@@ -41,11 +41,16 @@ public sealed class MicPipeline
     /// <summary>Input gain 0–10, applied before the gate. SingStar-class mics sit around −50 dBFS and need 4–8×.</summary>
     public double InputGain { get; set; } = 1.0;
 
-    /// <summary>Noise gate on peak amplitude 0–0.5 (post-gain). Below it the block is treated as silence.</summary>
-    public double Threshold { get; set; } = 0.01;
+    /// <summary>Noise gate on block RMS (linear, post-gain). Below it the block is treated as silence. Default −50 dBFS.</summary>
+    public double Threshold { get; set; } = 0.003;
 
     /// <summary>RMS 0..1 of the last processed block (post-gain, pre-gate) — for the UI meter.</summary>
     public double LevelRms => Volatile.Read(ref _levelRms);
+
+    /// <summary>True when the last block fell under the gate (UI shows "gated").</summary>
+    public bool IsGated => Volatile.Read(ref _gated) != 0;
+
+    private int _gated;
 
     /// <summary>Gated, gained mono samples for the monitor mixer.</summary>
     public SampleRing Monitor { get; }
@@ -56,7 +61,6 @@ public sealed class MicPipeline
         Span<float> mono = scratch[..frames];
         float gain = (float)InputGain;
         int ch = Channel == MicChannelSide.Right && channels > 1 ? 1 : 0;
-        float peak = 0;
         double sumSq = 0;
 
         for (int i = 0; i < frames; i++)
@@ -73,18 +77,16 @@ public sealed class MicPipeline
 
             s *= gain;
             mono[i] = s;
-            float a = Math.Abs(s);
-            if (a > peak)
-            {
-                peak = a;
-            }
-
             sumSq += s * s;
         }
 
-        Volatile.Write(ref _levelRms, Math.Sqrt(sumSq / Math.Max(1, frames)));
+        double rms = Math.Sqrt(sumSq / Math.Max(1, frames));
+        Volatile.Write(ref _levelRms, rms);
 
-        if (peak < Threshold)
+        // Gate on RMS (the same quantity the meter shows) so the UI marker sits exactly where the gate cuts.
+        bool gated = rms < Threshold;
+        Volatile.Write(ref _gated, gated ? 1 : 0);
+        if (gated)
         {
             mono.Clear();
         }

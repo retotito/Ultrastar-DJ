@@ -112,23 +112,36 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
         Status = Testing ? "Listening — sing into each mic" : "Could not open the microphones (see log)";
     }
 
-    [RelayCommand]
-    private void ToggleMonitor()
+    // Bound two-way to the ear toggle: the property change *is* the command.
+    partial void OnMonitoringChanged(bool value)
     {
-        if (Monitoring)
+        if (!value)
         {
             _audio.StopMonitor();
-            Monitoring = false;
             return;
         }
 
         if (!Testing || MonitorOutput is null)
         {
+            Status = Testing ? "Choose a monitor output first" : "Start the mic test first";
+            Dispatcher.UIThread.Post(() => Monitoring = false);
             return;
         }
 
         _audio.StartMonitor(MonitorOutput.Id);
-        Monitoring = _audio.Monitor.IsRunning;
+        if (!_audio.Monitor.IsRunning)
+        {
+            Status = "Could not open the monitor output (see log)";
+            Dispatcher.UIThread.Post(() => Monitoring = false);
+        }
+    }
+
+    partial void OnMonitorOutputChanged(AudioDeviceInfo? value)
+    {
+        if (Monitoring && value is not null)
+        {
+            _audio.StartMonitor(value.Id);
+        }
     }
 
     /// <summary>Mic bindings changed → streams must be reopened.</summary>
@@ -213,7 +226,9 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
 
         foreach (PlayerCardViewModel c in Players)
         {
-            c.Level = _audio.Mics.Pipeline(c.Config.Id)?.LevelRms ?? 0;
+            MicPipeline? pipe = _audio.Mics.Pipeline(c.Config.Id);
+            c.Level = pipe?.LevelRms ?? 0;
+            c.IsGated = pipe?.IsGated ?? false;
         }
     }
 
@@ -234,9 +249,10 @@ public sealed partial class PlayerCardViewModel : ObservableObject
     [ObservableProperty] private MicOption? _selectedMic;
     [ObservableProperty] private string _name;
     [ObservableProperty] private double _inputGain;
-    [ObservableProperty] private double _threshold;
+    [ObservableProperty] private double _gateDb;
     [ObservableProperty] private double _mixGain;
     [ObservableProperty] private double _level;
+    [ObservableProperty] private bool _isGated;
     [ObservableProperty] private string _note = "—";
     [ObservableProperty] private bool _calibrating;
 
@@ -246,18 +262,30 @@ public sealed partial class PlayerCardViewModel : ObservableObject
         _config = config;
         _name = config.Name;
         _inputGain = config.InputGain;
-        _threshold = config.Threshold;
+        _gateDb = ToDb(config.Threshold);
         _mixGain = config.MixGain;
         SyncMicOption();
     }
 
+    public const double GateMinDb = -70;
+    public const double GateMaxDb = -20;
+
     public string Title => $"P{Config.Id}";
     public string ColorKey => $"BrushPlayer{Config.Id}";
     public string MicDelayText => $"{Config.MicDelayMs:F0} ms";
-    /// <summary>Level in dB mapped to 0..1 over a 60 dB range — linear RMS is useless for quiet mics.</summary>
-    public double LevelDb => Level <= 0 ? 0 : Math.Clamp((20 * Math.Log10(Level) + 60) / 60, 0, 1);
+    public string GateText => $"{GateDb:F0} dB";
+    /// <summary>Level in dB mapped to 0..1 over the meter's 70 dB range — linear RMS is useless for quiet mics.</summary>
+    public double LevelDb => Level <= 0 ? 0 : Math.Clamp((20 * Math.Log10(Level) - GateMinDb) / -GateMinDb, 0, 1);
+    /// <summary>Gate position on the same 0..1 meter scale, so the user sees where the gate cuts.</summary>
+    public double GateMark => (GateDb - GateMinDb) / -GateMinDb;
+    public string NoteText => IsGated ? "gated" : Note;
 
     partial void OnLevelChanged(double value) => OnPropertyChanged(nameof(LevelDb));
+    partial void OnIsGatedChanged(bool value) => OnPropertyChanged(nameof(NoteText));
+    partial void OnNoteChanged(string value) => OnPropertyChanged(nameof(NoteText));
+
+    private static double ToDb(double linear) => Math.Clamp(linear <= 0 ? GateMinDb : 20 * Math.Log10(linear), GateMinDb, GateMaxDb);
+    private static double ToLinear(double db) => Math.Pow(10, db / 20);
 
     public void SyncMicOption()
     {
@@ -290,7 +318,12 @@ public sealed partial class PlayerCardViewModel : ObservableObject
 
     partial void OnNameChanged(string value) => Save(p => p with { Name = value });
     partial void OnInputGainChanged(double value) => Save(p => p with { InputGain = Math.Round(value, 2) });
-    partial void OnThresholdChanged(double value) => Save(p => p with { Threshold = Math.Round(value, 3) });
+    partial void OnGateDbChanged(double value)
+    {
+        OnPropertyChanged(nameof(GateText));
+        OnPropertyChanged(nameof(GateMark));
+        Save(p => p with { Threshold = ToLinear(Math.Round(value)) });
+    }
     partial void OnMixGainChanged(double value) => Save(p => p with { MixGain = Math.Round(value, 2) });
 
     private void Save(Func<PlayerConfig, PlayerConfig> change)

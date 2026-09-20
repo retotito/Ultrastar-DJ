@@ -66,12 +66,15 @@
     <Panel Grid.Column="1">
       <ContentControl Content="{Binding Library}" />
 
-      <!-- Popover anchored to the sidebar edge -->
+      <!-- Popover anchored to the sidebar edge; capped to the window height, content scrolls -->
       <Border Classes="popover"
               HorizontalAlignment="Left" VerticalAlignment="Top"
               Margin="{StaticResource Pad2}"
               IsVisible="{Binding PanelContent, Converter={x:Static ObjectConverters.IsNotNull}}">
-        <ContentControl Content="{Binding PanelContent}" />
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                      Padding="0,0,4,0">
+          <ContentControl Content="{Binding PanelContent}" />
+        </ScrollViewer>
       </Border>
     </Panel>
 

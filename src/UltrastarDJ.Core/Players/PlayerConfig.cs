@@ -24,8 +24,8 @@ public sealed record PlayerConfig
     public MicBinding? Mic { get; init; }
     /// <summary>Input gain 0–10 applied before the gate (quiet USB mics need 4–8).</summary>
     public double InputGain { get; init; } = 1.0;
-    /// <summary>Noise gate on peak amplitude 0–0.5, post-gain.</summary>
-    public double Threshold { get; init; } = 0.01;
+    /// <summary>Noise gate on block RMS (linear, post-gain). Default 0.003 ≈ −50 dBFS; the UI edits it in dB.</summary>
+    public double Threshold { get; init; } = 0.003;
     /// <summary>Level of this mic in the speaker mix, 0–2.</summary>
     public double MixGain { get; init; } = 1.0;
     /// <summary>Round-trip mic latency; the scorer evaluates this many ms behind the clock.</summary>

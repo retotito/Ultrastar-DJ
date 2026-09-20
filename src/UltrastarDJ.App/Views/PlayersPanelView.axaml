@@ -14,23 +14,26 @@
             <Border Grid.Column="0" Width="10" Height="10" CornerRadius="{StaticResource RadiusFull}" Margin="0,0,8,0"
                     Background="{Binding ColorKey, Converter={x:Static vm:PlayerConverters.BrushByKey}}" />
             <TextBox Grid.Column="1" Text="{Binding Name}" Classes="inline" />
-            <TextBlock Grid.Column="2" Classes="muted" Text="{Binding Note}" VerticalAlignment="Center" MinWidth="110" TextAlignment="Right" />
+            <TextBlock Grid.Column="2" Classes="muted" Text="{Binding NoteText}" VerticalAlignment="Center" MinWidth="110" TextAlignment="Right" />
           </Grid>
 
           <ComboBox ItemsSource="{Binding $parent[UserControl].((vm:PlayersPanelViewModel)DataContext).MicOptions}"
                     SelectedItem="{Binding SelectedMic}" HorizontalAlignment="Stretch" />
 
-          <ProgressBar Minimum="0" Maximum="1" Value="{Binding LevelDb}" Height="6"
-                       Foreground="{Binding ColorKey, Converter={x:Static vm:PlayerConverters.BrushByKey}}" />
+          <!-- Meter (dB) with the gate position drawn as a marker on the same scale -->
+          <c:LevelMeter Height="6" Margin="0,4" Level="{Binding LevelDb}" Mark="{Binding GateMark}"
+                        Fill="{Binding ColorKey, Converter={x:Static vm:PlayerConverters.BrushByKey}}"
+                        Track="{DynamicResource BrushSurfaceContainerHighest}"
+                        MarkBrush="{DynamicResource BrushOnSurface}" />
 
-          <Grid ColumnDefinitions="52,*,44" RowDefinitions="Auto,Auto,Auto">
+          <Grid ColumnDefinitions="52,*,52" RowDefinitions="Auto,Auto,Auto">
             <TextBlock Grid.Row="0" Grid.Column="0" Classes="label" Text="GAIN" VerticalAlignment="Center" />
             <Slider Grid.Row="0" Grid.Column="1" Minimum="0" Maximum="10" Value="{Binding InputGain}" />
             <TextBlock Grid.Row="0" Grid.Column="2" Classes="muted" Text="{Binding InputGain, StringFormat='{}{0:F1}×'}" VerticalAlignment="Center" TextAlignment="Right" />
 
             <TextBlock Grid.Row="1" Grid.Column="0" Classes="label" Text="GATE" VerticalAlignment="Center" />
-            <Slider Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="0.2" Value="{Binding Threshold}" />
-            <TextBlock Grid.Row="1" Grid.Column="2" Classes="muted" Text="{Binding Threshold, StringFormat='{}{0:F3}'}" VerticalAlignment="Center" TextAlignment="Right" />
+            <Slider Grid.Row="1" Grid.Column="1" Minimum="-70" Maximum="-20" Value="{Binding GateDb}" />
+            <TextBlock Grid.Row="1" Grid.Column="2" Classes="muted" Text="{Binding GateText}" VerticalAlignment="Center" TextAlignment="Right" />
 
             <TextBlock Grid.Row="2" Grid.Column="0" Classes="label" Text="MIX" VerticalAlignment="Center" />
             <Slider Grid.Row="2" Grid.Column="1" Minimum="0" Maximum="2" Value="{Binding MixGain}" />
@@ -76,7 +79,7 @@
           </DataTemplate>
         </ComboBox.ItemTemplate>
       </ComboBox>
-      <ToggleButton Grid.Column="2" IsChecked="{Binding Monitoring}" Command="{Binding ToggleMonitorCommand}" Margin="8,0,0,0" ToolTip.Tip="Hear the mics on this output">
+      <ToggleButton Grid.Column="2" IsChecked="{Binding Monitoring}" Margin="8,0,0,0" ToolTip.Tip="Hear the mics on this output">
         <c:Icon Glyph="hearing" FontSize="{StaticResource IconMd}" />
       </ToggleButton>
     </Grid>
