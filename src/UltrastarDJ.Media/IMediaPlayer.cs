@@ -36,6 +36,9 @@ public interface IMediaPlayer : IAsyncDisposable
     /// <summary>mpv <c>audio-device</c> id. <c>"auto"</c> = system default. Can be changed while playing.</summary>
     string AudioDevice { get; set; }
 
+    /// <summary>Stereo pair inside a multichannel output: (channels, firstChannelIndex). (2, 0) = plain stereo.</summary>
+    void SetChannelRouting(int totalChannels, int offset);
+
     /// <summary>Latest RMS level 0..1 of the output audio (0 when not metering).</summary>
     double LevelRms { get; }
 

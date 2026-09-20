@@ -106,6 +106,7 @@
   <SolidColorBrush x:Key="BrushSecondaryContainer" Color="{DynamicResource ColorSecondaryContainer}" />
   <SolidColorBrush x:Key="BrushOnSecondaryContainer" Color="{DynamicResource ColorOnSecondaryContainer}" />
   <SolidColorBrush x:Key="BrushError" Color="{DynamicResource ColorError}" />
+  <SolidColorBrush x:Key="BrushTertiary" Color="{DynamicResource ColorTertiary}" />
   <SolidColorBrush x:Key="BrushBackground" Color="{DynamicResource ColorBackground}" />
   <SolidColorBrush x:Key="BrushSurface" Color="{DynamicResource ColorSurface}" />
   <SolidColorBrush x:Key="BrushOnSurface" Color="{DynamicResource ColorOnSurface}" />

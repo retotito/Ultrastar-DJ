@@ -87,13 +87,15 @@ Deferred to Sprint 5: difficulty setting UI (Medium hardcoded in `PlaybackServic
 
 ## Sprint 5 — DJ workflow
 
-- [ ] Virtualized song table (search, filters, sort, badges, availability)
-- [ ] Preview player (all cases, own device, fader/meter), Add to queue, Load
-- [ ] Queue widget; Now Playing card (status, faders, mic mix rows, transport); popup locking while active
-- [ ] Audio Output panel (game/preview device pairs, faders), Displays panel, Settings (theme, difficulty, lyrics offset)
-- [ ] Validation dialog, offline handling, device-gone toasts
+- [x] Virtualized song table (search, language/genre filters, sortable headers, SOURCE badge, greyed rows when a source is unavailable — 5 s poll)
+- [x] Preview player (all cases, own device, fader/meter, seek), row ⋮/context menu: Preview / Add to queue / Load into game; double-click previews
+- [x] Queue widget (reorder, remove, load next, active row); Now Playing card (status, transport, game monitor); Audio Input/Output/Displays locked while Countdown/Playing/Paused
+- [x] Audio Output panel (game/preview device + stereo pair, faders, meters; persisted and applied at startup — **MOTU channel pairs still untested**), Displays panel, Settings (light theme, difficulty, lyrics offset ±500 ms); Media Lab removed
+- [x] Validation dialog on load/preview failure, device-gone toasts (mic disconnected)
+- [x] Shutdown tears services down off the UI thread with a 5 s deadline (a stalled preview player used to hang the app on close)
 
-**Demo:** the full "typical evening" flow from `00-vision.md` without touching a config file.
+**Demo (done):** the full "typical evening" flow from `00-vision.md` without touching a config file.
+Still open from earlier sprints: pre-resolving YouTube on queue-add, duet lyrics per track, 2-beamer stress test, Windows build.
 
 ---
 

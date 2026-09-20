@@ -1,0 +1,61 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:UltrastarDJ.App.ViewModels"
+             xmlns:c="using:UltrastarDJ.App.Controls"
+             x:Class="UltrastarDJ.App.Views.PreviewView"
+             x:DataType="vm:PreviewViewModel">
+
+  <StackPanel Spacing="{StaticResource Space2}" Margin="{StaticResource Pad3}">
+    <Border Background="{DynamicResource BrushBeamerBackground}" CornerRadius="{StaticResource RadiusMd}" Height="170" ClipToBounds="True">
+      <Panel>
+        <Image Source="{Binding Cover}" Stretch="UniformToFill" IsVisible="{Binding ShowCover}" />
+        <c:VideoSurface Source="{Binding Frames}" IsVisible="{Binding HasVideo}" />
+        <c:Icon Glyph="music_note" FontSize="{StaticResource IconXl}" IsVisible="{Binding !HasSong}" />
+        <ProgressBar IsIndeterminate="True" IsVisible="{Binding Loading}" VerticalAlignment="Bottom" Height="3" />
+      </Panel>
+    </Border>
+
+    <StackPanel>
+      <TextBlock Classes="title" Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
+      <TextBlock Classes="muted" FontSize="{StaticResource TextSm}" Text="{Binding Artist}" TextTrimming="CharacterEllipsis" />
+    </StackPanel>
+
+    <!-- Transport + progress -->
+    <Grid ColumnDefinitions="Auto,Auto,*,Auto" IsEnabled="{Binding HasSong}">
+      <Button Grid.Column="0" Classes="sidebar" Command="{Binding TogglePlayCommand}" ToolTip.Tip="Play / pause">
+        <c:Icon Glyph="{Binding IsPlaying, Converter={x:Static vm:PlayerConverters.PlayPauseGlyph}}" />
+      </Button>
+      <Button Grid.Column="1" Classes="sidebar" Command="{Binding StopCommand}" ToolTip.Tip="Stop and unload">
+        <c:Icon Glyph="stop" />
+      </Button>
+      <Slider Grid.Column="2" Minimum="0" Maximum="1" Value="{Binding Fraction}" Margin="8,0" VerticalAlignment="Center" />
+      <TextBlock Grid.Column="3" Classes="muted" FontFamily="{StaticResource FontMono}" FontSize="{StaticResource TextXs}" Text="{Binding TimeText}" VerticalAlignment="Center" />
+    </Grid>
+
+    <!-- Preview fader -->
+    <Grid ColumnDefinitions="Auto,*,44">
+      <c:Icon Glyph="headphones" FontSize="{StaticResource IconMd}" Margin="0,0,8,0" />
+      <Slider Grid.Column="1" Minimum="0" Maximum="1" Value="{Binding Gain}" />
+      <TextBlock Grid.Column="2" Classes="muted" Text="{Binding Gain, StringFormat='{}{0:P0}'}" VerticalAlignment="Center" TextAlignment="Right" />
+    </Grid>
+    <c:LevelMeter Height="4" Level="{Binding Level}" Fill="{DynamicResource BrushTertiary}" Track="{DynamicResource BrushSurfaceContainerHighest}" />
+
+    <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space2}">
+      <Button Classes="tonal" Command="{Binding AddToQueueCommand}">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <c:Icon Glyph="queue_music" FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
+          <TextBlock Text="Add to queue" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
+        </StackPanel>
+      </Button>
+      <Button Classes="tonal" Command="{Binding LoadIntoGameCommand}">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <c:Icon Glyph="play_circle" FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
+          <TextBlock Text="Load" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
+        </StackPanel>
+      </Button>
+    </StackPanel>
+
+    <TextBlock Foreground="{DynamicResource BrushError}" FontSize="{StaticResource TextXs}" TextWrapping="Wrap" Text="{Binding Error}"
+               IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+  </StackPanel>
+</UserControl>

@@ -1,0 +1,51 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:UltrastarDJ.App.ViewModels"
+             xmlns:c="using:UltrastarDJ.App.Controls"
+             x:Class="UltrastarDJ.App.Views.QueueView"
+             x:DataType="vm:QueueViewModel">
+
+  <Grid RowDefinitions="Auto,*">
+    <Border Grid.Row="0" Padding="{StaticResource Pad3}" BorderBrush="{DynamicResource BrushOutlineVariant}" BorderThickness="0,1,0,1">
+      <Grid ColumnDefinitions="*,Auto,Auto">
+        <TextBlock Classes="label" VerticalAlignment="Center" Text="{Binding Count, StringFormat='QUEUE ({0})'}" />
+        <Button Grid.Column="1" Classes="sidebar" Width="28" Height="28" Command="{Binding LoadNextCommand}" ToolTip.Tip="Load next song into the game">
+          <c:Icon Glyph="skip_next" FontSize="{StaticResource IconMd}" />
+        </Button>
+        <Button Grid.Column="2" Classes="sidebar" Width="28" Height="28" Command="{Binding ClearCommand}" ToolTip.Tip="Clear queue">
+          <c:Icon Glyph="delete_sweep" FontSize="{StaticResource IconMd}" />
+        </Button>
+      </Grid>
+    </Border>
+
+    <TextBlock Grid.Row="1" Classes="muted" Text="Queue is empty — add songs from the library or the preview player" Margin="{StaticResource Pad3}"
+               TextWrapping="Wrap" IsVisible="{Binding IsEmpty}" />
+
+    <ScrollViewer Grid.Row="1" IsVisible="{Binding !IsEmpty}">
+      <ItemsControl ItemsSource="{Binding Items}" Margin="4">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:QueueRowViewModel">
+            <Border Padding="8,6" CornerRadius="{StaticResource RadiusMd}" Classes.active="{Binding IsActive}">
+              <Border.Styles>
+                <Style Selector="Border.active">
+                  <Setter Property="Background" Value="{DynamicResource BrushSecondaryContainer}" />
+                </Style>
+              </Border.Styles>
+              <Grid ColumnDefinitions="24,*,Auto,Auto,Auto,Auto">
+                <TextBlock Grid.Column="0" Classes="muted" Text="{Binding Number}" VerticalAlignment="Center" />
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                  <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
+                  <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="{Binding Artist}" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+                <Button Grid.Column="2" Classes="sidebar" Width="26" Height="26" Command="{Binding MoveUpCommand}" ToolTip.Tip="Move up"><c:Icon Glyph="arrow_upward" FontSize="{StaticResource IconSm}" /></Button>
+                <Button Grid.Column="3" Classes="sidebar" Width="26" Height="26" Command="{Binding MoveDownCommand}" ToolTip.Tip="Move down"><c:Icon Glyph="arrow_downward" FontSize="{StaticResource IconSm}" /></Button>
+                <Button Grid.Column="4" Classes="sidebar" Width="26" Height="26" Command="{Binding LoadCommand}" ToolTip.Tip="Load into game"><c:Icon Glyph="play_circle" FontSize="{StaticResource IconSm}" /></Button>
+                <Button Grid.Column="5" Classes="sidebar" Width="26" Height="26" Command="{Binding RemoveCommand}" ToolTip.Tip="Remove"><c:Icon Glyph="close" FontSize="{StaticResource IconSm}" /></Button>
+              </Grid>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </ScrollViewer>
+  </Grid>
+</UserControl>

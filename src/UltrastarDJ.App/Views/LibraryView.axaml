@@ -2,31 +2,45 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:UltrastarDJ.App.ViewModels"
              xmlns:c="using:UltrastarDJ.App.Controls"
-             xmlns:songs="using:UltrastarDJ.Core.Songs"
              x:Class="UltrastarDJ.App.Views.LibraryView"
              x:DataType="vm:LibraryViewModel">
+
+  <UserControl.Styles>
+    <Style Selector="Button.header">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+      <Setter Property="Cursor" Value="Hand" />
+    </Style>
+  </UserControl.Styles>
 
   <Grid RowDefinitions="Auto,Auto,*">
     <Border Grid.Row="0" Padding="{StaticResource Pad3}"
             BorderBrush="{DynamicResource BrushOutlineVariant}" BorderThickness="0,0,0,1">
-      <Grid ColumnDefinitions="Auto,*,Auto">
+      <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto">
         <TextBlock Grid.Column="0" Classes="label" Text="LIBRARY" VerticalAlignment="Center" />
-        <TextBox Grid.Column="1" Margin="16,0" PlaceholderText="Search title or artist  —  double-click: preview · right-click or ▶: load into game" Text="{Binding Search}" />
-        <TextBlock Grid.Column="2" Classes="muted" VerticalAlignment="Center"
-                   Text="{Binding TotalCount, StringFormat='{}{0} songs'}" />
+        <TextBox Grid.Column="1" Margin="16,0" PlaceholderText="Search title or artist  —  double-click: preview · ⋮ or right-click: queue / game" Text="{Binding Search}" />
+        <ComboBox Grid.Column="2" ItemsSource="{Binding Languages}" SelectedItem="{Binding Language}" MinWidth="120" Margin="0,0,8,0" ToolTip.Tip="Language" />
+        <ComboBox Grid.Column="3" ItemsSource="{Binding Genres}" SelectedItem="{Binding Genre}" MinWidth="120" Margin="0,0,16,0" ToolTip.Tip="Genre" />
+        <TextBlock Grid.Column="4" Classes="muted" VerticalAlignment="Center">
+          <Run Text="{Binding ShownCount}" /><Run Text=" / " /><Run Text="{Binding TotalCount}" /><Run Text=" songs" />
+        </TextBlock>
       </Grid>
     </Border>
 
-    <!-- Header row -->
-    <Grid Grid.Row="1" ColumnDefinitions="2*,2*,60,90,60,36" Margin="12,6">
-      <TextBlock Grid.Column="0" Classes="label" Text="TITLE" />
-      <TextBlock Grid.Column="1" Classes="label" Text="ARTIST" />
-      <TextBlock Grid.Column="2" Classes="label" Text="YEAR" />
-      <TextBlock Grid.Column="3" Classes="label" Text="LANGUAGE" />
-      <TextBlock Grid.Column="4" Classes="label" Text="MEDIA" />
+    <!-- Header row: click to sort -->
+    <Grid Grid.Row="1" ColumnDefinitions="2*,2*,60,90,90,60,36" Margin="12,6">
+      <Button Grid.Column="0" Classes="header" Command="{Binding SortByCommand}" CommandParameter="{x:Static vm:LibrarySort.Title}"><TextBlock Classes="label" Text="{Binding TitleHeader}" /></Button>
+      <Button Grid.Column="1" Classes="header" Command="{Binding SortByCommand}" CommandParameter="{x:Static vm:LibrarySort.Artist}"><TextBlock Classes="label" Text="{Binding ArtistHeader}" /></Button>
+      <Button Grid.Column="2" Classes="header" Command="{Binding SortByCommand}" CommandParameter="{x:Static vm:LibrarySort.Year}"><TextBlock Classes="label" Text="{Binding YearHeader}" /></Button>
+      <Button Grid.Column="3" Classes="header" Command="{Binding SortByCommand}" CommandParameter="{x:Static vm:LibrarySort.Language}"><TextBlock Classes="label" Text="{Binding LanguageHeader}" /></Button>
+      <TextBlock Grid.Column="4" Classes="label" Text="SOURCE" />
+      <TextBlock Grid.Column="5" Classes="label" Text="MEDIA" />
     </Grid>
 
-    <ListBox Grid.Row="2" x:Name="SongList" ItemsSource="{Binding Songs}" SelectedItem="{Binding Selected}"
+    <ListBox Grid.Row="2" x:Name="SongList" ItemsSource="{Binding Rows}" SelectedItem="{Binding Selected}"
              Background="Transparent" BorderThickness="0" Padding="4,0">
       <ListBox.ItemsPanel>
         <ItemsPanelTemplate>
@@ -34,11 +48,13 @@
         </ItemsPanelTemplate>
       </ListBox.ItemsPanel>
       <ListBox.ItemTemplate>
-        <DataTemplate x:DataType="songs:Song">
-          <Grid ColumnDefinitions="2*,2*,60,90,60,36" Height="32" Background="Transparent">
+        <DataTemplate x:DataType="vm:LibraryRow">
+          <Grid ColumnDefinitions="2*,2*,60,90,90,60,36" Height="32" Background="Transparent" Opacity="{Binding Opacity}"
+                ToolTip.Tip="{Binding IsAvailable, Converter={x:Static vm:PlayerConverters.AvailabilityTooltip}}">
             <Grid.ContextMenu>
               <ContextMenu>
                 <MenuItem Header="Preview" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).PreviewCommand}" CommandParameter="{Binding}" />
+                <MenuItem Header="Add to queue" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).AddToQueueCommand}" CommandParameter="{Binding}" />
                 <MenuItem Header="Load into game" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).LoadIntoGameCommand}" CommandParameter="{Binding}" />
               </ContextMenu>
             </Grid.ContextMenu>
@@ -46,14 +62,23 @@
             <TextBlock Grid.Column="1" Text="{Binding Artist}" Classes="muted" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
             <TextBlock Grid.Column="2" Text="{Binding Year}" Classes="muted" VerticalAlignment="Center" />
             <TextBlock Grid.Column="3" Text="{Binding Language}" Classes="muted" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-            <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
+            <Border Grid.Column="4" Background="{DynamicResource BrushSecondaryContainer}" CornerRadius="{StaticResource RadiusFull}" Padding="8,2" HorizontalAlignment="Left" VerticalAlignment="Center">
+              <TextBlock Text="{Binding Source}" FontSize="{StaticResource TextXs}" Foreground="{DynamicResource BrushOnSecondaryContainer}" TextTrimming="CharacterEllipsis" MaxWidth="70" />
+            </Border>
+            <StackPanel Grid.Column="5" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
               <c:Icon Glyph="music_note" FontSize="{StaticResource IconSm}" IsVisible="{Binding HasLocalAudio}" ToolTip.Tip="Local audio" />
               <c:Icon Glyph="movie" FontSize="{StaticResource IconSm}" IsVisible="{Binding HasLocalVideo}" ToolTip.Tip="Local video" />
               <c:Icon Glyph="smart_display" FontSize="{StaticResource IconSm}" IsVisible="{Binding HasYouTube}" ToolTip.Tip="YouTube" />
             </StackPanel>
-            <Button Grid.Column="5" Classes="sidebar" Width="28" Height="28" ToolTip.Tip="Load into game"
-                    Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).LoadIntoGameCommand}" CommandParameter="{Binding}">
-              <c:Icon Glyph="play_circle" FontSize="{StaticResource IconMd}" />
+            <Button Grid.Column="6" Classes="sidebar" Width="28" Height="28" ToolTip.Tip="Actions">
+              <Button.Flyout>
+                <MenuFlyout>
+                  <MenuItem Header="Preview" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).PreviewCommand}" CommandParameter="{Binding}" />
+                  <MenuItem Header="Add to queue" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).AddToQueueCommand}" CommandParameter="{Binding}" />
+                  <MenuItem Header="Load into game" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).LoadIntoGameCommand}" CommandParameter="{Binding}" />
+                </MenuFlyout>
+              </Button.Flyout>
+              <c:Icon Glyph="more_vert" FontSize="{StaticResource IconMd}" />
             </Button>
           </Grid>
         </DataTemplate>

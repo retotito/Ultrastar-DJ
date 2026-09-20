@@ -29,6 +29,7 @@ public sealed class PlaybackService : IDisposable
     private readonly AudioInputService _audio;
     private readonly PlayersService _players;
     private readonly IDisplayService _displays;
+    private readonly AppSettingsService _settings;
     private readonly SongValidator _validator;
     private readonly ILogger<PlaybackService> _log;
     private readonly HashSet<DisplayId> _countdownDone = [];
@@ -36,12 +37,13 @@ public sealed class PlaybackService : IDisposable
     private Task? _tickLoop;
     private PlaybackState _state = PlaybackState.Idle;
 
-    public PlaybackService(MediaService media, AudioInputService audio, PlayersService players, IDisplayService displays, ILogger<PlaybackService> log)
+    public PlaybackService(MediaService media, AudioInputService audio, PlayersService players, IDisplayService displays, AppSettingsService settings, ILogger<PlaybackService> log)
     {
         _media = media;
         _audio = audio;
         _players = players;
         _displays = displays;
+        _settings = settings;
         _validator = new SongValidator(new FileSystemExistence());
         _log = log;
         _media.Game.EndReached += () => Dispatcher.UIThread.Post(() => { if (State is PlaybackState.Playing or PlaybackState.Paused) { Stop(); } });
@@ -75,7 +77,11 @@ public sealed class PlaybackService : IDisposable
     public MediaPlan? Plan { get; private set; }
     public GameSession? Session { get; private set; }
     public IGameClock? Clock => _media.Game.Clock;
-    public Difficulty Difficulty { get; set; } = Difficulty.Medium;
+    public Difficulty Difficulty => _settings.Difficulty;
+    /// <summary>Global lyrics offset; the beamers and the scorer read game time as clock + this.</summary>
+    public double LyricsOffsetSec => _settings.LyricsOffsetMs / 1000.0;
+    /// <summary>Game time including the lyrics offset — what beamers and the scorer use.</summary>
+    public double GamePositionSec => (Clock?.PositionSec ?? 0) + LyricsOffsetSec;
     public string? LastError { get; private set; }
     public bool IsBusy { get; private set; }
 
@@ -318,7 +324,7 @@ public sealed class PlaybackService : IDisposable
                     continue;
                 }
 
-                double pos = clock.PositionSec;
+                double pos = clock.PositionSec + LyricsOffsetSec;
                 Ticked?.Invoke(new GameTickInfo(pos, session.BeatAt(pos)));
 
                 if (State == PlaybackState.Playing)

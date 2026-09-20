@@ -1,0 +1,48 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:UltrastarDJ.App.ViewModels"
+             xmlns:c="using:UltrastarDJ.App.Controls"
+             x:Class="UltrastarDJ.App.Views.SettingsPanelView"
+             x:DataType="vm:SettingsPanelViewModel">
+
+  <StackPanel Spacing="{StaticResource Space2}">
+    <Grid ColumnDefinitions="Auto,*">
+      <c:Icon Grid.Column="0" Glyph="settings" Margin="0,0,8,0" />
+      <TextBlock Grid.Column="1" Classes="title" Text="Settings" VerticalAlignment="Center" />
+    </Grid>
+
+    <Border Classes="card">
+      <StackPanel Spacing="{StaticResource Space3}">
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel>
+            <TextBlock Text="Light theme" />
+            <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="Dark is easier on the eyes in a dim room" />
+          </StackPanel>
+          <ToggleSwitch Grid.Column="1" IsChecked="{Binding LightTheme}" OnContent="" OffContent="" />
+        </Grid>
+      </StackPanel>
+    </Border>
+
+    <Border Classes="card">
+      <StackPanel Spacing="{StaticResource Space2}">
+        <TextBlock Text="Difficulty" />
+        <ComboBox ItemsSource="{Binding Difficulties}" SelectedItem="{Binding Difficulty}" HorizontalAlignment="Stretch" />
+        <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="{Binding DifficultyHint}" />
+      </StackPanel>
+    </Border>
+
+    <Border Classes="card">
+      <StackPanel Spacing="{StaticResource Space2}">
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBlock Text="Lyrics offset" />
+          <TextBlock Grid.Column="1" Classes="muted" Text="{Binding LyricsOffsetMs, StringFormat='{}{0:+0;-0;0} ms'}" />
+        </Grid>
+        <Slider Minimum="-500" Maximum="500" TickFrequency="10" IsSnapToTickEnabled="True" Value="{Binding LyricsOffsetMs}" />
+        <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap"
+                   Text="Shifts notes and lyrics against the audio for every song. Use it only if all songs feel early or late; per-song timing belongs in the .txt (#GAP)." />
+      </StackPanel>
+    </Border>
+
+    <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="{Binding Version, StringFormat='Ultrastar DJ v{0}'}" HorizontalAlignment="Center" />
+  </StackPanel>
+</UserControl>

@@ -19,5 +19,5 @@ public sealed partial class LibraryView : UserControl
         };
     }
 
-    private Task LoadAsync() => DataContext is LibraryViewModel vm ? vm.LoadSelectedAsync() : Task.CompletedTask;
+    private Task LoadAsync() => DataContext is LibraryViewModel vm ? vm.PreviewSelectedAsync() : Task.CompletedTask;
 }

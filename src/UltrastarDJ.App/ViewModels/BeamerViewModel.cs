@@ -116,10 +116,10 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
 
             case PlaybackState.Playing:
                 _countdown.Stop();
-                if (Scene is null && _playback.Session is { } session && _playback.Clock is { } clock)
+                if (Scene is null && _playback.Session is { } session && _playback.Clock is not null)
                 {
                     RefreshAssignedPlayers();
-                    Scene = new GameScene(session, [.. AssignedPlayers], () => clock.PositionSec);
+                    Scene = new GameScene(session, [.. AssignedPlayers], () => _playback.GamePositionSec);
                 }
 
                 break;
@@ -190,9 +190,9 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
     private void OnPitchTicked(IReadOnlyList<PitchTick> ticks)
     {
         GameScene? scene = Scene;
-        if (scene is not null && _playback.Clock is { } clock)
+        if (scene is not null)
         {
-            scene.Apply(ticks, clock.PositionSec);
+            scene.Apply(ticks, _playback.GamePositionSec);
         }
     }
 

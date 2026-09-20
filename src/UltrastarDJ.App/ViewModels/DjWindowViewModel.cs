@@ -1,6 +1,8 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
+using UltrastarDJ.App.Services;
+using UltrastarDJ.Core.Playback;
 
 namespace UltrastarDJ.App.ViewModels;
 
@@ -14,12 +16,12 @@ public enum SidebarPanel
     AudioOutput,
     Displays,
     Settings,
-    MediaLab,
 }
 
 public sealed partial class DjWindowViewModel : ViewModelBase
 {
     private readonly IServiceProvider _services;
+    private readonly PlaybackService _playback;
 
     [ObservableProperty]
     private SidebarPanel _activePanel = SidebarPanel.None;
@@ -27,15 +29,45 @@ public sealed partial class DjWindowViewModel : ViewModelBase
     [ObservableProperty]
     private ViewModelBase? _panelContent;
 
-    public DjWindowViewModel(IServiceProvider services, LibraryViewModel library, NowPlayingViewModel nowPlaying)
+    /// <summary>Audio/display configuration is locked while a song is active (prototype rule).</summary>
+    [ObservableProperty]
+    private bool _audioLocked;
+
+    [ObservableProperty]
+    private DialogMessage? _dialog;
+
+    public DjWindowViewModel(IServiceProvider services, LibraryViewModel library, NowPlayingViewModel nowPlaying, PreviewViewModel preview, QueueViewModel queue,
+        NotificationService notifications, PlaybackService playback)
     {
         _services = services;
+        _playback = playback;
         Library = library;
         NowPlaying = nowPlaying;
+        Preview = preview;
+        Queue = queue;
+        Notifications = notifications;
+        notifications.DialogChanged += d => Dialog = d;
+        playback.StateChanged += _ => UpdateLock();
+        UpdateLock();
     }
 
     public LibraryViewModel Library { get; }
     public NowPlayingViewModel NowPlaying { get; }
+    public PreviewViewModel Preview { get; }
+    public QueueViewModel Queue { get; }
+    public NotificationService Notifications { get; }
+
+    private void UpdateLock()
+    {
+        AudioLocked = _playback.State is PlaybackState.Countdown or PlaybackState.Playing or PlaybackState.Paused;
+        if (AudioLocked && ActivePanel is SidebarPanel.AudioInput or SidebarPanel.AudioOutput or SidebarPanel.Displays)
+        {
+            ClosePanel();
+        }
+    }
+
+    [RelayCommand]
+    private void DismissDialog() => Notifications.DismissDialog();
 
     public static string Version => typeof(DjWindowViewModel).Assembly.GetName().Version?.ToString(3) ?? "dev";
 
@@ -54,7 +86,8 @@ public sealed partial class DjWindowViewModel : ViewModelBase
             SidebarPanel.Displays => _services.GetRequiredService<DisplaysPanelViewModel>(),
             SidebarPanel.Sources => _services.GetRequiredService<SourcesPanelViewModel>(),
             SidebarPanel.AudioInput => _services.GetRequiredService<PlayersPanelViewModel>(),
-            SidebarPanel.MediaLab => _services.GetRequiredService<MediaLabPanelViewModel>(),
+            SidebarPanel.AudioOutput => _services.GetRequiredService<AudioOutputPanelViewModel>(),
+            SidebarPanel.Settings => _services.GetRequiredService<SettingsPanelViewModel>(),
             _ => new PlaceholderPanelViewModel(panel.ToString()),
         };
     }

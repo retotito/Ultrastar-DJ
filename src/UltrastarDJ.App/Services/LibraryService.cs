@@ -9,7 +9,7 @@ namespace UltrastarDJ.App.Services;
 /// Song sources + library. Sources are persisted as a settings document; songs live in the SQLite
 /// repository, so the library is available immediately on the next start without rescanning.
 /// </summary>
-public sealed class LibraryService
+public sealed class LibraryService : IDisposable
 {
     private const string SettingsName = "sources";
 
@@ -19,6 +19,8 @@ public sealed class LibraryService
     private readonly ILogger<LibraryService> _log;
     private SourcesDocument _doc;
     private IReadOnlyList<Song> _songs;
+    private HashSet<string> _unavailable = [];
+    private readonly Timer _availabilityTimer;
 
     public LibraryService(ISettingsStore settings, ISongRepository repo, LocalFolderScanner scanner, ILogger<LibraryService> log)
     {
@@ -29,13 +31,33 @@ public sealed class LibraryService
         _doc = settings.Load(SettingsName, new SourcesDocument([]));
         _songs = repo.GetAll();
         _log.LogInformation("Library: {Songs} songs from {Sources} sources", _songs.Count, _doc.Sources.Count);
+        CheckAvailability();
+        // Folders on USB drives come and go; poll cheaply (Directory.Exists) instead of a watcher per source.
+        _availabilityTimer = new Timer(_ => CheckAvailability(), null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
     }
 
     /// <summary>Raised on the calling thread after <see cref="Songs"/> or <see cref="Sources"/> changed.</summary>
     public event Action? Changed;
 
+    /// <summary>Raised on a timer thread when a source folder appeared or disappeared.</summary>
+    public event Action? AvailabilityChanged;
+
     public IReadOnlyList<SongSource> Sources => _doc.Sources;
     public IReadOnlyList<Song> Songs => _songs;
+
+    public bool IsAvailable(string sourceId) => !_unavailable.Contains(sourceId);
+    public string SourceLabel(string sourceId) => _doc.Sources.FirstOrDefault(s => s.Id == sourceId)?.Label ?? sourceId;
+
+    private void CheckAvailability()
+    {
+        HashSet<string> gone = _doc.Sources.Where(s => s.Path is { } p && !Directory.Exists(p)).Select(s => s.Id).ToHashSet();
+        if (!gone.SetEquals(_unavailable))
+        {
+            _unavailable = gone;
+            _log.LogInformation("Source availability changed: {Unavailable} unavailable", gone.Count);
+            AvailabilityChanged?.Invoke();
+        }
+    }
 
     public async Task AddLocalFolderAsync(string path, IProgress<LocalFolderScanner.Progress>? progress = null, CancellationToken ct = default)
     {
@@ -76,6 +98,8 @@ public sealed class LibraryService
     }
 
     public int CountFor(string sourceId) => _repo.CountBySource(sourceId);
+
+    public void Dispose() => _availabilityTimer.Dispose();
 
     public sealed record SourcesDocument(IReadOnlyList<SongSource> Sources);
 }

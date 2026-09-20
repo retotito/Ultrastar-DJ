@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:UltrastarDJ.App.ViewModels"
         xmlns:c="using:UltrastarDJ.App.Controls"
+        xmlns:svc="using:UltrastarDJ.App.Services"
         x:Class="UltrastarDJ.App.Views.DjWindow"
         x:DataType="vm:DjWindowViewModel"
         Title="Ultrastar DJ"
@@ -10,6 +11,7 @@
         Icon="avares://UltrastarDJ/Assets/icon.png"
         Background="{DynamicResource BrushBackground}">
 
+  <Panel>
   <Grid ColumnDefinitions="Auto,*,Auto">
 
     <!-- ── Sidebar ─────────────────────────────────────────────────────── -->
@@ -20,11 +22,6 @@
             BorderThickness="0,0,1,0">
       <DockPanel Margin="{StaticResource Pad2}">
         <StackPanel DockPanel.Dock="Bottom" Spacing="{StaticResource Space1}">
-          <Button Classes="sidebar" Classes.active="{Binding ActivePanel, Converter={x:Static vm:SidebarPanelConverters.Is}, ConverterParameter=MediaLab}"
-                  Command="{Binding TogglePanelCommand}" CommandParameter="{x:Static vm:SidebarPanel.MediaLab}"
-                  ToolTip.Tip="Media Lab (Sprint 1 spike)">
-            <c:Icon Glyph="science" />
-          </Button>
           <Button Classes="sidebar" Classes.active="{Binding ActivePanel, Converter={x:Static vm:SidebarPanelConverters.Is}, ConverterParameter=Settings}"
                   Command="{Binding TogglePanelCommand}" CommandParameter="{x:Static vm:SidebarPanel.Settings}"
                   ToolTip.Tip="Settings">
@@ -44,16 +41,19 @@
             <c:Icon Glyph="library_music" />
           </Button>
           <Button Classes="sidebar" Classes.active="{Binding ActivePanel, Converter={x:Static vm:SidebarPanelConverters.Is}, ConverterParameter=AudioInput}"
+                  IsEnabled="{Binding !AudioLocked}"
                   Command="{Binding TogglePanelCommand}" CommandParameter="{x:Static vm:SidebarPanel.AudioInput}"
                   ToolTip.Tip="Audio Input (players &amp; microphones)">
             <c:Icon Glyph="mic_external_on" />
           </Button>
           <Button Classes="sidebar" Classes.active="{Binding ActivePanel, Converter={x:Static vm:SidebarPanelConverters.Is}, ConverterParameter=AudioOutput}"
+                  IsEnabled="{Binding !AudioLocked}"
                   Command="{Binding TogglePanelCommand}" CommandParameter="{x:Static vm:SidebarPanel.AudioOutput}"
                   ToolTip.Tip="Audio Output">
             <c:Icon Glyph="speaker" />
           </Button>
           <Button Classes="sidebar" Classes.active="{Binding ActivePanel, Converter={x:Static vm:SidebarPanelConverters.Is}, ConverterParameter=Displays}"
+                  IsEnabled="{Binding !AudioLocked}"
                   Command="{Binding TogglePanelCommand}" CommandParameter="{x:Static vm:SidebarPanel.Displays}"
                   ToolTip.Tip="Displays">
             <c:Icon Glyph="tv" />
@@ -84,32 +84,49 @@
             Background="{DynamicResource BrushSurface}"
             BorderBrush="{DynamicResource BrushOutlineVariant}"
             BorderThickness="1,0,0,0">
-      <Grid RowDefinitions="Auto,Auto,Auto,Auto,*">
+      <Grid RowDefinitions="Auto,Auto,*">
         <ContentControl Grid.Row="0" Content="{Binding NowPlaying}" />
-        <Border Grid.Row="1" Padding="{StaticResource Pad3}" BorderBrush="{DynamicResource BrushOutlineVariant}" BorderThickness="0,1,0,1">
-          <Grid ColumnDefinitions="*,Auto,Auto">
-            <TextBlock Classes="label" Text="PREVIEW PLAYER" VerticalAlignment="Center" />
-            <Button Grid.Column="1" Classes="sidebar" Width="28" Height="28" Command="{Binding Library.TogglePreviewCommand}" ToolTip.Tip="Play / pause preview">
-              <c:Icon Glyph="play_pause" FontSize="{StaticResource IconMd}" />
-            </Button>
-            <Button Grid.Column="2" Classes="sidebar" Width="28" Height="28" Command="{Binding Library.StopPreviewCommand}" ToolTip.Tip="Stop preview">
-              <c:Icon Glyph="stop" FontSize="{StaticResource IconMd}" />
-            </Button>
-          </Grid>
-        </Border>
-        <Border Grid.Row="2" Margin="{StaticResource Pad3}" Background="{DynamicResource BrushBeamerBackground}"
-                CornerRadius="{StaticResource RadiusMd}" Height="160" ClipToBounds="True">
-          <Panel>
-            <c:VideoSurface Source="{Binding Library.PreviewFrames}" />
-            <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Margin="8" VerticalAlignment="Bottom"
-                       Text="{Binding Library.Previewing.Title}" TextTrimming="CharacterEllipsis" />
-          </Panel>
-        </Border>
-        <TextBlock Grid.Row="3" Foreground="{DynamicResource BrushError}" FontSize="{StaticResource TextXs}" Margin="12,0" TextWrapping="Wrap"
-                   Text="{Binding Library.PreviewError}" IsVisible="{Binding Library.PreviewError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-        <TextBlock Grid.Row="4" Classes="muted" Text="Queue arrives in Sprint 5" Margin="{StaticResource Pad3}" />
+        <ContentControl Grid.Row="1" Content="{Binding Preview}" />
+        <ContentControl Grid.Row="2" Content="{Binding Queue}" />
       </Grid>
     </Border>
 
   </Grid>
+
+  <!-- Toasts (top-right, auto-dismiss) -->
+  <ItemsControl ItemsSource="{Binding Notifications.Toasts}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,12,360,0" Width="320">
+    <ItemsControl.ItemTemplate>
+      <DataTemplate x:DataType="svc:Toast">
+        <Border Classes="card" Margin="0,0,0,8" Padding="12" Classes.warn="{Binding IsWarning}">
+          <Border.Styles>
+            <Style Selector="Border.warn">
+              <Setter Property="BorderBrush" Value="{DynamicResource BrushError}" />
+            </Style>
+          </Border.Styles>
+          <Grid ColumnDefinitions="Auto,*">
+            <c:Icon Glyph="{Binding Glyph}" Margin="0,0,10,0" VerticalAlignment="Top" />
+            <StackPanel Grid.Column="1">
+              <TextBlock Text="{Binding Title}" FontWeight="{StaticResource WeightSemibold}" />
+              <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="{Binding Detail}" TextWrapping="Wrap" IsVisible="{Binding HasDetail}" />
+            </StackPanel>
+          </Grid>
+        </Border>
+      </DataTemplate>
+    </ItemsControl.ItemTemplate>
+  </ItemsControl>
+
+  <!-- Modal dialog -->
+  <Border Background="#99000000" IsVisible="{Binding Dialog, Converter={x:Static ObjectConverters.IsNotNull}}">
+    <Border Classes="card" Width="460" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="20">
+      <StackPanel Spacing="{StaticResource Space3}">
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <c:Icon Glyph="warning" Foreground="{DynamicResource BrushError}" />
+          <TextBlock Classes="title" Text="{Binding Dialog.Title}" />
+        </StackPanel>
+        <TextBlock Text="{Binding Dialog.Message}" TextWrapping="Wrap" />
+        <Button Classes="tonal" Content="OK" HorizontalAlignment="Right" Command="{Binding DismissDialogCommand}" IsDefault="True" />
+      </StackPanel>
+    </Border>
+  </Border>
+  </Panel>
 </Window>

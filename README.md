@@ -40,7 +40,7 @@ See [docs/06-build-release.md](docs/06-build-release.md) for release builds.
 
 ## Status
 
-Sprints 0–4 done on macOS: skeleton, media engine (libmpv, YouTube once → N windows, per-channel output device), Core port with tests, SQLite library, audio input (PortAudio, 4 mics on 2 SingStar dongles, YIN, monitoring, latency calibration), and the game itself — countdown, note lanes with live fills, lyrics, scoring and score screen on the beamer. Sprint 5 (DJ workflow: queue, outputs, settings) next — see the roadmap.
+Sprints 0–5 done on macOS: skeleton, media engine (libmpv, YouTube once → N windows, per-channel output device), Core port with tests, SQLite library, audio input (PortAudio, 4 mics on 2 SingStar dongles, YIN, monitoring, latency calibration), the game itself — countdown, note lanes with live fills, lyrics, scoring and score screen on the beamer — and the DJ workflow: filterable/sortable library, preview player, queue, Audio Output routing, settings, dialogs and toasts. Sprint 6 (USDB, songbook, polish) next — see the roadmap.
 
 ## License
 

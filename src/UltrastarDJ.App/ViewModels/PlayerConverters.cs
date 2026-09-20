@@ -21,4 +21,6 @@ public static class PlayerConverters
     public static readonly IValueConverter TestGlyph = new FuncValueConverter<bool, string>(on => on ? "stop" : "mic");
     public static readonly IValueConverter TestLabel = new FuncValueConverter<bool, string>(on => on ? "Stop test" : "Test mics");
     public static readonly IValueConverter MicTooltip = new FuncValueConverter<bool, string>(has => has ? "Sing on this screen" : "No microphone assigned");
+    public static readonly IValueConverter AvailabilityTooltip = new FuncValueConverter<bool, string?>(ok => ok ? null : "Source folder not reachable (drive unplugged?)");
+    public static readonly IValueConverter PlayPauseGlyph = new FuncValueConverter<bool, string>(playing => playing ? "pause" : "play_arrow");
 }

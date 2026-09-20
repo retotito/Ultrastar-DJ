@@ -73,6 +73,20 @@ public sealed class MediaChannel : IAsyncDisposable
         }
     }
 
+    /// <summary>First channel of the stereo pair on a multichannel device (0 = ch 1–2, 2 = ch 3–4 …).</summary>
+    public int ChannelOffset { get; private set; }
+
+    /// <summary>Total channels the device exposes (from the audio backend); 2 for ordinary stereo outputs.</summary>
+    public int DeviceChannels { get; private set; } = 2;
+
+    public void SetRouting(string deviceId, int deviceChannels, int channelOffset)
+    {
+        DeviceChannels = Math.Max(2, deviceChannels);
+        ChannelOffset = Math.Clamp(channelOffset, 0, DeviceChannels - 2);
+        DeviceId = deviceId;
+        _audio?.SetChannelRouting(DeviceChannels, ChannelOffset);
+    }
+
     /// <summary>0..1 linear gain.</summary>
     public double Gain
     {
@@ -115,6 +129,7 @@ public sealed class MediaChannel : IAsyncDisposable
 
             _audio = _factory.Create($"{Kind}-audio", video: plan.AudioRoleHasVideo);
             _audio.AudioDevice = _deviceId;
+            _audio.SetChannelRouting(DeviceChannels, ChannelOffset);
             _audio.Volume = _gain;
             _audio.StateChanged += s => StateChanged?.Invoke(s);
             _audio.ErrorOccurred += e => ErrorOccurred?.Invoke(e);

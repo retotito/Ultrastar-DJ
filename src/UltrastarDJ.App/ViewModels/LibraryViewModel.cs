@@ -2,122 +2,189 @@ using System.Collections.ObjectModel;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Microsoft.Extensions.Logging;
 using UltrastarDJ.App.Services;
 using UltrastarDJ.Core.Songs;
-using UltrastarDJ.Media;
 
 namespace UltrastarDJ.App.ViewModels;
 
-/// <summary>Centre panel: the song library. Sprint 2 shows a plain virtualized list; search/filter/sort follow in Sprint 5.</summary>
+/// <summary>A library row: the song plus what the table shows about its source.</summary>
+public sealed record LibraryRow(Song Song, string Source, bool IsAvailable)
+{
+    public string Title => Song.Title;
+    public string Artist => Song.Artist;
+    public int? Year => Song.Year;
+    public string? Language => Song.Language;
+    public string? Genre => Song.Genre;
+    public bool HasLocalAudio => Song.HasLocalAudio;
+    public bool HasLocalVideo => Song.HasLocalVideo;
+    public bool HasYouTube => Song.HasYouTube;
+    public double Opacity => IsAvailable ? 1.0 : 0.4;
+}
+
+public enum LibrarySort
+{
+    Artist,
+    Title,
+    Year,
+    Language,
+}
+
+/// <summary>Centre panel: the song library with search, filters and sort. Row actions hand songs to preview, queue or game.</summary>
 public sealed partial class LibraryViewModel : ViewModelBase
 {
+    private const string All = "All";
+
     private readonly LibraryService _library;
+    private readonly PreviewViewModel _preview;
+    private readonly QueueViewModel _queue;
     private readonly NowPlayingViewModel _nowPlaying;
-    private readonly MediaService _media;
-    private readonly ILogger<LibraryViewModel> _log;
 
     [ObservableProperty] private string _search = "";
     [ObservableProperty] private int _totalCount;
-    [ObservableProperty] private Song? _selected;
-    [ObservableProperty] private Song? _previewing;
-    [ObservableProperty] private string _previewError = "";
+    [ObservableProperty] private int _shownCount;
+    [ObservableProperty] private LibraryRow? _selected;
+    [ObservableProperty] private string _language = All;
+    [ObservableProperty] private string _genre = All;
+    [ObservableProperty] private LibrarySort _sort = LibrarySort.Artist;
+    [ObservableProperty] private bool _descending;
 
-    public LibraryViewModel(LibraryService library, NowPlayingViewModel nowPlaying, MediaService media, ILogger<LibraryViewModel> log)
+    public LibraryViewModel(LibraryService library, PreviewViewModel preview, QueueViewModel queue, NowPlayingViewModel nowPlaying)
     {
         _library = library;
+        _preview = preview;
+        _queue = queue;
         _nowPlaying = nowPlaying;
-        _media = media;
-        _log = log;
         Refresh();
         _library.Changed += () => Dispatcher.UIThread.Post(Refresh);
+        _library.AvailabilityChanged += () => Dispatcher.UIThread.Post(Refresh);
     }
 
-    public ObservableCollection<Song> Songs { get; } = [];
-    public Media.FrameBus PreviewFrames => _media.Preview.Frames;
-    private static readonly SongValidator Validator = new(new Infrastructure.Library.FileSystemExistence());
+    public ObservableCollection<LibraryRow> Rows { get; } = [];
+    public ObservableCollection<string> Languages { get; } = [All];
+    public ObservableCollection<string> Genres { get; } = [All];
 
-    /// <summary>Right-click → "Load into game" or the row's play icon.</summary>
-    [RelayCommand]
-    private Task LoadIntoGameAsync(Song? song) => song is null ? Task.CompletedTask : _nowPlaying.LoadCommand.ExecuteAsync(song);
+    public string SortIndicator(LibrarySort column) => Sort == column ? (Descending ? " ▼" : " ▲") : "";
+    public string ArtistHeader => "ARTIST" + SortIndicator(LibrarySort.Artist);
+    public string TitleHeader => "TITLE" + SortIndicator(LibrarySort.Title);
+    public string YearHeader => "YEAR" + SortIndicator(LibrarySort.Year);
+    public string LanguageHeader => "LANGUAGE" + SortIndicator(LibrarySort.Language);
 
-    /// <summary>Double-click: preview in the DJ's headphones (preview channel, 360p for YouTube).</summary>
     [RelayCommand]
-    private async Task PreviewAsync(Song? song)
+    private void SortBy(LibrarySort column)
     {
-        if (song is null)
+        if (Sort == column)
         {
-            return;
-        }
-
-        PreviewError = "";
-        Previewing = song;
-        try
-        {
-            SongValidationResult v = Validator.Validate(song);
-            if (!v.IsValid)
-            {
-                PreviewError = string.Join("\n", v.Errors.Select(e => e.Message));
-                return;
-            }
-
-            song = v.Song;
-            MediaPlan plan = MediaSourceResolver.Resolve(new SongMedia
-            {
-                AudioPath = song.AudioPath,
-                VideoPath = song.VideoPath,
-                YouTubeId = song.YouTubeId,
-                BackgroundPath = song.BackgroundPath,
-                CoverPath = song.CoverPath,
-                VideoGapSec = song.VideoGapSec ?? 0,
-            }, maxHeight: 360);
-            await _media.Preview.LoadAsync(plan);
-            _media.Preview.Play();
-        }
-        catch (MediaException ex)
-        {
-            PreviewError = ex.Message;
-            _log.LogWarning("Preview failed: {Error}", ex.Message);
-        }
-    }
-
-    [RelayCommand]
-    private void TogglePreview()
-    {
-        if (_media.Preview.State == Media.MediaState.Playing)
-        {
-            _media.Preview.Pause();
+            Descending = !Descending;
         }
         else
         {
-            _media.Preview.Play();
+            Sort = column;
+            Descending = false;
+        }
+
+        OnPropertyChanged(nameof(ArtistHeader));
+        OnPropertyChanged(nameof(TitleHeader));
+        OnPropertyChanged(nameof(YearHeader));
+        OnPropertyChanged(nameof(LanguageHeader));
+        Refresh();
+    }
+
+    /// <summary>Double-click / Enter.</summary>
+    [RelayCommand]
+    private Task PreviewAsync(LibraryRow? row) => row is null ? Task.CompletedTask : _preview.LoadCommand.ExecuteAsync(row.Song);
+
+    [RelayCommand]
+    private void AddToQueue(LibraryRow? row)
+    {
+        if (row is not null)
+        {
+            _queue.Add(row.Song);
         }
     }
 
     [RelayCommand]
-    private async Task StopPreviewAsync()
-    {
-        await _media.Preview.UnloadAsync();
-        Previewing = null;
-    }
+    private Task LoadIntoGameAsync(LibraryRow? row) => row is null ? Task.CompletedTask : _nowPlaying.LoadCommand.ExecuteAsync(row.Song);
 
-    public Task LoadSelectedAsync() => PreviewAsync(Selected);
+    public Task PreviewSelectedAsync() => PreviewAsync(Selected);
 
     partial void OnSearchChanged(string value) => Refresh();
+    partial void OnLanguageChanged(string value) => Refresh();
+    partial void OnGenreChanged(string value) => Refresh();
 
     private void Refresh()
     {
         IReadOnlyList<Song> all = _library.Songs;
         TotalCount = all.Count;
-        string q = Search.Trim();
-        IEnumerable<Song> filtered = q.Length == 0
-            ? all
-            : all.Where(s => s.Title.Contains(q, StringComparison.OrdinalIgnoreCase) || s.Artist.Contains(q, StringComparison.OrdinalIgnoreCase));
+        RefreshFilterValues(all);
 
-        Songs.Clear();
-        foreach (Song s in filtered)
+        string q = Search.Trim();
+        IEnumerable<Song> filtered = all;
+        if (q.Length > 0)
         {
-            Songs.Add(s);
+            filtered = filtered.Where(s => s.Title.Contains(q, StringComparison.OrdinalIgnoreCase) || s.Artist.Contains(q, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (Language != All)
+        {
+            filtered = filtered.Where(s => string.Equals(s.Language, Language, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (Genre != All)
+        {
+            filtered = filtered.Where(s => string.Equals(s.Genre, Genre, StringComparison.OrdinalIgnoreCase));
+        }
+
+        IOrderedEnumerable<Song> sorted = Sort switch
+        {
+            LibrarySort.Title => Order(filtered, s => s.Title),
+            LibrarySort.Year => Order(filtered, s => s.Year ?? 0),
+            LibrarySort.Language => Order(filtered, s => s.Language ?? ""),
+            _ => Order(filtered, s => s.Artist),
+        };
+        sorted = Sort == LibrarySort.Artist ? sorted.ThenBy(s => s.Title, StringComparer.OrdinalIgnoreCase) : sorted.ThenBy(s => s.Artist, StringComparer.OrdinalIgnoreCase);
+
+        Rows.Clear();
+        foreach (Song s in sorted)
+        {
+            Rows.Add(new LibraryRow(s, _library.SourceLabel(s.SourceId), _library.IsAvailable(s.SourceId)));
+        }
+
+        ShownCount = Rows.Count;
+    }
+
+    private IOrderedEnumerable<Song> Order<TKey>(IEnumerable<Song> songs, Func<Song, TKey> key)
+    {
+        IComparer<TKey>? cmp = typeof(TKey) == typeof(string) ? (IComparer<TKey>)StringComparer.OrdinalIgnoreCase : null;
+        return Descending ? songs.OrderByDescending(key, cmp) : songs.OrderBy(key, cmp);
+    }
+
+    private void RefreshFilterValues(IReadOnlyList<Song> all)
+    {
+        Sync(Languages, all.Select(s => s.Language).Where(l => !string.IsNullOrWhiteSpace(l)).Select(l => l!).Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase));
+        Sync(Genres, all.Select(s => s.Genre).Where(g => !string.IsNullOrWhiteSpace(g)).Select(g => g!).Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase));
+        if (!Languages.Contains(Language))
+        {
+            Language = All;
+        }
+
+        if (!Genres.Contains(Genre))
+        {
+            Genre = All;
+        }
+    }
+
+    private static void Sync(ObservableCollection<string> target, IEnumerable<string> values)
+    {
+        List<string> wanted = [All, .. values];
+        if (target.SequenceEqual(wanted))
+        {
+            return;
+        }
+
+        target.Clear();
+        foreach (string v in wanted)
+        {
+            target.Add(v);
         }
     }
 }

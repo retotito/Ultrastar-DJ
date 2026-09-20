@@ -1,0 +1,60 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:UltrastarDJ.App.ViewModels"
+             xmlns:c="using:UltrastarDJ.App.Controls"
+             xmlns:svc="using:UltrastarDJ.App.Services"
+             x:Class="UltrastarDJ.App.Views.AudioOutputPanelView"
+             x:DataType="vm:AudioOutputPanelViewModel">
+
+  <UserControl.Resources>
+    <DataTemplate x:Key="ChannelCard" x:DataType="vm:OutputChannelViewModel">
+      <Border Classes="card" Margin="0,0,0,8">
+        <StackPanel Spacing="{StaticResource Space2}">
+          <Grid ColumnDefinitions="Auto,*,Auto">
+            <c:Icon Glyph="{Binding Glyph}" Margin="0,0,8,0" />
+            <StackPanel Grid.Column="1">
+              <TextBlock Classes="title" Text="{Binding Title}" />
+              <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="{Binding Subtitle}" />
+            </StackPanel>
+            <TextBlock Grid.Column="2" Classes="muted" FontSize="{StaticResource TextXs}" Text="{Binding StateText}" VerticalAlignment="Center" />
+          </Grid>
+
+          <TextBlock Classes="label" Text="OUTPUT DEVICE" />
+          <ComboBox ItemsSource="{Binding $parent[UserControl].((vm:AudioOutputPanelViewModel)DataContext).Options}"
+                    SelectedItem="{Binding Selected}" HorizontalAlignment="Stretch">
+            <ComboBox.ItemTemplate>
+              <DataTemplate x:DataType="svc:OutputOption">
+                <TextBlock Text="{Binding Label}" />
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+
+          <TextBlock Classes="label" Text="VOLUME" />
+          <Grid ColumnDefinitions="*,44">
+            <Slider Minimum="0" Maximum="1" Value="{Binding Gain}" />
+            <TextBlock Grid.Column="1" Classes="muted" Text="{Binding Gain, StringFormat='{}{0:P0}'}" VerticalAlignment="Center" TextAlignment="Right" />
+          </Grid>
+          <c:LevelMeter Height="6" Level="{Binding Level}" Fill="{DynamicResource BrushPrimary}" Track="{DynamicResource BrushSurfaceContainerHighest}" />
+        </StackPanel>
+      </Border>
+    </DataTemplate>
+  </UserControl.Resources>
+
+  <StackPanel Spacing="{StaticResource Space2}">
+    <Grid ColumnDefinitions="Auto,*,Auto">
+      <c:Icon Grid.Column="0" Glyph="speaker" Margin="0,0,8,0" />
+      <TextBlock Grid.Column="1" Classes="title" Text="Audio Output" VerticalAlignment="Center" />
+      <Button Grid.Column="2" Classes="sidebar" Command="{Binding RefreshCommand}" ToolTip.Tip="Refresh device list — connect USB or Bluetooth first">
+        <c:Icon Glyph="refresh" FontSize="{StaticResource IconMd}" />
+      </Button>
+    </Grid>
+
+    <ContentControl Content="{Binding Game}" ContentTemplate="{StaticResource ChannelCard}" />
+    <ContentControl Content="{Binding Preview}" ContentTemplate="{StaticResource ChannelCard}" />
+
+    <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap" Text="{Binding Status}"
+               IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+    <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap"
+               Text="Multichannel interfaces are listed once per stereo pair. Mic monitoring follows the game output." />
+  </StackPanel>
+</UserControl>

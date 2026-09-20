@@ -38,10 +38,14 @@ public sealed partial class App : Application
 
         _services = BuildServices(options, paths);
         desktop.ShutdownMode = ShutdownMode.OnMainWindowClose;
-        desktop.Exit += (_, _) => Shutdown();
+        desktop.ShutdownRequested += OnShutdownRequested;
+        desktop.Exit += (_, _) => Log.CloseAndFlush();
 
         DjWindow window = new() { DataContext = _services.GetRequiredService<DjWindowViewModel>() };
         _services.GetRequiredService<DisplayService>().AttachOwner(window);
+        // Applies the persisted output routing to the media channels before anything plays, and the theme.
+        _services.GetRequiredService<OutputsService>();
+        _services.GetRequiredService<AppSettingsService>();
         desktop.MainWindow = window;
 
         _services.GetRequiredService<ILogger<App>>().LogInformation(
@@ -66,23 +70,30 @@ public sealed partial class App : Application
         services.AddSingleton<LocalFolderScanner>();
 
         // App services
+        services.AddSingleton<NotificationService>();
+        services.AddSingleton<AppSettingsService>();
         services.AddSingleton<MediaService>();
         services.AddSingleton<IAudioBackend, PortAudioBackend>();
         services.AddSingleton<PlayersService>();
         services.AddSingleton<AudioInputService>();
         services.AddSingleton<LibraryService>();
+        services.AddSingleton<OutputsService>();
         services.AddSingleton<PlaybackService>();
         services.AddSingleton<DisplayService>();
         services.AddSingleton<IDisplayService>(sp => sp.GetRequiredService<DisplayService>());
 
         // ViewModels
         services.AddSingleton<DjWindowViewModel>();
+        services.AddSingleton<Core.Queue.Playlist>();
         services.AddSingleton<NowPlayingViewModel>();
+        services.AddSingleton<QueueViewModel>();
+        services.AddSingleton<PreviewViewModel>();
         services.AddSingleton<LibraryViewModel>();
         services.AddSingleton<SourcesPanelViewModel>();
         services.AddSingleton<PlayersPanelViewModel>();
+        services.AddSingleton<AudioOutputPanelViewModel>();
+        services.AddSingleton<SettingsPanelViewModel>();
         services.AddTransient<DisplaysPanelViewModel>();
-        services.AddSingleton<MediaLabPanelViewModel>();
 
         return services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
     }
@@ -101,11 +112,40 @@ public sealed partial class App : Application
             .CreateLogger();
     }
 
-    private void Shutdown()
+    private bool _shuttingDown;
+
+    private void OnShutdownRequested(object? sender, ShutdownRequestedEventArgs e)
     {
-        // The container disposes singletons in reverse registration order, so native players and audio
-        // streams go before the logger. IAsyncDisposable singletons require the async path.
-        _services?.DisposeAsync().AsTask().GetAwaiter().GetResult();
+        if (_shuttingDown || sender is not IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            return;
+        }
+
+        // Native players and audio streams are torn down on a worker while the dispatcher keeps pumping:
+        // frame/state callbacks post to the UI thread, so blocking it here would deadlock the teardown.
+        _shuttingDown = true;
+        e.Cancel = true;
+        _ = DisposeServicesThenExitAsync(desktop);
+    }
+
+    private async Task DisposeServicesThenExitAsync(IClassicDesktopStyleApplicationLifetime desktop)
+    {
+        ServiceProvider services = _services!;
+        ILogger<App> log = services.GetRequiredService<ILogger<App>>();
+        Task dispose = Task.Run(() => services.DisposeAsync().AsTask());
+        Task finished = await Task.WhenAny(dispose, Task.Delay(TimeSpan.FromSeconds(5)));
+        if (finished != dispose)
+        {
+            log.LogWarning("Shutdown: service teardown did not finish in time; exiting anyway");
+        }
+        else if (dispose.IsFaulted)
+        {
+            log.LogError(dispose.Exception, "Shutdown: service teardown failed");
+        }
+
+        desktop.Shutdown();
+        // Hung native threads (mpv, PortAudio) must not keep the process alive.
         Log.CloseAndFlush();
+        Environment.Exit(0);
     }
 }

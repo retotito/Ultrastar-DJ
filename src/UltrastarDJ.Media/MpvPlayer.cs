@@ -130,7 +130,37 @@ public sealed class MpvPlayer : IMediaPlayer
         Observe("dwidth", MpvFormat.Int64);
         Observe("dheight", MpvFormat.Int64);
         // RMS meter as an audio filter; reset=1 gives per-frame values. Read by polling (see EventLoop).
-        SetProp("af", "@meter:lavfi=[astats=metadata=1:reset=1:measure_overall=none:measure_perchannel=RMS_level]");
+        ApplyFilters();
+    }
+
+    private const string MeterFilter = "@meter:lavfi=[astats=metadata=1:reset=1:measure_overall=none:measure_perchannel=RMS_level]";
+    private int _outputChannels = 2;
+    private int _channelOffset;
+
+    /// <summary>
+    /// Routes the stereo signal onto channels <paramref name="offset"/> and <paramref name="offset"/>+1 of an
+    /// <paramref name="totalChannels"/>-wide output (e.g. "MOTU — Ch 3–4"). (2, 0) is plain stereo.
+    /// </summary>
+    public void SetChannelRouting(int totalChannels, int offset)
+    {
+        _outputChannels = Math.Max(2, totalChannels);
+        _channelOffset = Math.Clamp(offset, 0, _outputChannels - 2);
+        ApplyFilters();
+    }
+
+    private void ApplyFilters()
+    {
+        if (_outputChannels <= 2 || _channelOffset == 0 && _outputChannels == 2)
+        {
+            SetProp("audio-channels", "auto-safe");
+            SetProp("af", MeterFilter);
+            return;
+        }
+
+        // The meter measures before the pan so it still sees the stereo signal.
+        string pan = $"pan={_outputChannels}c|c{_channelOffset}=c0|c{_channelOffset + 1}=c1";
+        SetProp("audio-channels", _outputChannels.ToString(CultureInfo.InvariantCulture));
+        SetProp("af", $"{MeterFilter},@route:lavfi=[{pan}]");
     }
 
     public string Name { get; }
@@ -739,7 +769,11 @@ public sealed class MpvPlayer : IMediaPlayer
         }
 
         _renderSignal.Set();
-        _renderThread?.Join(2000);
+        if (_renderThread is not null && !_renderThread.Join(2000))
+        {
+            _log.LogWarning("{Player}: render thread did not exit", Name);
+        }
+
         if (_renderContext != 0)
         {
             unsafe

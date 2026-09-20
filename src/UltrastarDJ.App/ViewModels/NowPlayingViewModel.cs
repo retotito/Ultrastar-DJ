@@ -15,6 +15,7 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
     private readonly PlaybackService _playback;
     private readonly IDisplayService _displays;
     private readonly MediaService _media;
+    private readonly NotificationService _notifications;
     private readonly ILogger<NowPlayingViewModel> _log;
     private readonly DispatcherTimer _poll;
 
@@ -27,11 +28,12 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private bool _loading;
     [ObservableProperty] private double _gain = 1.0;
 
-    public NowPlayingViewModel(PlaybackService playback, IDisplayService displays, MediaService media, ILogger<NowPlayingViewModel> log)
+    public NowPlayingViewModel(PlaybackService playback, IDisplayService displays, MediaService media, NotificationService notifications, ILogger<NowPlayingViewModel> log)
     {
         _playback = playback;
         _displays = displays;
         _media = media;
+        _notifications = notifications;
         _log = log;
         _gain = media.Game.Gain;
         _playback.StateChanged += _ => Refresh();
@@ -114,6 +116,7 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
         {
             Error = ex.Message;
             _log.LogWarning("Load failed: {Error}", ex.Message);
+            _notifications.ShowDialog("Song cannot be loaded", ex.Message);
         }
         finally
         {

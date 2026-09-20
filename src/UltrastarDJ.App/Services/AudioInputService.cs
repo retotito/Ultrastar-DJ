@@ -15,7 +15,7 @@ public sealed class AudioInputService : IDisposable
     private readonly PlayersService _players;
     private readonly ILogger<AudioInputService> _log;
 
-    public AudioInputService(IAudioBackend backend, PlayersService players, ILoggerFactory loggers)
+    public AudioInputService(IAudioBackend backend, PlayersService players, NotificationService notifications, ILoggerFactory loggers)
     {
         Backend = backend;
         _players = players;
@@ -24,6 +24,7 @@ public sealed class AudioInputService : IDisposable
         Monitor = new MonitorMixer(backend, loggers.CreateLogger<MonitorMixer>());
         Latency = new LatencyTest(backend, loggers.CreateLogger<LatencyTest>());
         players.Changed += OnPlayerChanged;
+        Mics.DeviceLost += id => notifications.Warn("Microphone disconnected", id);
     }
 
     public IAudioBackend Backend { get; }
