@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/UltrastarDJ.App/UltrastarDJ.App.csproj" />
+    <Project Path="src/UltrastarDJ.Audio/UltrastarDJ.Audio.csproj" />
+    <Project Path="src/UltrastarDJ.Core/UltrastarDJ.Core.csproj" />
+    <Project Path="src/UltrastarDJ.Infrastructure/UltrastarDJ.Infrastructure.csproj" />
+    <Project Path="src/UltrastarDJ.Media/UltrastarDJ.Media.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/UltrastarDJ.Core.Tests/UltrastarDJ.Core.Tests.csproj" />
+  </Folder>
+</Solution>

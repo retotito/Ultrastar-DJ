@@ -1,0 +1,30 @@
+<Project>
+
+  <!-- Shared settings for every project in the solution. Per-project files only add references. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- CS1591: missing XML comment. Enforced in review, not by the compiler. -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <Deterministic>true</Deterministic>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <InvariantGlobalization>true</InvariantGlobalization>
+
+    <Version>0.2.0-alpha.1</Version>
+    <Product>Ultrastar DJ</Product>
+    <Authors>Reto Küpfer</Authors>
+    <Copyright>© Reto Küpfer</Copyright>
+    <RepositoryUrl>https://github.com/retotito/Ultrastar-DJ</RepositoryUrl>
+  </PropertyGroup>
+
+  <!-- Domain and engine layers must be warning-free. The UI layer may carry warnings while iterating. -->
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'UltrastarDJ.Core' Or '$(MSBuildProjectName)' == 'UltrastarDJ.Media' Or '$(MSBuildProjectName)' == 'UltrastarDJ.Audio'">
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+</Project>

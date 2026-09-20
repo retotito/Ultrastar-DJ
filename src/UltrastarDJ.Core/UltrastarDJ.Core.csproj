@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Domain layer. Must not reference any other project or any UI/media/IO package. -->
+  <PropertyGroup>
+    <RootNamespace>UltrastarDJ.Core</RootNamespace>
+  </PropertyGroup>
+</Project>

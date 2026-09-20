@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Persistence, network, sidecars, guest server. Depends on Core only. -->
+  <PropertyGroup>
+    <RootNamespace>UltrastarDJ.Infrastructure</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../UltrastarDJ.Core/UltrastarDJ.Core.csproj" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+  </ItemGroup>
+</Project>

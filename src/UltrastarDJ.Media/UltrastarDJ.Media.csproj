@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Media engine: libmpv wrapper, channels, frame bus, clock. Depends on Core only. -->
+  <PropertyGroup>
+    <RootNamespace>UltrastarDJ.Media</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../UltrastarDJ.Core/UltrastarDJ.Core.csproj" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+  </ItemGroup>
+</Project>

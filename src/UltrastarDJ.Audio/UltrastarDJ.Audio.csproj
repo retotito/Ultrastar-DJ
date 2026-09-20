@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Audio I/O: PortAudio backend, mic pipelines, pitch detection, monitor mixer. Depends on Core only. -->
+  <PropertyGroup>
+    <RootNamespace>UltrastarDJ.Audio</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../UltrastarDJ.Core/UltrastarDJ.Core.csproj" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+  </ItemGroup>
+</Project>
