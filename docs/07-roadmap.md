@@ -46,10 +46,10 @@ Known: YouTube resolution via yt-dlp takes 10–15 s per load — pre-resolve wh
 
 ## Sprint 2 — Core port
 
-- [ ] `Song`/`Note` model, `UltraStarParser`, `BeatMath`, `SongValidator`, `SongQueue`
-- [ ] `ScoreEngine` (matching, points, phrase bonus, per-note state), `PitchRingBuffer`, `PitchToRow`
-- [ ] Port all edge-case tests listed in `03-game-engine.md`
-- [ ] `LocalFolderScanner` → `SqliteSongRepository`; library loads a real folder
+- [x] `Song`/`Note` model, `UltraStarParser`, `BeatMath`, `SongValidator`, `Playlist` (named so because analyzers reject `*Queue`)
+- [x] `PlayerScorer` (matching, joker, points, line bonus, per-note state), `PitchRingBuffer`, `NoteLaneGeometry.PitchToRow`
+- [x] Edge-case tests from `03-game-engine.md` (64 Core tests) + `RealCorpusTests` (set `ULTRASTAR_SONGS=<folder>` to parse a real library)
+- [x] `LocalFolderScanner` → `SqliteSongRepository`; Sources panel adds folders, library list in the DJ window, persists across restarts
 
 **Demo:** `dotnet test` green; a folder of songs appears in a plain list in the DJ window.
 

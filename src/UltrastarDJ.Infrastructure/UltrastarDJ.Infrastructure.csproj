@@ -6,5 +6,7 @@
   <ItemGroup>
     <ProjectReference Include="../UltrastarDJ.Core/UltrastarDJ.Core.csproj" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Microsoft.Data.Sqlite" />
+    <PackageReference Include="Dapper" />
   </ItemGroup>
 </Project>

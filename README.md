@@ -40,7 +40,7 @@ See [docs/06-build-release.md](docs/06-build-release.md) for release builds.
 
 ## Status
 
-Sprint 0 (skeleton) and Sprint 1 (media spike: libmpv, YouTube once → N windows, per-channel output device) done on macOS. Sprint 2 (Core port) next — see the roadmap.
+Sprints 0–2 done on macOS: skeleton, media engine (libmpv, YouTube once → N windows, per-channel output device), Core port with tests, SQLite library. Sprint 3 (audio input) next — see the roadmap.
 
 ## License
 

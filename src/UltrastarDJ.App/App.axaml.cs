@@ -10,6 +10,7 @@ using UltrastarDJ.App.ViewModels;
 using UltrastarDJ.App.Views;
 using UltrastarDJ.Core.Abstractions;
 using UltrastarDJ.Infrastructure;
+using UltrastarDJ.Infrastructure.Library;
 using UltrastarDJ.Infrastructure.Settings;
 
 namespace UltrastarDJ.App;
@@ -59,14 +60,19 @@ public sealed partial class App : Application
         // Infrastructure
         services.AddSingleton<ISettingsStore, JsonSettingsStore>();
         services.AddSingleton<SidecarLocator>();
+        services.AddSingleton<ISongRepository, SqliteSongRepository>();
+        services.AddSingleton<LocalFolderScanner>();
 
         // App services
         services.AddSingleton<MediaService>();
+        services.AddSingleton<LibraryService>();
         services.AddSingleton<DisplayService>();
         services.AddSingleton<IDisplayService>(sp => sp.GetRequiredService<DisplayService>());
 
         // ViewModels
         services.AddSingleton<DjWindowViewModel>();
+        services.AddSingleton<LibraryViewModel>();
+        services.AddSingleton<SourcesPanelViewModel>();
         services.AddTransient<DisplaysPanelViewModel>();
         services.AddSingleton<MediaLabPanelViewModel>();
 
@@ -89,13 +95,14 @@ public sealed partial class App : Application
 
     private void Shutdown()
     {
-        // Native players must go before the container tears down loggers.
+        // Native players must go before the container tears down loggers; the container itself
+        // holds IAsyncDisposable singletons, so it must be disposed asynchronously too.
         if (_services?.GetService<MediaService>() is { } media)
         {
             media.DisposeAsync().AsTask().GetAwaiter().GetResult();
         }
 
-        _services?.Dispose();
+        _services?.DisposeAsync().AsTask().GetAwaiter().GetResult();
         Log.CloseAndFlush();
     }
 }

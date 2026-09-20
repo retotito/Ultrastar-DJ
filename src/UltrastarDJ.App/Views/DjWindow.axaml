@@ -62,20 +62,9 @@
       </DockPanel>
     </Border>
 
-    <!-- ── Centre: library (placeholder) + popover overlay ─────────────── -->
+    <!-- ── Centre: library + popover overlay ─────────────────────────────────────── -->
     <Panel Grid.Column="1">
-      <Grid RowDefinitions="Auto,*">
-        <Border Grid.Row="0" Padding="{StaticResource Pad3}"
-                BorderBrush="{DynamicResource BrushOutlineVariant}" BorderThickness="0,0,0,1">
-          <TextBlock Classes="label" Text="LIBRARY" />
-        </Border>
-        <StackPanel Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="{StaticResource Space2}">
-          <c:Icon Glyph="library_music" FontSize="{StaticResource IconXl}" />
-          <TextBlock Classes="muted" Text="Song library arrives in Sprint 5" HorizontalAlignment="Center" />
-          <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" HorizontalAlignment="Center"
-                     Text="{Binding Version, StringFormat='v{0}'}" />
-        </StackPanel>
-      </Grid>
+      <ContentControl Content="{Binding Library}" />
 
       <!-- Popover anchored to the sidebar edge -->
       <Border Classes="popover"

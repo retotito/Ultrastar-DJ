@@ -1,0 +1,46 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:UltrastarDJ.App.ViewModels"
+             xmlns:c="using:UltrastarDJ.App.Controls"
+             x:Class="UltrastarDJ.App.Views.SourcesPanelView"
+             x:DataType="vm:SourcesPanelViewModel">
+
+  <StackPanel Spacing="{StaticResource Space2}">
+    <Grid ColumnDefinitions="Auto,*,Auto">
+      <c:Icon Grid.Column="0" Glyph="library_music" Margin="0,0,8,0" />
+      <TextBlock Grid.Column="1" Classes="title" Text="Song Sources" VerticalAlignment="Center" />
+      <Button Grid.Column="2" Classes="tonal" Command="{Binding AddFolderCommand}" IsEnabled="{Binding !Busy}">
+        <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
+          <c:Icon Glyph="create_new_folder" FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
+          <TextBlock Text="Add folder" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
+        </StackPanel>
+      </Button>
+    </Grid>
+
+    <ItemsControl ItemsSource="{Binding Sources}">
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="vm:SourceRowViewModel">
+          <Border Classes="card" Margin="0,0,0,8">
+            <Grid ColumnDefinitions="*,Auto,Auto" RowDefinitions="Auto,Auto">
+              <TextBlock Grid.Row="0" Grid.Column="0" Classes="title" Text="{Binding Label}" />
+              <Button Grid.Row="0" Grid.Column="1" Classes="sidebar" Command="{Binding RescanCommand}" ToolTip.Tip="Rescan">
+                <c:Icon Glyph="refresh" FontSize="{StaticResource IconMd}" />
+              </Button>
+              <Button Grid.Row="0" Grid.Column="2" Classes="sidebar" Command="{Binding RemoveCommand}" ToolTip.Tip="Remove source">
+                <c:Icon Glyph="delete" FontSize="{StaticResource IconMd}" />
+              </Button>
+              <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Classes="muted" FontSize="{StaticResource TextXs}"
+                         Text="{Binding Path}" TextTrimming="CharacterEllipsis" />
+            </Grid>
+          </Border>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+
+    <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="{Binding Status}"
+               IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+    <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap"
+               Text="Folders are scanned recursively for UltraStar .txt files. USDB arrives in a later sprint."
+               IsVisible="{Binding !Sources.Count}" />
+  </StackPanel>
+</UserControl>

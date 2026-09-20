@@ -27,10 +27,13 @@ public sealed partial class DjWindowViewModel : ViewModelBase
     [ObservableProperty]
     private ViewModelBase? _panelContent;
 
-    public DjWindowViewModel(IServiceProvider services)
+    public DjWindowViewModel(IServiceProvider services, LibraryViewModel library)
     {
         _services = services;
+        Library = library;
     }
+
+    public LibraryViewModel Library { get; }
 
     public static string Version => typeof(DjWindowViewModel).Assembly.GetName().Version?.ToString(3) ?? "dev";
 
@@ -47,6 +50,7 @@ public sealed partial class DjWindowViewModel : ViewModelBase
         PanelContent = panel switch
         {
             SidebarPanel.Displays => _services.GetRequiredService<DisplaysPanelViewModel>(),
+            SidebarPanel.Sources => _services.GetRequiredService<SourcesPanelViewModel>(),
             SidebarPanel.MediaLab => _services.GetRequiredService<MediaLabPanelViewModel>(),
             _ => new PlaceholderPanelViewModel(panel.ToString()),
         };

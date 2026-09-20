@@ -1,0 +1,59 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:UltrastarDJ.App.ViewModels"
+             xmlns:c="using:UltrastarDJ.App.Controls"
+             xmlns:songs="using:UltrastarDJ.Core.Songs"
+             x:Class="UltrastarDJ.App.Views.LibraryView"
+             x:DataType="vm:LibraryViewModel">
+
+  <Grid RowDefinitions="Auto,Auto,*">
+    <Border Grid.Row="0" Padding="{StaticResource Pad3}"
+            BorderBrush="{DynamicResource BrushOutlineVariant}" BorderThickness="0,0,0,1">
+      <Grid ColumnDefinitions="Auto,*,Auto">
+        <TextBlock Grid.Column="0" Classes="label" Text="LIBRARY" VerticalAlignment="Center" />
+        <TextBox Grid.Column="1" Margin="16,0" PlaceholderText="Search title or artist" Text="{Binding Search}" />
+        <TextBlock Grid.Column="2" Classes="muted" VerticalAlignment="Center"
+                   Text="{Binding TotalCount, StringFormat='{}{0} songs'}" />
+      </Grid>
+    </Border>
+
+    <!-- Header row -->
+    <Grid Grid.Row="1" ColumnDefinitions="2*,2*,60,90,60" Margin="12,6">
+      <TextBlock Grid.Column="0" Classes="label" Text="TITLE" />
+      <TextBlock Grid.Column="1" Classes="label" Text="ARTIST" />
+      <TextBlock Grid.Column="2" Classes="label" Text="YEAR" />
+      <TextBlock Grid.Column="3" Classes="label" Text="LANGUAGE" />
+      <TextBlock Grid.Column="4" Classes="label" Text="MEDIA" />
+    </Grid>
+
+    <ListBox Grid.Row="2" ItemsSource="{Binding Songs}" SelectedItem="{Binding Selected}"
+             Background="Transparent" BorderThickness="0" Padding="4,0">
+      <ListBox.ItemsPanel>
+        <ItemsPanelTemplate>
+          <VirtualizingStackPanel />
+        </ItemsPanelTemplate>
+      </ListBox.ItemsPanel>
+      <ListBox.ItemTemplate>
+        <DataTemplate x:DataType="songs:Song">
+          <Grid ColumnDefinitions="2*,2*,60,90,60" Height="32">
+            <TextBlock Grid.Column="0" Text="{Binding Title}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+            <TextBlock Grid.Column="1" Text="{Binding Artist}" Classes="muted" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+            <TextBlock Grid.Column="2" Text="{Binding Year}" Classes="muted" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="3" Text="{Binding Language}" Classes="muted" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+            <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
+              <c:Icon Glyph="music_note" FontSize="{StaticResource IconSm}" IsVisible="{Binding HasLocalAudio}" ToolTip.Tip="Local audio" />
+              <c:Icon Glyph="movie" FontSize="{StaticResource IconSm}" IsVisible="{Binding HasLocalVideo}" ToolTip.Tip="Local video" />
+              <c:Icon Glyph="smart_display" FontSize="{StaticResource IconSm}" IsVisible="{Binding HasYouTube}" ToolTip.Tip="YouTube" />
+            </StackPanel>
+          </Grid>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+
+    <StackPanel Grid.Row="2" VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="{StaticResource Space2}"
+                IsVisible="{Binding !TotalCount}">
+      <c:Icon Glyph="library_music" FontSize="{StaticResource IconXl}" />
+      <TextBlock Classes="muted" Text="No songs yet — add a folder under Song Sources" HorizontalAlignment="Center" />
+    </StackPanel>
+  </Grid>
+</UserControl>
