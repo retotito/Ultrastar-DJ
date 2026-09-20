@@ -2,9 +2,15 @@
   <!-- Audio I/O: PortAudio backend, mic pipelines, pitch detection, monitor mixer. Depends on Core only. -->
   <PropertyGroup>
     <RootNamespace>UltrastarDJ.Audio</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../UltrastarDJ.Core/UltrastarDJ.Core.csproj" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="PortAudioSharp2" />
+    <!-- Native libportaudio per platform; the host picks the matching runtimes/<rid>/native at run time. -->
+    <PackageReference Include="org.k2fsa.portaudio.runtime.osx-arm64" />
+    <PackageReference Include="org.k2fsa.portaudio.runtime.osx-x64" />
+    <PackageReference Include="org.k2fsa.portaudio.runtime.win-x64" />
   </ItemGroup>
 </Project>

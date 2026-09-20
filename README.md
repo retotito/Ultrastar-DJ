@@ -40,7 +40,7 @@ See [docs/06-build-release.md](docs/06-build-release.md) for release builds.
 
 ## Status
 
-Sprints 0–2 done on macOS: skeleton, media engine (libmpv, YouTube once → N windows, per-channel output device), Core port with tests, SQLite library. Sprint 3 (audio input) next — see the roadmap.
+Sprints 0–3 done on macOS: skeleton, media engine (libmpv, YouTube once → N windows, per-channel output device), Core port with tests, SQLite library, audio input (PortAudio, 4 mics on 2 SingStar dongles, YIN, monitoring, latency calibration). Sprint 4 (game on the beamer) next — see the roadmap.
 
 ## License
 

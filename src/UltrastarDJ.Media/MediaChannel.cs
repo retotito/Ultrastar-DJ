@@ -27,6 +27,7 @@ public sealed class MediaChannel : IAsyncDisposable
     private MediaGameClock? _clock;
     private string _deviceId = AudioOutputDevice.Auto.Id;
     private double _gain = 1.0;
+    private bool _disposed;
 
     public MediaChannel(MediaChannelKind kind, IMediaPlayerFactory factory, ILoggerFactory loggers)
     {
@@ -214,6 +215,12 @@ public sealed class MediaChannel : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
         await UnloadAsync().ConfigureAwait(false);
         Frames.Dispose();
         _gate.Dispose();

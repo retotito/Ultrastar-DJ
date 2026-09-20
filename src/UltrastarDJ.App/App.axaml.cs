@@ -8,6 +8,8 @@ using Serilog;
 using UltrastarDJ.App.Services;
 using UltrastarDJ.App.ViewModels;
 using UltrastarDJ.App.Views;
+using UltrastarDJ.Audio;
+using UltrastarDJ.Audio.PortAudio;
 using UltrastarDJ.Core.Abstractions;
 using UltrastarDJ.Infrastructure;
 using UltrastarDJ.Infrastructure.Library;
@@ -65,6 +67,9 @@ public sealed partial class App : Application
 
         // App services
         services.AddSingleton<MediaService>();
+        services.AddSingleton<IAudioBackend, PortAudioBackend>();
+        services.AddSingleton<PlayersService>();
+        services.AddSingleton<AudioInputService>();
         services.AddSingleton<LibraryService>();
         services.AddSingleton<DisplayService>();
         services.AddSingleton<IDisplayService>(sp => sp.GetRequiredService<DisplayService>());
@@ -73,6 +78,7 @@ public sealed partial class App : Application
         services.AddSingleton<DjWindowViewModel>();
         services.AddSingleton<LibraryViewModel>();
         services.AddSingleton<SourcesPanelViewModel>();
+        services.AddSingleton<PlayersPanelViewModel>();
         services.AddTransient<DisplaysPanelViewModel>();
         services.AddSingleton<MediaLabPanelViewModel>();
 
@@ -95,13 +101,8 @@ public sealed partial class App : Application
 
     private void Shutdown()
     {
-        // Native players must go before the container tears down loggers; the container itself
-        // holds IAsyncDisposable singletons, so it must be disposed asynchronously too.
-        if (_services?.GetService<MediaService>() is { } media)
-        {
-            media.DisposeAsync().AsTask().GetAwaiter().GetResult();
-        }
-
+        // The container disposes singletons in reverse registration order, so native players and audio
+        // streams go before the logger. IAsyncDisposable singletons require the async path.
         _services?.DisposeAsync().AsTask().GetAwaiter().GetResult();
         Log.CloseAndFlush();
     }

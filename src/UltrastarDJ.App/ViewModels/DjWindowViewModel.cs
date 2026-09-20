@@ -51,6 +51,7 @@ public sealed partial class DjWindowViewModel : ViewModelBase
         {
             SidebarPanel.Displays => _services.GetRequiredService<DisplaysPanelViewModel>(),
             SidebarPanel.Sources => _services.GetRequiredService<SourcesPanelViewModel>(),
+            SidebarPanel.AudioInput => _services.GetRequiredService<PlayersPanelViewModel>(),
             SidebarPanel.MediaLab => _services.GetRequiredService<MediaLabPanelViewModel>(),
             _ => new PlaceholderPanelViewModel(panel.ToString()),
         };

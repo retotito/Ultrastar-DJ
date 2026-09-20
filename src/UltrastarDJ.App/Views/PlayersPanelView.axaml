@@ -1,0 +1,89 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:UltrastarDJ.App.ViewModels"
+             xmlns:c="using:UltrastarDJ.App.Controls"
+             xmlns:audio="using:UltrastarDJ.Audio"
+             x:Class="UltrastarDJ.App.Views.PlayersPanelView"
+             x:DataType="vm:PlayersPanelViewModel">
+
+  <UserControl.Resources>
+    <DataTemplate x:Key="PlayerCard" x:DataType="vm:PlayerCardViewModel">
+      <Border Classes="card" Margin="0,0,0,8" Padding="12">
+        <StackPanel Spacing="{StaticResource Space2}">
+          <Grid ColumnDefinitions="Auto,*,Auto">
+            <Border Grid.Column="0" Width="10" Height="10" CornerRadius="{StaticResource RadiusFull}" Margin="0,0,8,0"
+                    Background="{Binding ColorKey, Converter={x:Static vm:PlayerConverters.BrushByKey}}" />
+            <TextBox Grid.Column="1" Text="{Binding Name}" Classes="inline" />
+            <TextBlock Grid.Column="2" Classes="muted" Text="{Binding Note}" VerticalAlignment="Center" MinWidth="110" TextAlignment="Right" />
+          </Grid>
+
+          <ComboBox ItemsSource="{Binding $parent[UserControl].((vm:PlayersPanelViewModel)DataContext).MicOptions}"
+                    SelectedItem="{Binding SelectedMic}" HorizontalAlignment="Stretch" />
+
+          <ProgressBar Minimum="0" Maximum="1" Value="{Binding LevelDb}" Height="6"
+                       Foreground="{Binding ColorKey, Converter={x:Static vm:PlayerConverters.BrushByKey}}" />
+
+          <Grid ColumnDefinitions="52,*,44" RowDefinitions="Auto,Auto,Auto">
+            <TextBlock Grid.Row="0" Grid.Column="0" Classes="label" Text="GAIN" VerticalAlignment="Center" />
+            <Slider Grid.Row="0" Grid.Column="1" Minimum="0" Maximum="10" Value="{Binding InputGain}" />
+            <TextBlock Grid.Row="0" Grid.Column="2" Classes="muted" Text="{Binding InputGain, StringFormat='{}{0:F1}×'}" VerticalAlignment="Center" TextAlignment="Right" />
+
+            <TextBlock Grid.Row="1" Grid.Column="0" Classes="label" Text="GATE" VerticalAlignment="Center" />
+            <Slider Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="0.2" Value="{Binding Threshold}" />
+            <TextBlock Grid.Row="1" Grid.Column="2" Classes="muted" Text="{Binding Threshold, StringFormat='{}{0:F3}'}" VerticalAlignment="Center" TextAlignment="Right" />
+
+            <TextBlock Grid.Row="2" Grid.Column="0" Classes="label" Text="MIX" VerticalAlignment="Center" />
+            <Slider Grid.Row="2" Grid.Column="1" Minimum="0" Maximum="2" Value="{Binding MixGain}" />
+            <TextBlock Grid.Row="2" Grid.Column="2" Classes="muted" Text="{Binding MixGain, StringFormat='{}{0:F2}'}" VerticalAlignment="Center" TextAlignment="Right" />
+          </Grid>
+
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" VerticalAlignment="Center"
+                       Text="{Binding MicDelayText, StringFormat='Mic delay {0}'}" />
+            <Button Grid.Column="1" Classes="tonal" Command="{Binding CalibrateCommand}" IsEnabled="{Binding !Calibrating}" Padding="12,4">
+              <StackPanel Orientation="Horizontal" Spacing="4">
+                <c:Icon Glyph="timer" FontSize="{StaticResource IconSm}" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
+                <TextBlock Text="Calibrate" FontSize="{StaticResource TextSm}" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
+              </StackPanel>
+            </Button>
+          </Grid>
+        </StackPanel>
+      </Border>
+    </DataTemplate>
+  </UserControl.Resources>
+
+  <StackPanel Spacing="{StaticResource Space2}">
+    <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+      <c:Icon Grid.Column="0" Glyph="mic_external_on" Margin="0,0,8,0" />
+      <TextBlock Grid.Column="1" Classes="title" Text="Audio Input" VerticalAlignment="Center" />
+      <Button Grid.Column="2" Classes="sidebar" Command="{Binding RefreshDevicesCommand}" ToolTip.Tip="Refresh device list (stop the test first)">
+        <c:Icon Glyph="refresh" FontSize="{StaticResource IconMd}" />
+      </Button>
+      <Button Grid.Column="3" Classes="tonal" Command="{Binding ToggleTestCommand}" Classes.active="{Binding Testing}">
+        <StackPanel Orientation="Horizontal" Spacing="4">
+          <c:Icon Glyph="{Binding Testing, Converter={x:Static vm:PlayerConverters.TestGlyph}}" FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
+          <TextBlock Text="{Binding Testing, Converter={x:Static vm:PlayerConverters.TestLabel}}" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
+        </StackPanel>
+      </Button>
+    </Grid>
+
+    <Grid ColumnDefinitions="Auto,*,Auto" IsVisible="{Binding Testing}">
+      <TextBlock Grid.Column="0" Classes="label" Text="MONITOR" VerticalAlignment="Center" Margin="0,0,8,0" />
+      <ComboBox Grid.Column="1" ItemsSource="{Binding Outputs}" SelectedItem="{Binding MonitorOutput}" HorizontalAlignment="Stretch">
+        <ComboBox.ItemTemplate>
+          <DataTemplate x:DataType="audio:AudioDeviceInfo">
+            <TextBlock Text="{Binding Name}" />
+          </DataTemplate>
+        </ComboBox.ItemTemplate>
+      </ComboBox>
+      <ToggleButton Grid.Column="2" IsChecked="{Binding Monitoring}" Command="{Binding ToggleMonitorCommand}" Margin="8,0,0,0" ToolTip.Tip="Hear the mics on this output">
+        <c:Icon Glyph="hearing" FontSize="{StaticResource IconMd}" />
+      </ToggleButton>
+    </Grid>
+
+    <ItemsControl ItemsSource="{Binding Players}" ItemTemplate="{StaticResource PlayerCard}" />
+
+    <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap" Text="{Binding Status}"
+               IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+  </StackPanel>
+</UserControl>

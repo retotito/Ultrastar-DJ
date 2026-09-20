@@ -57,13 +57,16 @@ Known: YouTube resolution via yt-dlp takes 10–15 s per load — pre-resolve wh
 
 ## Sprint 3 — Audio input
 
-- [ ] `IAudioBackend` (PortAudio): enumerate, input by device+channel, output by device+offset, hot-plug polling
-- [ ] `MicPipeline`: gain → gate → level → YIN → ring buffer; synthetic-sine tests for YIN accuracy (< 0.3 semitone)
-- [ ] `MonitorMixer` into the game output device; mute/mix gains
-- [ ] `LatencyTest`
-- [ ] Players/mics panel (4 cards, device/channel pick, gain/gate faders, test mode, calibration dialog)
+- [x] `IAudioBackend` (PortAudio): enumerate, input by device+channel, output by device+offset; refresh only while idle (PortAudio must re-init) — hot-plug *loss* is detected via the stream going inactive, *arrival* needs a manual refresh
+- [x] `MicPipeline`: gain → gate → level → YIN → ring buffer; 16 tests (YIN < ⅓ semitone E2–C6, harmonics → fundamental, L/R demux, gate, gain)
+- [x] `MonitorMixer` (linear resampler between mic and output rates); per-player mix gain / mute
+- [x] `LatencyTest` — Goertzel tone detector at 1 kHz, two-block sustain, plausibility window 12–800 ms; measured 44–48 ms MacBook speakers → SingStar mic
+- [x] Audio Input panel (4 cards, device/channel pick, gain/gate/mix, dB meter, live note, test mode, monitor output, calibrate)
 
-**Demo:** sing into two mics on one interface; levels move, detected notes print, monitoring audible on the game device.
+Hardware note: SingStar USB mics deliver ≈ −55 dBFS; defaults are gain 1×/gate 0.01 and the gain slider goes to 10×.
+Headless check: `dotnet run --project tools/MicSmoke -- mics|monitor <out>|latency <out> <in> [L|R]`.
+
+**Demo (done):** four mics on two SingStar dongles tracked independently; monitoring audible; latency calibrated.
 
 ---
 

@@ -7,11 +7,13 @@
     <Project Path="src/UltrastarDJ.Media/UltrastarDJ.Media.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/UltrastarDJ.Audio.Tests/UltrastarDJ.Audio.Tests.csproj" />
     <Project Path="tests/UltrastarDJ.Core.Tests/UltrastarDJ.Core.Tests.csproj" />
     <Project Path="tests/UltrastarDJ.Infrastructure.Tests/UltrastarDJ.Infrastructure.Tests.csproj" />
     <Project Path="tests/UltrastarDJ.Media.Tests/UltrastarDJ.Media.Tests.csproj" />
   </Folder>
   <Folder Name="/tools/">
     <Project Path="tools/MediaSmoke/MediaSmoke.csproj" />
+    <Project Path="tools/MicSmoke/MicSmoke.csproj" />
   </Folder>
 </Solution>
