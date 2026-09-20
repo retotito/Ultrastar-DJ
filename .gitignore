@@ -1,0 +1,35 @@
+# .NET
+bin/
+obj/
+out/
+*.user
+*.suo
+.vs/
+*.swp
+TestResults/
+*.binlog
+
+# Rider / VS Code
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/extensions.json
+
+# Native binaries — downloaded per machine by scripts/fetch-natives.*
+natives/
+
+# Velopack / packaging output
+Releases/
+*.dmg
+*.pkg
+*.app/
+
+# Logs & local data
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
