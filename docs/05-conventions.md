@@ -6,7 +6,7 @@ These are binding for humans and agents. When in doubt: boring, explicit, tested
 
 ## Language & compiler
 
-- C# 12, `.NET 8` (pinned in `global.json`). `LangVersion` latest-major only via SDK bump.
+- C# latest, `.NET 10` (SDK pinned in `global.json`). Versions of all packages live in `Directory.Packages.props` (central package management) — never in a `.csproj`.
 - `Directory.Build.props`: `<Nullable>enable</Nullable>`, `<ImplicitUsings>enable</ImplicitUsings>`,
   `<TreatWarningsAsErrors>true</TreatWarningsAsErrors>` for `Core`, `Media`, `Audio`; warnings allowed but
   visible in `App` during UI iteration.

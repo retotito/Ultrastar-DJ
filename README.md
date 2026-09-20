@@ -3,7 +3,7 @@
 Desktop karaoke DJ app for parties. The DJ runs the show from a laptop; singers see lyrics, note bars
 and scores on one or two projectors. Songs come from local UltraStar folders, USDB and YouTube.
 
-**Stack:** C# / .NET 8 · Avalonia 11 · libmpv · PortAudio · SQLite · ASP.NET Core (guest songbook).
+**Stack:** C# / .NET 10 · Avalonia 12 · libmpv · PortAudio · SQLite · ASP.NET Core (guest songbook).
 **Platforms:** macOS (Apple Silicon + Intel), Windows x64.
 
 This is the second implementation. The first (Tauri + Svelte, [retotito/UltraStarDJ](https://github.com/retotito/UltraStarDJ))
@@ -28,7 +28,7 @@ AI agents: start with [.github/copilot-instructions.md](.github/copilot-instruct
 ## Getting started (developer)
 
 ```sh
-# 1. Install the .NET 8 SDK (version pinned in global.json)
+# 1. Install the .NET 10 SDK (version pinned in global.json) — macOS: brew install --cask dotnet-sdk
 # 2. Fetch native binaries for this machine (libmpv, yt-dlp, ffmpeg) — never committed
 zsh scripts/fetch-natives.sh          # macOS
 pwsh scripts/fetch-natives.ps1        # Windows
@@ -40,7 +40,7 @@ See [docs/06-build-release.md](docs/06-build-release.md) for release builds.
 
 ## Status
 
-Sprint 0 (skeleton) not started — see the roadmap.
+Sprint 0 (skeleton, windows, build pipeline) done. Sprint 1 (media spike) next — see the roadmap.
 
 ## License
 

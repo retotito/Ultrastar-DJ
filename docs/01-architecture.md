@@ -4,8 +4,8 @@
 
 | Layer | Technology | Why |
 |---|---|---|
-| Language / runtime | **C# 12 on .NET 8 LTS** | Strong AI-agent support, GC (no memory bugs), self-contained builds for macOS + Windows |
-| UI | **Avalonia 11** + XAML, **CommunityToolkit.Mvvm** | Cross-platform, HTML-like declarative markup, real multi-window, Skia rendering for 60 fps game overlays |
+| Language / runtime | **C# on .NET 10** | Strong AI-agent support, GC (no memory bugs), self-contained builds for macOS + Windows |
+| UI | **Avalonia 12** + XAML, **CommunityToolkit.Mvvm** | Cross-platform, HTML-like declarative markup, real multi-window, Skia rendering for 60 fps game overlays |
 | Media decode + playback | **libmpv** via thin P/Invoke | Plays local files *and* YouTube (built-in yt-dlp hook, DASH audio+video sync), `--audio-device` per instance, render API hands us frames |
 | Audio I/O | **PortAudio** (`PortAudioSharp2`) | Mic capture per device/channel, multichannel outputs, monitoring mix — replaces cpal |
 | Pitch detection | own C# port of YIN (from `pitchy`) | ~150 lines, deterministic, testable |
@@ -23,9 +23,10 @@
 
 ```
 Ultrastar-DJ/
-  UltrastarDJ.sln
+  UltrastarDJ.slnx
   global.json                       ← pins .NET SDK version
-  Directory.Build.props             ← shared compiler settings (nullable, warnings, LangVersion)
+  Directory.Build.props             ← shared compiler settings (nullable, warnings) + <Version>
+  Directory.Packages.props          ← central NuGet package versions
   .editorconfig
   src/
     UltrastarDJ.Core/               ← domain. Song, Note, parser, timing, scoring, queue. NO dependencies.

@@ -1,6 +1,6 @@
 # Ultrastar DJ — AI Agent Instructions
 
-You are working on **Ultrastar DJ**, a desktop karaoke DJ app: C# / .NET 8, Avalonia 11, libmpv, PortAudio.
+You are working on **Ultrastar DJ**, a desktop karaoke DJ app: C# / .NET 10, Avalonia 12, libmpv, PortAudio.
 Code identifier: `UltrastarDJ` (namespaces, projects). Display name: "Ultrastar DJ".
 
 ## Read first (in this order)

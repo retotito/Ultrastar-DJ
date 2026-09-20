@@ -9,12 +9,12 @@ human can run. "Done" per task = `05-conventions.md` → Definition of done.
 
 Goal: an empty but *shippable* app on both platforms.
 
-- [ ] Solution + projects per `01-architecture.md`, `Directory.Build.props`, `global.json`, `.editorconfig`
-- [ ] DI composition root, Serilog, `JsonSettingsStore`
-- [ ] `Styles/Tokens.axaml` (dark + light), Fluent base, `Icon` control with Material Symbols font, Inter font
-- [ ] `DjWindow` with sidebar + empty panels; `DisplayService` opening a fullscreen `BeamerWindow` on a chosen screen (and `--beamer-debug`)
-- [ ] `scripts/fetch-natives.{sh,ps1}`, `publish-macos.sh` + `bundle-macos.sh`, `publish-windows.ps1`
-- [ ] Builds, runs, and produces an installable artifact on macOS arm64 and Windows x64
+- [x] Solution + projects per `01-architecture.md`, `Directory.Build.props`, `global.json`, `.editorconfig`
+- [x] DI composition root, Serilog, `JsonSettingsStore`
+- [x] `Styles/Tokens.axaml` (dark + light), Fluent base, `Icon` control with Material Symbols font, Inter font
+- [x] `DjWindow` with sidebar + empty panels; `DisplayService` opening a fullscreen `BeamerWindow` on a chosen screen (and `--beamer-debug`)
+- [x] `scripts/fetch-natives.{sh,ps1}`, `publish-macos.sh` + `bundle-macos.sh`, `publish-windows.ps1`
+- [x] Builds, runs, and produces an installable artifact on macOS arm64 (dmg verified) — Windows x64 scripts written, **not yet run on a Windows machine**
 
 **Demo:** launch app, open beamer on second screen showing "Ultrastar DJ" idle screen; dmg/Setup installs.
 
