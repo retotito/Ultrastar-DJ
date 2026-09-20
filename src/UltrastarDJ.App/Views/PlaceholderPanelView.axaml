@@ -1,0 +1,11 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:UltrastarDJ.App.ViewModels"
+             xmlns:c="using:UltrastarDJ.App.Controls"
+             x:Class="UltrastarDJ.App.Views.PlaceholderPanelView"
+             x:DataType="vm:PlaceholderPanelViewModel">
+  <StackPanel Spacing="{StaticResource Space2}">
+    <TextBlock Classes="title" Text="{Binding Title}" />
+    <TextBlock Classes="muted" Text="This panel is implemented in a later sprint." />
+  </StackPanel>
+</UserControl>

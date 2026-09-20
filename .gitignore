@@ -20,11 +20,11 @@ TestResults/
 # Native binaries — downloaded per machine by scripts/fetch-natives.*
 natives/
 
-# Velopack / packaging output
+# Velopack / packaging output (macOS bundles live only under out/; "*.app/" would also match UltrastarDJ.App/ on a case-insensitive FS)
 Releases/
+out/
 *.dmg
 *.pkg
-*.app/
 
 # Logs & local data
 logs/

@@ -1,0 +1,27 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:UltrastarDJ.App.ViewModels"
+        xmlns:c="using:UltrastarDJ.App.Controls"
+        x:Class="UltrastarDJ.App.Views.BeamerWindow"
+        x:DataType="vm:BeamerViewModel"
+        Background="{DynamicResource BrushBeamerBackground}"
+        ShowInTaskbar="False"
+        CanResize="True">
+
+  <!-- Idle screen. Later sprints switch on State: Preview, Countdown, Playing, Score. -->
+  <Panel>
+    <c:VideoSurface Source="{Binding GameFrames}" />
+
+    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="{StaticResource Space4}"
+                IsVisible="{Binding !HasVideo}">
+      <Image Source="avares://UltrastarDJ/Assets/icon.png" Width="160" Height="160" />
+      <TextBlock Text="Ultrastar DJ" FontSize="64" FontWeight="{StaticResource WeightBold}"
+                 Foreground="{DynamicResource BrushBeamerText}" HorizontalAlignment="Center" />
+      <TextBlock Text="{Binding Label}" FontSize="{StaticResource Text2Xl}"
+                 Foreground="{DynamicResource BrushOnSurfaceVariant}" HorizontalAlignment="Center" />
+    </StackPanel>
+
+    <TextBlock Text="Esc closes this screen" Classes="muted" FontSize="{StaticResource TextSm}"
+               HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="{StaticResource Pad4}" />
+  </Panel>
+</Window>

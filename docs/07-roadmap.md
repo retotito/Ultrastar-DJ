@@ -24,14 +24,20 @@ Goal: an empty but *shippable* app on both platforms.
 
 Goal: the two problems that motivated the rewrite are demonstrably solved.
 
-- [ ] `MpvPlayer` P/Invoke wrapper (create, options, commands, property observe, events, SW render context)
-- [ ] `FrameBus` + `VideoSurface` control; frames in DJ monitor + 2 beamers from one player
-- [ ] `MediaChannel` Game/Preview with `audio-device` selection, gain, `astats` metering
-- [ ] `MediaSourceResolver` for all six cases (unit-tested) — playback of cases 2, 3, 4, 6
-- [ ] `MediaGameClock` + `ClockFollower` (drift log)
-- [ ] Channel-pair routing via `pan` on a multichannel device (test with the MOTU)
-- [ ] Readiness signal (buffering) for local and YouTube
-- [ ] Acceptance list in `02-media-engine.md` passes on macOS **and** Windows
+- [x] `MpvPlayer` P/Invoke wrapper (create, options, commands, property observe, events, SW render context)
+- [x] `FrameBus` + `VideoSurface` control; frames in DJ monitor + 2 beamers from one player
+- [x] `MediaChannel` Game/Preview with `audio-device` selection, gain, `astats` metering
+- [x] `MediaSourceResolver` for all six cases (unit-tested) — playback verified for cases 2, 4, 6 (3 = same path as 2 with a YouTube visual)
+- [x] `MediaGameClock` + `ClockFollower` (drift log: +138 ms at start → single digits within 5 s)
+- [ ] Channel-pair routing via `pan` on a multichannel device (test with the MOTU) — **deferred to Sprint 5** (needs the interface at hand)
+- [x] Readiness signal (buffering) for local and YouTube
+- [x] Acceptance list in `02-media-engine.md` passes on macOS — **Windows still to run** (first clone on the Windows machine)
+
+**Result: GO.** YouTube plays once per role with audio on a chosen CoreAudio device and the same frames on
+the DJ monitor and two beamers; preview plays a local file on a different device at the same time.
+Headless check: `dotnet run --project tools/MediaSmoke -- <file|youtubeId> [audioFile|-] [device]`.
+Spike UI: sidebar → Media Lab (remove in Sprint 5 when the real preview/Now Playing UI lands).
+Known: YouTube resolution via yt-dlp takes 10–15 s per load — pre-resolve when a song enters the queue (Sprint 5).
 
 **Go/no-go:** if YouTube-to-device or frame fan-out fails fundamentally, stop and revisit the engine choice
 (fallback: FFmpeg-decoded audio through PortAudio, mpv for video) **before** Sprint 2.

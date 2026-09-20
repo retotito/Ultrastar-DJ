@@ -66,6 +66,12 @@ else
   mv "$STAGE/libs"/*.dylib "$DEST/"
   mv "$STAGE/libmpv.2.dylib" "$DEST/"
   rm -rf "$STAGE"
+  # dylibbundler can emit a duplicate LC_RPATH, which dyld refuses to load ("duplicate LC_RPATH"). Dedupe.
+  for lib in "$DEST"/*.dylib; do
+    chmod u+w "$lib"
+    n=$(otool -l "$lib" | grep -A2 LC_RPATH | grep -c "path @loader_path/" || true)
+    while (( n > 1 )); do install_name_tool -delete_rpath "@loader_path/" "$lib" 2>/dev/null; n=$((n-1)); done
+  done
   # Homebrew dylibs are ad-hoc signed; rewriting load commands invalidates that → re-sign.
   for lib in "$DEST"/*.dylib; do codesign --force -s - "$lib" 2>/dev/null; done
   echo "✓ libmpv + $(ls "$DEST"/*.dylib | wc -l | tr -d ' ') dylibs"

@@ -1,0 +1,111 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:UltrastarDJ.App.ViewModels"
+        xmlns:c="using:UltrastarDJ.App.Controls"
+        x:Class="UltrastarDJ.App.Views.DjWindow"
+        x:DataType="vm:DjWindowViewModel"
+        Title="Ultrastar DJ"
+        Width="1400" Height="860"
+        MinWidth="1100" MinHeight="700"
+        Icon="avares://UltrastarDJ/Assets/icon.png"
+        Background="{DynamicResource BrushBackground}">
+
+  <Grid ColumnDefinitions="Auto,*,Auto">
+
+    <!-- ── Sidebar ─────────────────────────────────────────────────────── -->
+    <Border Grid.Column="0"
+            Width="{StaticResource SidebarWidth}"
+            Background="{DynamicResource BrushSurfaceContainerLow}"
+            BorderBrush="{DynamicResource BrushOutlineVariant}"
+            BorderThickness="0,0,1,0">
+      <DockPanel Margin="{StaticResource Pad2}">
+        <StackPanel DockPanel.Dock="Bottom" Spacing="{StaticResource Space1}">
+          <Button Classes="sidebar" Classes.active="{Binding ActivePanel, Converter={x:Static vm:SidebarPanelConverters.Is}, ConverterParameter=MediaLab}"
+                  Command="{Binding TogglePanelCommand}" CommandParameter="{x:Static vm:SidebarPanel.MediaLab}"
+                  ToolTip.Tip="Media Lab (Sprint 1 spike)">
+            <c:Icon Glyph="science" />
+          </Button>
+          <Button Classes="sidebar" Classes.active="{Binding ActivePanel, Converter={x:Static vm:SidebarPanelConverters.Is}, ConverterParameter=Settings}"
+                  Command="{Binding TogglePanelCommand}" CommandParameter="{x:Static vm:SidebarPanel.Settings}"
+                  ToolTip.Tip="Settings">
+            <c:Icon Glyph="settings" />
+          </Button>
+        </StackPanel>
+
+        <StackPanel Spacing="{StaticResource Space1}">
+          <Button Classes="sidebar" Classes.active="{Binding ActivePanel, Converter={x:Static vm:SidebarPanelConverters.Is}, ConverterParameter=Layout}"
+                  Command="{Binding TogglePanelCommand}" CommandParameter="{x:Static vm:SidebarPanel.Layout}"
+                  ToolTip.Tip="Layout">
+            <c:Icon Glyph="table_chart" />
+          </Button>
+          <Button Classes="sidebar" Classes.active="{Binding ActivePanel, Converter={x:Static vm:SidebarPanelConverters.Is}, ConverterParameter=Sources}"
+                  Command="{Binding TogglePanelCommand}" CommandParameter="{x:Static vm:SidebarPanel.Sources}"
+                  ToolTip.Tip="Song Sources">
+            <c:Icon Glyph="library_music" />
+          </Button>
+          <Button Classes="sidebar" Classes.active="{Binding ActivePanel, Converter={x:Static vm:SidebarPanelConverters.Is}, ConverterParameter=AudioInput}"
+                  Command="{Binding TogglePanelCommand}" CommandParameter="{x:Static vm:SidebarPanel.AudioInput}"
+                  ToolTip.Tip="Audio Input (players &amp; microphones)">
+            <c:Icon Glyph="mic_external_on" />
+          </Button>
+          <Button Classes="sidebar" Classes.active="{Binding ActivePanel, Converter={x:Static vm:SidebarPanelConverters.Is}, ConverterParameter=AudioOutput}"
+                  Command="{Binding TogglePanelCommand}" CommandParameter="{x:Static vm:SidebarPanel.AudioOutput}"
+                  ToolTip.Tip="Audio Output">
+            <c:Icon Glyph="speaker" />
+          </Button>
+          <Button Classes="sidebar" Classes.active="{Binding ActivePanel, Converter={x:Static vm:SidebarPanelConverters.Is}, ConverterParameter=Displays}"
+                  Command="{Binding TogglePanelCommand}" CommandParameter="{x:Static vm:SidebarPanel.Displays}"
+                  ToolTip.Tip="Displays">
+            <c:Icon Glyph="tv" />
+          </Button>
+        </StackPanel>
+      </DockPanel>
+    </Border>
+
+    <!-- ── Centre: library (placeholder) + popover overlay ─────────────── -->
+    <Panel Grid.Column="1">
+      <Grid RowDefinitions="Auto,*">
+        <Border Grid.Row="0" Padding="{StaticResource Pad3}"
+                BorderBrush="{DynamicResource BrushOutlineVariant}" BorderThickness="0,0,0,1">
+          <TextBlock Classes="label" Text="LIBRARY" />
+        </Border>
+        <StackPanel Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="{StaticResource Space2}">
+          <c:Icon Glyph="library_music" FontSize="{StaticResource IconXl}" />
+          <TextBlock Classes="muted" Text="Song library arrives in Sprint 5" HorizontalAlignment="Center" />
+          <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" HorizontalAlignment="Center"
+                     Text="{Binding Version, StringFormat='v{0}'}" />
+        </StackPanel>
+      </Grid>
+
+      <!-- Popover anchored to the sidebar edge -->
+      <Border Classes="popover"
+              HorizontalAlignment="Left" VerticalAlignment="Top"
+              Margin="{StaticResource Pad2}"
+              IsVisible="{Binding PanelContent, Converter={x:Static ObjectConverters.IsNotNull}}">
+        <ContentControl Content="{Binding PanelContent}" />
+      </Border>
+    </Panel>
+
+    <!-- ── Right panel: preview player + queue (placeholders) ──────────── -->
+    <Border Grid.Column="2"
+            Width="{StaticResource RightPanelWidth}"
+            Background="{DynamicResource BrushSurface}"
+            BorderBrush="{DynamicResource BrushOutlineVariant}"
+            BorderThickness="1,0,0,0">
+      <Grid RowDefinitions="Auto,Auto,Auto,*">
+        <Border Grid.Row="0" Padding="{StaticResource Pad3}" BorderBrush="{DynamicResource BrushOutlineVariant}" BorderThickness="0,0,0,1">
+          <TextBlock Classes="label" Text="PREVIEW PLAYER" />
+        </Border>
+        <Border Grid.Row="1" Margin="{StaticResource Pad3}" Background="{DynamicResource BrushBeamerBackground}"
+                CornerRadius="{StaticResource RadiusMd}" Height="180">
+          <c:Icon Glyph="music_note" FontSize="{StaticResource IconXl}" />
+        </Border>
+        <Border Grid.Row="2" Padding="{StaticResource Pad3}" BorderBrush="{DynamicResource BrushOutlineVariant}" BorderThickness="0,1,0,1">
+          <TextBlock Classes="label" Text="QUEUE" />
+        </Border>
+        <TextBlock Grid.Row="3" Classes="muted" Text="Queue is empty" Margin="{StaticResource Pad3}" />
+      </Grid>
+    </Border>
+
+  </Grid>
+</Window>

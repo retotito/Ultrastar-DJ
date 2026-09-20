@@ -1,0 +1,182 @@
+<!--
+  Design tokens — the only place colours, spacing, typography and radii are defined.
+  Ported 1:1 from the prototype's app.css. Views reference these via DynamicResource (colours/brushes)
+  or StaticResource (sizes). Never hardcode values in a view.
+-->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <!-- ── Theme-dependent: colours ─────────────────────────────────────── -->
+  <ResourceDictionary.ThemeDictionaries>
+
+    <ResourceDictionary x:Key="Dark">
+      <Color x:Key="ColorPrimary">#90C8FF</Color>
+      <Color x:Key="ColorOnPrimary">#003354</Color>
+      <Color x:Key="ColorPrimaryContainer">#004B78</Color>
+      <Color x:Key="ColorOnPrimaryContainer">#CCE5FF</Color>
+
+      <Color x:Key="ColorSecondary">#A8C8E8</Color>
+      <Color x:Key="ColorOnSecondary">#1A3348</Color>
+      <Color x:Key="ColorSecondaryContainer">#2A4A62</Color>
+      <Color x:Key="ColorOnSecondaryContainer">#D6EAF8</Color>
+
+      <Color x:Key="ColorTertiary">#80CBC4</Color>
+      <Color x:Key="ColorTertiaryContainer">#004D47</Color>
+
+      <Color x:Key="ColorError">#F2B8B5</Color>
+      <Color x:Key="ColorOnError">#601410</Color>
+      <Color x:Key="ColorErrorContainer">#8C1D18</Color>
+
+      <Color x:Key="ColorBackground">#121212</Color>
+      <Color x:Key="ColorOnBackground">#E3E3E3</Color>
+      <Color x:Key="ColorSurface">#121212</Color>
+      <Color x:Key="ColorOnSurface">#E3E3E3</Color>
+      <Color x:Key="ColorSurfaceVariant">#444444</Color>
+      <Color x:Key="ColorOnSurfaceVariant">#C8C8C8</Color>
+
+      <Color x:Key="ColorSurfaceContainerLowest">#0D0D0D</Color>
+      <Color x:Key="ColorSurfaceContainerLow">#1A1A1A</Color>
+      <Color x:Key="ColorSurfaceContainer">#1E1E1E</Color>
+      <Color x:Key="ColorSurfaceContainerHigh">#282828</Color>
+      <Color x:Key="ColorSurfaceContainerHighest">#333333</Color>
+
+      <Color x:Key="ColorOutline">#8A8A8A</Color>
+      <Color x:Key="ColorOutlineVariant">#444444</Color>
+      <Color x:Key="ColorScrim">#000000</Color>
+
+      <Color x:Key="ColorTableRowHover">#1F78AAFF</Color>
+      <Color x:Key="ColorTableRowSelected">#24CFBCFF</Color>
+    </ResourceDictionary>
+
+    <ResourceDictionary x:Key="Light">
+      <Color x:Key="ColorPrimary">#1A73E8</Color>
+      <Color x:Key="ColorOnPrimary">#FFFFFF</Color>
+      <Color x:Key="ColorPrimaryContainer">#D3E3FD</Color>
+      <Color x:Key="ColorOnPrimaryContainer">#041E49</Color>
+
+      <Color x:Key="ColorSecondary">#4A5C6A</Color>
+      <Color x:Key="ColorOnSecondary">#FFFFFF</Color>
+      <Color x:Key="ColorSecondaryContainer">#DDE3EA</Color>
+      <Color x:Key="ColorOnSecondaryContainer">#1F2A32</Color>
+
+      <Color x:Key="ColorTertiary">#00796B</Color>
+      <Color x:Key="ColorTertiaryContainer">#B2DFDB</Color>
+
+      <Color x:Key="ColorError">#B3261E</Color>
+      <Color x:Key="ColorOnError">#FFFFFF</Color>
+      <Color x:Key="ColorErrorContainer">#F9DEDC</Color>
+
+      <Color x:Key="ColorBackground">#F8F9FA</Color>
+      <Color x:Key="ColorOnBackground">#1F1F1F</Color>
+      <Color x:Key="ColorSurface">#FFFFFF</Color>
+      <Color x:Key="ColorOnSurface">#1F1F1F</Color>
+      <Color x:Key="ColorSurfaceVariant">#E1E3E1</Color>
+      <Color x:Key="ColorOnSurfaceVariant">#444746</Color>
+
+      <Color x:Key="ColorSurfaceContainerLowest">#FFFFFF</Color>
+      <Color x:Key="ColorSurfaceContainerLow">#F3F4F6</Color>
+      <Color x:Key="ColorSurfaceContainer">#EEF0F2</Color>
+      <Color x:Key="ColorSurfaceContainerHigh">#E7E9EC</Color>
+      <Color x:Key="ColorSurfaceContainerHighest">#DFE2E5</Color>
+
+      <Color x:Key="ColorOutline">#747775</Color>
+      <Color x:Key="ColorOutlineVariant">#C4C7C5</Color>
+      <Color x:Key="ColorScrim">#000000</Color>
+
+      <Color x:Key="ColorTableRowHover">#141A73E8</Color>
+      <Color x:Key="ColorTableRowSelected">#1F1A73E8</Color>
+    </ResourceDictionary>
+
+  </ResourceDictionary.ThemeDictionaries>
+
+  <!-- ── Theme-independent: player accents, golden ────────────────────── -->
+  <Color x:Key="ColorPlayer1">#4F8EF7</Color>
+  <Color x:Key="ColorPlayer2">#F75F5F</Color>
+  <Color x:Key="ColorPlayer3">#4ECB71</Color>
+  <Color x:Key="ColorPlayer4">#F7C84F</Color>
+  <Color x:Key="ColorGolden">#FFD700</Color>
+  <Color x:Key="ColorBeamerBackground">#000000</Color>
+  <Color x:Key="ColorBeamerText">#FFFFFF</Color>
+
+  <!-- ── Brushes (bind to these in views; they follow the theme) ───────── -->
+  <SolidColorBrush x:Key="BrushPrimary" Color="{DynamicResource ColorPrimary}" />
+  <SolidColorBrush x:Key="BrushOnPrimary" Color="{DynamicResource ColorOnPrimary}" />
+  <SolidColorBrush x:Key="BrushPrimaryContainer" Color="{DynamicResource ColorPrimaryContainer}" />
+  <SolidColorBrush x:Key="BrushOnPrimaryContainer" Color="{DynamicResource ColorOnPrimaryContainer}" />
+  <SolidColorBrush x:Key="BrushSecondaryContainer" Color="{DynamicResource ColorSecondaryContainer}" />
+  <SolidColorBrush x:Key="BrushOnSecondaryContainer" Color="{DynamicResource ColorOnSecondaryContainer}" />
+  <SolidColorBrush x:Key="BrushError" Color="{DynamicResource ColorError}" />
+  <SolidColorBrush x:Key="BrushBackground" Color="{DynamicResource ColorBackground}" />
+  <SolidColorBrush x:Key="BrushSurface" Color="{DynamicResource ColorSurface}" />
+  <SolidColorBrush x:Key="BrushOnSurface" Color="{DynamicResource ColorOnSurface}" />
+  <SolidColorBrush x:Key="BrushOnSurfaceVariant" Color="{DynamicResource ColorOnSurfaceVariant}" />
+  <SolidColorBrush x:Key="BrushSurfaceContainerLowest" Color="{DynamicResource ColorSurfaceContainerLowest}" />
+  <SolidColorBrush x:Key="BrushSurfaceContainerLow" Color="{DynamicResource ColorSurfaceContainerLow}" />
+  <SolidColorBrush x:Key="BrushSurfaceContainer" Color="{DynamicResource ColorSurfaceContainer}" />
+  <SolidColorBrush x:Key="BrushSurfaceContainerHigh" Color="{DynamicResource ColorSurfaceContainerHigh}" />
+  <SolidColorBrush x:Key="BrushSurfaceContainerHighest" Color="{DynamicResource ColorSurfaceContainerHighest}" />
+  <SolidColorBrush x:Key="BrushOutline" Color="{DynamicResource ColorOutline}" />
+  <SolidColorBrush x:Key="BrushOutlineVariant" Color="{DynamicResource ColorOutlineVariant}" />
+  <SolidColorBrush x:Key="BrushPlayer1" Color="{StaticResource ColorPlayer1}" />
+  <SolidColorBrush x:Key="BrushPlayer2" Color="{StaticResource ColorPlayer2}" />
+  <SolidColorBrush x:Key="BrushPlayer3" Color="{StaticResource ColorPlayer3}" />
+  <SolidColorBrush x:Key="BrushPlayer4" Color="{StaticResource ColorPlayer4}" />
+  <SolidColorBrush x:Key="BrushGolden" Color="{StaticResource ColorGolden}" />
+  <SolidColorBrush x:Key="BrushBeamerBackground" Color="{StaticResource ColorBeamerBackground}" />
+  <SolidColorBrush x:Key="BrushBeamerText" Color="{StaticResource ColorBeamerText}" />
+
+  <!-- ── Spacing scale (px) ───────────────────────────────────────────── -->
+  <x:Double x:Key="Space1">4</x:Double>
+  <x:Double x:Key="Space2">8</x:Double>
+  <x:Double x:Key="Space3">12</x:Double>
+  <x:Double x:Key="Space4">16</x:Double>
+  <x:Double x:Key="Space5">20</x:Double>
+  <x:Double x:Key="Space6">24</x:Double>
+  <x:Double x:Key="Space8">32</x:Double>
+  <x:Double x:Key="Space10">40</x:Double>
+  <x:Double x:Key="Space12">48</x:Double>
+
+  <Thickness x:Key="Pad1">4</Thickness>
+  <Thickness x:Key="Pad2">8</Thickness>
+  <Thickness x:Key="Pad3">12</Thickness>
+  <Thickness x:Key="Pad4">16</Thickness>
+  <Thickness x:Key="Pad6">24</Thickness>
+  <Thickness x:Key="PadCard">16</Thickness>
+  <Thickness x:Key="PadPanel">12</Thickness>
+
+  <!-- ── Typography ───────────────────────────────────────────────────── -->
+  <FontFamily x:Key="FontSans">fonts:Inter#Inter, $Default</FontFamily>
+  <FontFamily x:Key="FontMono">JetBrains Mono, Menlo, Consolas, monospace</FontFamily>
+  <FontFamily x:Key="FontIcons">avares://UltrastarDJ/Assets/Fonts/MaterialSymbolsOutlined.ttf#Material Symbols Outlined</FontFamily>
+
+  <x:Double x:Key="TextXs">12</x:Double>
+  <x:Double x:Key="TextSm">14</x:Double>
+  <x:Double x:Key="TextBase">16</x:Double>
+  <x:Double x:Key="TextLg">18</x:Double>
+  <x:Double x:Key="TextXl">20</x:Double>
+  <x:Double x:Key="Text2Xl">24</x:Double>
+  <x:Double x:Key="Text3Xl">30</x:Double>
+
+  <x:Double x:Key="IconSm">16</x:Double>
+  <x:Double x:Key="IconMd">20</x:Double>
+  <x:Double x:Key="IconLg">24</x:Double>
+  <x:Double x:Key="IconXl">32</x:Double>
+
+  <FontWeight x:Key="WeightRegular">Normal</FontWeight>
+  <FontWeight x:Key="WeightMedium">Medium</FontWeight>
+  <FontWeight x:Key="WeightSemibold">SemiBold</FontWeight>
+  <FontWeight x:Key="WeightBold">Bold</FontWeight>
+
+  <!-- ── Shape ────────────────────────────────────────────────────────── -->
+  <CornerRadius x:Key="RadiusSm">4</CornerRadius>
+  <CornerRadius x:Key="RadiusMd">8</CornerRadius>
+  <CornerRadius x:Key="RadiusLg">12</CornerRadius>
+  <CornerRadius x:Key="RadiusXl">16</CornerRadius>
+  <CornerRadius x:Key="RadiusFull">9999</CornerRadius>
+
+  <!-- ── Layout constants ─────────────────────────────────────────────── -->
+  <x:Double x:Key="SidebarWidth">56</x:Double>
+  <x:Double x:Key="RightPanelWidth">340</x:Double>
+  <x:Double x:Key="PopoverWidth">420</x:Double>
+
+</ResourceDictionary>

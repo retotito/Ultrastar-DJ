@@ -1,0 +1,89 @@
+<!--
+  Control styles built on the tokens. One selector group per control family.
+  Add a class here when the same look is needed in more than one view.
+-->
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:c="using:UltrastarDJ.App.Controls">
+
+  <!-- Base text -->
+  <Style Selector="TextBlock">
+    <Setter Property="FontFamily" Value="{StaticResource FontSans}" />
+    <Setter Property="Foreground" Value="{DynamicResource BrushOnSurface}" />
+  </Style>
+  <Style Selector="TextBlock.muted">
+    <Setter Property="Foreground" Value="{DynamicResource BrushOnSurfaceVariant}" />
+  </Style>
+  <Style Selector="TextBlock.title">
+    <Setter Property="FontSize" Value="{StaticResource TextXl}" />
+    <Setter Property="FontWeight" Value="{StaticResource WeightSemibold}" />
+  </Style>
+  <Style Selector="TextBlock.label">
+    <Setter Property="FontSize" Value="{StaticResource TextXs}" />
+    <Setter Property="FontWeight" Value="{StaticResource WeightSemibold}" />
+    <Setter Property="Foreground" Value="{DynamicResource BrushOnSurfaceVariant}" />
+  </Style>
+
+  <!-- Icon glyphs -->
+  <Style Selector="c|Icon">
+    <Setter Property="FontFamily" Value="{StaticResource FontIcons}" />
+    <Setter Property="FontSize" Value="{StaticResource IconLg}" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="Foreground" Value="{DynamicResource BrushOnSurfaceVariant}" />
+  </Style>
+
+  <!-- Sidebar icon button -->
+  <Style Selector="Button.sidebar">
+    <Setter Property="Width" Value="40" />
+    <Setter Property="Height" Value="40" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="{StaticResource RadiusMd}" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Button.sidebar:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BrushSurfaceContainerHigh}" />
+  </Style>
+  <Style Selector="Button.sidebar.active /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BrushSecondaryContainer}" />
+  </Style>
+  <Style Selector="Button.sidebar.active c|Icon">
+    <Setter Property="Foreground" Value="{DynamicResource BrushOnSecondaryContainer}" />
+  </Style>
+
+  <!-- Tonal button (secondary action) -->
+  <Style Selector="Button.tonal">
+    <Setter Property="Background" Value="{DynamicResource BrushSecondaryContainer}" />
+    <Setter Property="Foreground" Value="{DynamicResource BrushOnSecondaryContainer}" />
+    <Setter Property="CornerRadius" Value="{StaticResource RadiusFull}" />
+    <Setter Property="Padding" Value="16,8" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+  <Style Selector="Button.tonal:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BrushSurfaceContainerHighest}" />
+  </Style>
+
+  <!-- Card surface -->
+  <Style Selector="Border.card">
+    <Setter Property="Background" Value="{DynamicResource BrushSurfaceContainer}" />
+    <Setter Property="CornerRadius" Value="{StaticResource RadiusLg}" />
+    <Setter Property="Padding" Value="{StaticResource PadCard}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BrushOutlineVariant}" />
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
+
+  <!-- Popover panel anchored next to the sidebar -->
+  <Style Selector="Border.popover">
+    <Setter Property="Background" Value="{DynamicResource BrushSurfaceContainerLow}" />
+    <Setter Property="CornerRadius" Value="{StaticResource RadiusLg}" />
+    <Setter Property="Padding" Value="{StaticResource PadPanel}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BrushOutlineVariant}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Width" Value="{StaticResource PopoverWidth}" />
+    <Setter Property="BoxShadow" Value="0 8 24 0 #99000000" />
+  </Style>
+
+</Styles>

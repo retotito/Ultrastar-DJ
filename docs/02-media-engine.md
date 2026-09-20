@@ -23,7 +23,8 @@ public interface IMediaPlayer : IAsyncDisposable
     Task LoadAsync(MediaSource source, MediaLoadOptions options, CancellationToken ct);
     void Play();
     void Pause();
-    void Stop();
+    /// <summary>Stops and unloads the file; the player can be reused.</summary>
+    void Unload();
     void Seek(TimeSpan position);
     TimeSpan Position { get; }        // read from "time-pos" (observed property, cached)
     TimeSpan? Duration { get; }
@@ -186,11 +187,20 @@ The DJ window may show a small monitor of the game visual using the same bus. Th
 ## Readiness / buffering (replaces `canplaythrough`)
 
 `PlaybackService` may enable **Play** only when:
-- GameAudio `State == Ready` (file loaded, `demuxer-cache-duration ≥ 3 s` or EOF cached, not `paused-for-cache`),
+- GameAudio `State == Ready`: file loaded and, for **network sources only**, `demuxer-cache-duration ≥ 2 s`
+  (or the rest of the file is cached). mpv does not cache local files (`cache=auto`), so they are ready at
+  `FILE_LOADED`. If a network cache never reaches the threshold, the player starts anyway after 8 s.
 - GameVisual (if any) `State == Ready`,
 - every open beamer has reported `BeamerReady` (window laid out, surfaces subscribed).
 
 This gives YouTube a real readiness signal — the prototype had none.
+
+### Lessons from the spike (keep)
+- Shutdown order is strict: stop render thread → `mpv_render_context_free` → `quit` → wait for the event
+  thread to see `MPV_EVENT_SHUTDOWN` → `mpv_terminate_destroy`. Calling terminate while another thread is in
+  `mpv_wait_event` deadlocks.
+- `af-metadata/<label>` does not reliably notify via `mpv_observe_property`; poll it (50 ms) from the event loop.
+- `dylibbundler` may write a duplicate `LC_RPATH`, which dyld refuses ("duplicate LC_RPATH"); `fetch-natives.sh` dedupes.
 
 ---
 

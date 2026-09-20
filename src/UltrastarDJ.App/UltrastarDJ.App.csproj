@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Avalonia desktop app and composition root. The only project that references everything. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>UltrastarDJ.App</RootNamespace>
+    <AssemblyName>UltrastarDJ</AssemblyName>
+    <ApplicationIcon>Assets/icon.ico</ApplicationIcon>
+    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <RuntimeIdentifiers>osx-arm64;osx-x64;win-x64</RuntimeIdentifiers>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../UltrastarDJ.Core/UltrastarDJ.Core.csproj" />
+    <ProjectReference Include="../UltrastarDJ.Media/UltrastarDJ.Media.csproj" />
+    <ProjectReference Include="../UltrastarDJ.Audio/UltrastarDJ.Audio.csproj" />
+    <ProjectReference Include="../UltrastarDJ.Infrastructure/UltrastarDJ.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" />
+    <PackageReference Include="Avalonia.Desktop" />
+    <PackageReference Include="Avalonia.Themes.Fluent" />
+    <PackageReference Include="Avalonia.Fonts.Inter" />
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Serilog.Extensions.Logging" />
+    <PackageReference Include="Serilog.Sinks.Console" />
+    <PackageReference Include="Serilog.Sinks.File" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="Assets/**" />
+  </ItemGroup>
+
+  <!-- Native sidecars/libraries fetched per machine by scripts/fetch-natives.* land next to the executable. -->
+  <ItemGroup Condition="'$(RuntimeIdentifier)' != '' And Exists('$(MSBuildThisFileDirectory)../../natives/$(RuntimeIdentifier)')">
+    <None Include="$(MSBuildThisFileDirectory)../../natives/$(RuntimeIdentifier)/**" LinkBase="natives" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
