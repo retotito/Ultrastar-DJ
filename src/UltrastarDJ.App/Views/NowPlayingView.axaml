@@ -1,0 +1,46 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:UltrastarDJ.App.ViewModels"
+             xmlns:c="using:UltrastarDJ.App.Controls"
+             x:Class="UltrastarDJ.App.Views.NowPlayingView"
+             x:DataType="vm:NowPlayingViewModel">
+
+  <Border Classes="card" Margin="{StaticResource Pad3}">
+    <StackPanel Spacing="{StaticResource Space2}">
+      <TextBlock Classes="label" Text="NOW PLAYING" />
+      <Border Background="{DynamicResource BrushBeamerBackground}" CornerRadius="{StaticResource RadiusMd}" Height="110" ClipToBounds="True"
+              IsVisible="{Binding HasSong}">
+        <c:VideoSurface Source="{Binding GameFrames}" />
+      </Border>
+      <TextBlock Classes="title" Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
+      <TextBlock Classes="muted" Text="{Binding Artist}" TextTrimming="CharacterEllipsis" />
+      <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="{Binding Players, StringFormat='Singers: {0}'}"
+                 IsVisible="{Binding Players, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock Classes="muted" FontSize="{StaticResource TextSm}" Text="{Binding Status}" VerticalAlignment="Center" TextWrapping="Wrap" />
+        <TextBlock Grid.Column="1" Classes="muted" FontFamily="{StaticResource FontMono}" Text="{Binding Position}" VerticalAlignment="Center" />
+      </Grid>
+
+      <Grid ColumnDefinitions="Auto,*,44">
+        <c:Icon Glyph="volume_up" FontSize="{StaticResource IconMd}" Margin="0,0,8,0" />
+        <Slider Grid.Column="1" Minimum="0" Maximum="1" Value="{Binding Gain}" />
+        <TextBlock Grid.Column="2" Classes="muted" Text="{Binding Gain, StringFormat='{}{0:P0}'}" VerticalAlignment="Center" TextAlignment="Right" />
+      </Grid>
+      <c:LevelMeter Height="4" Level="{Binding Level}" Fill="{DynamicResource BrushPrimary}" Track="{DynamicResource BrushSurfaceContainerHighest}" />
+
+      <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}" HorizontalAlignment="Center" Margin="0,4,0,0">
+        <Button Classes="sidebar" Command="{Binding ClearCommand}" ToolTip.Tip="Clear — beamers back to idle"><c:Icon Glyph="tv_off" /></Button>
+        <Button Classes="sidebar" Command="{Binding PreviewCommand}" ToolTip.Tip="Show get-ready screen"><c:Icon Glyph="tv" /></Button>
+        <Button Classes="sidebar" Command="{Binding PlayCommand}" ToolTip.Tip="Play (countdown on the beamers)"><c:Icon Glyph="play_arrow" FontSize="{StaticResource IconXl}" /></Button>
+        <Button Classes="sidebar" Command="{Binding PauseCommand}" ToolTip.Tip="Pause"><c:Icon Glyph="pause" /></Button>
+        <Button Classes="sidebar" Command="{Binding ResumeCommand}" ToolTip.Tip="Resume"><c:Icon Glyph="resume" /></Button>
+        <Button Classes="sidebar" Command="{Binding StopCommand}" ToolTip.Tip="Stop — show scores"><c:Icon Glyph="stop" /></Button>
+        <Button Classes="sidebar" Command="{Binding DismissCommand}" ToolTip.Tip="Leave the score screen"><c:Icon Glyph="check" /></Button>
+      </StackPanel>
+
+      <TextBlock Foreground="{DynamicResource BrushError}" FontSize="{StaticResource TextXs}" TextWrapping="Wrap" Text="{Binding Error}"
+                 IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+    </StackPanel>
+  </Border>
+</UserControl>

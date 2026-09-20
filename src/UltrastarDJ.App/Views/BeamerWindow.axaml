@@ -2,26 +2,85 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:UltrastarDJ.App.ViewModels"
         xmlns:c="using:UltrastarDJ.App.Controls"
+        xmlns:game="using:UltrastarDJ.App.Game"
         x:Class="UltrastarDJ.App.Views.BeamerWindow"
         x:DataType="vm:BeamerViewModel"
         Background="{DynamicResource BrushBeamerBackground}"
         ShowInTaskbar="False"
         CanResize="True">
 
-  <!-- Idle screen. Later sprints switch on State: Preview, Countdown, Playing, Score. -->
-  <Panel>
-    <c:VideoSurface Source="{Binding GameFrames}" />
+  <Window.Styles>
+    <Style Selector="TextBlock.beamer">
+      <Setter Property="Foreground" Value="{DynamicResource BrushBeamerText}" />
+      <Setter Property="FontFamily" Value="{StaticResource FontSans}" />
+    </Style>
+  </Window.Styles>
 
-    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="{StaticResource Space4}"
-                IsVisible="{Binding !HasVideo}">
+  <Panel>
+    <!-- Background layer: the song's image (blurred for preview/score, dim behind the game), video on top while playing -->
+    <Image Source="{Binding Background}" Stretch="UniformToFill" IsVisible="{Binding ShowBackground}" Opacity="0.55">
+      <Image.Effect>
+        <BlurEffect Radius="18" />
+      </Image.Effect>
+    </Image>
+    <c:VideoSurface Source="{Binding GameFrames}" IsVisible="{Binding ShowVideo}" />
+
+    <!-- Idle -->
+    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="{StaticResource Space4}" IsVisible="{Binding IsIdle}">
       <Image Source="avares://UltrastarDJ/Assets/icon.png" Width="160" Height="160" />
-      <TextBlock Text="Ultrastar DJ" FontSize="64" FontWeight="{StaticResource WeightBold}"
-                 Foreground="{DynamicResource BrushBeamerText}" HorizontalAlignment="Center" />
-      <TextBlock Text="{Binding Label}" FontSize="{StaticResource Text2Xl}"
-                 Foreground="{DynamicResource BrushOnSurfaceVariant}" HorizontalAlignment="Center" />
+      <TextBlock Classes="beamer" Text="Ultrastar DJ" FontSize="64" FontWeight="{StaticResource WeightBold}" HorizontalAlignment="Center" />
+      <TextBlock Classes="beamer" Text="{Binding Label}" FontSize="{StaticResource Text2Xl}" Opacity="0.6" HorizontalAlignment="Center" />
     </StackPanel>
 
-    <TextBlock Text="Esc closes this screen" Classes="muted" FontSize="{StaticResource TextSm}"
-               HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="{StaticResource Pad4}" />
+    <!-- Preview: get ready -->
+    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="{StaticResource Space3}" IsVisible="{Binding IsPreview}">
+      <TextBlock Classes="beamer" Text="GET READY" FontSize="{StaticResource Text2Xl}" Opacity="0.7" HorizontalAlignment="Center" />
+      <TextBlock Classes="beamer" Text="{Binding Title}" FontSize="72" FontWeight="{StaticResource WeightBold}" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" />
+      <TextBlock Classes="beamer" Text="{Binding Artist}" FontSize="40" Opacity="0.8" HorizontalAlignment="Center" />
+      <ItemsControl ItemsSource="{Binding AssignedPlayers}" HorizontalAlignment="Center" Margin="0,24,0,0">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="16" /></ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="game:ScenePlayer">
+            <Border Background="{Binding Brush}" CornerRadius="{StaticResource RadiusFull}" Padding="24,8">
+              <TextBlock Text="{Binding Name}" FontSize="{StaticResource TextXl}" FontWeight="{StaticResource WeightSemibold}" Foreground="Black" />
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </StackPanel>
+
+    <!-- Countdown -->
+    <TextBlock Classes="beamer" Text="{Binding CountdownValue}" FontSize="240" FontWeight="{StaticResource WeightBold}"
+               HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsCountdown}" />
+
+    <!-- Game -->
+    <c:GameOverlayControl Scene="{Binding Scene}" IsRunning="{Binding IsGame}" IsVisible="{Binding IsGame}" />
+    <Border IsVisible="{Binding IsPaused}" Background="#88000000">
+      <TextBlock Classes="beamer" Text="PAUSED" FontSize="96" FontWeight="{StaticResource WeightBold}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+    </Border>
+
+    <!-- Score -->
+    <Border IsVisible="{Binding IsScore}" Background="#AA000000">
+      <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="{StaticResource Space6}" MinWidth="700">
+        <TextBlock Classes="beamer" Text="{Binding Title}" FontSize="40" FontWeight="{StaticResource WeightBold}" HorizontalAlignment="Center" />
+        <ItemsControl ItemsSource="{Binding Scores}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:ScoreRowViewModel">
+              <Grid ColumnDefinitions="56,280,*,200" Margin="0,10" VerticalAlignment="Center">
+                <c:Icon Grid.Column="0" Glyph="emoji_events" FontSize="40" Foreground="{StaticResource BrushGolden}" IsVisible="{Binding IsWinner}" />
+                <TextBlock Grid.Column="1" Classes="beamer" Text="{Binding Name}" FontSize="40" FontWeight="{StaticResource WeightSemibold}" Foreground="{Binding Brush}" VerticalAlignment="Center" />
+                <c:LevelMeter Grid.Column="2" Height="18" Level="{Binding Fraction}" Fill="{Binding Brush}" Track="#33FFFFFF" VerticalAlignment="Center" Margin="24,0" />
+                <TextBlock Grid.Column="3" Classes="beamer" Text="{Binding Displayed}" FontSize="48" FontWeight="{StaticResource WeightBold}" TextAlignment="Right" VerticalAlignment="Center" />
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </Border>
+
+    <TextBlock Classes="beamer" Text="Esc closes this screen" FontSize="{StaticResource TextSm}" Opacity="0.5"
+               HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="{StaticResource Pad4}" IsVisible="{Binding IsIdle}" />
   </Panel>
 </Window>

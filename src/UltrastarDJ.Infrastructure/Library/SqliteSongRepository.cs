@@ -15,6 +15,9 @@ public sealed class SqliteSongRepository : ISongRepository, IDisposable
     private readonly string _connectionString;
     private readonly Lock _writeLock = new();
 
+    // Must run before the first Query<Row>: Dapper builds the column map once, when it first deserialises the type.
+    static SqliteSongRepository() => DefaultTypeMap.MatchNamesWithUnderscores = true;
+
     public SqliteSongRepository(AppPaths paths)
         : this(Path.Combine(paths.Data, "library.db"))
     {
@@ -111,11 +114,9 @@ public sealed class SqliteSongRepository : ISongRepository, IDisposable
 
     public void Dispose() => SqliteConnection.ClearAllPools();
 
-    // Dapper maps snake_case columns onto these PascalCase members via DefaultTypeMap.MatchNamesWithUnderscores.
+    // Dapper maps snake_case columns onto these PascalCase members (see the static constructor).
     private sealed class Row
     {
-        static Row() => DefaultTypeMap.MatchNamesWithUnderscores = true;
-
         public string Id { get; set; } = "";
         public string SourceId { get; set; } = "";
         public string Title { get; set; } = "";

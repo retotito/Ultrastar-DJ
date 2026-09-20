@@ -72,13 +72,16 @@ Headless check: `dotnet run --project tools/MicSmoke -- mics|monitor <out>|laten
 
 ## Sprint 4 — Game on the beamer
 
-- [ ] `PlaybackService` state machine, `GameSession`, `GameTicker` (60 Hz), messages
-- [ ] `GameOverlayControl`: note lanes (geometry, styles, syllables), sung fill, glow, PERFECT, playhead, lyrics with sweep + lead-in, progress
-- [ ] Beamer states: idle, preview, countdown (reports `CountdownDone`), playing/paused, score (animated)
-- [ ] Per-beamer player assignment; 2 beamers with different players
-- [ ] Mic delay applied; `#VIDEOGAP` modes A/B verified with test songs; `#END`
+- [x] `PlaybackService` state machine (Idle → Loaded → Preview → Countdown → Playing ⇄ Paused → Score → Loaded), `GameSession` (Core, tested), 60 Hz tick loop; beamers observe the service directly (in-process events instead of a messenger)
+- [x] `GameOverlayControl`: note lanes (geometry, styles, syllables), sung fill (correct in colour / wrong at sung row), glow, PERFECT, playhead, lyrics with sweep + lead-in, progress
+- [x] Beamer states: idle, preview, countdown (first beamer to finish starts the song), playing/paused, score (animated count-up, winner)
+- [x] Per-beamer player assignment (Displays panel chips; a player is on one screen only)
+- [x] Per-player mic delay applied; `#VIDEOGAP` modes handled by the media plan; `#END` via mpv `end`, plus a 4 s tail after the last note
+- [x] DJ: Now Playing card (transport, game gain/meter, monitor), library → double-click previews, right-click / ▶ loads into the game
 
-**Demo:** full song with 2 players on 2 beamers, scores at the end; 60 fps on a 1080p beamer.
+Deferred to Sprint 5: difficulty setting UI (Medium hardcoded in `PlaybackService.Difficulty`), 2-beamer/4-player stress test on a 1080p projector, duet lyrics per track.
+
+**Demo (done):** full song with four SingStar mics on one beamer, live fills and scores, score screen at the end.
 
 ---
 

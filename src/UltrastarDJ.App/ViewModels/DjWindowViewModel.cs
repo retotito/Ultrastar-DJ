@@ -27,13 +27,15 @@ public sealed partial class DjWindowViewModel : ViewModelBase
     [ObservableProperty]
     private ViewModelBase? _panelContent;
 
-    public DjWindowViewModel(IServiceProvider services, LibraryViewModel library)
+    public DjWindowViewModel(IServiceProvider services, LibraryViewModel library, NowPlayingViewModel nowPlaying)
     {
         _services = services;
         Library = library;
+        NowPlaying = nowPlaying;
     }
 
     public LibraryViewModel Library { get; }
+    public NowPlayingViewModel NowPlaying { get; }
 
     public static string Version => typeof(DjWindowViewModel).Assembly.GetName().Version?.ToString(3) ?? "dev";
 

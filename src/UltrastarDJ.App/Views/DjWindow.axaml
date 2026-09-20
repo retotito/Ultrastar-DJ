@@ -84,18 +84,30 @@
             Background="{DynamicResource BrushSurface}"
             BorderBrush="{DynamicResource BrushOutlineVariant}"
             BorderThickness="1,0,0,0">
-      <Grid RowDefinitions="Auto,Auto,Auto,*">
-        <Border Grid.Row="0" Padding="{StaticResource Pad3}" BorderBrush="{DynamicResource BrushOutlineVariant}" BorderThickness="0,0,0,1">
-          <TextBlock Classes="label" Text="PREVIEW PLAYER" />
+      <Grid RowDefinitions="Auto,Auto,Auto,Auto,*">
+        <ContentControl Grid.Row="0" Content="{Binding NowPlaying}" />
+        <Border Grid.Row="1" Padding="{StaticResource Pad3}" BorderBrush="{DynamicResource BrushOutlineVariant}" BorderThickness="0,1,0,1">
+          <Grid ColumnDefinitions="*,Auto,Auto">
+            <TextBlock Classes="label" Text="PREVIEW PLAYER" VerticalAlignment="Center" />
+            <Button Grid.Column="1" Classes="sidebar" Width="28" Height="28" Command="{Binding Library.TogglePreviewCommand}" ToolTip.Tip="Play / pause preview">
+              <c:Icon Glyph="play_pause" FontSize="{StaticResource IconMd}" />
+            </Button>
+            <Button Grid.Column="2" Classes="sidebar" Width="28" Height="28" Command="{Binding Library.StopPreviewCommand}" ToolTip.Tip="Stop preview">
+              <c:Icon Glyph="stop" FontSize="{StaticResource IconMd}" />
+            </Button>
+          </Grid>
         </Border>
-        <Border Grid.Row="1" Margin="{StaticResource Pad3}" Background="{DynamicResource BrushBeamerBackground}"
-                CornerRadius="{StaticResource RadiusMd}" Height="180">
-          <c:Icon Glyph="music_note" FontSize="{StaticResource IconXl}" />
+        <Border Grid.Row="2" Margin="{StaticResource Pad3}" Background="{DynamicResource BrushBeamerBackground}"
+                CornerRadius="{StaticResource RadiusMd}" Height="160" ClipToBounds="True">
+          <Panel>
+            <c:VideoSurface Source="{Binding Library.PreviewFrames}" />
+            <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Margin="8" VerticalAlignment="Bottom"
+                       Text="{Binding Library.Previewing.Title}" TextTrimming="CharacterEllipsis" />
+          </Panel>
         </Border>
-        <Border Grid.Row="2" Padding="{StaticResource Pad3}" BorderBrush="{DynamicResource BrushOutlineVariant}" BorderThickness="0,1,0,1">
-          <TextBlock Classes="label" Text="QUEUE" />
-        </Border>
-        <TextBlock Grid.Row="3" Classes="muted" Text="Queue is empty" Margin="{StaticResource Pad3}" />
+        <TextBlock Grid.Row="3" Foreground="{DynamicResource BrushError}" FontSize="{StaticResource TextXs}" Margin="12,0" TextWrapping="Wrap"
+                   Text="{Binding Library.PreviewError}" IsVisible="{Binding Library.PreviewError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        <TextBlock Grid.Row="4" Classes="muted" Text="Queue arrives in Sprint 5" Margin="{StaticResource Pad3}" />
       </Grid>
     </Border>
 

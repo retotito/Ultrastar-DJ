@@ -71,11 +71,13 @@ public sealed partial class App : Application
         services.AddSingleton<PlayersService>();
         services.AddSingleton<AudioInputService>();
         services.AddSingleton<LibraryService>();
+        services.AddSingleton<PlaybackService>();
         services.AddSingleton<DisplayService>();
         services.AddSingleton<IDisplayService>(sp => sp.GetRequiredService<DisplayService>());
 
         // ViewModels
         services.AddSingleton<DjWindowViewModel>();
+        services.AddSingleton<NowPlayingViewModel>();
         services.AddSingleton<LibraryViewModel>();
         services.AddSingleton<SourcesPanelViewModel>();
         services.AddSingleton<PlayersPanelViewModel>();

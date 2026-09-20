@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Platform;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using UltrastarDJ.App.ViewModels;
 using UltrastarDJ.App.Views;
@@ -16,17 +17,21 @@ public sealed class DisplayService : IDisplayService
     private readonly ISettingsStore _settings;
     private readonly AppOptions _options;
     private readonly MediaService _media;
+    private readonly PlayersService _players;
+    private readonly IServiceProvider _services;
     private readonly ILogger<DisplayService> _log;
     private readonly Dictionary<DisplayId, BeamerWindow> _open = [];
     private Window? _owner;
     private DisplaysDocument _doc;
     private IReadOnlyList<ScreenInfo> _screens = [];
 
-    public DisplayService(ISettingsStore settings, AppOptions options, MediaService media, ILogger<DisplayService> log)
+    public DisplayService(ISettingsStore settings, AppOptions options, MediaService media, PlayersService players, IServiceProvider services, ILogger<DisplayService> log)
     {
         _settings = settings;
         _options = options;
         _media = media;
+        _players = players;
+        _services = services;
         _log = log;
         _doc = settings.Load(SettingsName, DisplaysDocument.Default());
     }
@@ -88,9 +93,12 @@ public sealed class DisplayService : IDisplayService
         }
 
         Screen? target = _owner?.Screens.All.ElementAtOrDefault(screen.Index);
+        // Resolved here, not injected: PlaybackService depends on IDisplayService (would be a constructor cycle).
+        PlaybackService playback = _services.GetRequiredService<PlaybackService>();
+        BeamerViewModel vm = new(id, _media.Game.Frames, playback, _players, this);
         BeamerWindow window = new()
         {
-            DataContext = new BeamerViewModel(id, _media.Game.Frames),
+            DataContext = vm,
             Title = $"Ultrastar DJ — Beamer {(int)id}",
         };
 
@@ -113,6 +121,7 @@ public sealed class DisplayService : IDisplayService
 
         window.Closed += (_, _) =>
         {
+            vm.Dispose();
             _open.Remove(id);
             _log.LogInformation("Beamer {Display} closed", (int)id);
             OpenStateChanged?.Invoke(id, false);
