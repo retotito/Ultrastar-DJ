@@ -1,0 +1,71 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:UltrastarDJ.App.ViewModels"
+             xmlns:c="using:UltrastarDJ.App.Controls"
+             x:Class="UltrastarDJ.App.Views.SongbookPanelView"
+             x:DataType="vm:SongbookPanelViewModel">
+
+  <StackPanel Spacing="{StaticResource Space2}">
+    <Grid ColumnDefinitions="Auto,*,Auto">
+      <c:Icon Grid.Column="0" Glyph="phone_iphone" Margin="0,0,8,0" />
+      <TextBlock Grid.Column="1" Classes="title" Text="Songbook" VerticalAlignment="Center" />
+      <Button Grid.Column="2" Classes="tonal" Command="{Binding ToggleCommand}" IsEnabled="{Binding !Busy}">
+        <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
+          <c:Icon Glyph="{Binding IsRunning, Converter={x:Static vm:BoolConverters.Glyph}, ConverterParameter='stop|play_arrow'}"
+                  FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
+          <TextBlock Text="{Binding IsRunning, Converter={x:Static vm:BoolConverters.Text}, ConverterParameter='Stop|Start'}"
+                     Foreground="{DynamicResource BrushOnSecondaryContainer}" />
+        </StackPanel>
+      </Button>
+    </Grid>
+    <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap"
+               Text="Guests on the same Wi-Fi open the address on their phone, search the library and request songs. Requests appear above the queue." />
+
+    <Border Classes="card" IsVisible="{Binding IsRunning}">
+      <StackPanel Spacing="{StaticResource Space1}">
+        <TextBlock Classes="label" Text="ADDRESS" />
+        <SelectableTextBlock Text="{Binding Urls}" FontFamily="{StaticResource FontMono}" FontSize="{StaticResource TextLg}" />
+        <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="Several addresses = several network interfaces; the Wi-Fi one usually starts with 192.168." TextWrapping="Wrap" />
+      </StackPanel>
+    </Border>
+
+    <TextBlock Foreground="{DynamicResource BrushError}" FontSize="{StaticResource TextXs}" TextWrapping="Wrap" Text="{Binding Error}"
+               IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+    <Border Classes="card">
+      <StackPanel Spacing="{StaticResource Space3}">
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel>
+            <TextBlock Text="Party PIN" />
+            <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="Guests must enter it before they see the library" />
+          </StackPanel>
+          <ToggleSwitch Grid.Column="1" IsChecked="{Binding PinEnabled}" OnContent="" OffContent="" />
+        </Grid>
+        <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding PinEnabled}">
+          <TextBlock Text="{Binding Pin}" FontFamily="{StaticResource FontMono}" FontSize="{StaticResource Text2Xl}" FontWeight="{StaticResource WeightBold}" VerticalAlignment="Center" />
+          <Button Grid.Column="1" Classes="sidebar" Command="{Binding RegeneratePinCommand}" ToolTip.Tip="New PIN">
+            <c:Icon Glyph="casino" FontSize="{StaticResource IconMd}" />
+          </Button>
+        </Grid>
+      </StackPanel>
+    </Border>
+
+    <Border Classes="card">
+      <StackPanel Spacing="{StaticResource Space3}">
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel>
+            <TextBlock Text="Start with the app" />
+          </StackPanel>
+          <ToggleSwitch Grid.Column="1" IsChecked="{Binding AutoStart}" OnContent="" OffContent="" />
+        </Grid>
+        <Grid ColumnDefinitions="*,90">
+          <StackPanel>
+            <TextBlock Text="Port" />
+            <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="Applies on the next start" />
+          </StackPanel>
+          <TextBox Grid.Column="1" Text="{Binding Port}" IsEnabled="{Binding !IsRunning}" TextAlignment="Right" />
+        </Grid>
+      </StackPanel>
+    </Border>
+  </StackPanel>
+</UserControl>

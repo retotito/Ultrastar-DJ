@@ -5,9 +5,12 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../UltrastarDJ.Core/UltrastarDJ.Core.csproj" />
-    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.Data.Sqlite" />
     <PackageReference Include="Dapper" />
     <PackageReference Include="AngleSharp" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Songbook/songbook.html" LogicalName="songbook.html" />
   </ItemGroup>
 </Project>

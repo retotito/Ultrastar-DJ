@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#121218">
+<title>Ultrastar DJ — Songbook</title>
+<style>
+  :root { --bg:#121218; --card:#1c1c26; --card2:#262633; --text:#ecebf3; --muted:#9a98ab; --accent:#c8b8ff; --accent-text:#1a1a24; --danger:#ff6b6b; --ok:#4ecb71; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { margin:0; background:var(--bg); color:var(--text); font:16px/1.4 -apple-system, "Segoe UI", Roboto, Inter, sans-serif; }
+  header { position:sticky; top:0; z-index:5; background:var(--bg); padding:calc(env(safe-area-inset-top) + 12px) 16px 10px; border-bottom:1px solid #2a2a3a; }
+  h1 { margin:0 0 8px; font-size:18px; letter-spacing:.4px; display:flex; align-items:center; gap:8px; }
+  h1 small { color:var(--muted); font-weight:400; font-size:13px; }
+  .search { display:flex; gap:8px; }
+  .search input { flex:1; background:var(--card2); border:1px solid #33334a; color:var(--text); border-radius:12px; padding:12px 14px; font-size:16px; outline:none; }
+  .search input:focus { border-color:var(--accent); }
+  main { padding:12px 16px calc(env(safe-area-inset-bottom) + 24px); }
+  .now { background:var(--card); border-radius:14px; padding:12px 14px; margin-bottom:12px; }
+  .now .label { color:var(--muted); font-size:11px; letter-spacing:1px; text-transform:uppercase; }
+  .now .title { font-weight:600; }
+  .now .artist, .queue li { color:var(--muted); font-size:14px; }
+  .queue { margin:6px 0 0; padding:0 0 0 18px; }
+  .song { display:flex; align-items:center; gap:12px; background:var(--card); border-radius:14px; padding:12px 14px; margin-bottom:8px; }
+  .song .meta { flex:1; min-width:0; }
+  .song .t { font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .song .a { color:var(--muted); font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .badge { font-size:10px; letter-spacing:.6px; padding:2px 7px; border-radius:99px; background:var(--card2); color:var(--muted); }
+  .badge.usdb { background:#2e9e5b; color:#fff; }
+  .btn { background:var(--accent); color:var(--accent-text); border:none; border-radius:10px; padding:10px 14px; font-size:14px; font-weight:700; cursor:pointer; }
+  .btn:disabled { opacity:.5; }
+  .btn.ok { background:var(--ok); }
+  .hint { color:var(--muted); text-align:center; padding:24px 0; font-size:14px; }
+  .toast { position:fixed; left:16px; right:16px; bottom:calc(env(safe-area-inset-bottom) + 16px); background:var(--card2); border:1px solid #33334a; border-radius:12px; padding:12px 14px; text-align:center; opacity:0; transform:translateY(10px); transition:.25s; pointer-events:none; }
+  .toast.show { opacity:1; transform:none; }
+  .overlay { display:none; position:fixed; inset:0; background:var(--bg); z-index:100; align-items:center; justify-content:center; padding:24px; }
+  .overlay.visible { display:flex; }
+  .card { background:var(--card); border:1px solid #2a2a3a; border-radius:16px; padding:28px 24px; width:100%; max-width:320px; display:flex; flex-direction:column; gap:14px; align-items:center; text-align:center; }
+  .card h2 { margin:0; font-size:20px; }
+  .card p { margin:0; color:var(--muted); font-size:14px; }
+  .card input { width:100%; background:var(--card2); border:2px solid #3a3a4a; color:var(--text); border-radius:12px; padding:12px; font-size:24px; text-align:center; outline:none; }
+  .card input.pin { letter-spacing:12px; font-weight:700; }
+  .card input:focus { border-color:var(--accent); }
+  .card .btn { width:100%; padding:14px; font-size:16px; }
+  .err { color:var(--danger); font-size:13px; min-height:18px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🎤 Songbook <small id="count"></small></h1>
+  <div class="search"><input id="q" type="search" placeholder="Search title or artist" autocomplete="off" autocorrect="off"></div>
+</header>
+<main>
+  <section class="now" id="now" hidden>
+    <div class="label">Now playing</div>
+    <div class="title" id="nowTitle"></div>
+    <div class="artist" id="nowArtist"></div>
+    <ol class="queue" id="queue"></ol>
+  </section>
+  <div id="list"></div>
+  <div class="hint" id="hint">Type to search the library.</div>
+</main>
+<div class="toast" id="toast"></div>
+
+<div class="overlay" id="pinOverlay">
+  <div class="card">
+    <h2>🎉 Party PIN</h2>
+    <p>Ask the DJ for the 4-digit PIN.</p>
+    <input class="pin" id="pinInput" type="tel" inputmode="numeric" maxlength="4" pattern="[0-9]*" autocomplete="one-time-code">
+    <button class="btn" onclick="submitPin()">Join the party</button>
+    <div class="err" id="pinError"></div>
+  </div>
+</div>
+
+<div class="overlay" id="nameOverlay">
+  <div class="card">
+    <h2>Your name</h2>
+    <p>So the DJ knows who wants to sing.</p>
+    <input id="nameInput" type="text" maxlength="40" autocomplete="given-name">
+    <button class="btn" onclick="submitName()">Request song</button>
+    <button class="btn" style="background:var(--card2);color:var(--text)" onclick="closeName()">Cancel</button>
+  </div>
+</div>
+
+<script>
+  var pin = sessionStorage.getItem('sb_pin') || '';
+  var guest = localStorage.getItem('sb_name') || '';
+  var pendingSong = null;
+  var timer = null;
+
+  function api(path) { return fetch(path + (path.indexOf('?') < 0 ? '?' : '&') + 'pin=' + encodeURIComponent(pin)); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function toast(msg) { var t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(function () { t.classList.remove('show'); }, 2200); }
+
+  async function verify() {
+    var res = await api('/api/verify-pin');
+    if (res.status === 401) { document.getElementById('pinOverlay').classList.add('visible'); return false; }
+    document.getElementById('pinOverlay').classList.remove('visible');
+    return true;
+  }
+  async function submitPin() {
+    pin = document.getElementById('pinInput').value.trim();
+    var res = await api('/api/verify-pin');
+    if (res.status === 401) { document.getElementById('pinError').textContent = 'Wrong PIN'; return; }
+    sessionStorage.setItem('sb_pin', pin);
+    document.getElementById('pinOverlay').classList.remove('visible');
+    refreshState(); search();
+  }
+
+  async function refreshState() {
+    var res = await api('/api/state');
+    if (!res.ok) { if (res.status === 401) verify(); return; }
+    var s = await res.json();
+    document.getElementById('count').textContent = s.songCount.toLocaleString() + ' songs';
+    var now = document.getElementById('now');
+    if (s.nowPlaying || s.queue.length) {
+      now.hidden = false;
+      document.getElementById('nowTitle').textContent = s.nowPlaying ? s.nowPlaying.title : '—';
+      document.getElementById('nowArtist').textContent = s.nowPlaying ? s.nowPlaying.artist : '';
+      document.getElementById('queue').innerHTML = s.queue.map(function (q) { return '<li>' + esc(q.artist) + ' – ' + esc(q.title) + '</li>'; }).join('');
+    } else { now.hidden = true; }
+  }
+
+  async function search() {
+    var q = document.getElementById('q').value.trim();
+    var list = document.getElementById('list'), hint = document.getElementById('hint');
+    if (q.length < 2) { list.innerHTML = ''; hint.textContent = 'Type to search the library.'; hint.hidden = false; return; }
+    var res = await api('/api/songs?q=' + encodeURIComponent(q));
+    if (!res.ok) { if (res.status === 401) verify(); return; }
+    var songs = await res.json();
+    hint.hidden = songs.length > 0;
+    hint.textContent = 'No songs found.';
+    list.innerHTML = songs.map(function (s) {
+      return '<div class="song"><div class="meta"><div class="t">' + esc(s.title) + '</div><div class="a">' + esc(s.artist) + (s.year ? ' · ' + s.year : '') + '</div></div>'
+        + '<span class="badge' + (s.source === 'USDB' ? ' usdb' : '') + '">' + esc(s.source) + '</span>'
+        + '<button class="btn" onclick="request(' + JSON.stringify(s.id).replace(/"/g, '&quot;') + ')">Request</button></div>';
+    }).join('');
+  }
+
+  function request(id) {
+    pendingSong = id;
+    if (!guest) { document.getElementById('nameInput').value = ''; document.getElementById('nameOverlay').classList.add('visible'); document.getElementById('nameInput').focus(); return; }
+    send();
+  }
+  function submitName() {
+    var n = document.getElementById('nameInput').value.trim();
+    if (!n) return;
+    guest = n; localStorage.setItem('sb_name', n);
+    closeName(); send();
+  }
+  function closeName() { document.getElementById('nameOverlay').classList.remove('visible'); }
+  async function send() {
+    var res = await fetch('/api/request?pin=' + encodeURIComponent(pin), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ songId: pendingSong, guest: guest }) });
+    pendingSong = null;
+    if (res.ok) toast('Requested — the DJ has been told 🎶');
+    else if (res.status === 401) verify();
+    else toast('Could not send the request');
+  }
+
+  document.getElementById('q').addEventListener('input', function () { clearTimeout(timer); timer = setTimeout(search, 200); });
+  document.getElementById('pinInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') submitPin(); });
+  document.getElementById('nameInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') submitName(); });
+  verify().then(function (ok) { if (ok) { refreshState(); } });
+  setInterval(refreshState, 5000);
+</script>
+</body>
+</html>

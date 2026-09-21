@@ -50,6 +50,7 @@ public sealed partial class App : Application
         desktop.MainWindow = window;
         // Reconnects to USDB with saved credentials and pulls catalog changes; failures only set the panel status.
         _ = _services.GetRequiredService<UsdbService>().AutoConnectAsync();
+        _ = _services.GetRequiredService<SongbookService>().AutoStartAsync();
 
         _services.GetRequiredService<ILogger<App>>().LogInformation(
             "Ultrastar DJ {Version} started (beamer-debug: {BeamerDebug})",
@@ -84,6 +85,7 @@ public sealed partial class App : Application
         services.AddSingleton<LibraryService>();
         services.AddSingleton<UsdbService>();
         services.AddSingleton<SongResolver>();
+        services.AddSingleton<SongbookService>();
         services.AddSingleton<OutputsService>();
         services.AddSingleton<PlaybackService>();
         services.AddSingleton<DisplayService>();
@@ -100,6 +102,7 @@ public sealed partial class App : Application
         services.AddSingleton<PlayersPanelViewModel>();
         services.AddSingleton<AudioOutputPanelViewModel>();
         services.AddSingleton<SettingsPanelViewModel>();
+        services.AddSingleton<SongbookPanelViewModel>();
         services.AddTransient<DisplaysPanelViewModel>();
 
         return services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });

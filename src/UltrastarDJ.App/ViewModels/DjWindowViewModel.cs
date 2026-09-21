@@ -15,6 +15,7 @@ public enum SidebarPanel
     AudioInput,
     AudioOutput,
     Displays,
+    Songbook,
     Settings,
 }
 
@@ -90,6 +91,7 @@ public sealed partial class DjWindowViewModel : ViewModelBase
             SidebarPanel.Sources => _services.GetRequiredService<SourcesPanelViewModel>(),
             SidebarPanel.AudioInput => _services.GetRequiredService<PlayersPanelViewModel>(),
             SidebarPanel.AudioOutput => _services.GetRequiredService<AudioOutputPanelViewModel>(),
+            SidebarPanel.Songbook => _services.GetRequiredService<SongbookPanelViewModel>(),
             SidebarPanel.Settings => _services.GetRequiredService<SettingsPanelViewModel>(),
             _ => new PlaceholderPanelViewModel(panel.ToString()),
         };

@@ -1,32 +1,41 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using UltrastarDJ.App.Services;
 using UltrastarDJ.Core.Queue;
 using UltrastarDJ.Core.Songs;
 
 namespace UltrastarDJ.App.ViewModels;
 
-/// <summary>The DJ's queue. Wraps <see cref="Playlist"/>; loading a song into the game marks it active.</summary>
+/// <summary>The DJ's queue plus incoming guest requests. Wraps <see cref="Playlist"/>; loading a song into the game marks it active.</summary>
 public sealed partial class QueueViewModel : ViewModelBase
 {
     private readonly Playlist _playlist;
     private readonly NowPlayingViewModel _nowPlaying;
+    private readonly SongbookService _songbook;
 
     [ObservableProperty] private Song? _selected;
 
-    public QueueViewModel(Playlist playlist, NowPlayingViewModel nowPlaying)
+    public QueueViewModel(Playlist playlist, NowPlayingViewModel nowPlaying, SongbookService songbook)
     {
         _playlist = playlist;
         _nowPlaying = nowPlaying;
+        _songbook = songbook;
         _playlist.Changed += Refresh;
+        _songbook.Changed += () => OnPropertyChanged(nameof(HasRequests));
         Refresh();
     }
 
     public ObservableCollection<QueueRowViewModel> Items { get; } = [];
+    public ObservableCollection<SongRequest> Requests => _songbook.Requests;
+    public bool HasRequests => _songbook.Requests.Count > 0;
     public int Count => _playlist.Count;
     public bool IsEmpty => _playlist.Count == 0;
 
     public void Add(Song song) => _playlist.Add(song);
+
+    [RelayCommand] private void AcceptRequest(SongRequest? r) { if (r is not null) { _songbook.Accept(r); } }
+    [RelayCommand] private void DismissRequest(SongRequest? r) { if (r is not null) { _songbook.Dismiss(r); } }
 
     private void Refresh()
     {

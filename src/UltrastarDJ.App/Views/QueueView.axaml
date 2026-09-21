@@ -1,12 +1,44 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:UltrastarDJ.App.ViewModels"
+             xmlns:svc="using:UltrastarDJ.App.Services"
              xmlns:c="using:UltrastarDJ.App.Controls"
              x:Class="UltrastarDJ.App.Views.QueueView"
              x:DataType="vm:QueueViewModel">
 
-  <Grid RowDefinitions="Auto,*">
-    <Border Grid.Row="0" Padding="{StaticResource Pad3}" BorderBrush="{DynamicResource BrushOutlineVariant}" BorderThickness="0,1,0,1">
+  <Grid RowDefinitions="Auto,Auto,*">
+    <!-- Guest requests from the songbook -->
+    <Border Grid.Row="0" IsVisible="{Binding HasRequests}" BorderBrush="{DynamicResource BrushOutlineVariant}" BorderThickness="0,1,0,0">
+      <StackPanel>
+        <TextBlock Classes="label" Margin="{StaticResource Pad3}" Text="{Binding Requests.Count, StringFormat='REQUESTS ({0})'}" />
+        <ScrollViewer MaxHeight="180">
+          <ItemsControl ItemsSource="{Binding Requests}" Margin="4,0,4,4">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="svc:SongRequest">
+              <Grid ColumnDefinitions="*,Auto,Auto" Margin="8,4">
+                <StackPanel VerticalAlignment="Center">
+                  <TextBlock Text="{Binding Song.Title}" TextTrimming="CharacterEllipsis" />
+                  <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextTrimming="CharacterEllipsis">
+                    <Run Text="{Binding Song.Artist}" /><Run Text="  ·  " /><Run Text="{Binding Guest}" FontWeight="{StaticResource WeightSemibold}" />
+                  </TextBlock>
+                </StackPanel>
+                <Button Grid.Column="1" Classes="sidebar" Width="26" Height="26" ToolTip.Tip="Add to queue"
+                        Command="{Binding $parent[UserControl].((vm:QueueViewModel)DataContext).AcceptRequestCommand}" CommandParameter="{Binding}">
+                  <c:Icon Glyph="playlist_add" FontSize="{StaticResource IconSm}" />
+                </Button>
+                <Button Grid.Column="2" Classes="sidebar" Width="26" Height="26" ToolTip.Tip="Dismiss"
+                        Command="{Binding $parent[UserControl].((vm:QueueViewModel)DataContext).DismissRequestCommand}" CommandParameter="{Binding}">
+                  <c:Icon Glyph="close" FontSize="{StaticResource IconSm}" />
+                </Button>
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        </ScrollViewer>
+      </StackPanel>
+    </Border>
+
+    <Border Grid.Row="1" Padding="{StaticResource Pad3}" BorderBrush="{DynamicResource BrushOutlineVariant}" BorderThickness="0,1,0,1">
       <Grid ColumnDefinitions="*,Auto,Auto">
         <TextBlock Classes="label" VerticalAlignment="Center" Text="{Binding Count, StringFormat='QUEUE ({0})'}" />
         <Button Grid.Column="1" Classes="sidebar" Width="28" Height="28" Command="{Binding LoadNextCommand}" ToolTip.Tip="Load next song into the game">
@@ -18,10 +50,10 @@
       </Grid>
     </Border>
 
-    <TextBlock Grid.Row="1" Classes="muted" Text="Queue is empty — add songs from the library or the preview player" Margin="{StaticResource Pad3}"
+    <TextBlock Grid.Row="2" Classes="muted" Text="Queue is empty — add songs from the library or the preview player" Margin="{StaticResource Pad3}"
                TextWrapping="Wrap" IsVisible="{Binding IsEmpty}" />
 
-    <ScrollViewer Grid.Row="1" IsVisible="{Binding !IsEmpty}">
+    <ScrollViewer Grid.Row="2" IsVisible="{Binding !IsEmpty}">
       <ItemsControl ItemsSource="{Binding Items}" Margin="4">
         <ItemsControl.ItemTemplate>
           <DataTemplate x:DataType="vm:QueueRowViewModel">

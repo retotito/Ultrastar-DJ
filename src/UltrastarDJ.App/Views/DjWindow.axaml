@@ -63,6 +63,11 @@
                   ToolTip.Tip="Displays">
             <c:Icon Glyph="tv" />
           </Button>
+          <Button Classes="sidebar" Classes.active="{Binding ActivePanel, Converter={x:Static vm:SidebarPanelConverters.Is}, ConverterParameter=Songbook}"
+                  Command="{Binding TogglePanelCommand}" CommandParameter="{x:Static vm:SidebarPanel.Songbook}"
+                  ToolTip.Tip="Songbook for guests (phone)">
+            <c:Icon Glyph="phone_iphone" />
+          </Button>
         </StackPanel>
       </DockPanel>
     </Border>
