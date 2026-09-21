@@ -9,6 +9,15 @@
         ShowInTaskbar="False"
         CanResize="True">
 
+  <Window.Resources>
+    <DataTemplate x:Key="PlayerChip" x:DataType="game:ScenePlayer">
+      <Border Background="{Binding Brush}" CornerRadius="{StaticResource RadiusFull}" Padding="24,8">
+        <TextBlock Text="{Binding Name}" FontSize="{StaticResource TextXl}" FontWeight="{StaticResource WeightSemibold}" Foreground="Black" />
+      </Border>
+    </DataTemplate>
+    <ItemsPanelTemplate x:Key="ChipRow"><StackPanel Orientation="Horizontal" Spacing="16" /></ItemsPanelTemplate>
+  </Window.Resources>
+
   <Window.Styles>
     <Style Selector="TextBlock.beamer">
       <Setter Property="Foreground" Value="{DynamicResource BrushBeamerText}" />
@@ -30,6 +39,8 @@
       <Image Source="avares://UltrastarDJ/Assets/icon.png" Width="160" Height="160" />
       <TextBlock Classes="beamer" Text="Ultrastar DJ" FontSize="64" FontWeight="{StaticResource WeightBold}" HorizontalAlignment="Center" />
       <TextBlock Classes="beamer" Text="{Binding Label}" FontSize="{StaticResource Text2Xl}" Opacity="0.6" HorizontalAlignment="Center" />
+      <ItemsControl ItemsSource="{Binding AssignedPlayers}" ItemsPanel="{StaticResource ChipRow}" ItemTemplate="{StaticResource PlayerChip}"
+                    HorizontalAlignment="Center" Margin="0,24,0,0" IsVisible="{Binding HasAssignedPlayers}" />
     </StackPanel>
 
     <!-- Preview: get ready -->
@@ -37,18 +48,8 @@
       <TextBlock Classes="beamer" Text="GET READY" FontSize="{StaticResource Text2Xl}" Opacity="0.7" HorizontalAlignment="Center" />
       <TextBlock Classes="beamer" Text="{Binding Title}" FontSize="72" FontWeight="{StaticResource WeightBold}" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" />
       <TextBlock Classes="beamer" Text="{Binding Artist}" FontSize="40" Opacity="0.8" HorizontalAlignment="Center" />
-      <ItemsControl ItemsSource="{Binding AssignedPlayers}" HorizontalAlignment="Center" Margin="0,24,0,0">
-        <ItemsControl.ItemsPanel>
-          <ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="16" /></ItemsPanelTemplate>
-        </ItemsControl.ItemsPanel>
-        <ItemsControl.ItemTemplate>
-          <DataTemplate x:DataType="game:ScenePlayer">
-            <Border Background="{Binding Brush}" CornerRadius="{StaticResource RadiusFull}" Padding="24,8">
-              <TextBlock Text="{Binding Name}" FontSize="{StaticResource TextXl}" FontWeight="{StaticResource WeightSemibold}" Foreground="Black" />
-            </Border>
-          </DataTemplate>
-        </ItemsControl.ItemTemplate>
-      </ItemsControl>
+      <ItemsControl ItemsSource="{Binding AssignedPlayers}" ItemsPanel="{StaticResource ChipRow}" ItemTemplate="{StaticResource PlayerChip}"
+                    HorizontalAlignment="Center" Margin="0,24,0,0" />
     </StackPanel>
 
     <!-- Countdown -->

@@ -20,7 +20,7 @@
           </Grid>
 
           <TextBlock Classes="label" Text="OUTPUT DEVICE" />
-          <ComboBox ItemsSource="{Binding $parent[UserControl].((vm:AudioOutputPanelViewModel)DataContext).Options}"
+          <ComboBox ItemsSource="{Binding Options}"
                     SelectedItem="{Binding Selected}" HorizontalAlignment="Stretch">
             <ComboBox.ItemTemplate>
               <DataTemplate x:DataType="svc:OutputOption">

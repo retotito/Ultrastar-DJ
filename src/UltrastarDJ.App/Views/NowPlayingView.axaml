@@ -3,33 +3,33 @@
              xmlns:vm="using:UltrastarDJ.App.ViewModels"
              xmlns:c="using:UltrastarDJ.App.Controls"
              x:Class="UltrastarDJ.App.Views.NowPlayingView"
-             x:DataType="vm:NowPlayingViewModel">
+             x:DataType="vm:NowPlayingViewModel"
+             Width="{StaticResource RightPanelWidth}">
 
-  <Border Classes="card" Margin="{StaticResource Pad3}">
+  <Border Classes="card floating">
     <StackPanel Spacing="{StaticResource Space2}">
-      <TextBlock Classes="label" Text="NOW PLAYING" />
+      <!-- Drag handle -->
+      <Grid x:Name="DragHandle" ColumnDefinitions="Auto,*,Auto" Background="Transparent" Cursor="SizeAll">
+        <c:Icon Glyph="drag_indicator" Classes="muted" FontSize="{StaticResource IconMd}" VerticalAlignment="Center" />
+        <TextBlock Grid.Column="1" Classes="label" Text="NOW PLAYING" VerticalAlignment="Center" Margin="4,0,0,0" />
+        <Button Grid.Column="2" Classes="sidebar small" Command="{Binding HideCommand}" ToolTip.Tip="Hide (toggle from the sidebar)">
+          <c:Icon Glyph="close" FontSize="{StaticResource IconMd}" />
+        </Button>
+      </Grid>
+
       <Border Background="{DynamicResource BrushBeamerBackground}" CornerRadius="{StaticResource RadiusMd}" Height="110" ClipToBounds="True"
               IsVisible="{Binding HasSong}">
         <c:VideoSurface Source="{Binding GameFrames}" />
       </Border>
       <TextBlock Classes="title" Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
       <TextBlock Classes="muted" Text="{Binding Artist}" TextTrimming="CharacterEllipsis" />
-      <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="{Binding Players, StringFormat='Singers: {0}'}"
-                 IsVisible="{Binding Players, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 
       <Grid ColumnDefinitions="*,Auto">
         <TextBlock Classes="muted" FontSize="{StaticResource TextSm}" Text="{Binding Status}" VerticalAlignment="Center" TextWrapping="Wrap" />
         <TextBlock Grid.Column="1" Classes="muted" FontFamily="{StaticResource FontMono}" Text="{Binding Position}" VerticalAlignment="Center" />
       </Grid>
 
-      <Grid ColumnDefinitions="Auto,*,44">
-        <c:Icon Glyph="volume_up" FontSize="{StaticResource IconMd}" Margin="0,0,8,0" />
-        <Slider Grid.Column="1" Minimum="0" Maximum="1" Value="{Binding Gain}" />
-        <TextBlock Grid.Column="2" Classes="muted" Text="{Binding Gain, StringFormat='{}{0:P0}'}" VerticalAlignment="Center" TextAlignment="Right" />
-      </Grid>
-      <c:LevelMeter Height="4" Level="{Binding Level}" Fill="{DynamicResource BrushPrimary}" Track="{DynamicResource BrushSurfaceContainerHighest}" />
-
-      <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}" HorizontalAlignment="Center" Margin="0,4,0,0">
+      <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}" HorizontalAlignment="Center">
         <Button Classes="sidebar" Command="{Binding ClearCommand}" ToolTip.Tip="Clear — beamers back to idle"><c:Icon Glyph="tv_off" /></Button>
         <Button Classes="sidebar" Command="{Binding PreviewCommand}" ToolTip.Tip="Show get-ready screen"><c:Icon Glyph="tv" /></Button>
         <Button Classes="sidebar" Command="{Binding PlayCommand}" ToolTip.Tip="Play (countdown on the beamers)"><c:Icon Glyph="play_arrow" FontSize="{StaticResource IconXl}" /></Button>
@@ -38,6 +38,42 @@
         <Button Classes="sidebar" Command="{Binding StopCommand}" ToolTip.Tip="Stop — show scores"><c:Icon Glyph="stop" /></Button>
         <Button Classes="sidebar" Command="{Binding DismissCommand}" ToolTip.Tip="Leave the score screen"><c:Icon Glyph="check" /></Button>
       </StackPanel>
+
+      <!-- Song fader (game output) -->
+      <Grid ColumnDefinitions="72,*,44" RowDefinitions="Auto,Auto">
+        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+          <c:Icon Glyph="volume_up" FontSize="{StaticResource IconMd}" />
+          <TextBlock Classes="muted" FontSize="{StaticResource TextSm}" Text="Song" VerticalAlignment="Center" />
+        </StackPanel>
+        <Slider Grid.Column="1" Minimum="0" Maximum="1" Value="{Binding Gain}" VerticalAlignment="Center" />
+        <TextBlock Grid.Column="2" Classes="muted" Text="{Binding Gain, StringFormat='{}{0:P0}'}" VerticalAlignment="Center" TextAlignment="Right" />
+        <c:LevelMeter Grid.Row="1" Grid.Column="1" Height="4" Margin="0,-4,0,0" Level="{Binding Level}"
+                      Fill="{DynamicResource BrushPrimary}" Track="{DynamicResource BrushSurfaceContainerHighest}" />
+      </Grid>
+
+      <!-- Mic mix: one row per player assigned to an open beamer -->
+      <ItemsControl ItemsSource="{Binding MixRows}" IsVisible="{Binding HasMixRows}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:MixRowViewModel">
+            <Grid ColumnDefinitions="72,*,44" RowDefinitions="Auto,Auto" Margin="0,2,0,0">
+              <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                <Border Width="10" Height="10" CornerRadius="5" VerticalAlignment="Center"
+                        Background="{Binding ColorKey, Converter={x:Static vm:PlayerConverters.BrushByKey}}" />
+                <TextBlock Classes="muted" FontSize="{StaticResource TextSm}" Text="{Binding Name}" VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis" MaxWidth="52" />
+              </StackPanel>
+              <Slider Grid.Column="1" Minimum="0" Maximum="2" Value="{Binding MixGain}" VerticalAlignment="Center" IsEnabled="{Binding !Muted}" />
+              <Button Grid.Column="2" Classes="sidebar small" HorizontalAlignment="Right" Command="{Binding ToggleMuteCommand}"
+                      ToolTip.Tip="Mute this mic in the speakers (scoring unaffected)">
+                <c:Icon Glyph="{Binding MuteGlyph}" FontSize="{StaticResource IconMd}" />
+              </Button>
+              <c:LevelMeter Grid.Row="1" Grid.Column="1" Height="4" Margin="0,-4,0,0" Level="{Binding LevelDb}"
+                            Fill="{Binding ColorKey, Converter={x:Static vm:PlayerConverters.BrushByKey}}"
+                            Track="{DynamicResource BrushSurfaceContainerHighest}" />
+            </Grid>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
 
       <TextBlock Foreground="{DynamicResource BrushError}" FontSize="{StaticResource TextXs}" TextWrapping="Wrap" Text="{Binding Error}"
                  IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />

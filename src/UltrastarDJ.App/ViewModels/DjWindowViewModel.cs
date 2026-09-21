@@ -69,6 +69,9 @@ public sealed partial class DjWindowViewModel : ViewModelBase
     [RelayCommand]
     private void DismissDialog() => Notifications.DismissDialog();
 
+    [RelayCommand]
+    private void ToggleNowPlaying() => NowPlaying.ToggleVisible();
+
     public static string Version => typeof(DjWindowViewModel).Assembly.GetName().Version?.ToString(3) ?? "dev";
 
     [RelayCommand]

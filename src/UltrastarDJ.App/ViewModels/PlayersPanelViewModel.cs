@@ -39,6 +39,7 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
         RefreshDevices();
         Players = new ObservableCollection<PlayerCardViewModel>(players.All.Select(p => new PlayerCardViewModel(p, this)));
         _audio.Mics.Analyzed += OnAnalyzed;
+        _players.Changed += OnConfigChanged;
         _audio.Mics.DeviceLost += id => Dispatcher.UIThread.Post(() => Status = $"Microphone disconnected: {id}");
         _meterTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(50), DispatcherPriority.Background, (_, _) => PollMeters());
         _meterTimer.Start();
@@ -217,6 +218,8 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
         }, DispatcherPriority.Background);
     }
 
+    private void OnConfigChanged(PlayerConfig p) => Players.FirstOrDefault(c => c.Config.Id == p.Id)?.ApplyExternal(p);
+
     private void PollMeters()
     {
         if (!Testing)
@@ -236,6 +239,7 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
     {
         _meterTimer.Stop();
         _audio.Mics.Analyzed -= OnAnalyzed;
+        _players.Changed -= OnConfigChanged;
         _audio.StopAll();
     }
 }
@@ -272,6 +276,8 @@ public sealed partial class PlayerCardViewModel : ObservableObject
 
     public string Title => $"P{Config.Id}";
     public string ColorKey => $"BrushPlayer{Config.Id}";
+    /// <summary>Bound directly so ItemsSource resolves before SelectedItem when the panel view is recreated.</summary>
+    public ObservableCollection<MicOption> MicOptions => _owner.MicOptions;
     public string MicDelayText => $"{Config.MicDelayMs:F0} ms";
     public string GateText => $"{GateDb:F0} dB";
     /// <summary>Level in dB mapped to 0..1 over the meter's 70 dB range — linear RMS is useless for quiet mics.</summary>
@@ -290,7 +296,15 @@ public sealed partial class PlayerCardViewModel : ObservableObject
     public void SyncMicOption()
     {
         _loading = true;
-        SelectedMic = _owner.MicOptions.FirstOrDefault(o => Equals(o.Binding, Config.Mic)) ?? _owner.MicOptions.FirstOrDefault();
+        MicOption? match = _owner.MicOptions.FirstOrDefault(o => Equals(o.Binding, Config.Mic));
+        if (match is null && Config.Mic is { } mic)
+        {
+            // Keep the binding visible (and persisted) while the device is unplugged.
+            match = new MicOption($"{mic.DeviceId} — {mic.Channel} (not connected)", mic);
+            _owner.MicOptions.Add(match);
+        }
+
+        SelectedMic = match ?? _owner.MicOptions.FirstOrDefault();
         _loading = false;
     }
 
@@ -298,6 +312,15 @@ public sealed partial class PlayerCardViewModel : ObservableObject
     {
         Config = _owner.PlayersService.Get(Config.Id);
         OnPropertyChanged(nameof(MicDelayText));
+    }
+
+    /// <summary>Config changed elsewhere (Now Playing mix row): mirror the knobs without re-saving.</summary>
+    public void ApplyExternal(PlayerConfig config)
+    {
+        _loading = true;
+        Config = config;
+        MixGain = config.MixGain;
+        _loading = false;
     }
 
     public void ApplySample(PitchSample s)

@@ -48,15 +48,19 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
         gameFrames.SourceChanged += OnFramesChanged;
         _playback.StateChanged += OnPlaybackStateChanged;
         _playback.PitchTicked += OnPitchTicked;
+        _displays.PlayersChanged += OnAssignmentChanged;
+        _players.Changed += OnPlayerConfigChanged;
         _countdown = new DispatcherTimer(TimeSpan.FromSeconds(1), DispatcherPriority.Normal, (_, _) => CountdownTick());
         _scoreAnim = new DispatcherTimer(TimeSpan.FromMilliseconds(33), DispatcherPriority.Render, (_, _) => AnimateScores());
         OnPlaybackStateChanged(_playback.State);
+        RefreshAssignedPlayers();
     }
 
     public DisplayId Id { get; }
     public string Label => $"Beamer {(int)Id}";
     public FrameBus GameFrames { get; }
     public ObservableCollection<ScenePlayer> AssignedPlayers { get; } = [];
+    public bool HasAssignedPlayers => AssignedPlayers.Count > 0;
     public ObservableCollection<ScoreRowViewModel> Scores { get; } = [];
 
     public bool IsIdle => State is PlaybackState.Idle or PlaybackState.Loaded;
@@ -169,7 +173,20 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
         {
             AssignedPlayers.Add(new ScenePlayer(p.Id, p.Name, PlayerBrush(p.Id), PlayerColor(p.Id)));
         }
+
+        OnPropertyChanged(nameof(HasAssignedPlayers));
     }
+
+    // Assignment/name/mic edits show up live on the idle and get-ready screens; a running game keeps its scene.
+    private void OnAssignmentChanged()
+    {
+        if (!IsGame)
+        {
+            RefreshAssignedPlayers();
+        }
+    }
+
+    private void OnPlayerConfigChanged(PlayerConfig p) => OnAssignmentChanged();
 
     private static Color PlayerColor(int id)
         => Application.Current is { } app && app.TryGetResource($"ColorPlayer{id}", ThemeVariant.Default, out object? v) && v is Color c ? c : Colors.White;
@@ -241,6 +258,8 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
         GameFrames.SourceChanged -= OnFramesChanged;
         _playback.StateChanged -= OnPlaybackStateChanged;
         _playback.PitchTicked -= OnPitchTicked;
+        _displays.PlayersChanged -= OnAssignmentChanged;
+        _players.Changed -= OnPlayerConfigChanged;
     }
 }
 

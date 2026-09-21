@@ -60,6 +60,7 @@ public sealed class AudioInputService : IDisposable
         foreach (PlayerConfig p in _players.All)
         {
             Monitor.SetGain(p.Id, p.MixGain);
+            Monitor.SetMuted(p.Id, p.MixMuted);
         }
     }
 
@@ -75,6 +76,7 @@ public sealed class AudioInputService : IDisposable
         }
 
         Monitor.SetGain(p.Id, p.MixGain);
+        Monitor.SetMuted(p.Id, p.MixMuted);
     }
 
     private static bool IsHidden(AudioDeviceInfo d)

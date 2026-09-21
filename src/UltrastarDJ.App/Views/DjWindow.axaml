@@ -30,6 +30,11 @@
         </StackPanel>
 
         <StackPanel Spacing="{StaticResource Space1}">
+          <Button Classes="sidebar" Classes.active="{Binding NowPlaying.IsVisible}"
+                  Command="{Binding ToggleNowPlayingCommand}"
+                  ToolTip.Tip="Now Playing (transport, song &amp; mic mix)">
+            <c:Icon Glyph="play_circle" />
+          </Button>
           <Button Classes="sidebar" Classes.active="{Binding ActivePanel, Converter={x:Static vm:SidebarPanelConverters.Is}, ConverterParameter=Layout}"
                   Command="{Binding TogglePanelCommand}" CommandParameter="{x:Static vm:SidebarPanel.Layout}"
                   ToolTip.Tip="Layout">
@@ -78,20 +83,26 @@
       </Border>
     </Panel>
 
-    <!-- ── Right panel: preview player + queue (placeholders) ──────────── -->
+    <!-- ── Right panel: preview player + queue ──────────────────────────────────── -->
     <Border Grid.Column="2"
             Width="{StaticResource RightPanelWidth}"
             Background="{DynamicResource BrushSurface}"
             BorderBrush="{DynamicResource BrushOutlineVariant}"
             BorderThickness="1,0,0,0">
-      <Grid RowDefinitions="Auto,Auto,*">
-        <ContentControl Grid.Row="0" Content="{Binding NowPlaying}" />
-        <ContentControl Grid.Row="1" Content="{Binding Preview}" />
-        <ContentControl Grid.Row="2" Content="{Binding Queue}" />
+      <Grid RowDefinitions="Auto,*">
+        <ContentControl Grid.Row="0" Content="{Binding Preview}" />
+        <ContentControl Grid.Row="1" Content="{Binding Queue}" />
       </Grid>
     </Border>
 
   </Grid>
+
+  <!-- Floating Now Playing card (draggable by its header; position persisted) -->
+  <Canvas>
+    <ContentControl Content="{Binding NowPlaying}"
+                    Canvas.Left="{Binding NowPlaying.CardX}" Canvas.Top="{Binding NowPlaying.CardY}"
+                    IsVisible="{Binding NowPlaying.IsVisible}" />
+  </Canvas>
 
   <!-- Toasts (top-right, auto-dismiss) -->
   <ItemsControl ItemsSource="{Binding Notifications.Toasts}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,12,360,0" Width="320">

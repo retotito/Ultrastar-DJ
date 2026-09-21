@@ -53,6 +53,10 @@
   <Style Selector="Button.sidebar.active c|Icon">
     <Setter Property="Foreground" Value="{DynamicResource BrushOnSecondaryContainer}" />
   </Style>
+  <Style Selector="Button.sidebar.small">
+    <Setter Property="Width" Value="28" />
+    <Setter Property="Height" Value="28" />
+  </Style>
 
   <!-- Tonal button (secondary action) -->
   <Style Selector="Button.tonal">
@@ -82,6 +86,12 @@
     <Setter Property="Padding" Value="{StaticResource PadCard}" />
     <Setter Property="BorderBrush" Value="{DynamicResource BrushOutlineVariant}" />
     <Setter Property="BorderThickness" Value="1" />
+  </Style>
+  <!-- Card that floats above the layout (Now Playing) -->
+  <Style Selector="Border.card.floating">
+    <Setter Property="Background" Value="{DynamicResource BrushSurfaceContainerLow}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BrushOutline}" />
+    <Setter Property="BoxShadow" Value="0 12 40 4 #B3000000" />
   </Style>
 
   <!-- Popover panel anchored next to the sidebar -->

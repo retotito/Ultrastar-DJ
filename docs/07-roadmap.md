@@ -93,6 +93,7 @@ Deferred to Sprint 5: difficulty setting UI (Medium hardcoded in `PlaybackServic
 - [x] Audio Output panel (game/preview device + stereo pair, faders, meters; persisted and applied at startup — **MOTU channel pairs still untested**), Displays panel, Settings (light theme, difficulty, lyrics offset ±500 ms); Media Lab removed
 - [x] Validation dialog on load/preview failure, device-gone toasts (mic disconnected)
 - [x] Shutdown tears services down off the UI thread with a 5 s deadline (a stalled preview player used to hang the app on close)
+- [x] **5b:** Now Playing is a floating, draggable card (sidebar toggle, position persisted) with song fader/meter and one mic-mix row per player on an open beamer (fader, mute, live meter → game output device incl. stereo pair; linked with the Audio Input panel); beamer idle screen shows its assigned players live
 
 **Demo (done):** the full "typical evening" flow from `00-vision.md` without touching a config file.
 Still open from earlier sprints: pre-resolving YouTube on queue-add, duet lyrics per track, 2-beamer stress test, Windows build.

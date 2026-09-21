@@ -20,8 +20,8 @@ public sealed partial class AudioOutputPanelViewModel : ViewModelBase, IDisposab
     {
         _outputs = outputs;
         _media = media;
-        Game = new OutputChannelViewModel("Game", "Beamer / main speakers", "music_note", media.Game, o => outputs.SetGameOutput(o), g => outputs.SetGameGain(g));
-        Preview = new OutputChannelViewModel("Preview", "DJ headphones / monitor", "headphones", media.Preview, o => outputs.SetPreviewOutput(o), g => outputs.SetPreviewGain(g));
+        Game = new OutputChannelViewModel("Game", "Beamer / main speakers", "music_note", media.Game, Options, o => outputs.SetGameOutput(o), g => outputs.SetGameGain(g));
+        Preview = new OutputChannelViewModel("Preview", "DJ headphones / monitor", "headphones", media.Preview, Options, o => outputs.SetPreviewOutput(o), g => outputs.SetPreviewGain(g));
         _meter = new DispatcherTimer(TimeSpan.FromMilliseconds(50), DispatcherPriority.Background, (_, _) => { Game.Poll(); Preview.Poll(); });
         _meter.Start();
         _ = RefreshAsync();
@@ -61,12 +61,14 @@ public sealed partial class OutputChannelViewModel : ObservableObject
     [ObservableProperty] private double _gain = 1.0;
     [ObservableProperty] private double _level;
 
-    public OutputChannelViewModel(string title, string subtitle, string glyph, MediaChannel channel, Action<OutputOption> setOutput, Action<double> setGain)
+    public OutputChannelViewModel(string title, string subtitle, string glyph, MediaChannel channel, ObservableCollection<OutputOption> options,
+        Action<OutputOption> setOutput, Action<double> setGain)
     {
         Title = title;
         Subtitle = subtitle;
         Glyph = glyph;
         _channel = channel;
+        Options = options;
         _setOutput = setOutput;
         _setGain = setGain;
     }
@@ -74,6 +76,8 @@ public sealed partial class OutputChannelViewModel : ObservableObject
     public string Title { get; }
     public string Subtitle { get; }
     public string Glyph { get; }
+    /// <summary>Shared with the panel; bound directly so ItemsSource resolves before SelectedItem when the view is recreated.</summary>
+    public ObservableCollection<OutputOption> Options { get; }
     /// <summary>YouTube-only songs are metered too (mpv decodes them) — unlike the prototype, no dimming needed.</summary>
     public string StateText => _channel.State == MediaState.Idle ? "" : _channel.State.ToString();
 

@@ -28,6 +28,8 @@ public sealed record PlayerConfig
     public double Threshold { get; init; } = 0.003;
     /// <summary>Level of this mic in the speaker mix, 0–2.</summary>
     public double MixGain { get; init; } = 1.0;
+    /// <summary>Mic removed from the speaker mix (scoring unaffected).</summary>
+    public bool MixMuted { get; init; }
     /// <summary>Round-trip mic latency; the scorer evaluates this many ms behind the clock.</summary>
     public double MicDelayMs { get; init; } = 40;
 

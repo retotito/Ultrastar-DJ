@@ -25,10 +25,15 @@ public sealed class AppSettingsService
     public Difficulty Difficulty => _doc.Difficulty;
     /// <summary>Positive = lyrics/notes appear later relative to the audio.</summary>
     public double LyricsOffsetMs => _doc.LyricsOffsetMs;
+    public bool NowPlayingHidden => _doc.NowPlayingHidden;
+    /// <summary>Top-left of the floating Now Playing card in window coordinates; null = default placement.</summary>
+    public (double X, double Y)? NowPlayingPosition => _doc.NowPlayingX is { } x && _doc.NowPlayingY is { } y ? (x, y) : null;
 
     public void SetLightTheme(bool light) => Update(_doc with { LightTheme = light });
     public void SetDifficulty(Difficulty d) => Update(_doc with { Difficulty = d });
     public void SetLyricsOffsetMs(double ms) => Update(_doc with { LyricsOffsetMs = Math.Clamp(Math.Round(ms), -500, 500) });
+    public void SetNowPlayingHidden(bool hidden) => Update(_doc with { NowPlayingHidden = hidden });
+    public void SetNowPlayingPosition(double x, double y) => Update(_doc with { NowPlayingX = Math.Round(x), NowPlayingY = Math.Round(y) });
 
     private void Update(AppSettingsDocument doc)
     {
@@ -48,6 +53,10 @@ public sealed class AppSettingsService
 
     public sealed record AppSettingsDocument(bool LightTheme, Difficulty Difficulty, double LyricsOffsetMs)
     {
+        public bool NowPlayingHidden { get; init; }
+        public double? NowPlayingX { get; init; }
+        public double? NowPlayingY { get; init; }
+
         public static AppSettingsDocument Default() => new(false, Difficulty.Medium, 0);
     }
 }

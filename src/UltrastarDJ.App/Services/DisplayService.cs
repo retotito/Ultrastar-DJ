@@ -81,7 +81,10 @@ public sealed class DisplayService : IDisplayService
             .With(otherCfg with { PlayerIds = otherCfg.PlayerIds.Except(playerIds).ToList() })
             .With(_doc.Get(id) with { PlayerIds = playerIds });
         _settings.Save(SettingsName, _doc);
+        PlayersChanged?.Invoke();
     }
+
+    public event Action? PlayersChanged;
 
     public bool IsOpen(DisplayId id) => _open.ContainsKey(id);
 

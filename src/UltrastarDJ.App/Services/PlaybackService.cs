@@ -213,11 +213,7 @@ public sealed class PlaybackService : IDisposable
             string? monitorOut = ResolveMonitorOutput();
             if (monitorOut is not null)
             {
-                _audio.StartMonitor(monitorOut);
-                foreach (PlayerConfig p in active)
-                {
-                    _audio.Monitor.SetGain(p.Id, p.MixGain);
-                }
+                _audio.StartMonitor(monitorOut, _media.Game.ChannelOffset);
             }
         }
 

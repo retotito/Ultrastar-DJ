@@ -17,7 +17,7 @@
             <TextBlock Grid.Column="2" Classes="muted" Text="{Binding NoteText}" VerticalAlignment="Center" MinWidth="110" TextAlignment="Right" />
           </Grid>
 
-          <ComboBox ItemsSource="{Binding $parent[UserControl].((vm:PlayersPanelViewModel)DataContext).MicOptions}"
+          <ComboBox ItemsSource="{Binding MicOptions}"
                     SelectedItem="{Binding SelectedMic}" HorizontalAlignment="Stretch" />
 
           <!-- Meter (dB) with the gate position drawn as a marker on the same scale -->

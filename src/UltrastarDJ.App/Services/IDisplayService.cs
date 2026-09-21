@@ -23,4 +23,7 @@ public interface IDisplayService
 
     /// <summary>Raised on the UI thread when a display opens or closes.</summary>
     event Action<DisplayId, bool>? OpenStateChanged;
+
+    /// <summary>Raised on the UI thread after <see cref="SetPlayers"/> (both displays may have changed).</summary>
+    event Action? PlayersChanged;
 }
