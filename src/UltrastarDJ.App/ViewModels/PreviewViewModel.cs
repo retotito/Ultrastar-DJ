@@ -16,10 +16,9 @@ namespace UltrastarDJ.App.ViewModels;
 /// </summary>
 public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
 {
-    private static readonly SongValidator Validator = new(new FileSystemExistence());
-
     private readonly MediaService _media;
     private readonly OutputsService _outputs;
+    private readonly SongResolver _resolver;
     private readonly QueueViewModel _queue;
     private readonly NowPlayingViewModel _nowPlaying;
     private readonly NotificationService _notifications;
@@ -38,10 +37,11 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private double _level;
     [ObservableProperty] private string _error = "";
 
-    public PreviewViewModel(MediaService media, OutputsService outputs, QueueViewModel queue, NowPlayingViewModel nowPlaying, NotificationService notifications, ILogger<PreviewViewModel> log)
+    public PreviewViewModel(MediaService media, OutputsService outputs, SongResolver resolver, QueueViewModel queue, NowPlayingViewModel nowPlaying, NotificationService notifications, ILogger<PreviewViewModel> log)
     {
         _media = media;
         _outputs = outputs;
+        _resolver = resolver;
         _queue = queue;
         _nowPlaying = nowPlaying;
         _notifications = notifications;
@@ -100,27 +100,25 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
         Loading = true;
         try
         {
-            SongValidationResult v = Validator.Validate(song);
-            if (!v.IsValid)
-            {
-                Error = string.Join("\n", v.Errors.Select(e => e.Message));
-                _notifications.ShowDialog("Song cannot be previewed", Error);
-                return;
-            }
-
-            Song = v.Song;
-            Cover = LoadBitmap(v.Song.CoverPath ?? v.Song.BackgroundPath);
+            Song resolved = await _resolver.ResolveAsync(song);
+            Song = resolved;
+            Cover = LoadBitmap(resolved.CoverPath ?? resolved.BackgroundPath);
             MediaPlan plan = MediaSourceResolver.Resolve(new SongMedia
             {
-                AudioPath = v.Song.AudioPath,
-                VideoPath = v.Song.VideoPath,
-                YouTubeId = v.Song.YouTubeId,
-                BackgroundPath = v.Song.BackgroundPath,
-                CoverPath = v.Song.CoverPath,
-                VideoGapSec = v.Song.VideoGapSec ?? 0,
+                AudioPath = resolved.AudioPath,
+                VideoPath = resolved.VideoPath,
+                YouTubeId = resolved.YouTubeId,
+                BackgroundPath = resolved.BackgroundPath,
+                CoverPath = resolved.CoverPath,
+                VideoGapSec = resolved.VideoGapSec ?? 0,
             }, maxHeight: 360);
             await _media.Preview.LoadAsync(plan);
             _media.Preview.Play();
+        }
+        catch (SongLoadException ex)
+        {
+            Error = ex.Message;
+            _notifications.ShowDialog("Song cannot be previewed", ex.Message);
         }
         catch (MediaException ex)
         {

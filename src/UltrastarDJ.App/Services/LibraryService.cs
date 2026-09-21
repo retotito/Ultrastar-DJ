@@ -15,22 +15,29 @@ public sealed class LibraryService : IDisposable
 
     private readonly ISettingsStore _settings;
     private readonly ISongRepository _repo;
+    private readonly IUsdbCatalog _usdb;
     private readonly LocalFolderScanner _scanner;
     private readonly ILogger<LibraryService> _log;
     private SourcesDocument _doc;
+    private IReadOnlyList<Song> _localSongs;
+    private List<Song> _usdbSongs;
     private IReadOnlyList<Song> _songs;
     private HashSet<string> _unavailable = [];
+    private bool _usdbOnline;
     private readonly Timer _availabilityTimer;
 
-    public LibraryService(ISettingsStore settings, ISongRepository repo, LocalFolderScanner scanner, ILogger<LibraryService> log)
+    public LibraryService(ISettingsStore settings, ISongRepository repo, IUsdbCatalog usdb, LocalFolderScanner scanner, ILogger<LibraryService> log)
     {
         _settings = settings;
         _repo = repo;
+        _usdb = usdb;
         _scanner = scanner;
         _log = log;
         _doc = settings.Load(SettingsName, new SourcesDocument([]));
-        _songs = repo.GetAll();
-        _log.LogInformation("Library: {Songs} songs from {Sources} sources", _songs.Count, _doc.Sources.Count);
+        _localSongs = repo.GetAll();
+        _usdbSongs = usdb.GetAll().Select(e => e.ToSong()).ToList();
+        _songs = Merge();
+        _log.LogInformation("Library: {Songs} songs from {Sources} sources + {Usdb} USDB", _localSongs.Count, _doc.Sources.Count, _usdbSongs.Count);
         CheckAvailability();
         // Folders on USB drives come and go; poll cheaply (Directory.Exists) instead of a watcher per source.
         _availabilityTimer = new Timer(_ => CheckAvailability(), null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
@@ -44,9 +51,30 @@ public sealed class LibraryService : IDisposable
 
     public IReadOnlyList<SongSource> Sources => _doc.Sources;
     public IReadOnlyList<Song> Songs => _songs;
+    public int UsdbCount => _usdbSongs.Count;
 
-    public bool IsAvailable(string sourceId) => !_unavailable.Contains(sourceId);
-    public string SourceLabel(string sourceId) => _doc.Sources.FirstOrDefault(s => s.Id == sourceId)?.Label ?? sourceId;
+    public bool IsAvailable(string sourceId) => sourceId == UsdbCatalogEntry.SourceId ? _usdbOnline : !_unavailable.Contains(sourceId);
+    public string SourceLabel(string sourceId) => sourceId == UsdbCatalogEntry.SourceId ? "USDB" : _doc.Sources.FirstOrDefault(s => s.Id == sourceId)?.Label ?? sourceId;
+
+    /// <summary>USDB songs need a live session to fetch their txt; offline/disconnected greys them like an unplugged drive.</summary>
+    public void SetUsdbOnline(bool online)
+    {
+        if (_usdbOnline != online)
+        {
+            _usdbOnline = online;
+            AvailabilityChanged?.Invoke();
+        }
+    }
+
+    /// <summary>Re-reads the USDB catalog after a sync or disconnect.</summary>
+    public void RefreshUsdb()
+    {
+        _usdbSongs = _usdb.GetAll().Select(e => e.ToSong()).ToList();
+        _songs = Merge();
+        Changed?.Invoke();
+    }
+
+    private IReadOnlyList<Song> Merge() => _usdbSongs.Count == 0 ? _localSongs : [.. _localSongs, .. _usdbSongs];
 
     private void CheckAvailability()
     {
@@ -84,7 +112,8 @@ public sealed class LibraryService : IDisposable
 
         IReadOnlyList<Song> songs = await _scanner.ScanAsync(source.Id, source.Path, progress, ct).ConfigureAwait(false);
         _repo.ReplaceSource(source.Id, songs);
-        _songs = _repo.GetAll();
+        _localSongs = _repo.GetAll();
+        _songs = Merge();
         Changed?.Invoke();
     }
 
@@ -93,7 +122,8 @@ public sealed class LibraryService : IDisposable
         _doc = _doc with { Sources = _doc.Sources.Where(s => s.Id != sourceId).ToList() };
         _settings.Save(SettingsName, _doc);
         _repo.RemoveSource(sourceId);
-        _songs = _repo.GetAll();
+        _localSongs = _repo.GetAll();
+        _songs = Merge();
         Changed?.Invoke();
     }
 

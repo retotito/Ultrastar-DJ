@@ -62,8 +62,20 @@
             <TextBlock Grid.Column="1" Text="{Binding Artist}" Classes="muted" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
             <TextBlock Grid.Column="2" Text="{Binding Year}" Classes="muted" VerticalAlignment="Center" />
             <TextBlock Grid.Column="3" Text="{Binding Language}" Classes="muted" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-            <Border Grid.Column="4" Background="{DynamicResource BrushSecondaryContainer}" CornerRadius="{StaticResource RadiusFull}" Padding="8,2" HorizontalAlignment="Left" VerticalAlignment="Center">
-              <TextBlock Text="{Binding Source}" FontSize="{StaticResource TextXs}" Foreground="{DynamicResource BrushOnSecondaryContainer}" TextTrimming="CharacterEllipsis" MaxWidth="70" />
+            <Border Grid.Column="4" Background="{DynamicResource BrushSecondaryContainer}" CornerRadius="{StaticResource RadiusFull}" Padding="8,2" HorizontalAlignment="Left" VerticalAlignment="Center"
+                    Classes.usdb="{Binding IsUsdb}">
+              <Border.Styles>
+                <Style Selector="TextBlock">
+                  <Setter Property="Foreground" Value="{DynamicResource BrushOnSecondaryContainer}" />
+                </Style>
+                <Style Selector="Border.usdb">
+                  <Setter Property="Background" Value="{DynamicResource BrushUsdb}" />
+                </Style>
+                <Style Selector="Border.usdb TextBlock">
+                  <Setter Property="Foreground" Value="White" />
+                </Style>
+              </Border.Styles>
+              <TextBlock Text="{Binding Source}" FontSize="{StaticResource TextXs}" TextTrimming="CharacterEllipsis" MaxWidth="70" />
             </Border>
             <StackPanel Grid.Column="5" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
               <c:Icon Glyph="music_note" FontSize="{StaticResource IconSm}" IsVisible="{Binding HasLocalAudio}" ToolTip.Tip="Local audio" />

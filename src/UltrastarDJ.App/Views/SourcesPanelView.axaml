@@ -40,7 +40,49 @@
     <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="{Binding Status}"
                IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
     <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap"
-               Text="Folders are scanned recursively for UltraStar .txt files. USDB arrives in a later sprint."
+               Text="Folders are scanned recursively for UltraStar .txt files."
                IsVisible="{Binding !Sources.Count}" />
+
+    <!-- USDB -->
+    <Border Classes="card" Margin="0,8,0,0">
+      <StackPanel Spacing="{StaticResource Space2}">
+        <Grid ColumnDefinitions="Auto,*,Auto">
+          <c:Icon Glyph="cloud" Margin="0,0,8,0" Foreground="{DynamicResource BrushUsdb}" />
+          <TextBlock Grid.Column="1" Classes="title" Text="USDB" VerticalAlignment="Center" />
+          <TextBlock Grid.Column="2" Classes="muted" FontSize="{StaticResource TextXs}" VerticalAlignment="Center"
+                     Text="{Binding UsdbCount, StringFormat='{}{0:N0} songs'}" IsVisible="{Binding UsdbCount}" />
+        </Grid>
+        <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap"
+                   Text="usdb.animux.de — 27 000 community songs played from YouTube. Needs a free account and internet." />
+
+        <!-- Login form -->
+        <StackPanel Spacing="{StaticResource Space1}" IsVisible="{Binding !UsdbConnected}">
+          <TextBox PlaceholderText="Username" Text="{Binding UsdbUser}" IsEnabled="{Binding !UsdbBusy}" />
+          <TextBox PlaceholderText="Password" PasswordChar="•" Text="{Binding UsdbPassword}" IsEnabled="{Binding !UsdbBusy}" />
+          <Button Classes="tonal" HorizontalAlignment="Right" Command="{Binding UsdbConnectCommand}" Content="Connect" />
+        </StackPanel>
+
+        <!-- Connected -->
+        <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}" IsVisible="{Binding UsdbConnected}">
+          <Button Classes="tonal" Command="{Binding UsdbSyncCommand}" ToolTip.Tip="Fetch songs added or changed since the last sync" IsVisible="{Binding !UsdbSyncing}">
+            <StackPanel Orientation="Horizontal" Spacing="4">
+              <c:Icon Glyph="sync" FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
+              <TextBlock Text="Sync" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
+            </StackPanel>
+          </Button>
+          <Button Classes="sidebar" Command="{Binding UsdbFullSyncCommand}" ToolTip.Tip="Download the whole catalog again" IsVisible="{Binding !UsdbSyncing}">
+            <c:Icon Glyph="cloud_download" FontSize="{StaticResource IconMd}" />
+          </Button>
+          <Button Classes="tonal" Command="{Binding UsdbAbortCommand}" Content="Stop sync" IsVisible="{Binding UsdbSyncing}" />
+          <Button Classes="sidebar" Command="{Binding UsdbDisconnectCommand}" ToolTip.Tip="Disconnect and remove USDB songs from the library" IsEnabled="{Binding !UsdbSyncing}">
+            <c:Icon Glyph="logout" FontSize="{StaticResource IconMd}" />
+          </Button>
+        </StackPanel>
+        <ProgressBar IsIndeterminate="True" Height="4" IsVisible="{Binding UsdbSyncing}" />
+
+        <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap" Text="{Binding UsdbStatus}"
+                   IsVisible="{Binding UsdbStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      </StackPanel>
+    </Border>
   </StackPanel>
 </UserControl>

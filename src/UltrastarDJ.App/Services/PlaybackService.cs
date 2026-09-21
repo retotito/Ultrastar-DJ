@@ -30,21 +30,21 @@ public sealed class PlaybackService : IDisposable
     private readonly PlayersService _players;
     private readonly IDisplayService _displays;
     private readonly AppSettingsService _settings;
-    private readonly SongValidator _validator;
+    private readonly SongResolver _resolver;
     private readonly ILogger<PlaybackService> _log;
     private readonly HashSet<DisplayId> _countdownDone = [];
     private CancellationTokenSource? _tickCts;
     private Task? _tickLoop;
     private PlaybackState _state = PlaybackState.Idle;
 
-    public PlaybackService(MediaService media, AudioInputService audio, PlayersService players, IDisplayService displays, AppSettingsService settings, ILogger<PlaybackService> log)
+    public PlaybackService(MediaService media, AudioInputService audio, PlayersService players, IDisplayService displays, AppSettingsService settings, SongResolver resolver, ILogger<PlaybackService> log)
     {
         _media = media;
         _audio = audio;
         _players = players;
         _displays = displays;
         _settings = settings;
-        _validator = new SongValidator(new FileSystemExistence());
+        _resolver = resolver;
         _log = log;
         _media.Game.EndReached += () => Dispatcher.UIThread.Post(() => { if (State is PlaybackState.Playing or PlaybackState.Paused) { Stop(); } });
         _media.Game.ErrorOccurred += e => Dispatcher.UIThread.Post(() => { LastError = e; if (State is PlaybackState.Playing or PlaybackState.Paused or PlaybackState.Countdown) { Stop(); } });
@@ -125,17 +125,7 @@ public sealed class PlaybackService : IDisposable
                 await ClearCoreAsync();
             }
 
-            SongValidationResult v = _validator.Validate(song);
-            if (!v.IsValid)
-            {
-                throw new SongLoadException(string.Join("\n", v.Errors.Select(e => e.Message)));
-            }
-
-            Song loaded = await Task.Run(() => SongNotesLoader.WithNotes(v.Song), ct);
-            if (loaded.Notes is null || loaded.Notes.Count == 0)
-            {
-                throw new SongLoadException("Song has no notes.");
-            }
+            Song loaded = await _resolver.ResolveAsync(song, ct);
 
             MediaPlan plan = MediaSourceResolver.Resolve(new SongMedia
             {

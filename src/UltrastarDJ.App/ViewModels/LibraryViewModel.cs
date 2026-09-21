@@ -15,9 +15,11 @@ public sealed record LibraryRow(Song Song, string Source, bool IsAvailable)
     public int? Year => Song.Year;
     public string? Language => Song.Language;
     public string? Genre => Song.Genre;
+    public bool IsUsdb => Song.UsdbId is not null;
     public bool HasLocalAudio => Song.HasLocalAudio;
     public bool HasLocalVideo => Song.HasLocalVideo;
-    public bool HasYouTube => Song.HasYouTube;
+    /// <summary>USDB songs always play from YouTube; the id is only known once the txt is fetched.</summary>
+    public bool HasYouTube => Song.HasYouTube || IsUsdb;
     public double Opacity => IsAvailable ? 1.0 : 0.4;
 }
 
@@ -59,7 +61,8 @@ public sealed partial class LibraryViewModel : ViewModelBase
         _library.AvailabilityChanged += () => Dispatcher.UIThread.Post(Refresh);
     }
 
-    public ObservableCollection<LibraryRow> Rows { get; } = [];
+    /// <summary>Replaced wholesale on every refresh: 27k USDB rows through ObservableCollection.Add would stall the UI.</summary>
+    [ObservableProperty] private IReadOnlyList<LibraryRow> _rows = [];
     public ObservableCollection<string> Languages { get; } = [All];
     public ObservableCollection<string> Genres { get; } = [All];
 
@@ -143,12 +146,7 @@ public sealed partial class LibraryViewModel : ViewModelBase
         };
         sorted = Sort == LibrarySort.Artist ? sorted.ThenBy(s => s.Title, StringComparer.OrdinalIgnoreCase) : sorted.ThenBy(s => s.Artist, StringComparer.OrdinalIgnoreCase);
 
-        Rows.Clear();
-        foreach (Song s in sorted)
-        {
-            Rows.Add(new LibraryRow(s, _library.SourceLabel(s.SourceId), _library.IsAvailable(s.SourceId)));
-        }
-
+        Rows = sorted.Select(s => new LibraryRow(s, _library.SourceLabel(s.SourceId), _library.IsAvailable(s.SourceId))).ToList();
         ShownCount = Rows.Count;
     }
 

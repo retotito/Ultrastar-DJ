@@ -46,6 +46,9 @@ public class UltraStarParserTests
     [InlineData("#VIDEO:https://youtu.be/dQw4w9WgXcQ")]
     [InlineData("#YOUTUBE:dQw4w9WgXcQ")]
     [InlineData("#VIDEO:dQw4w9WgXcQ")]
+    [InlineData("#VIDEO:a=dQw4w9WgXcQ,co=cover-5849d589864f0.jpg,bg=bg-5467c92bb8e04.jpg")]
+    [InlineData("#VIDEO:v=dQw4w9WgXcQ")]
+    [InlineData("#VIDEO:co=cover.jpg,a=dQw4w9WgXcQ")]
     public void ParseHeader_VideoTagWithYouTube_BecomesYouTubeId(string tag)
     {
         SongHeader h = UltraStarParser.ParseHeader($"#TITLE:a\n#ARTIST:b\n{tag}\n");

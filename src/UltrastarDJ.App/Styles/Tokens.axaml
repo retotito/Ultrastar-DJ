@@ -95,6 +95,7 @@
   <Color x:Key="ColorPlayer3">#4ECB71</Color>
   <Color x:Key="ColorPlayer4">#F7C84F</Color>
   <Color x:Key="ColorGolden">#FFD700</Color>
+  <Color x:Key="ColorUsdb">#2E9E5B</Color>
   <Color x:Key="ColorBeamerBackground">#000000</Color>
   <Color x:Key="ColorBeamerText">#FFFFFF</Color>
 
@@ -123,6 +124,7 @@
   <SolidColorBrush x:Key="BrushPlayer3" Color="{StaticResource ColorPlayer3}" />
   <SolidColorBrush x:Key="BrushPlayer4" Color="{StaticResource ColorPlayer4}" />
   <SolidColorBrush x:Key="BrushGolden" Color="{StaticResource ColorGolden}" />
+  <SolidColorBrush x:Key="BrushUsdb" Color="{StaticResource ColorUsdb}" />
   <SolidColorBrush x:Key="BrushBeamerBackground" Color="{StaticResource ColorBeamerBackground}" />
   <SolidColorBrush x:Key="BrushBeamerText" Color="{StaticResource ColorBeamerText}" />
 

@@ -14,6 +14,7 @@ using UltrastarDJ.Core.Abstractions;
 using UltrastarDJ.Infrastructure;
 using UltrastarDJ.Infrastructure.Library;
 using UltrastarDJ.Infrastructure.Settings;
+using UltrastarDJ.Infrastructure.Usdb;
 
 namespace UltrastarDJ.App;
 
@@ -47,6 +48,8 @@ public sealed partial class App : Application
         _services.GetRequiredService<OutputsService>();
         _services.GetRequiredService<AppSettingsService>();
         desktop.MainWindow = window;
+        // Reconnects to USDB with saved credentials and pulls catalog changes; failures only set the panel status.
+        _ = _services.GetRequiredService<UsdbService>().AutoConnectAsync();
 
         _services.GetRequiredService<ILogger<App>>().LogInformation(
             "Ultrastar DJ {Version} started (beamer-debug: {BeamerDebug})",
@@ -67,6 +70,8 @@ public sealed partial class App : Application
         services.AddSingleton<ISettingsStore, JsonSettingsStore>();
         services.AddSingleton<SidecarLocator>();
         services.AddSingleton<ISongRepository, SqliteSongRepository>();
+        services.AddSingleton<IUsdbCatalog, SqliteUsdbCatalog>();
+        services.AddSingleton<IUsdbClient, UsdbClient>();
         services.AddSingleton<LocalFolderScanner>();
 
         // App services
@@ -77,6 +82,8 @@ public sealed partial class App : Application
         services.AddSingleton<PlayersService>();
         services.AddSingleton<AudioInputService>();
         services.AddSingleton<LibraryService>();
+        services.AddSingleton<UsdbService>();
+        services.AddSingleton<SongResolver>();
         services.AddSingleton<OutputsService>();
         services.AddSingleton<PlaybackService>();
         services.AddSingleton<DisplayService>();

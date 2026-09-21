@@ -11,22 +11,38 @@ using UltrastarDJ.Infrastructure.Library;
 
 namespace UltrastarDJ.App.ViewModels;
 
-/// <summary>Song Sources panel: local folders now; USDB arrives in Sprint 6.</summary>
-public sealed partial class SourcesPanelViewModel : ViewModelBase
+/// <summary>Song Sources panel: local folders and the USDB account.</summary>
+public sealed partial class SourcesPanelViewModel : ViewModelBase, IDisposable
 {
     private readonly LibraryService _library;
+    private readonly UsdbService _usdb;
     private readonly ILogger<SourcesPanelViewModel> _log;
 
     [ObservableProperty] private bool _busy;
     [ObservableProperty] private string _status = "";
 
-    public SourcesPanelViewModel(LibraryService library, ILogger<SourcesPanelViewModel> log)
+    [ObservableProperty] private string _usdbUser = "";
+    [ObservableProperty] private string _usdbPassword = "";
+    [ObservableProperty] private bool _usdbConnected;
+    [ObservableProperty] private bool _usdbSyncing;
+    [ObservableProperty] private bool _usdbBusy;
+    [ObservableProperty] private string _usdbStatus = "";
+    [ObservableProperty] private int _usdbCount;
+
+    public SourcesPanelViewModel(LibraryService library, UsdbService usdb, ILogger<SourcesPanelViewModel> log)
     {
         _library = library;
+        _usdb = usdb;
         _log = log;
+        _usdbUser = usdb.Username ?? "";
         Refresh();
-        _library.Changed += () => Dispatcher.UIThread.Post(Refresh);
+        RefreshUsdb();
+        _library.Changed += OnLibraryChanged;
+        _usdb.Changed += OnUsdbChanged;
     }
+
+    private void OnLibraryChanged() => Dispatcher.UIThread.Post(Refresh);
+    private void OnUsdbChanged() => Dispatcher.UIThread.Post(RefreshUsdb);
 
     public ObservableCollection<SourceRowViewModel> Sources { get; } = [];
 
@@ -40,6 +56,67 @@ public sealed partial class SourcesPanelViewModel : ViewModelBase
         {
             Sources.Add(new SourceRowViewModel(s, _library.CountFor(s.Id), this));
         }
+    }
+
+    private void RefreshUsdb()
+    {
+        UsdbConnected = _usdb.IsConnected;
+        UsdbSyncing = _usdb.IsSyncing;
+        UsdbStatus = _usdb.Status;
+        UsdbCount = _usdb.CatalogCount;
+        UsdbConnectCommand.NotifyCanExecuteChanged();
+        UsdbSyncCommand.NotifyCanExecuteChanged();
+    }
+
+    public bool CanConnectUsdb => !UsdbBusy && !UsdbConnected && UsdbUser.Trim().Length > 0 && UsdbPassword.Length > 0;
+    partial void OnUsdbUserChanged(string value) => UsdbConnectCommand.NotifyCanExecuteChanged();
+    partial void OnUsdbPasswordChanged(string value) => UsdbConnectCommand.NotifyCanExecuteChanged();
+
+    [RelayCommand(CanExecute = nameof(CanConnectUsdb))]
+    private async Task UsdbConnectAsync()
+    {
+        UsdbBusy = true;
+        try
+        {
+            if (await _usdb.ConnectAsync(UsdbUser.Trim(), UsdbPassword))
+            {
+                UsdbPassword = "";
+            }
+        }
+        catch (UsdbException ex)
+        {
+            _log.LogWarning("USDB connect failed: {Error}", ex.Message);
+            UsdbStatus = ex.Message;
+        }
+        finally
+        {
+            UsdbBusy = false;
+            RefreshUsdb();
+        }
+    }
+
+    private bool CanSyncUsdb() => UsdbConnected && !UsdbSyncing;
+
+    [RelayCommand(CanExecute = nameof(CanSyncUsdb))]
+    private Task UsdbSyncAsync() => _usdb.SyncAsync(full: false);
+
+    [RelayCommand(CanExecute = nameof(CanSyncUsdb))]
+    private Task UsdbFullSyncAsync() => _usdb.SyncAsync(full: true);
+
+    [RelayCommand] private void UsdbAbort() => _usdb.AbortSync();
+
+    [RelayCommand]
+    private void UsdbDisconnect()
+    {
+        _usdb.Disconnect();
+        UsdbPassword = "";
+        RefreshUsdb();
+    }
+
+    public void Dispose()
+    {
+        _library.Changed -= OnLibraryChanged;
+        _usdb.Changed -= OnUsdbChanged;
     }
 
     [RelayCommand]

@@ -8,5 +8,6 @@
     <PackageReference Include="Microsoft.Extensions.Logging" />
     <PackageReference Include="Microsoft.Data.Sqlite" />
     <PackageReference Include="Dapper" />
+    <PackageReference Include="AngleSharp" />
   </ItemGroup>
 </Project>
