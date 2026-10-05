@@ -31,7 +31,7 @@
 
           <TextBlock Classes="label" Text="VOLUME" />
           <Grid ColumnDefinitions="*,44">
-            <Slider Minimum="0" Maximum="1" Value="{Binding Gain}" />
+            <c:Fader Minimum="0" Maximum="1" Value="{Binding Gain}" />
             <TextBlock Grid.Column="1" Classes="muted" Text="{Binding Gain, StringFormat='{}{0:P0}'}" VerticalAlignment="Center" TextAlignment="Right" />
           </Grid>
           <c:LevelMeter Height="6" Level="{Binding Level}" Fill="{DynamicResource BrushPrimary}" Track="{DynamicResource BrushSurfaceContainerHighest}" />

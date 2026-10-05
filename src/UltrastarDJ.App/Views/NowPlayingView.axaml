@@ -17,7 +17,7 @@
   <Border Classes="card floating">
     <StackPanel Spacing="{StaticResource Space2}">
       <!-- Header like the sidebar popovers (DjWindow), and the drag handle of the card -->
-      <Border x:Name="DragHandle" Background="Transparent" Cursor="SizeAll" ToolTip.Tip="Drag to move"
+      <Border x:Name="DragHandle" Background="Transparent" ToolTip.Tip="Drag to move"
               BorderBrush="{DynamicResource BrushOutlineVariant}" BorderThickness="0,0,0,1"
               Padding="0,0,0,8" Margin="0,0,0,4">
         <Grid ColumnDefinitions="Auto,*,Auto,Auto">
@@ -58,7 +58,7 @@
           <c:Icon Glyph="volume_up" FontSize="{StaticResource IconMd}" />
           <TextBlock Classes="muted" FontSize="{StaticResource TextSm}" Text="Song" VerticalAlignment="Center" />
         </StackPanel>
-        <Slider Grid.Column="1" Minimum="0" Maximum="1" Value="{Binding Gain}" VerticalAlignment="Center" />
+        <c:Fader Grid.Column="1" Minimum="0" Maximum="1" Value="{Binding Gain}" VerticalAlignment="Center" />
         <TextBlock Grid.Column="2" Classes="muted" Text="{Binding Gain, StringFormat='{}{0:P0}'}" VerticalAlignment="Center" TextAlignment="Right" />
         <c:LevelMeter Grid.Row="1" Grid.Column="1" Height="4" Margin="0,-4,0,0" Level="{Binding Level}"
                       Fill="{DynamicResource BrushPrimary}" Track="{DynamicResource BrushSurfaceContainerHighest}" />
@@ -75,7 +75,7 @@
                 <TextBlock Classes="muted" FontSize="{StaticResource TextSm}" Text="{Binding Name}" VerticalAlignment="Center"
                            TextTrimming="CharacterEllipsis" MaxWidth="52" />
               </StackPanel>
-              <Slider Grid.Column="1" Minimum="0" Maximum="2" Value="{Binding MixGain}" VerticalAlignment="Center" IsEnabled="{Binding !Muted}" />
+              <c:Fader Grid.Column="1" Minimum="0" Maximum="2" Value="{Binding MixGain}" VerticalAlignment="Center" IsEnabled="{Binding !Muted}" />
               <Button Grid.Column="2" Classes="sidebar small" HorizontalAlignment="Right" Command="{Binding ToggleMuteCommand}"
                       ToolTip.Tip="Mute this mic in the speakers (scoring unaffected)">
                 <c:Icon Glyph="{Binding MuteGlyph}" FontSize="{StaticResource IconMd}" />

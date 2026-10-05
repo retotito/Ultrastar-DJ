@@ -28,15 +28,15 @@
 
           <Grid ColumnDefinitions="52,*,52" RowDefinitions="Auto,Auto,Auto">
             <TextBlock Grid.Row="0" Grid.Column="0" Classes="label" Text="GAIN" VerticalAlignment="Center" />
-            <Slider Grid.Row="0" Grid.Column="1" Minimum="0" Maximum="10" Value="{Binding InputGain}" />
+            <c:Fader Grid.Row="0" Grid.Column="1" ResetValue="1" Minimum="0" Maximum="10" Value="{Binding InputGain}" />
             <TextBlock Grid.Row="0" Grid.Column="2" Classes="muted" Text="{Binding InputGain, StringFormat='{}{0:F1}×'}" VerticalAlignment="Center" TextAlignment="Right" />
 
             <TextBlock Grid.Row="1" Grid.Column="0" Classes="label" Text="GATE" VerticalAlignment="Center" />
-            <Slider Grid.Row="1" Grid.Column="1" Minimum="-70" Maximum="-20" Value="{Binding GateDb}" />
+            <c:Fader Grid.Row="1" Grid.Column="1" ResetValue="-50" Minimum="-70" Maximum="-20" Value="{Binding GateDb}" />
             <TextBlock Grid.Row="1" Grid.Column="2" Classes="muted" Text="{Binding GateText}" VerticalAlignment="Center" TextAlignment="Right" />
 
             <TextBlock Grid.Row="2" Grid.Column="0" Classes="label" Text="MIX" VerticalAlignment="Center" />
-            <Slider Grid.Row="2" Grid.Column="1" Minimum="0" Maximum="2" Value="{Binding MixGain}" />
+            <c:Fader Grid.Row="2" Grid.Column="1" ResetValue="1" Minimum="0" Maximum="2" Value="{Binding MixGain}" />
             <TextBlock Grid.Row="2" Grid.Column="2" Classes="muted" Text="{Binding MixGain, StringFormat='{}{0:F2}'}" VerticalAlignment="Center" TextAlignment="Right" />
           </Grid>
 

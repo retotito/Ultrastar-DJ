@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using UltrastarDJ.App.Controls;
 using UltrastarDJ.App.ViewModels;
 
 namespace UltrastarDJ.App.Views;
@@ -17,6 +18,7 @@ public sealed partial class NowPlayingView : UserControl
     public NowPlayingView()
     {
         InitializeComponent();
+        DragHandle.Cursor = GrabCursors.Grab;
         DragHandle.PointerPressed += OnHandlePressed;
         DragHandle.PointerMoved += OnHandleMoved;
         DragHandle.PointerReleased += OnHandleReleased;
@@ -49,6 +51,7 @@ public sealed partial class NowPlayingView : UserControl
         _cardStartX = vm.CardX;
         _cardStartY = vm.CardY;
         e.Pointer.Capture(DragHandle);
+        DragHandle.Cursor = GrabCursors.Grabbing;
         e.Handled = true;
     }
 
@@ -81,6 +84,7 @@ public sealed partial class NowPlayingView : UserControl
         }
 
         _dragging = false;
+        DragHandle.Cursor = GrabCursors.Grab;
         Vm?.SavePosition();
     }
 }

@@ -35,7 +35,7 @@
     <!-- Preview fader -->
     <Grid ColumnDefinitions="Auto,*,44">
       <c:Icon Glyph="headphones" FontSize="{StaticResource IconMd}" Margin="0,0,8,0" />
-      <Slider Grid.Column="1" Minimum="0" Maximum="1" Value="{Binding Gain}" />
+      <c:Fader Grid.Column="1" Minimum="0" Maximum="1" Value="{Binding Gain}" />
       <TextBlock Grid.Column="2" Classes="muted" Text="{Binding Gain, StringFormat='{}{0:P0}'}" VerticalAlignment="Center" TextAlignment="Right" />
     </Grid>
     <c:LevelMeter Height="4" Level="{Binding Level}" Fill="{DynamicResource BrushTertiary}" Track="{DynamicResource BrushSurfaceContainerHighest}" />

@@ -7,6 +7,14 @@
              x:DataType="vm:LibraryViewModel">
 
   <UserControl.Styles>
+    <!-- Song rows: zebra stripes (hover/selection still win: they style the template's presenter), and
+         less vertical padding than Fluent's 9/12 → rows 43 instead of 53px. Fixed height keeps virtualization exact. -->
+    <Style Selector="ListBox#SongList ListBoxItem">
+      <Setter Property="Padding" Value="12,5,12,6" />
+    </Style>
+    <Style Selector="ListBox#SongList ListBoxItem:nth-child(2n)">
+      <Setter Property="Background" Value="{DynamicResource BrushTableRowAlt}" />
+    </Style>
     <Style Selector="Button.header">
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderThickness" Value="0" />

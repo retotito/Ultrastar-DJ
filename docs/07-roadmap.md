@@ -177,6 +177,18 @@ videos (Sprint 6 list), read-ahead cap (Later). Guest songbook phone test moved 
 
 ---
 
+## Sprint 6h — UI fixes: sizes, rows, cursors, faders  *(done)*
+
+- [x] Sidebar navigation icons 36px (`IconNav`) with 20px gaps, as in the prototype; other icon buttons unchanged.
+- [x] Body text 14 → 16px app-wide (`Window` font size + Fluent's `ControlContentThemeFontSize`); explicit sizes (labels, titles, small notes) unchanged. The prototype's CSS said 14px but its screenshots render ~16px.
+- [x] Settings panel anchors to the window's bottom (its button is at the sidebar's bottom); others stay at the top.
+- [x] Cursors: hand on buttons, drop-downs, menu items, toggles; Now Playing header open hand, closed fist while dragging (prototype's grab/grabbing). Windows: check what `DragMove` looks like.
+- [x] `Fader` for every volume/gain/gate/offset slider: knob only (track clicks ignored), open hand / fist on the knob, double-click resets (100%, gate −50 dB, offset 0). Song position slider keeps click-to-jump.
+- [x] Song list: zebra stripes (`ColorTableRowAlt`, on-surface 4% as in the prototype, `:nth-child(2n)`), rows 53 → 43px.
+- [x] Verified live
+
+---
+
 ## Later / ideas
 
 - Cap mpv read-ahead (~60 s) so YouTube streams like a player instead of pulling the whole song into RAM

@@ -25,7 +25,7 @@ public sealed partial class DjWindowViewModel : ViewModelBase
     private readonly PlaybackService _playback;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(PanelTitle), nameof(PanelGlyph))]
+    [NotifyPropertyChangedFor(nameof(PanelTitle), nameof(PanelGlyph), nameof(PanelAtBottom))]
     private SidebarPanel _activePanel = SidebarPanel.None;
 
     /// <summary>Shown in the popover header, next to its close button.</summary>
@@ -36,6 +36,9 @@ public sealed partial class DjWindowViewModel : ViewModelBase
         SidebarPanel.AudioOutput => "Audio Output",
         _ => ActivePanel.ToString(),
     };
+
+    /// <summary>Panels opened from the bottom of the sidebar (Settings) anchor to the window's bottom edge.</summary>
+    public bool PanelAtBottom => ActivePanel == SidebarPanel.Settings;
 
     public string PanelGlyph => ActivePanel switch
     {

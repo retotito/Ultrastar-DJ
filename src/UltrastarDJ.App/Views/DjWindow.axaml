@@ -20,8 +20,13 @@
             Background="{DynamicResource BrushSurfaceContainerLow}"
             BorderBrush="{DynamicResource BrushOutlineVariant}"
             BorderThickness="0,0,1,0">
+      <Border.Styles>
+        <Style Selector="Button.sidebar c|Icon">
+          <Setter Property="FontSize" Value="{StaticResource IconNav}" />
+        </Style>
+      </Border.Styles>
       <DockPanel Margin="{StaticResource Pad2}">
-        <StackPanel DockPanel.Dock="Bottom" Spacing="{StaticResource Space1}">
+        <StackPanel DockPanel.Dock="Bottom" Spacing="{StaticResource Space5}">
           <Button Classes="sidebar" Classes.active="{Binding ActivePanel, Converter={x:Static vm:SidebarPanelConverters.Is}, ConverterParameter=Settings}"
                   Command="{Binding TogglePanelCommand}" CommandParameter="{x:Static vm:SidebarPanel.Settings}"
                   ToolTip.Tip="Settings">
@@ -29,7 +34,7 @@
           </Button>
         </StackPanel>
 
-        <StackPanel Spacing="{StaticResource Space1}">
+        <StackPanel Spacing="{StaticResource Space5}">
           <Button Classes="sidebar" Classes.active="{Binding NowPlaying.IsVisible}"
                   Command="{Binding ToggleNowPlayingCommand}"
                   ToolTip.Tip="Now Playing (transport, song &amp; mic mix)">
@@ -78,8 +83,8 @@
 
       <!-- Popover anchored to the sidebar edge; capped to the window height, content scrolls.
            Closes on a press anywhere outside it and the sidebar (DjWindow.axaml.cs). -->
-      <Border Classes="popover" x:Name="Popover"
-              HorizontalAlignment="Left" VerticalAlignment="Top"
+      <Border Classes="popover" x:Name="Popover" Classes.bottom="{Binding PanelAtBottom}"
+              HorizontalAlignment="Left"
               Margin="{StaticResource Pad2}"
               IsVisible="{Binding PanelContent, Converter={x:Static ObjectConverters.IsNotNull}}">
         <DockPanel>
