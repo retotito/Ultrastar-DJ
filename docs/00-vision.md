@@ -68,7 +68,8 @@ Everything below exists in the prototype and must exist in v2 unless marked *(la
 - USDB songs: `.txt` fetched on demand, YouTube ID extracted, requires internet (offline badge + block).
 
 ### Preview player (DJ headphones)
-- Plays the selected song's media (audio, video, YouTube) with transport + progress.
+- Plays the selected song's media (audio, video, YouTube) with play/pause + seekable progress. No stop: the song stays
+  loaded until another one replaces it.
 - Own volume fader with level meter. Own output device / channel pair. **Must work for YouTube** (this failed in the prototype).
 - Add to queue / Load into game.
 

@@ -144,14 +144,6 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
         }
     }
 
-    [RelayCommand]
-    private async Task StopAsync()
-    {
-        await _media.Preview.UnloadAsync();
-        Song = null;
-        Cover = null;
-    }
-
     [RelayCommand(CanExecute = nameof(HasSong))]
     private void AddToQueue() => _queue.Add(Song!);
 
