@@ -100,13 +100,31 @@ Still open from earlier sprints: pre-resolving YouTube on queue-add, duet lyrics
 
 ---
 
-## Sprint 6 — Sources, guests, polish
+## Sprint 6 — Sources, guests, polish  *(in progress)*
 
-- [ ] `UsdbClient` (login, catalog sync with progress/abort, incremental, song txt), SQLite catalog, badges, auto-login
-- [ ] Songbook server (Kestrel) + mobile page + PIN; optional tunnel sidecar
+- [x] `UsdbClient` (login, streamed full catalog paging, incremental sync from the mtime watermark, song txt) + `UsdbHtml` scraper (AngleSharp); `SqliteUsdbCatalog` table in `library.db`; `UsdbService` (credentials persisted in `settings/usdb.json` — plain text, like the prototype; auto-connect at start; full/incremental sync with abort — a stopped full sync keeps what it fetched; disconnect removes the songs); green USDB badge, rows greyed while offline. **Verified live: 28.7k songs, preview and game from YouTube.**
+- [x] `SongResolver` (App): one load path for game and preview — USDB txt from disk cache (`cache/usdb/<id>.txt`) or network → BPM/GAP/YouTube id/notes → `SongValidator`. USDB writes `#VIDEO:a=<ytid>,co=…,bg=…`; `YouTubeId.TryExtract` understands that form.
+- [x] Songbook: `SongbookServer` (Kestrel, Infrastructure) serves the embedded `songbook.html` + `/api/songs|state|request|verify-pin`, optional 4-digit PIN; `SongbookService` (App) with persisted port/PIN/autostart, LAN URLs, guest requests → toast + REQUESTS section above the queue; Songbook sidebar panel. **Not yet tested from a phone.** Tunnel sidecar (bore) dropped for now — LAN only.
 - [ ] yt-dlp self-update action; error dialogs for blocked/unavailable videos
 - [ ] Packaging polish: icons, version display, README download instructions (Gatekeeper/SmartScreen)
 - [ ] Remove debug logs, close TODOs, tag `v0.2.0-beta.1`
+
+### Where to resume
+
+1. Phone test of the songbook (Songbook panel → Start → open the shown `http://192.168.x.x:4747` on a phone; request a song; try the PIN).
+2. yt-dlp self-update (`yt-dlp -U` against the sidecar in `natives/<rid>/`, button in Settings) and a dialog when mpv reports a blocked/unavailable video (`MediaChannel.ErrorOccurred`).
+3. Packaging polish, debug-log cleanup, roadmap/README update, tag.
+
+Still open from earlier sprints: Windows build test, MOTU channel-pair verification, pre-resolving YouTube on queue-add, duet lyrics per track, 2-beamer stress test. The user also has small UI details to report after Sprint 6.
+
+### Lessons that are not obvious from the code
+
+- Never dispose services synchronously on the UI thread at `Exit` — the preview player teardown deadlocked and the app hung on close. `App.OnShutdownRequested` cancels, disposes on a worker with a 5 s deadline, then `Shutdown()` + `Environment.Exit`.
+- A `ComboBox` whose `ItemsSource` is bound through `$parent[...]` resolves after `SelectedItem` when a panel view is recreated → the selection is written back as null. Expose the option list on the row view model and bind directly.
+- Avalonia "was not able to start the RenderTimer (-6661)" at startup means the display is asleep / screen locked, not a code bug.
+- Dapper `MatchNamesWithUnderscores` must be set before the first `Query<T>` (static ctor of the repository).
+- mpv shutdown order: render context free → `quit` → join event thread → `terminate_destroy`.
+- Analyzers (warnings-as-errors) reject `*Queue`/`*Stream` type names, `params` as a parameter name, and XML docs on positional record parameters.
 
 ---
 
