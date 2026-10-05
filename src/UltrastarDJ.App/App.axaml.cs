@@ -38,6 +38,9 @@ public sealed partial class App : Application
         ConfigureSerilog(paths);
 
         _services = BuildServices(options, paths);
+#if DEBUG
+        Diagnostics.UiInspector.Attach(paths.Logs, _services.GetRequiredService<ILogger<App>>());
+#endif
         desktop.ShutdownMode = ShutdownMode.OnMainWindowClose;
         desktop.ShutdownRequested += OnShutdownRequested;
         desktop.Exit += (_, _) => Log.CloseAndFlush();

@@ -141,6 +141,12 @@ videos (Sprint 6 list), read-ahead cap (Later). Guest songbook phone test moved 
 
 ---
 
+## Sprint 6c — UI inspector  *(done)*
+
+- [x] Debug-only `UiInspector` (Avalonia's Developer Tools are paid): F12 overlay with type/name/classes/axaml file/DataContext/layout of the hovered control, Shift+F12 dumps the visual tree to `logs/`. See [04-ui.md](04-ui.md#ui-inspector-debug-builds). **Verified live in the DJ window.** Not in Release builds.
+
+---
+
 ## Later / ideas
 
 - Cap mpv read-ahead (~60 s) so YouTube streams like a player instead of pulling the whole song into RAM
