@@ -4,18 +4,31 @@
              xmlns:c="using:UltrastarDJ.App.Controls"
              x:Class="UltrastarDJ.App.Views.NowPlayingView"
              x:DataType="vm:NowPlayingViewModel"
-             Width="{StaticResource RightPanelWidth}">
+             Width="{StaticResource RightPanelWidth}"
+             ClipToBounds="False">
+
+  <!-- The card's shadow reaches outside this control; see DjWindow.axaml. -->
+  <UserControl.Styles>
+    <Style Selector="UserControl /template/ ContentPresenter">
+      <Setter Property="ClipToBounds" Value="False" />
+    </Style>
+  </UserControl.Styles>
 
   <Border Classes="card floating">
     <StackPanel Spacing="{StaticResource Space2}">
-      <!-- Drag handle -->
-      <Grid x:Name="DragHandle" ColumnDefinitions="Auto,*,Auto" Background="Transparent" Cursor="SizeAll">
-        <c:Icon Glyph="drag_indicator" Classes="muted" FontSize="{StaticResource IconMd}" VerticalAlignment="Center" />
-        <TextBlock Grid.Column="1" Classes="label" Text="NOW PLAYING" VerticalAlignment="Center" Margin="4,0,0,0" />
-        <Button Grid.Column="2" Classes="sidebar small" Command="{Binding HideCommand}" ToolTip.Tip="Hide (toggle from the sidebar)">
-          <c:Icon Glyph="close" FontSize="{StaticResource IconMd}" />
-        </Button>
-      </Grid>
+      <!-- Header like the sidebar popovers (DjWindow), and the drag handle of the card -->
+      <Border x:Name="DragHandle" Background="Transparent" Cursor="SizeAll" ToolTip.Tip="Drag to move"
+              BorderBrush="{DynamicResource BrushOutlineVariant}" BorderThickness="0,0,0,1"
+              Padding="0,0,0,8" Margin="0,0,0,4">
+        <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+          <c:Icon Grid.Column="0" Glyph="play_circle" Margin="0,0,8,0" VerticalAlignment="Center" />
+          <TextBlock Grid.Column="1" Classes="title" Text="Now Playing" VerticalAlignment="Center" />
+          <c:Icon Grid.Column="2" Glyph="drag_indicator" Classes="muted" FontSize="{StaticResource IconMd}" VerticalAlignment="Center" Margin="0,0,4,0" />
+          <Button Grid.Column="3" Classes="sidebar" Width="28" Height="28" Command="{Binding HideCommand}" ToolTip.Tip="Close (reopen from the sidebar)">
+            <c:Icon Glyph="close" FontSize="{StaticResource IconMd}" />
+          </Button>
+        </Grid>
+      </Border>
 
       <Border Background="{DynamicResource BrushBeamerBackground}" CornerRadius="{StaticResource RadiusMd}" Height="110" ClipToBounds="True"
               IsVisible="{Binding HasSong}">

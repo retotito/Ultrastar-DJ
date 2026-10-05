@@ -115,9 +115,15 @@
 
   </Grid>
 
-  <!-- Floating Now Playing card (draggable by its header; position persisted) -->
+  <!-- Floating Now Playing card (draggable by its header; position persisted).
+       Nothing between the Canvas and the card may clip, or the card's shadow is cut to a square. -->
   <Canvas>
-    <ContentControl Content="{Binding NowPlaying}"
+    <Canvas.Styles>
+      <Style Selector="ContentControl.unclipped, ContentControl.unclipped /template/ ContentPresenter">
+        <Setter Property="ClipToBounds" Value="False" />
+      </Style>
+    </Canvas.Styles>
+    <ContentControl Classes="unclipped" Content="{Binding NowPlaying}"
                     Canvas.Left="{Binding NowPlaying.CardX}" Canvas.Top="{Binding NowPlaying.CardY}"
                     IsVisible="{Binding NowPlaying.IsVisible}" />
   </Canvas>

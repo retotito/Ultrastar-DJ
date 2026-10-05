@@ -170,6 +170,13 @@ videos (Sprint 6 list), read-ahead cap (Later). Guest songbook phone test moved 
 
 ---
 
+## Sprint 6g — One look for floating panels  *(done)*
+
+- [x] Now Playing card uses the popover frame (subtle border, rounded shadow without spread, same padding) and the popover header (icon, title, drag hint, ✕, divider). Shared style in `Controls.axaml`. The square shadow was clipping by the card's container (`ClipToBounds`), not the shadow itself. **Verified live (screenshot).**
+- [x] Context menus, ⋮ menus and filter drop-downs get the same shadow (`ShadowOverlay` token, `ShadowRoom` margin on the frame inside their popup windows — a margin on the menu control itself did not work). **Verified live.**
+
+---
+
 ## Later / ideas
 
 - Cap mpv read-ahead (~60 s) so YouTube streams like a player instead of pulling the whole song into RAM

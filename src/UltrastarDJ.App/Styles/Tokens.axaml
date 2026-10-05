@@ -177,6 +177,15 @@
   <CornerRadius x:Key="RadiusXl">16</CornerRadius>
   <CornerRadius x:Key="RadiusFull">9999</CornerRadius>
 
+  <!-- One shadow for everything floating: popovers, Now Playing, menus, drop-downs. No spread: Avalonia draws
+       spread shadows with square corners. Menus/drop-downs live in their own popup windows, which end at their
+       content: ShadowRoom is transparent margin inside the popup so the shadow is not cut off, and
+       -ShadowRoom.Left/Top is the placement offset that keeps the visible menu where it was. -->
+  <BoxShadows x:Key="ShadowOverlay">0 8 24 0 #99000000</BoxShadows>
+  <Thickness x:Key="ShadowRoom">16,4,16,28</Thickness>
+  <x:Double x:Key="ShadowRoomOffsetX">-16</x:Double>
+  <x:Double x:Key="ShadowRoomOffsetY">-4</x:Double>
+
   <!-- ── Layout constants ─────────────────────────────────────────────── -->
   <x:Double x:Key="SidebarWidth">56</x:Double>
   <x:Double x:Key="RightPanelWidth">340</x:Double>
