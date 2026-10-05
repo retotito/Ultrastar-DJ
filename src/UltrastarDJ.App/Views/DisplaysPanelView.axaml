@@ -17,18 +17,17 @@
           </StackPanel>
 
           <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="{StaticResource Space2}" Margin="0,12,0,0">
-            <ComboBox ItemsSource="{Binding $parent[UserControl].((vm:DisplaysPanelViewModel)DataContext).Screens}"
-                      SelectedItem="{Binding SelectedScreen}"
-                      IsEnabled="{Binding !IsOpen}"
-                      MinWidth="220">
-              <ComboBox.ItemTemplate>
-                <DataTemplate>
-                  <TextBlock Text="{Binding Name}" />
-                </DataTemplate>
-              </ComboBox.ItemTemplate>
-            </ComboBox>
             <Button Classes="tonal" Command="{Binding OpenCommand}" Content="Open" />
             <Button Classes="tonal" Command="{Binding CloseCommand}" Content="Close" />
+            <Button Classes="tonal" Command="{Binding ToggleFullScreenCommand}"
+                    ToolTip.Tip="Fullscreen on the screen the window is on — drag it to the projector first. Also: double-click or F in the window, Esc leaves.">
+              <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
+                <c:Icon Glyph="{Binding IsFullScreen, Converter={x:Static vm:BoolConverters.Glyph}, ConverterParameter='fullscreen_exit|fullscreen'}"
+                        FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
+                <TextBlock Text="{Binding IsFullScreen, Converter={x:Static vm:BoolConverters.Text}, ConverterParameter='Exit fullscreen|Fullscreen'}"
+                           Foreground="{DynamicResource BrushOnSecondaryContainer}" />
+              </StackPanel>
+            </Button>
           </StackPanel>
 
           <!-- Which players sing on this screen (a player can be on one screen only) -->
@@ -55,11 +54,8 @@
   </UserControl.Resources>
 
   <StackPanel Spacing="{StaticResource Space2}">
-    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="{StaticResource Space1}">
-      <Button Classes="sidebar" Command="{Binding RefreshScreensCommand}" ToolTip.Tip="Refresh screen list">
-        <c:Icon Glyph="refresh" FontSize="{StaticResource IconMd}" />
-      </Button>
-    </StackPanel>
+    <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap"
+               Text="A beamer opens next to this window: drag it to the projector, then go fullscreen (button, double-click or F)." />
 
     <ContentControl Content="{Binding Beamer1}" ContentTemplate="{StaticResource DisplayRow}" />
     <ContentControl Content="{Binding Beamer2}" ContentTemplate="{StaticResource DisplayRow}" />

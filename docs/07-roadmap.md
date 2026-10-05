@@ -189,6 +189,28 @@ videos (Sprint 6 list), read-ahead cap (Later). Guest songbook phone test moved 
 
 ---
 
+## Sprint 6i — Preview player logic  *(done)*
+
+- [x] Stop button removed: pause covers silence, loading another song replaces the current one, the position slider rewinds; stop only threw away the song (and disabled Add to queue / Load). Load into the game does not pause the preview: loading does not start the song, and preview (headphones) and game use separate outputs.
+- [x] Verified live
+
+---
+
+## Sprint 6j — Beamer windows you can move  *(done)*
+
+Found in use: a beamer opened on the DJ's screen covered the DJ window for good — it was an owned window (always in
+front of its owner), borderless and fullscreen on a screen picked in code.
+
+- [x] Beamers are independent, normal windows: 960×540 on the DJ window's screen (beamer 2 cascaded), title bar, resizable; the DJ drags them to the projector. No screen picker (removed `ScreenInfo`, `DisplayConfig.ScreenName`, `--beamer-debug`).
+- [x] Fullscreen on the window's current screen: Displays panel button, double-click or F; Esc leaves fullscreen and no longer closes; pointer hides after 2 s in fullscreen.
+- [x] Closing the DJ window closes all beamers first; closing one beamer keeps the other and updates the Displays panel.
+- [x] Fix: picking an entry in a drop-down inside a sidebar panel (e.g. mic selection) closed the panel. The list is drawn outside the panel but is its logical descendant; light dismiss now checks the logical tree too.
+- [x] Now Playing card stays inside the DJ window: clamped on every window resize and when the card itself grows (saved position not overwritten — only dragging saves).
+- [x] Verified live on macOS
+- [ ] Windows/Linux: check fullscreen and that the DJ window comes to the front (with the Windows build test)
+
+---
+
 ## Later / ideas
 
 - Cap mpv read-ahead (~60 s) so YouTube streams like a player instead of pulling the whole song into RAM

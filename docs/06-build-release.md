@@ -44,7 +44,6 @@ Rule of thumb: **in-process libraries** (libmpv, PortAudio) must be the exact ar
 dotnet build                          # whole solution
 dotnet test                           # all test projects
 dotnet run --project src/UltrastarDJ.App
-dotnet run --project src/UltrastarDJ.App -- --beamer-debug   # opens beamer 1 as a normal window on the same screen
 ```
 
 Settings and logs live in the per-user app data folder (`~/Library/Application Support/UltrastarDJ`,

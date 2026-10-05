@@ -2,27 +2,29 @@ using UltrastarDJ.Core.Displays;
 
 namespace UltrastarDJ.App.Services;
 
-/// <summary>A monitor as seen by the display service. Stable enough to persist by <see cref="Name"/>.</summary>
-public sealed record ScreenInfo(int Index, string Name, int WidthPx, int HeightPx, bool IsPrimary);
-
 /// <summary>
 /// Opens and closes the singer screens (beamer windows) and remembers which players belong to which screen.
 /// Boundary between ViewModels and Avalonia windowing — ViewModels never touch <c>Window</c> directly.
 /// </summary>
 public interface IDisplayService
 {
-    IReadOnlyList<ScreenInfo> Screens { get; }
-    void RefreshScreens();
-
     DisplayConfig GetConfig(DisplayId id);
     void SetPlayers(DisplayId id, IReadOnlyList<int> playerIds);
 
     bool IsOpen(DisplayId id);
-    void Open(DisplayId id, ScreenInfo screen);
+    /// <summary>Opens a normal window on the DJ window's screen; the DJ drags it to the projector.</summary>
+    void Open(DisplayId id);
     void Close(DisplayId id);
 
-    /// <summary>Raised on the UI thread when a display opens or closes.</summary>
+    bool IsFullScreen(DisplayId id);
+    /// <summary>Fullscreen on whatever screen the window is on now.</summary>
+    void ToggleFullScreen(DisplayId id);
+
+    /// <summary>Raised on the UI thread when a display opens or closes (also when the DJ closes it from its title bar).</summary>
     event Action<DisplayId, bool>? OpenStateChanged;
+
+    /// <summary>Raised on the UI thread when a display enters or leaves fullscreen, whoever triggered it.</summary>
+    event Action<DisplayId, bool>? FullScreenChanged;
 
     /// <summary>Raised on the UI thread after <see cref="SetPlayers"/> (both displays may have changed).</summary>
     event Action? PlayersChanged;

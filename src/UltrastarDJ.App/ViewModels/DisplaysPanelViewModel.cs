@@ -7,7 +7,7 @@ using UltrastarDJ.Core.Players;
 
 namespace UltrastarDJ.App.ViewModels;
 
-/// <summary>Displays panel: pick a monitor per beamer, open/close it, and choose which players sing on it.</summary>
+/// <summary>Displays panel: open/close each beamer, toggle its fullscreen, and choose which players sing on it.</summary>
 public sealed partial class DisplaysPanelViewModel : ViewModelBase
 {
     private readonly IDisplayService _displays;
@@ -17,14 +17,12 @@ public sealed partial class DisplaysPanelViewModel : ViewModelBase
     {
         _displays = displays;
         _players = players;
-        _displays.RefreshScreens();
-        Screens = new ObservableCollection<ScreenInfo>(_displays.Screens);
-        Beamer1 = new DisplayRowViewModel(DisplayId.Beamer1, _displays, _players, Screens, this);
-        Beamer2 = new DisplayRowViewModel(DisplayId.Beamer2, _displays, _players, Screens, this);
+        Beamer1 = new DisplayRowViewModel(DisplayId.Beamer1, _displays, _players, this);
+        Beamer2 = new DisplayRowViewModel(DisplayId.Beamer2, _displays, _players, this);
         _displays.OpenStateChanged += OnOpenStateChanged;
+        _displays.FullScreenChanged += OnFullScreenChanged;
     }
 
-    public ObservableCollection<ScreenInfo> Screens { get; }
     public DisplayRowViewModel Beamer1 { get; }
     public DisplayRowViewModel Beamer2 { get; }
 
@@ -35,51 +33,43 @@ public sealed partial class DisplaysPanelViewModel : ViewModelBase
         Beamer2.LoadAssignments();
     }
 
-    [RelayCommand]
-    private void RefreshScreens()
-    {
-        _displays.RefreshScreens();
-        Screens.Clear();
-        foreach (ScreenInfo s in _displays.Screens)
-        {
-            Screens.Add(s);
-        }
-
-        Beamer1.PickDefaultScreen();
-        Beamer2.PickDefaultScreen();
-    }
+    private DisplayRowViewModel Row(DisplayId id) => id == DisplayId.Beamer1 ? Beamer1 : Beamer2;
 
     private void OnOpenStateChanged(DisplayId id, bool isOpen)
     {
-        (id == DisplayId.Beamer1 ? Beamer1 : Beamer2).IsOpen = isOpen;
+        Row(id).IsOpen = isOpen;
+        if (!isOpen)
+        {
+            Row(id).IsFullScreen = false;
+        }
     }
+
+    private void OnFullScreenChanged(DisplayId id, bool fullScreen) => Row(id).IsFullScreen = fullScreen;
 }
 
 public sealed partial class DisplayRowViewModel : ObservableObject
 {
     private readonly IDisplayService _displays;
     private readonly PlayersService _players;
-    private readonly ObservableCollection<ScreenInfo> _screens;
     private readonly DisplaysPanelViewModel _owner;
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(OpenCommand))]
-    private ScreenInfo? _selectedScreen;
-
-    [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(OpenCommand))]
     [NotifyCanExecuteChangedFor(nameof(CloseCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ToggleFullScreenCommand))]
     private bool _isOpen;
 
-    public DisplayRowViewModel(DisplayId id, IDisplayService displays, PlayersService players, ObservableCollection<ScreenInfo> screens, DisplaysPanelViewModel owner)
+    [ObservableProperty]
+    private bool _isFullScreen;
+
+    public DisplayRowViewModel(DisplayId id, IDisplayService displays, PlayersService players, DisplaysPanelViewModel owner)
     {
         Id = id;
         _displays = displays;
         _players = players;
-        _screens = screens;
         _owner = owner;
         IsOpen = displays.IsOpen(id);
-        PickDefaultScreen();
+        IsFullScreen = displays.IsFullScreen(id);
         foreach (PlayerConfig p in players.All)
         {
             Players.Add(new PlayerToggleViewModel(p, this));
@@ -118,22 +108,16 @@ public sealed partial class DisplayRowViewModel : ObservableObject
         _owner.SyncAssignments();
     }
 
-    /// <summary>Prefer the persisted screen, then the first non-primary one, then whatever exists.</summary>
-    public void PickDefaultScreen()
-    {
-        string? remembered = _displays.GetConfig(Id).ScreenName;
-        SelectedScreen = _screens.FirstOrDefault(s => s.Name == remembered)
-            ?? _screens.FirstOrDefault(s => !s.IsPrimary)
-            ?? _screens.FirstOrDefault();
-    }
-
     [RelayCommand(CanExecute = nameof(CanOpen))]
-    private void Open() => _displays.Open(Id, SelectedScreen!);
+    private void Open() => _displays.Open(Id);
 
-    private bool CanOpen() => !IsOpen && SelectedScreen is not null;
+    private bool CanOpen() => !IsOpen;
 
     [RelayCommand(CanExecute = nameof(IsOpen))]
     private void Close() => _displays.Close(Id);
+
+    [RelayCommand(CanExecute = nameof(IsOpen))]
+    private void ToggleFullScreen() => _displays.ToggleFullScreen(Id);
 }
 
 /// <summary>One player chip on a display row. Disabled when the player has no mic.</summary>

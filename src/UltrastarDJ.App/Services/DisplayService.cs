@@ -13,9 +13,13 @@ namespace UltrastarDJ.App.Services;
 public sealed class DisplayService : IDisplayService
 {
     private const string SettingsName = "displays";
+    // Small enough to sit next to the DJ window; the DJ drags it to the projector and goes fullscreen there.
+    private const double InitialWidth = 960;
+    private const double InitialHeight = 540;
+    // Beamer 2 opens this far down-right of beamer 1 so both title bars stay reachable.
+    private const int CascadePx = 48;
 
     private readonly ISettingsStore _settings;
-    private readonly AppOptions _options;
     private readonly MediaService _media;
     private readonly PlayersService _players;
     private readonly IServiceProvider _services;
@@ -23,12 +27,10 @@ public sealed class DisplayService : IDisplayService
     private readonly Dictionary<DisplayId, BeamerWindow> _open = [];
     private Window? _owner;
     private DisplaysDocument _doc;
-    private IReadOnlyList<ScreenInfo> _screens = [];
 
-    public DisplayService(ISettingsStore settings, AppOptions options, MediaService media, PlayersService players, IServiceProvider services, ILogger<DisplayService> log)
+    public DisplayService(ISettingsStore settings, MediaService media, PlayersService players, IServiceProvider services, ILogger<DisplayService> log)
     {
         _settings = settings;
-        _options = options;
         _media = media;
         _players = players;
         _services = services;
@@ -37,37 +39,22 @@ public sealed class DisplayService : IDisplayService
     }
 
     public event Action<DisplayId, bool>? OpenStateChanged;
+    public event Action<DisplayId, bool>? FullScreenChanged;
 
-    public IReadOnlyList<ScreenInfo> Screens => _screens;
-
-    /// <summary>Called once by the composition root; screens are enumerated relative to the DJ window.</summary>
+    /// <summary>
+    /// Called once by the composition root. Beamers are independent windows (an owned window would always stay in
+    /// front of the DJ window), so the DJ window closes them itself — before the app tears down media.
+    /// </summary>
     public void AttachOwner(Window owner)
     {
         _owner = owner;
-        owner.Opened += (_, _) => RefreshScreens();
-    }
-
-    public void RefreshScreens()
-    {
-        Avalonia.Controls.Screens? screens = _owner?.Screens;
-        if (screens is null)
+        owner.Closing += (_, _) =>
         {
-            _screens = [];
-            return;
-        }
-
-        _screens = screens.All
-            .Select((s, i) => new ScreenInfo(
-                i,
-                s.DisplayName ?? $"Screen {i + 1}",
-                s.Bounds.Width,
-                s.Bounds.Height,
-                s.IsPrimary))
-            .ToList();
-        if (_log.IsEnabled(LogLevel.Debug))
-        {
-            _log.LogDebug("Screens: {Screens}", string.Join(" | ", _screens.Select(s => $"{s.Name} {s.WidthPx}x{s.HeightPx}{(s.IsPrimary ? " (primary)" : "")}")));
-        }
+            foreach (BeamerWindow window in _open.Values.ToList())
+            {
+                window.Close();
+            }
+        };
     }
 
     public DisplayConfig GetConfig(DisplayId id) => _doc.Get(id);
@@ -88,14 +75,13 @@ public sealed class DisplayService : IDisplayService
 
     public bool IsOpen(DisplayId id) => _open.ContainsKey(id);
 
-    public void Open(DisplayId id, ScreenInfo screen)
+    public void Open(DisplayId id)
     {
         if (_open.ContainsKey(id))
         {
             return;
         }
 
-        Screen? target = _owner?.Screens.All.ElementAtOrDefault(screen.Index);
         // Resolved here, not injected: PlaybackService depends on IDisplayService (would be a constructor cycle).
         PlaybackService playback = _services.GetRequiredService<PlaybackService>();
         BeamerViewModel vm = new(id, _media.Game.Frames, playback, _players, this);
@@ -103,25 +89,18 @@ public sealed class DisplayService : IDisplayService
         {
             DataContext = vm,
             Title = $"Ultrastar DJ — Beamer {(int)id}",
+            Width = InitialWidth,
+            Height = InitialHeight,
         };
+        PlaceOnOwnerScreen(window, id);
 
-        if (_options.BeamerDebug || target is null)
+        window.PropertyChanged += (_, e) =>
         {
-            window.Width = 960;
-            window.Height = 540;
-            window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-        }
-        else
-        {
-            // Position on the target screen before going fullscreen so the OS fullscreens the right monitor.
-            window.WindowStartupLocation = WindowStartupLocation.Manual;
-            window.Position = target.Bounds.Position;
-            window.Width = target.WorkingArea.Width / target.Scaling;
-            window.Height = target.WorkingArea.Height / target.Scaling;
-            window.WindowDecorations = WindowDecorations.None;
-            window.Opened += (_, _) => window.WindowState = WindowState.FullScreen;
-        }
-
+            if (e.Property == Window.WindowStateProperty)
+            {
+                FullScreenChanged?.Invoke(id, window.WindowState == WindowState.FullScreen);
+            }
+        };
         window.Closed += (_, _) =>
         {
             vm.Dispose();
@@ -131,20 +110,39 @@ public sealed class DisplayService : IDisplayService
         };
 
         _open[id] = window;
-        _doc = _doc.With(_doc.Get(id) with { ScreenName = screen.Name });
-        _settings.Save(SettingsName, _doc);
-
-        if (_owner is not null)
-        {
-            window.Show(_owner);
-        }
-        else
-        {
-            window.Show();
-        }
-
-        _log.LogInformation("Beamer {Display} opened on {Screen}", (int)id, screen.Name);
+        window.Show();
+        _log.LogInformation("Beamer {Display} opened", (int)id);
         OpenStateChanged?.Invoke(id, true);
+    }
+
+    public bool IsFullScreen(DisplayId id) => _open.TryGetValue(id, out BeamerWindow? w) && w.WindowState == WindowState.FullScreen;
+
+    public void ToggleFullScreen(DisplayId id)
+    {
+        if (_open.TryGetValue(id, out BeamerWindow? window))
+        {
+            window.WindowState = window.WindowState == WindowState.FullScreen ? WindowState.Normal : WindowState.FullScreen;
+        }
+    }
+
+    private void PlaceOnOwnerScreen(BeamerWindow window, DisplayId id)
+    {
+        Screen? screen = _owner is null ? null : _owner.Screens.ScreenFromWindow(_owner) ?? _owner.Screens.Primary;
+        if (screen is null)
+        {
+            window.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            return;
+        }
+
+        // Position is in physical pixels, Width/Height in DIPs.
+        PixelRect area = screen.WorkingArea;
+        int w = (int)(InitialWidth * screen.Scaling);
+        int h = (int)(InitialHeight * screen.Scaling);
+        int cascade = id == DisplayId.Beamer2 ? (int)(CascadePx * screen.Scaling) : 0;
+        window.WindowStartupLocation = WindowStartupLocation.Manual;
+        window.Position = new PixelPoint(
+            area.X + Math.Max(0, (area.Width - w) / 2) + cascade,
+            area.Y + Math.Max(0, (area.Height - h) / 2) + cascade);
     }
 
     public void Close(DisplayId id)

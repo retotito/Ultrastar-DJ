@@ -33,11 +33,10 @@ public sealed partial class App : Application
             return;
         }
 
-        AppOptions options = AppOptions.Parse(desktop.Args ?? []);
         AppPaths paths = new();
         ConfigureSerilog(paths);
 
-        _services = BuildServices(options, paths);
+        _services = BuildServices(paths);
 #if DEBUG
         Diagnostics.UiInspector.Attach(paths.Logs, _services.GetRequiredService<ILogger<App>>());
 #endif
@@ -56,17 +55,15 @@ public sealed partial class App : Application
         _ = _services.GetRequiredService<SongbookService>().AutoStartAsync();
 
         _services.GetRequiredService<ILogger<App>>().LogInformation(
-            "Ultrastar DJ {Version} started (beamer-debug: {BeamerDebug})",
-            typeof(App).Assembly.GetName().Version?.ToString(3), options.BeamerDebug);
+            "Ultrastar DJ {Version} started", typeof(App).Assembly.GetName().Version?.ToString(3));
 
         base.OnFrameworkInitializationCompleted();
     }
 
-    private static ServiceProvider BuildServices(AppOptions options, AppPaths paths)
+    private static ServiceProvider BuildServices(AppPaths paths)
     {
         ServiceCollection services = new();
 
-        services.AddSingleton(options);
         services.AddSingleton(paths);
         services.AddLogging(builder => builder.AddSerilog(dispose: false));
 

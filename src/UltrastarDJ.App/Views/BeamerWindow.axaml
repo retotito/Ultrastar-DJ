@@ -6,7 +6,6 @@
         x:Class="UltrastarDJ.App.Views.BeamerWindow"
         x:DataType="vm:BeamerViewModel"
         Background="{DynamicResource BrushBeamerBackground}"
-        ShowInTaskbar="False"
         CanResize="True">
 
   <Window.Resources>

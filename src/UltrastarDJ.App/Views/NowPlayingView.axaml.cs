@@ -23,8 +23,48 @@ public sealed partial class NowPlayingView : UserControl
         DragHandle.PointerMoved += OnHandleMoved;
         DragHandle.PointerReleased += OnHandleReleased;
         DragHandle.PointerCaptureLost += (_, _) => EndDrag();
-        SizeChanged += (_, _) => PlaceIfUnset();
+        // The card can grow (mix rows appear), and a saved position may come from a bigger window.
+        SizeChanged += (_, _) =>
+        {
+            PlaceIfUnset();
+            KeepInsideWindow();
+        };
     }
+
+    // The window shrinking must not push the card out of reach: pull it back in on every resize.
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        if (TopLevel.GetTopLevel(this) is { } top)
+        {
+            top.SizeChanged += OnWindowSizeChanged;
+        }
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        if (TopLevel.GetTopLevel(this) is { } top)
+        {
+            top.SizeChanged -= OnWindowSizeChanged;
+        }
+
+        base.OnDetachedFromVisualTree(e);
+    }
+
+    private void OnWindowSizeChanged(object? sender, SizeChangedEventArgs e) => KeepInsideWindow();
+
+    /// <summary>Clamps the card into the window. Not persisted: the saved position is only what the DJ dragged to.</summary>
+    private void KeepInsideWindow()
+    {
+        if (Vm is { } vm && TopLevel.GetTopLevel(this) is { } top && Bounds.Width > 0)
+        {
+            (vm.CardX, vm.CardY) = Clamp(vm.CardX, vm.CardY, top);
+        }
+    }
+
+    private (double X, double Y) Clamp(double x, double y, TopLevel top) => (
+        Math.Clamp(x, 0, Math.Max(0, top.ClientSize.Width - Bounds.Width)),
+        Math.Clamp(y, 0, Math.Max(0, top.ClientSize.Height - Bounds.Height)));
 
     private NowPlayingViewModel? Vm => DataContext as NowPlayingViewModel;
 
@@ -63,8 +103,7 @@ public sealed partial class NowPlayingView : UserControl
         }
 
         Point p = e.GetPosition(top);
-        vm.CardX = Math.Clamp(_cardStartX + p.X - _pointerStart.X, 0, Math.Max(0, top.ClientSize.Width - Bounds.Width));
-        vm.CardY = Math.Clamp(_cardStartY + p.Y - _pointerStart.Y, 0, Math.Max(0, top.ClientSize.Height - Bounds.Height));
+        (vm.CardX, vm.CardY) = Clamp(_cardStartX + p.X - _pointerStart.X, _cardStartY + p.Y - _pointerStart.Y, top);
     }
 
     private void OnHandleReleased(object? sender, PointerReleasedEventArgs e)
