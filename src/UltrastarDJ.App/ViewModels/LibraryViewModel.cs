@@ -21,6 +21,14 @@ public sealed record LibraryRow(Song Song, string Source, bool IsAvailable)
     /// <summary>USDB songs always play from YouTube; the id is only known once the txt is fetched.</summary>
     public bool HasYouTube => Song.HasYouTube || IsUsdb;
     public double Opacity => IsAvailable ? 1.0 : 0.4;
+    /// <summary>USDB popularity; "—" for local songs, empty for USDB songs under 100 views.</summary>
+    public string Stars => Song.Stars is { } n ? new string('★', n) : "—";
+}
+
+/// <summary>An entry of the rating filter: exactly <see cref="Stars"/> stars, or no filter when null.</summary>
+public sealed record RatingOption(int? Stars, string Label)
+{
+    public override string ToString() => Label;
 }
 
 /// <summary>An entry of the source filter. <see cref="Key"/> is a source id, or <see cref="AllKey"/>/<see cref="LocalKey"/>.</summary>
@@ -34,7 +42,10 @@ public sealed record SourceOption(string Key, string Label)
 /// <summary>Centre panel: the song library with search, filters and sort. Row actions hand songs to preview, queue or game.</summary>
 public sealed partial class LibraryViewModel : ViewModelBase
 {
-    private const string All = "All";
+    // The first entry of each filter is "no filter" and is labelled with the filter's name.
+    private const string AnyLanguage = "Language";
+    private const string AnyGenre = "Genre";
+    private static readonly RatingOption AnyRating = new(null, "Rating");
     private static readonly SourceOption AllSources = new(SourceOption.AllKey, "All sources");
 
     // Clearing Sources makes the ComboBox write null back into Source; that must not re-enter Refresh.
@@ -49,8 +60,9 @@ public sealed partial class LibraryViewModel : ViewModelBase
     [ObservableProperty] private int _totalCount;
     [ObservableProperty] private int _shownCount;
     [ObservableProperty] private LibraryRow? _selected;
-    [ObservableProperty] private string _language = All;
-    [ObservableProperty] private string _genre = All;
+    [ObservableProperty] private string _language = AnyLanguage;
+    [ObservableProperty] private string _genre = AnyGenre;
+    [ObservableProperty] private RatingOption? _rating = AnyRating;
     [ObservableProperty] private SongSort _sort = SongSort.Artist;
     /// <summary>Null while the ComboBox rebuilds its items; treated as "all sources".</summary>
     [ObservableProperty] private SourceOption? _source = AllSources;
@@ -69,8 +81,22 @@ public sealed partial class LibraryViewModel : ViewModelBase
 
     /// <summary>Replaced wholesale on every refresh: 27k USDB rows through ObservableCollection.Add would stall the UI.</summary>
     [ObservableProperty] private IReadOnlyList<LibraryRow> _rows = [];
-    public ObservableCollection<string> Languages { get; } = [All];
-    public ObservableCollection<string> Genres { get; } = [All];
+    public ObservableCollection<string> Languages { get; } = [AnyLanguage];
+    public ObservableCollection<string> Genres { get; } = [AnyGenre];
+    /// <summary>Any of rating/language/genre/source set (search has its own clear button). Shows "Clear".</summary>
+    public bool HasActiveFilters => Rating?.Stars is not null || Language != AnyLanguage || Genre != AnyGenre
+        || Source?.Key is not (null or SourceOption.AllKey);
+
+    [RelayCommand]
+    private void ClearFilters()
+    {
+        Rating = AnyRating;
+        Language = AnyLanguage;
+        Genre = AnyGenre;
+        Source = AllSources;
+    }
+
+    public IReadOnlyList<RatingOption> Ratings { get; } = [AnyRating, new(1, "★"), new(2, "★★"), new(3, "★★★"), new(4, "★★★★")];
     public ObservableCollection<SourceOption> Sources { get; } = [AllSources];
 
     public string SortIndicator(SongSort column) => Sort == column ? (Descending ? " ▼" : " ▲") : "";
@@ -79,6 +105,7 @@ public sealed partial class LibraryViewModel : ViewModelBase
     public string YearHeader => "YEAR" + SortIndicator(SongSort.Year);
     public string LanguageHeader => "LANGUAGE" + SortIndicator(SongSort.Language);
     public string SourceHeader => "SOURCE" + SortIndicator(SongSort.Source);
+    public string RatingHeader => "RATING" + SortIndicator(SongSort.Rating);
 
     [RelayCommand]
     private void SortBy(SongSort column)
@@ -98,6 +125,7 @@ public sealed partial class LibraryViewModel : ViewModelBase
         OnPropertyChanged(nameof(YearHeader));
         OnPropertyChanged(nameof(LanguageHeader));
         OnPropertyChanged(nameof(SourceHeader));
+        OnPropertyChanged(nameof(RatingHeader));
         Refresh();
     }
 
@@ -122,6 +150,8 @@ public sealed partial class LibraryViewModel : ViewModelBase
     partial void OnSearchChanged(string value) => Refresh();
     partial void OnLanguageChanged(string value) => Refresh();
     partial void OnGenreChanged(string value) => Refresh();
+    partial void OnRatingChanged(RatingOption? value) => Refresh();
+
     partial void OnSourceChanged(SourceOption? value)
     {
         if (!_rebuildingSources)
@@ -139,8 +169,9 @@ public sealed partial class LibraryViewModel : ViewModelBase
         SongQuery query = new()
         {
             Search = Search,
-            Language = Language == All ? null : Language,
-            Genre = Genre == All ? null : Genre,
+            Language = Language == AnyLanguage ? null : Language,
+            Genre = Genre == AnyGenre ? null : Genre,
+            Stars = Rating?.Stars,
             SourceIds = SelectedSourceIds(),
             SortBy = Sort,
             Descending = Descending,
@@ -149,6 +180,7 @@ public sealed partial class LibraryViewModel : ViewModelBase
             .Select(s => new LibraryRow(s, _library.SourceLabel(s.SourceId), _library.IsAvailable(s.SourceId)))
             .ToList();
         ShownCount = Rows.Count;
+        OnPropertyChanged(nameof(HasActiveFilters));
     }
 
     private HashSet<string>? SelectedSourceIds() => Source?.Key switch
@@ -160,8 +192,8 @@ public sealed partial class LibraryViewModel : ViewModelBase
 
     private void RefreshFilterValues(IReadOnlyList<Song> all)
     {
-        Sync(Languages, all.Select(s => s.Language).Where(l => !string.IsNullOrWhiteSpace(l)).Select(l => l!).Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase));
-        Sync(Genres, all.Select(s => s.Genre).Where(g => !string.IsNullOrWhiteSpace(g)).Select(g => g!).Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase));
+        Sync(Languages, AnyLanguage, all.Select(s => s.Language).Where(l => !string.IsNullOrWhiteSpace(l)).Select(l => l!).Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase));
+        Sync(Genres, AnyGenre, all.Select(s => s.Genre).Where(g => !string.IsNullOrWhiteSpace(g)).Select(g => g!).Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase));
         List<SourceOption> sources = [AllSources];
         if (_library.Sources.Count > 1 || (_library.Sources.Count > 0 && _library.UsdbCount > 0))
         {
@@ -190,18 +222,18 @@ public sealed partial class LibraryViewModel : ViewModelBase
 
         if (!Languages.Contains(Language))
         {
-            Language = All;
+            Language = AnyLanguage;
         }
 
         if (!Genres.Contains(Genre))
         {
-            Genre = All;
+            Genre = AnyGenre;
         }
     }
 
-    private static void Sync(ObservableCollection<string> target, IEnumerable<string> values)
+    private static void Sync(ObservableCollection<string> target, string any, IEnumerable<string> values)
     {
-        List<string> wanted = [All, .. values];
+        List<string> wanted = [any, .. values];
         if (target.SequenceEqual(wanted))
         {
             return;

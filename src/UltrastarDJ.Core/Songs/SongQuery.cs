@@ -7,6 +7,8 @@ public enum SongSort
     Year,
     Language,
     Source,
+    /// <summary>By USDB views; local songs (no views) count as lowest.</summary>
+    Rating,
 }
 
 /// <summary>
@@ -23,6 +25,8 @@ public sealed record SongQuery
     public string? Genre { get; init; }
     /// <summary>Song sources to keep (<see cref="Song.SourceId"/>); <c>null</c> = all sources.</summary>
     public IReadOnlySet<string>? SourceIds { get; init; }
+    /// <summary>Exact <see cref="Song.Stars"/>; songs without stars (local) are dropped. <c>null</c> = no rating filter.</summary>
+    public int? Stars { get; init; }
     public SongSort SortBy { get; init; } = SongSort.Artist;
     public bool Descending { get; init; }
 
@@ -47,6 +51,11 @@ public sealed record SongQuery
             filtered = filtered.Where(s => string.Equals(s.Genre, Genre, StringComparison.OrdinalIgnoreCase));
         }
 
+        if (Stars is { } stars)
+        {
+            filtered = filtered.Where(s => s.Stars == stars);
+        }
+
         if (SourceIds is not null)
         {
             filtered = filtered.Where(s => SourceIds.Contains(s.SourceId));
@@ -58,6 +67,7 @@ public sealed record SongQuery
             SongSort.Year => Order(filtered, s => s.Year ?? 0),
             SongSort.Language => Order(filtered, s => s.Language ?? ""),
             SongSort.Source => Order(filtered, s => sourceLabel(s.SourceId)),
+            SongSort.Rating => Order(filtered, s => s.UsdbViews ?? -1),
             _ => Order(filtered, s => s.Artist),
         };
 

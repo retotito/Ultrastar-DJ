@@ -161,6 +161,15 @@ videos (Sprint 6 list), read-ahead cap (Later). Guest songbook phone test moved 
 
 ---
 
+## Sprint 6f — Library: rating filter, filter names, clear  *(done)*
+
+- [x] Rating = USDB popularity from views (★ 100+, ★★ 500+, ★★★ 1000+, ★★★★ 2000+), as in the prototype: `Song.Stars`, `SongQuery.Stars`, sort by views; RATING column; filter matches the exact star count (the prototype used "at least" — changed after live test), hides local songs. USDB's own rating column is not usable — it renders as images, the scraper stores 0 for every song.
+- [x] Rating, Language and Genre filters show their name instead of "All" when unset.
+- [x] "Clear" text button at the end of the filter row while rating/language/genre/source is set (as in the prototype; search is not reset); ✕ inside the search box clears the search.
+- [x] Verified live
+
+---
+
 ## Later / ideas
 
 - Cap mpv read-ahead (~60 s) so YouTube streams like a player instead of pulling the whole song into RAM

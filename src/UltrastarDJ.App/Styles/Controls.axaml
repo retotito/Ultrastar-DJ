@@ -70,6 +70,21 @@
     <Setter Property="Background" Value="{DynamicResource BrushSurfaceContainerHighest}" />
   </Style>
 
+  <!-- Text button (low-emphasis action, e.g. "Clear" filters) -->
+  <Style Selector="Button.text">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource BrushPrimary}" />
+    <Setter Property="CornerRadius" Value="{StaticResource RadiusFull}" />
+    <Setter Property="Padding" Value="12,6" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+  <Style Selector="Button.text:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BrushSurfaceContainerHigh}" />
+  </Style>
+  <Style Selector="Button.text c|Icon">
+    <Setter Property="Foreground" Value="{DynamicResource BrushPrimary}" />
+  </Style>
+
   <!-- Borderless text box that reads like a label until focused (player names) -->
   <Style Selector="TextBox.inline">
     <Setter Property="Background" Value="Transparent" />

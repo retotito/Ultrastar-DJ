@@ -80,6 +80,20 @@ public sealed record Song
     public int? UsdbId { get; init; }
     public int? UsdbViews { get; init; }
 
+    /// <summary>
+    /// Popularity 0–4 from USDB views (100/500/1000/2000+), as in the prototype; <c>null</c> for local songs.
+    /// USDB's own rating column is not used: the song list renders it as images, so the scraper only sees 0.
+    /// </summary>
+    public int? Stars => UsdbViews switch
+    {
+        null => null,
+        >= 2000 => 4,
+        >= 1000 => 3,
+        >= 500 => 2,
+        >= 100 => 1,
+        _ => 0,
+    };
+
     public bool HasLocalAudio => !string.IsNullOrEmpty(AudioPath);
     public bool HasLocalVideo => !string.IsNullOrEmpty(VideoPath);
     public bool HasYouTube => !string.IsNullOrEmpty(YouTubeId);

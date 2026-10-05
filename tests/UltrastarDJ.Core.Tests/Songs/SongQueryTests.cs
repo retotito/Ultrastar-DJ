@@ -6,15 +6,15 @@ public class SongQueryTests
 {
     private static readonly Dictionary<string, string> Labels = new() { ["a"] = "Party Folder", ["b"] = "Classics", ["usdb"] = "USDB" };
 
-    private static Song S(string title, string artist, string source, int? year = null, string? language = null, string? genre = null)
-        => new() { Id = $"{source}::{title}", SourceId = source, Title = title, Artist = artist, Bpm = 300, Year = year, Language = language, Genre = genre };
+    private static Song S(string title, string artist, string source, int? year = null, string? language = null, string? genre = null, int? views = null)
+        => new() { Id = $"{source}::{title}", SourceId = source, Title = title, Artist = artist, Bpm = 300, Year = year, Language = language, Genre = genre, UsdbViews = views };
 
     private static readonly Song[] Songs =
     [
         S("Roxanne", "The Police", "a", 1978, "English", "Rock"),
         S("Lovefool", "The Cardigans", "b", 1996, "English", "Pop"),
-        S("Beautiful Day", "U2", "usdb", 2000, "English", "Pop"),
-        S("99 Luftballons", "Nena", "usdb", 1983, "German", "Pop"),
+        S("Beautiful Day", "U2", "usdb", 2000, "English", "Pop", views: 2500),
+        S("99 Luftballons", "Nena", "usdb", 1983, "German", "Pop", views: 600),
     ];
 
     private static List<string> Titles(SongQuery q) => q.Apply(Songs, id => Labels[id]).Select(s => s.Title).ToList();
@@ -64,5 +64,33 @@ public class SongQueryTests
         Song[] songs = [S("New", "X", "a", 2010), S("None", "Y", "a"), S("Old", "Z", "a", 1970)];
 
         Assert.Equal(["None", "Old", "New"], new SongQuery { SortBy = SongSort.Year }.Apply(songs, id => Labels[id]).Select(s => s.Title));
+    }
+
+    [Theory]
+    [InlineData(null, null)]
+    [InlineData(99, 0)]
+    [InlineData(100, 1)]
+    [InlineData(499, 1)]
+    [InlineData(500, 2)]
+    [InlineData(1000, 3)]
+    [InlineData(2000, 4)]
+    public void Stars_FromUsdbViews(int? views, int? stars)
+    {
+        Assert.Equal(stars, S("T", "A", "usdb", views: views).Stars);
+    }
+
+    [Fact]
+    public void Apply_Stars_KeepsExactlyThatRatingAndDropsUnrated()
+    {
+        Assert.Equal(["99 Luftballons"], Titles(new SongQuery { Stars = 2 }));
+        Assert.Equal(["Beautiful Day"], Titles(new SongQuery { Stars = 4 }));
+        Assert.Empty(Titles(new SongQuery { Stars = 1 }));
+    }
+
+    [Fact]
+    public void Apply_SortByRating_OrdersByViewsWithUnratedFirst()
+    {
+        Assert.Equal(["Lovefool", "Roxanne", "99 Luftballons", "Beautiful Day"], Titles(new SongQuery { SortBy = SongSort.Rating }));
+        Assert.Equal(["Beautiful Day", "99 Luftballons", "Lovefool", "Roxanne"], Titles(new SongQuery { SortBy = SongSort.Rating, Descending = true }));
     }
 }
