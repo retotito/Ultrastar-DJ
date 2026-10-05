@@ -147,6 +147,13 @@ videos (Sprint 6 list), read-ahead cap (Later). Guest songbook phone test moved 
 
 ---
 
+## Sprint 6d — Library: filter and sort by source  *(done)*
+
+- [x] Source filter in the library header: All sources · All local folders · each folder · USDB. SOURCE column sorts by source name (ties: artist, title). Search/filter/sort moved from `LibraryViewModel` into `Core.Songs.SongQuery`, with tests. **Verified live.**
+- [x] "LIBRARY" title removed from the header; shown/total song count moved to a footer at the bottom left (as in the prototype). **Verified live.**
+
+---
+
 ## Later / ideas
 
 - Cap mpv read-ahead (~60 s) so YouTube streams like a player instead of pulling the whole song into RAM

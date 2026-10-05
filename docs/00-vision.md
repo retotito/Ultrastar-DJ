@@ -63,7 +63,7 @@ Everything below exists in the prototype and must exist in v2 unless marked *(la
 
 ### Library
 - Sources: local folders (recursive scan for `.txt`), USDB (login, full + incremental catalog sync, progress, abort, disconnect, auto-login on start). *(later)*: custom/plugin sources.
-- Song table with virtual scrolling (27k+ rows), search (title/artist), filters (language, genre), column sort, source badge (local / USDB), availability watcher (source folder unplugged → songs greyed).
+- Song table with virtual scrolling (27k+ rows), search (title/artist), filters (language, genre, source: one folder, all local folders or USDB), column sort incl. source, source badge (local / USDB), availability watcher (source folder unplugged → songs greyed).
 - Lazy song validation before preview/queue/load: required tags, ≥1 note line, at least one playable audio source on disk or YouTube; patched copy with missing optional files nulled; error dialog listing problems.
 - USDB songs: `.txt` fetched on demand, YouTube ID extracted, requires internet (offline badge + block).
 

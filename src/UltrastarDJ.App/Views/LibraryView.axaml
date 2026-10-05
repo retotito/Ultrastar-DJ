@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:UltrastarDJ.App.ViewModels"
+             xmlns:core="using:UltrastarDJ.Core.Songs"
              xmlns:c="using:UltrastarDJ.App.Controls"
              x:Class="UltrastarDJ.App.Views.LibraryView"
              x:DataType="vm:LibraryViewModel">
@@ -16,27 +17,24 @@
     </Style>
   </UserControl.Styles>
 
-  <Grid RowDefinitions="Auto,Auto,*">
+  <Grid RowDefinitions="Auto,Auto,*,Auto">
     <Border Grid.Row="0" Padding="{StaticResource Pad3}"
             BorderBrush="{DynamicResource BrushOutlineVariant}" BorderThickness="0,0,0,1">
-      <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto">
-        <TextBlock Grid.Column="0" Classes="label" Text="LIBRARY" VerticalAlignment="Center" />
-        <TextBox Grid.Column="1" Margin="16,0" PlaceholderText="Search title or artist  —  double-click: preview · ⋮ or right-click: queue / game" Text="{Binding Search}" />
-        <ComboBox Grid.Column="2" ItemsSource="{Binding Languages}" SelectedItem="{Binding Language}" MinWidth="120" Margin="0,0,8,0" ToolTip.Tip="Language" />
-        <ComboBox Grid.Column="3" ItemsSource="{Binding Genres}" SelectedItem="{Binding Genre}" MinWidth="120" Margin="0,0,16,0" ToolTip.Tip="Genre" />
-        <TextBlock Grid.Column="4" Classes="muted" VerticalAlignment="Center">
-          <Run Text="{Binding ShownCount}" /><Run Text=" / " /><Run Text="{Binding TotalCount}" /><Run Text=" songs" />
-        </TextBlock>
+      <Grid ColumnDefinitions="*,Auto,Auto,Auto">
+        <TextBox Grid.Column="0" Margin="0,0,16,0" PlaceholderText="Search title or artist  —  double-click: preview · ⋮ or right-click: queue / game" Text="{Binding Search}" />
+        <ComboBox Grid.Column="1" ItemsSource="{Binding Languages}" SelectedItem="{Binding Language}" MinWidth="120" Margin="0,0,8,0" ToolTip.Tip="Language" />
+        <ComboBox Grid.Column="2" ItemsSource="{Binding Genres}" SelectedItem="{Binding Genre}" MinWidth="120" Margin="0,0,8,0" ToolTip.Tip="Genre" />
+        <ComboBox Grid.Column="3" ItemsSource="{Binding Sources}" SelectedItem="{Binding Source}" MinWidth="140" ToolTip.Tip="Song source" />
       </Grid>
     </Border>
 
     <!-- Header row: click to sort -->
     <Grid Grid.Row="1" ColumnDefinitions="2*,2*,60,90,90,60,36" Margin="12,6">
-      <Button Grid.Column="0" Classes="header" Command="{Binding SortByCommand}" CommandParameter="{x:Static vm:LibrarySort.Title}"><TextBlock Classes="label" Text="{Binding TitleHeader}" /></Button>
-      <Button Grid.Column="1" Classes="header" Command="{Binding SortByCommand}" CommandParameter="{x:Static vm:LibrarySort.Artist}"><TextBlock Classes="label" Text="{Binding ArtistHeader}" /></Button>
-      <Button Grid.Column="2" Classes="header" Command="{Binding SortByCommand}" CommandParameter="{x:Static vm:LibrarySort.Year}"><TextBlock Classes="label" Text="{Binding YearHeader}" /></Button>
-      <Button Grid.Column="3" Classes="header" Command="{Binding SortByCommand}" CommandParameter="{x:Static vm:LibrarySort.Language}"><TextBlock Classes="label" Text="{Binding LanguageHeader}" /></Button>
-      <TextBlock Grid.Column="4" Classes="label" Text="SOURCE" />
+      <Button Grid.Column="0" Classes="header" Command="{Binding SortByCommand}" CommandParameter="{x:Static core:SongSort.Title}"><TextBlock Classes="label" Text="{Binding TitleHeader}" /></Button>
+      <Button Grid.Column="1" Classes="header" Command="{Binding SortByCommand}" CommandParameter="{x:Static core:SongSort.Artist}"><TextBlock Classes="label" Text="{Binding ArtistHeader}" /></Button>
+      <Button Grid.Column="2" Classes="header" Command="{Binding SortByCommand}" CommandParameter="{x:Static core:SongSort.Year}"><TextBlock Classes="label" Text="{Binding YearHeader}" /></Button>
+      <Button Grid.Column="3" Classes="header" Command="{Binding SortByCommand}" CommandParameter="{x:Static core:SongSort.Language}"><TextBlock Classes="label" Text="{Binding LanguageHeader}" /></Button>
+      <Button Grid.Column="4" Classes="header" Command="{Binding SortByCommand}" CommandParameter="{x:Static core:SongSort.Source}"><TextBlock Classes="label" Text="{Binding SourceHeader}" /></Button>
       <TextBlock Grid.Column="5" Classes="label" Text="MEDIA" />
     </Grid>
 
@@ -96,6 +94,14 @@
         </DataTemplate>
       </ListBox.ItemTemplate>
     </ListBox>
+
+    <!-- Footer: shown / total -->
+    <Border Grid.Row="3" Padding="{StaticResource Pad2}"
+            BorderBrush="{DynamicResource BrushOutlineVariant}" BorderThickness="0,1,0,0">
+      <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Margin="4,0,0,0">
+        <Run Text="{Binding ShownCount}" /><Run Text=" / " /><Run Text="{Binding TotalCount}" /><Run Text=" songs" />
+      </TextBlock>
+    </Border>
 
     <StackPanel Grid.Row="2" VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="{StaticResource Space2}"
                 IsVisible="{Binding !TotalCount}">
