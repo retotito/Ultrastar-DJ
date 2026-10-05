@@ -15,7 +15,7 @@
   <Grid ColumnDefinitions="Auto,*,Auto">
 
     <!-- ── Sidebar ─────────────────────────────────────────────────────── -->
-    <Border Grid.Column="0"
+    <Border Grid.Column="0" x:Name="Sidebar"
             Width="{StaticResource SidebarWidth}"
             Background="{DynamicResource BrushSurfaceContainerLow}"
             BorderBrush="{DynamicResource BrushOutlineVariant}"
@@ -76,15 +76,28 @@
     <Panel Grid.Column="1">
       <ContentControl Content="{Binding Library}" />
 
-      <!-- Popover anchored to the sidebar edge; capped to the window height, content scrolls -->
-      <Border Classes="popover"
+      <!-- Popover anchored to the sidebar edge; capped to the window height, content scrolls.
+           Closes on a press anywhere outside it and the sidebar (DjWindow.axaml.cs). -->
+      <Border Classes="popover" x:Name="Popover"
               HorizontalAlignment="Left" VerticalAlignment="Top"
               Margin="{StaticResource Pad2}"
               IsVisible="{Binding PanelContent, Converter={x:Static ObjectConverters.IsNotNull}}">
-        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
-                      Padding="0,0,4,0">
-          <ContentControl Content="{Binding PanelContent}" />
-        </ScrollViewer>
+        <DockPanel>
+          <Border DockPanel.Dock="Top" BorderBrush="{DynamicResource BrushOutlineVariant}" BorderThickness="0,0,0,1"
+                  Padding="0,0,0,8" Margin="0,0,0,12">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+              <c:Icon Grid.Column="0" Glyph="{Binding PanelGlyph}" Margin="0,0,8,0" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="1" Classes="title" Text="{Binding PanelTitle}" VerticalAlignment="Center" />
+              <Button Grid.Column="2" Classes="sidebar" Width="28" Height="28" Command="{Binding ClosePanelCommand}" ToolTip.Tip="Close">
+                <c:Icon Glyph="close" FontSize="{StaticResource IconMd}" />
+              </Button>
+            </Grid>
+          </Border>
+          <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                        Padding="0,0,4,0">
+            <ContentControl Content="{Binding PanelContent}" />
+          </ScrollViewer>
+        </DockPanel>
       </Border>
     </Panel>
 

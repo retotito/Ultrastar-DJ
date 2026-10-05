@@ -5,7 +5,6 @@
              x:Class="UltrastarDJ.App.Views.PlaceholderPanelView"
              x:DataType="vm:PlaceholderPanelViewModel">
   <StackPanel Spacing="{StaticResource Space2}">
-    <TextBlock Classes="title" Text="{Binding Title}" />
     <TextBlock Classes="muted" Text="This panel is implemented in a later sprint." />
   </StackPanel>
 </UserControl>

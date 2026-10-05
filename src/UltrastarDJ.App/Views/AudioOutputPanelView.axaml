@@ -41,13 +41,11 @@
   </UserControl.Resources>
 
   <StackPanel Spacing="{StaticResource Space2}">
-    <Grid ColumnDefinitions="Auto,*,Auto">
-      <c:Icon Grid.Column="0" Glyph="speaker" Margin="0,0,8,0" />
-      <TextBlock Grid.Column="1" Classes="title" Text="Audio Output" VerticalAlignment="Center" />
-      <Button Grid.Column="2" Classes="sidebar" Command="{Binding RefreshCommand}" ToolTip.Tip="Refresh device list — connect USB or Bluetooth first">
+    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="{StaticResource Space1}">
+      <Button Classes="sidebar" Command="{Binding RefreshCommand}" ToolTip.Tip="Refresh device list — connect USB or Bluetooth first">
         <c:Icon Glyph="refresh" FontSize="{StaticResource IconMd}" />
       </Button>
-    </Grid>
+    </StackPanel>
 
     <ContentControl Content="{Binding Game}" ContentTemplate="{StaticResource ChannelCard}" />
     <ContentControl Content="{Binding Preview}" ContentTemplate="{StaticResource ChannelCard}" />

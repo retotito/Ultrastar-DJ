@@ -25,7 +25,29 @@ public sealed partial class DjWindowViewModel : ViewModelBase
     private readonly PlaybackService _playback;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(PanelTitle), nameof(PanelGlyph))]
     private SidebarPanel _activePanel = SidebarPanel.None;
+
+    /// <summary>Shown in the popover header, next to its close button.</summary>
+    public string PanelTitle => ActivePanel switch
+    {
+        SidebarPanel.Sources => "Song Sources",
+        SidebarPanel.AudioInput => "Audio Input",
+        SidebarPanel.AudioOutput => "Audio Output",
+        _ => ActivePanel.ToString(),
+    };
+
+    public string PanelGlyph => ActivePanel switch
+    {
+        SidebarPanel.Layout => "table_chart",
+        SidebarPanel.Sources => "library_music",
+        SidebarPanel.AudioInput => "mic_external_on",
+        SidebarPanel.AudioOutput => "speaker",
+        SidebarPanel.Displays => "tv",
+        SidebarPanel.Songbook => "phone_iphone",
+        SidebarPanel.Settings => "settings",
+        _ => "",
+    };
 
     [ObservableProperty]
     private ViewModelBase? _panelContent;

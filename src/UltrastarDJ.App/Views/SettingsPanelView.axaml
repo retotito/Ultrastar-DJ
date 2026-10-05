@@ -6,11 +6,6 @@
              x:DataType="vm:SettingsPanelViewModel">
 
   <StackPanel Spacing="{StaticResource Space2}">
-    <Grid ColumnDefinitions="Auto,*">
-      <c:Icon Grid.Column="0" Glyph="settings" Margin="0,0,8,0" />
-      <TextBlock Grid.Column="1" Classes="title" Text="Settings" VerticalAlignment="Center" />
-    </Grid>
-
     <Border Classes="card">
       <StackPanel Spacing="{StaticResource Space3}">
         <Grid ColumnDefinitions="*,Auto">

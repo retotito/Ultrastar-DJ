@@ -56,19 +56,17 @@
   </UserControl.Resources>
 
   <StackPanel Spacing="{StaticResource Space2}">
-    <Grid ColumnDefinitions="Auto,*,Auto,Auto">
-      <c:Icon Grid.Column="0" Glyph="mic_external_on" Margin="0,0,8,0" />
-      <TextBlock Grid.Column="1" Classes="title" Text="Audio Input" VerticalAlignment="Center" />
-      <Button Grid.Column="2" Classes="sidebar" Command="{Binding RefreshDevicesCommand}" ToolTip.Tip="Refresh device list (stop the test first)">
+    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="{StaticResource Space1}">
+      <Button Classes="sidebar" Command="{Binding RefreshDevicesCommand}" ToolTip.Tip="Refresh device list (stop the test first)">
         <c:Icon Glyph="refresh" FontSize="{StaticResource IconMd}" />
       </Button>
-      <Button Grid.Column="3" Classes="tonal" Command="{Binding ToggleTestCommand}" Classes.active="{Binding Testing}">
+      <Button Classes="tonal" Command="{Binding ToggleTestCommand}" Classes.active="{Binding Testing}">
         <StackPanel Orientation="Horizontal" Spacing="4">
           <c:Icon Glyph="{Binding Testing, Converter={x:Static vm:PlayerConverters.TestGlyph}}" FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
           <TextBlock Text="{Binding Testing, Converter={x:Static vm:PlayerConverters.TestLabel}}" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
         </StackPanel>
       </Button>
-    </Grid>
+    </StackPanel>
 
     <Grid ColumnDefinitions="Auto,*,Auto" IsVisible="{Binding Testing}">
       <TextBlock Grid.Column="0" Classes="label" Text="MONITOR" VerticalAlignment="Center" Margin="0,0,8,0" />

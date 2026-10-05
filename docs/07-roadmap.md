@@ -154,6 +154,13 @@ videos (Sprint 6 list), read-ahead cap (Later). Guest songbook phone test moved 
 
 ---
 
+## Sprint 6e — Sidebar panels: light dismiss and header  *(done)*
+
+- [x] A press anywhere outside the open panel (and outside the sidebar buttons) closes it; the press still reaches its target. Now Playing is not affected. **Verified live.**
+- [x] Shared panel header in `DjWindow`: icon, title, ✕, divider; body scrolls under it. Panel views lost their own titles; their actions moved to a right-aligned row. **Verified live.**
+
+---
+
 ## Later / ideas
 
 - Cap mpv read-ahead (~60 s) so YouTube streams like a player instead of pulling the whole song into RAM
