@@ -11,12 +11,23 @@ $Dest = Join-Path $Root 'natives\win-x64'
 New-Item -ItemType Directory -Force -Path $Dest | Out-Null
 Write-Host "→ natives for win-x64 → $Dest"
 
-# ── yt-dlp ─────────────────────────────────────────────────────────────────
-$ytdlp = Join-Path $Dest 'yt-dlp.exe'
-if (Test-Path $ytdlp) { Write-Host "✓ yt-dlp present" }
+# ── yt-dlp (folder build) ──────────────────────────────────────────────────
+# The folder build (yt-dlp_win.zip) starts fast; the single-file yt-dlp.exe unpacks a Python runtime
+# on every run, and mpv runs yt-dlp for every YouTube load.
+$ytdlpDir = Join-Path $Dest 'yt-dlp'
+$ytdlp = Join-Path $ytdlpDir 'yt-dlp.exe'
+if (Test-Path $ytdlp) { Write-Host "✓ yt-dlp present ($(& $ytdlp --version))" }
 else {
   Write-Host "→ downloading yt-dlp…"
-  Invoke-WebRequest 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe' -OutFile $ytdlp
+  $tmp = Join-Path ([IO.Path]::GetTempPath()) "yt-dlp-$(Get-Random)"
+  New-Item -ItemType Directory -Force -Path $tmp | Out-Null
+  Invoke-WebRequest 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_win.zip' -OutFile "$tmp\yt-dlp.zip"
+  Expand-Archive "$tmp\yt-dlp.zip" -DestinationPath "$tmp\yt-dlp"
+  # Also replaces an older single-file build.
+  Remove-Item (Join-Path $Dest 'yt-dlp.exe') -Force -ErrorAction SilentlyContinue
+  if (Test-Path $ytdlpDir) { Remove-Item $ytdlpDir -Recurse -Force }
+  Copy-Item "$tmp\yt-dlp" $ytdlpDir -Recurse   # Move-Item cannot move folders across drives
+  Remove-Item $tmp -Recurse -Force
   Write-Host "✓ yt-dlp $(& $ytdlp --version)"
 }
 

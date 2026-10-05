@@ -24,7 +24,7 @@ That is the entire onboarding — the same "clone, one script, build" flow as th
 |---|---|---|---|
 | `libmpv` (`libmpv.2.dylib` / `libmpv-2.dll`) | media decode/playback | in-process (`DllImport`) — **must match CPU arch** | mac: Homebrew `mpv` + `dylibbundler` to collect dependencies, or a self-contained libmpv build; win: shinchiro/zhongfly `mpv-dev` builds |
 | PortAudio | audio I/O | via `PortAudioSharp2` NuGet (ships native libs) | NuGet |
-| `yt-dlp` | YouTube resolution (called by mpv's ytdl hook) | separate process | GitHub releases (`yt-dlp_macos` universal, `yt-dlp.exe`) |
+| `yt-dlp` | YouTube resolution (called by mpv's ytdl hook) | separate process, **folder build** in `natives/<rid>/yt-dlp/` | GitHub releases `yt-dlp_macos.zip` (universal) / `yt-dlp_win.zip`. Not the single-file `yt-dlp_macos`/`yt-dlp.exe`: those unpack a Python runtime on every run (~9 s on macOS vs 0.2 s) |
 | `ffmpeg` | used by yt-dlp when muxing is needed | separate process | mac: evermeet.cx static; win: gyan.dev / BtbN builds |
 
 `fetch-natives.*` detects OS + arch (`uname -m` / `$env:PROCESSOR_ARCHITECTURE`), downloads into

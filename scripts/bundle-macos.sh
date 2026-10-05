@@ -29,7 +29,7 @@ cp "$ROOT/src/UltrastarDJ.App/Assets/icon.icns" "$APP/Contents/Resources/icon.ic
 # Sidecars/dylibs are published under MacOS/natives/; dyld finds libmpv via DllImport search paths
 # configured in the app (natives/ next to the executable), so no install_name_tool pass is needed.
 chmod +x "$APP/Contents/MacOS/$EXECUTABLE"
-[[ -d "$APP/Contents/MacOS/natives" ]] && chmod +x "$APP/Contents/MacOS/natives/"{yt-dlp,ffmpeg} 2>/dev/null || true
+[[ -d "$APP/Contents/MacOS/natives" ]] && chmod +x "$APP/Contents/MacOS/natives/"{yt-dlp/yt-dlp,ffmpeg} 2>/dev/null || true
 
 cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>

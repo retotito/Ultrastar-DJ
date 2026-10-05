@@ -59,10 +59,13 @@ static string? FindYtDlp()
     DirectoryInfo? dir = new(AppContext.BaseDirectory);
     for (int i = 0; i < 8 && dir is not null; i++, dir = dir.Parent)
     {
-        string p = Path.Combine(dir.FullName, "natives", System.Runtime.InteropServices.RuntimeInformation.RuntimeIdentifier, "yt-dlp");
-        if (File.Exists(p))
+        string natives = Path.Combine(dir.FullName, "natives", System.Runtime.InteropServices.RuntimeInformation.RuntimeIdentifier);
+        foreach (string p in new[] { Path.Combine(natives, "yt-dlp", "yt-dlp"), Path.Combine(natives, "yt-dlp") })
         {
-            return p;
+            if (File.Exists(p))
+            {
+                return p;
+            }
         }
     }
 

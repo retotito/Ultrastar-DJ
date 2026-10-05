@@ -111,7 +111,7 @@ Still open from earlier sprints: pre-resolving YouTube on queue-add, duet lyrics
 
 ### Where to resume
 
-1. Phone test of the songbook (Songbook panel → Start → open the shown `http://192.168.x.x:4747` on a phone; request a song; try the PIN).
+1. *(Moved to later — see Sprint 6b.)* Phone test of the songbook (Songbook panel → Start → open the shown `http://192.168.x.x:4747` on a phone; request a song; try the PIN).
 2. yt-dlp self-update (`yt-dlp -U` against the sidecar in `natives/<rid>/`, button in Settings) and a dialog when mpv reports a blocked/unavailable video (`MediaChannel.ErrorOccurred`).
 3. Packaging polish, debug-log cleanup, roadmap/README update, tag.
 
@@ -124,12 +124,26 @@ Still open from earlier sprints: Windows build test, MOTU channel-pair verificat
 - Avalonia "was not able to start the RenderTimer (-6661)" at startup means the display is asleep / screen locked, not a code bug.
 - Dapper `MatchNamesWithUnderscores` must be set before the first `Query<T>` (static ctor of the repository).
 - mpv shutdown order: render context free → `quit` → join event thread → `terminate_destroy`.
+- Never swap files in `natives/` under a running app: `MediaService` resolves the yt-dlp path once at start, so the app keeps the stale path ("youtube-dl failed: not found"). Quit, fetch, restart.
 - Analyzers (warnings-as-errors) reject `*Queue`/`*Stream` type names, `params` as a parameter name, and XML docs on positional record parameters.
+
+---
+
+## Sprint 6b — Faster YouTube start  *(done)*
+
+Found in first real use: opening a YouTube song in preview or game took ~12 s before sound. Not a download
+(mpv streams into RAM) — 8.7 s of it was yt-dlp's single-file build unpacking itself on every run.
+
+- [x] yt-dlp folder build (`natives/<rid>/yt-dlp/`, `SidecarLocator` prefers it); fetch scripts migrate the old single file; warm-up run at app start. **Measured: yt-dlp start 8.7 s → 0.19 s. Verified live: YouTube preview and game start in 2–3 s.** Windows fetch script not yet run on Windows.
+
+Not done here: pre-resolving stream URLs (already a leftover above), error dialog for blocked/age-restricted
+videos (Sprint 6 list), read-ahead cap (Later). Guest songbook phone test moved to later.
 
 ---
 
 ## Later / ideas
 
+- Cap mpv read-ahead (~60 s) so YouTube streams like a player instead of pulling the whole song into RAM
 - OpenGL frame path (shared texture) if CPU copy shows up in profiles
 - Global hotkeys, keyboard-only DJ operation
 - Duet rendering (two tracks per lane pair), medley, `#PREVIEWSTART`

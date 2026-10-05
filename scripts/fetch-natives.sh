@@ -20,14 +20,23 @@ DEST="$ROOT/natives/$RID"
 mkdir -p "$DEST"
 echo "→ natives for $RID → $DEST"
 
-# ── yt-dlp (universal binary) ────────────────────────────────────────────────
-if [[ -x "$DEST/yt-dlp" ]]; then
-  echo "✓ yt-dlp present ($("$DEST/yt-dlp" --version))"
+# ── yt-dlp (universal folder build) ─────────────────────────────────────────
+# The folder build (yt-dlp_macos.zip) starts in ~0.2 s. The single-file yt-dlp_macos unpacks a
+# Python runtime on every run (~9 s), and mpv runs yt-dlp for every YouTube load.
+if [[ -x "$DEST/yt-dlp/yt-dlp" ]]; then
+  echo "✓ yt-dlp present ($("$DEST/yt-dlp/yt-dlp" --version))"
 else
   echo "→ downloading yt-dlp…"
-  curl -fsSL "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_macos" -o "$DEST/yt-dlp"
-  chmod +x "$DEST/yt-dlp"
-  echo "✓ yt-dlp $("$DEST/yt-dlp" --version)"
+  TMP=$(mktemp -d)
+  curl -fsSL "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_macos.zip" -o "$TMP/yt-dlp.zip"
+  unzip -q "$TMP/yt-dlp.zip" -d "$TMP/yt-dlp"
+  mv "$TMP/yt-dlp/yt-dlp_macos" "$TMP/yt-dlp/yt-dlp"
+  chmod +x "$TMP/yt-dlp/yt-dlp"
+  rm -rf "$DEST/yt-dlp"   # also replaces an older single-file build
+  mv "$TMP/yt-dlp" "$DEST/yt-dlp"
+  rm -rf "$TMP"
+  # The first run of a new binary is scanned by macOS (~9 s); pay that here, not on the first song.
+  echo "✓ yt-dlp $("$DEST/yt-dlp/yt-dlp" --version)"
 fi
 
 # ── ffmpeg (static; evermeet serves a build that runs on both arches) ────────
