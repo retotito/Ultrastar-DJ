@@ -1,8 +1,7 @@
-using System.Diagnostics;
 using Avalonia.Controls;
 using Avalonia.Input.Platform;
-using Avalonia.Platform.Storage;
 using Avalonia.Interactivity;
+using UltrastarDJ.App.Services;
 using UltrastarDJ.App.ViewModels;
 
 namespace UltrastarDJ.App.Views;
@@ -14,25 +13,11 @@ public sealed partial class SongDetailsView : UserControl
 
     private SongDetailsViewModel? Vm => DataContext as SongDetailsViewModel;
 
-    private async void OnShowInFolder(object? sender, RoutedEventArgs e)
+    private void OnShowInFolder(object? sender, RoutedEventArgs e)
     {
-        if (Vm is not { TxtPath: { } txt, Folder: { } folder })
+        if (Vm is { TxtPath: { } txt })
         {
-            return;
-        }
-
-        // Reveal selects the .txt in its folder; the launcher can only open the folder itself.
-        if (OperatingSystem.IsMacOS())
-        {
-            Process.Start(new ProcessStartInfo("open", ["-R", txt]) { UseShellExecute = false });
-        }
-        else if (OperatingSystem.IsWindows())
-        {
-            Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{txt}\"") { UseShellExecute = false });
-        }
-        else if (TopLevel.GetTopLevel(this)?.Launcher is { } launcher)
-        {
-            await launcher.LaunchDirectoryInfoAsync(new DirectoryInfo(folder));
+            FileReveal.Reveal(txt);
         }
     }
 

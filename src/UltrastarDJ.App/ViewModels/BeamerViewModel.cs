@@ -154,7 +154,7 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
                 {
                     RefreshAssignedPlayers();
                     Scene = new GameScene(session, [.. AssignedPlayers], () => _playback.GamePositionSec,
-                        _playback.Timeline, () => _playback.Clock?.PositionSec ?? 0);
+                        _playback.Timeline, () => _playback.Clock?.PositionSec ?? 0, _playback.MicActivityOf);
                 }
 
                 break;

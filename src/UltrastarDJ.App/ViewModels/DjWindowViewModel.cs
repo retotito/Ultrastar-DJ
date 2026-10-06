@@ -64,6 +64,11 @@ public sealed partial class DjWindowViewModel : ViewModelBase
             players.StopTests();
         }
 
+        if (newValue is SettingsPanelViewModel settings && !ReferenceEquals(oldValue, newValue))
+        {
+            settings.RefreshFiles();
+        }
+
         if (oldValue is AudioOutputPanelViewModel outputs && !ReferenceEquals(oldValue, newValue))
         {
             outputs.StopSyncTest();

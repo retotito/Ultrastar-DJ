@@ -17,8 +17,10 @@ public sealed class GameScene
     /// <summary>Guards <see cref="Lanes"/> and <see cref="Ratings"/> between the tick thread and the renderer.</summary>
     public Lock Sync { get; } = new();
 
-    public GameScene(GameSession session, IReadOnlyList<ScenePlayer> players, Func<double> positionSec, SongTimeline? timeline, Func<double> clockSec)
+    public GameScene(GameSession session, IReadOnlyList<ScenePlayer> players, Func<double> positionSec, SongTimeline? timeline, Func<double> clockSec,
+        Func<int, double> micActivity)
     {
+        MicActivity = micActivity;
         Session = session;
         Players = players;
         PositionSec = positionSec;
@@ -37,6 +39,8 @@ public sealed class GameScene
     /// <summary>Media clock without the lyrics offset — elapsed / remaining are real playing time.</summary>
     public Func<double> ClockSec { get; }
     public Dictionary<int, LaneState> Lanes { get; } = [];
+    /// <summary>Player id → how loud they sing now, 0..1 above the gate (the mic meter next to the name).</summary>
+    public Func<int, double> MicActivity { get; }
 
     /// <summary>The latest phrase rating per player (popup and, for a 100 % phrase, the star burst).</summary>
     public Dictionary<int, PhraseResult> Ratings { get; } = [];

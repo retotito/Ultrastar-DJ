@@ -322,6 +322,10 @@ Details: `03-game-engine.md` "Mic plug / unplug".
 - [x] Details popup (centre of the window; ✕, Esc or a click outside closes): picture, title, artist, source; tags (year … END, USDB id/views); notes summary (`Core.Songs.SongSummary`, tested — singing ends at, solo/duet with names, phrases/notes, golden share, rap/freestyle, pitch range e.g. G3 – G4); files with ✓/✗ and the folder (Show in Finder); problems (`Core.Songs.SongCheck`, tested — validator errors, missing files, #VIDEOGAP without video, no #LANGUAGE, overlapping or zero-length notes, #START/#END outside the notes); the .txt with Copy; Open on USDB / YouTube; Preview, Add to queue, Load into game. USDB songs fetch their text like Preview (cached).
 - [x] Menu icons 24 px (Fluent's 16 px icon box widened for all menus).
 - [x] Verified live: filters, Layout panel, table scrolling, menus, Details popup.
+- [x] Settings → Logs & data: Log folder (today's log selected in Finder), Today's log (opens in Console), crash reports (only when macOS wrote one for the app; newest selected), App data folder. `Services.FileReveal` (Finder / Explorer / xdg-open), also used by Details → Show in Finder.
+- [x] Log size: at most 10 MB per file (then a new file), 7 files kept — ≤ 70 MB worst case. UI inspector dumps (debug builds) older than 7 days are deleted at startup.
+- [x] Beamer mic meter: five bars in the player's colour after "Name  score", as tall as its capitals — the singer sees their mic works. Driven by loudness above the player's noise gate (`Core.Players.MicActivity`, tested; 0 at the gate, full at +30 dB), each bar wobbling at its own pace, fast rise and smooth fall; dots when silent. No FFT: two volatile reads and five rectangles per player per frame.
+- [x] Verified live: Logs & data buttons, mic meter.
 
 ---
 

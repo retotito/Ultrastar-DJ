@@ -167,6 +167,8 @@ public sealed class GameOverlayControl : Control
                 }
             }
 
+            AdvanceMeterClock();
+
             // Lyrics follow the first player's track (duets share a lyric line per track; keep it simple for now).
             // No player on this beamer: karaoke without scoring — lyrics of the song's first track, no lanes.
             NoteTrack lyricsTrack = n > 0 ? scene.Lanes[scene.Players[0].Id].Track : scene.Session.Song.Notes![0];
@@ -258,6 +260,8 @@ public sealed class GameOverlayControl : Control
 
         FormattedText label = lab.Text;
         ctx.DrawText(label, new Point(lane.X, lane.Y - 4));
+        DrawMicMeter(ctx, new Point(lane.X + label.WidthIncludingTrailingWhitespace + labelSize * 0.6, lane.Y - 4 + label.Baseline),
+            labelSize, player, scene.MicActivity(player.Id));
 
         if (ShowPianoRollLines)
         {
@@ -341,6 +345,44 @@ public sealed class GameOverlayControl : Control
             _effects.DrawRating(ctx, lane, rated, pos, paint.TextGlow);
         }
     }
+
+    // ── Mic meter: five bars after the name, so a singer sees their mic works ──
+    private const int MeterBars = 5;
+    // Bars fall back at this rate (full height per second × 2.5): quick, but readable like a mixer meter.
+    private const double MeterFallPerSec = 2.5;
+    // Each bar moves at its own pace so the meter looks alive; driven by loudness only (no FFT on the audio thread).
+    private static readonly (double Speed, double Phase)[] MeterWobble = [(9.1, 0.0), (12.7, 1.3), (7.9, 2.1), (11.3, 0.7), (8.6, 2.8)];
+    private readonly Dictionary<int, double[]> _meter = [];
+    private readonly System.Diagnostics.Stopwatch _meterClock = System.Diagnostics.Stopwatch.StartNew();
+    private double _meterLastSec;
+
+    /// <summary>Bars as tall as the name's capitals, standing on its baseline; dots when the mic is silent.</summary>
+    private void DrawMicMeter(DrawingContext ctx, Point baseline, double fontSize, ScenePlayer player, double activity)
+    {
+        if (!_meter.TryGetValue(player.Id, out double[]? bars))
+        {
+            bars = new double[MeterBars];
+            _meter[player.Id] = bars;
+        }
+
+        double now = _meterClock.Elapsed.TotalSeconds;
+        double dt = Math.Clamp(now - _meterLastSec, 0, 0.1);
+        double capHeight = fontSize * 0.72;
+        double w = Math.Max(2, fontSize * 0.13);
+        double gap = w * 0.7;
+        for (int i = 0; i < MeterBars; i++)
+        {
+            (double speed, double phase) = MeterWobble[i];
+            double target = activity * (0.55 + 0.45 * (0.5 + 0.5 * Math.Sin(now * speed + phase)));
+            bars[i] = target >= bars[i] ? target : Math.Max(target, bars[i] - MeterFallPerSec * dt);
+            double h = Math.Max(w, capHeight * bars[i]);
+            Rect r = new(baseline.X + i * (w + gap), baseline.Y - h, w, h);
+            ctx.DrawRectangle(player.Brush, null, new RoundedRect(r, w / 2));
+        }
+    }
+
+    // One clock step per frame for all lanes (DrawMicMeter runs once per player).
+    private void AdvanceMeterClock() => _meterLastSec = _meterClock.Elapsed.TotalSeconds;
 
     /// <summary>Any voice recorded on the note (freestyle ticks carry their beat when the mic is not silent).</summary>
     private static bool Heard(Note note, LaneState state)

@@ -159,6 +159,10 @@ public sealed partial class App : Application
             .WriteTo.File(
                 Path.Combine(paths.Logs, "ultrastardj-.log"),
                 rollingInterval: RollingInterval.Day,
+                // At most 7 files of 10 MB: a day with an error repeating all night starts a new file
+                // (…_001.log) instead of growing one without limit; the oldest file is deleted.
+                fileSizeLimitBytes: 10 * 1024 * 1024,
+                rollOnFileSizeLimit: true,
                 retainedFileCountLimit: 7,
                 outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {SourceContext:l}: {Message:lj}{NewLine}{Exception}")
             .CreateLogger();

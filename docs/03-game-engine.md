@@ -151,6 +151,13 @@ or PERFECT! (8, ≈ 94 %+) pops up in the lane (0.35 s pop, 0.55 s rise to 70 %,
 (awful … good) are not shown. A 100 % phrase also bursts stars in the player's colour. On the score screen, once the count-up has finished, stars in the
 winner's colour twinkle and drift upwards for 5 s (`Controls.StarShower`).
 
+## Mic meter (beamer)
+
+Five bars in the player's colour after the name and score, as tall as the name's capitals: shows the singer their mic
+works. Loudness above the player's noise gate (`Core.Players.MicActivity`: 0 at the gate, 1 at +30 dB, logarithmic)
+read per frame from the mic pipeline; each bar follows it with its own slow wobble (not a real spectrum — no FFT on
+the audio thread), rises at once and falls at 2.5 heights per second. Silent or gated: dots.
+
 ## Elapsed / remaining (beamer)
 
 `Core.Timing.SongTimeline` (tested) is the playing span in game time (0 = audio start; `#VIDEOGAP` already taken

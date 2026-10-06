@@ -42,9 +42,30 @@ internal static class UiInspector
         _dumpDir = dumpDir;
         _log = log;
         _notifications = notifications;
+        PruneDumps(dumpDir);
         InputElement.KeyDownEvent.AddClassHandler<Window>(OnKeyDown, RoutingStrategies.Tunnel, handledEventsToo: true);
         InputElement.PointerMovedEvent.AddClassHandler<Window>(OnPointerMoved, RoutingStrategies.Tunnel, handledEventsToo: true);
         InputElement.PointerPressedEvent.AddClassHandler<Window>(OnPointerPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
+    }
+
+    // Dumps sit next to the logs; unlike the logs nothing rotates them, so a week is kept.
+    private static void PruneDumps(string dir)
+    {
+        DateTime cutoff = DateTime.UtcNow - TimeSpan.FromDays(7);
+        foreach (FileInfo f in new DirectoryInfo(dir).EnumerateFiles("visual-tree-*.txt"))
+        {
+            if (f.LastWriteTimeUtc < cutoff)
+            {
+                try
+                {
+                    f.Delete();
+                }
+                catch (IOException)
+                {
+                    // In use or gone: try again next start.
+                }
+            }
+        }
     }
 
     private static void OnKeyDown(Window window, KeyEventArgs e)

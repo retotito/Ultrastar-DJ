@@ -47,7 +47,9 @@ dotnet run --project src/UltrastarDJ.App
 ```
 
 Settings and logs live in the per-user app data folder (`~/Library/Application Support/UltrastarDJ`,
-`%APPDATA%\UltrastarDJ`). Delete the folder for a clean start.
+`%APPDATA%\UltrastarDJ`). Delete the folder for a clean start. Inside: `logs/ultrastardj-YYYYMMDD.log` (Serilog, one per
+day, a new file after 10 MB, 7 files kept), `settings/*.json`, `library.db`, `cache/`. Native crashes (audio threads) end up in macOS's
+`~/Library/Logs/DiagnosticReports/UltrastarDJ-*.ips`. Settings → Logs & data opens all of these for users.
 
 ---
 

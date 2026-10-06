@@ -469,6 +469,13 @@ public sealed class PlaybackService : IDisposable
         }
     }
 
+    /// <summary>
+    /// How loud the player sings right now, 0..1 above their noise gate (<see cref="MicActivity"/>) — the beamer's
+    /// mic meter. Render thread: two volatile reads, no allocation.
+    /// </summary>
+    public double MicActivityOf(int playerId)
+        => _audio.Mics.Pipeline(playerId) is { } p ? MicActivity.Level(p.LevelRms, p.Threshold) : 0;
+
     /// <summary>The player's scoring delay: calibrated total minus the output latency it was calibrated through.</summary>
     public double MicDelayMs(PlayerConfig p) => LatencyModel.InputDelayMs(p.CalibratedTotalMs, _outputs.LatencyFor(p.CalibrationOutputKey));
 

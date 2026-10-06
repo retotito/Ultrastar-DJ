@@ -36,6 +36,43 @@
       </StackPanel>
     </Border>
 
+    <Border Classes="card">
+      <StackPanel Spacing="{StaticResource Space2}">
+        <TextBlock Text="Logs &amp; data" />
+        <WrapPanel ItemSpacing="8" LineSpacing="8">
+          <Button Classes="tonal" Command="{Binding ShowLogFolderCommand}" ToolTip.Tip="Finder with today's log selected — the file to send when asking for help">
+            <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
+              <c:Icon Glyph="folder_open" FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushOnSecondaryContainer}" VerticalAlignment="Center" />
+              <TextBlock Text="Log folder" Foreground="{DynamicResource BrushOnSecondaryContainer}" VerticalAlignment="Center" />
+            </StackPanel>
+          </Button>
+          <Button Classes="tonal" Command="{Binding OpenLogCommand}" ToolTip.Tip="Today's log in Console: search it and watch new lines arrive">
+            <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
+              <c:Icon Glyph="description" FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushOnSecondaryContainer}" VerticalAlignment="Center" />
+              <TextBlock Text="Today's log" Foreground="{DynamicResource BrushOnSecondaryContainer}" VerticalAlignment="Center" />
+            </StackPanel>
+          </Button>
+          <Button Classes="tonal" Command="{Binding ShowCrashReportsCommand}" IsVisible="{Binding HasCrashReports}"
+                  ToolTip.Tip="macOS wrote these when the app crashed; the newest is selected in Finder">
+            <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
+              <c:Icon Glyph="bug_report" FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushOnSecondaryContainer}" VerticalAlignment="Center" />
+              <TextBlock Text="{Binding CrashReportsText}" Foreground="{DynamicResource BrushOnSecondaryContainer}" VerticalAlignment="Center" />
+            </StackPanel>
+          </Button>
+          <Button Classes="tonal" Command="{Binding ShowDataFolderCommand}" ToolTip.Tip="Settings, song library and cache — for backups or a clean start">
+            <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
+              <c:Icon Glyph="inventory_2" FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushOnSecondaryContainer}" VerticalAlignment="Center" />
+              <TextBlock Text="App data" Foreground="{DynamicResource BrushOnSecondaryContainer}" VerticalAlignment="Center" />
+            </StackPanel>
+          </Button>
+        </WrapPanel>
+        <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap"
+                   Text="The log records what the app did (songs, playback, mics, errors) — one file per day, the last 7 are kept. Send it along when something went wrong." />
+        <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap" Text="{Binding FilesStatus}"
+                   IsVisible="{Binding FilesStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      </StackPanel>
+    </Border>
+
     <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="{Binding Version, StringFormat='Ultrastar DJ v{0}'}" HorizontalAlignment="Center" />
   </StackPanel>
 </UserControl>
