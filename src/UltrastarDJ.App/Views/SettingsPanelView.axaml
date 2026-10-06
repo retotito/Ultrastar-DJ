@@ -8,13 +8,12 @@
   <StackPanel Spacing="{StaticResource Space2}">
     <Border Classes="card">
       <StackPanel Spacing="{StaticResource Space3}">
-        <Grid ColumnDefinitions="*,Auto">
-          <StackPanel>
-            <TextBlock Text="Light theme" />
-            <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="Dark is easier on the eyes in a dim room" />
-          </StackPanel>
-          <ToggleSwitch Grid.Column="1" IsChecked="{Binding LightTheme}" OnContent="" OffContent="" />
-        </Grid>
+        <!-- Title, drop-down, description — like Difficulty and Note bar style. -->
+        <StackPanel Spacing="{StaticResource Space2}">
+          <TextBlock Text="Theme" />
+          <ComboBox ItemsSource="{Binding Themes}" SelectedItem="{Binding Theme}" HorizontalAlignment="Stretch" />
+          <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="Dark is easier on the eyes in a dim room" TextWrapping="Wrap" />
+        </StackPanel>
         <Grid ColumnDefinitions="*,Auto">
           <StackPanel>
             <TextBlock Text="Show tooltips" />
@@ -28,7 +27,9 @@
     <Border Classes="card">
       <StackPanel Spacing="{StaticResource Space2}">
         <TextBlock Text="Difficulty" />
-        <ComboBox ItemsSource="{Binding Difficulties}" SelectedItem="{Binding Difficulty}" HorizontalAlignment="Stretch" />
+        <ComboBox ItemsSource="{Binding Difficulties}" SelectedItem="{Binding Difficulty}" HorizontalAlignment="Stretch"
+                  IsEnabled="{Binding !DifficultyLocked}" ToolTip.ShowOnDisabled="True"
+                  ToolTip.Tip="{Binding DifficultyLocked, Converter={x:Static vm:BoolConverters.Text}, ConverterParameter='Locked while a song runs — applies from the next song|How exactly the pitch must match'}" />
         <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="{Binding DifficultyHint}" />
         <TextBlock Text="Note bar style" Margin="0,8,0,0" />
         <ComboBox ItemsSource="{Binding NoteBarStyles}" SelectedItem="{Binding NoteBarStyle}" HorizontalAlignment="Stretch" />

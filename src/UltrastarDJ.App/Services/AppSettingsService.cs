@@ -83,6 +83,7 @@ public sealed class AppSettingsService
         /// <summary>Null = <see cref="LibraryColumns.DefaultVisible"/> (files written before the Layout panel).</summary>
         public IReadOnlyList<LibraryColumn>? VisibleColumns { get; init; }
 
-        public static AppSettingsDocument Default() => new(false, Difficulty.Medium, 0);
+        /// <summary>A first start is light; a saved choice (light or dark) is kept.</summary>
+        public static AppSettingsDocument Default() => new(true, Difficulty.Medium, 0);
     }
 }

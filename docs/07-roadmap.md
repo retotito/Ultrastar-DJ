@@ -313,7 +313,7 @@ Details: `03-game-engine.md` "Mic plug / unplug".
 
 ---
 
-## Sprint 11 — Fixes  *(in progress)*
+## Sprint 11 — Fixes  *(done)*
 
 - [x] Library filters: Language and Genre list each value once, never "French, English" (`Core.Songs.ValueList`, tested, as usdb_syncer: languages split on `, ; / |`, genres on commas; "(romanized)" stays its own entry). Choosing a value finds every song that has it among its entries ("French" → "French", "English, French", "Chinese (romanized), French"). USDB catalog: 148 → 85 languages, 946 → 700 genres. The table column keeps the original text.
 - [x] Filter drop-downs have a fixed width — that of their widest entry (`Controls.FitWidestItem`); they no longer jump while scrolling through genres.
@@ -340,8 +340,12 @@ Details: `03-game-engine.md` "Mic plug / unplug".
 - [x] Song Sources: on/off switch per folder (prototype) — off leaves its songs out of the library and the source filter; rows show the song count, or greyed "Not connected" with an icon. Source filter: unplugged folders greyed "(not connected)" (still selectable), switched-off ones left out; the chosen filter survives a drive coming or going.
 - [x] Greyed songs (drive unplugged, USDB offline): Preview, Add to queue and Load into game disabled in both menus, the Details popup and on double-click / Enter, with the reason as tooltip; Details stays.
 - [x] Fix: memory leak — macOS killed the app at 23 GB after ~17 min. The phrase rating popup, the bar syllables and the lyrics sweep re-coloured their FormattedText every frame (`SetForegroundBrush`), so Avalonia laid them out again; the rating's FontWeight.Black (not in the font) built a new synthetic font face each time, which HarfBuzz kept alive (~55/s). Found with a memory log line, `dotnet-gcdump` (4,407 orphan GlyphTypefaces rooted by HarfBuzz handles) and `dotnet-trace` (stacks into `ScoreEffects.DrawRating`). Now one cached text per colour, Inter Bold; .NET heap stays flat (116 MB through songs). `Diagnostics.MemoryLog` writes process / heap / allocation rate every 30 s.
+- [x] Fix: switching a source on or off left the Language / Genre filters showing an empty selection — rebuilding their lists made the ComboBoxes write null (and refresh mid-rebuild). Guarded like the Source filter; the choice is restored, or "no filter" if that value left with the source.
+- [x] Filter counts (faceted search): every entry of Rating, Language, Genre and Source shows how many songs it would show under the search and the other filters — "French (1,812)", the first entry the total; recomputed on every search keystroke and filter change (`Core.Songs.SongFacets`, one pass, tested — counts match what the filter shows); entries with 0 greyed, still selectable. The closed box shows only the name and is as narrow as the longest name; the open list is wider by the room for the numbers (`FitWidestItem.Suffix`).
+- [x] Search placeholder shortened to "Search title or artist". Settings: Theme drop-down (Light / Dark) instead of the light-theme switch; a first start is light (a saved choice is kept).
+- [x] Settings → Difficulty locked while a song runs (countdown / playing / paused), with the reason as tooltip: the scorers take the tolerance at song start, so a change mid-song only applied to the next song. Theme and Note bar style stay live.
 - [x] Song Sources → USDB on/off switch: off leaves USDB songs out of the library, the source filter and the songbook; stays logged in, sync still works; persisted.
-- [ ] Verified live
+- [x] Verified live
 
 ---
 

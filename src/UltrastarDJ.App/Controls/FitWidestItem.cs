@@ -11,11 +11,28 @@ namespace UltrastarDJ.App.Controls;
 /// <c>c:FitWidestItem.IsEnabled="True"</c> on a ComboBox: its width is that of its widest item, measured from the
 /// items' text. Without it, the box follows the selected text and the virtualised drop-down follows whichever
 /// items are scrolled into view — both jump while browsing a long list (genres).
+/// With a <c>Suffix</c> (the open list's song counts) only the open list gets the extra room; the closed box, which
+/// shows just the name, stays as narrow as the longest name.
 /// </summary>
 public static class FitWidestItem
 {
     // Template chrome around the text: left/right padding plus the drop-down arrow column.
     private const double ChromeWidth = 56;
+    // Around an item's text in the open list: item padding plus room for the scrollbar.
+    private const double ListChromeWidth = 44;
+
+    private static readonly AttachedProperty<double> DropDownWidthProperty =
+        AvaloniaProperty.RegisterAttached<ComboBox, double>("DropDownWidth", typeof(FitWidestItem));
+
+    private static readonly AttachedProperty<Border?> PopupBorderProperty =
+        AvaloniaProperty.RegisterAttached<ComboBox, Border?>("PopupBorder", typeof(FitWidestItem));
+
+    /// <summary>Text appended to every item when measuring — room for what the item template adds (" (88,888)").</summary>
+    public static readonly AttachedProperty<string?> SuffixProperty =
+        AvaloniaProperty.RegisterAttached<ComboBox, string?>("Suffix", typeof(FitWidestItem));
+
+    public static string? GetSuffix(ComboBox c) => c.GetValue(SuffixProperty);
+    public static void SetSuffix(ComboBox c, string? value) => c.SetValue(SuffixProperty, value);
 
     public static readonly AttachedProperty<bool> IsEnabledProperty =
         AvaloniaProperty.RegisterAttached<ComboBox, bool>("IsEnabled", typeof(FitWidestItem));
@@ -51,6 +68,12 @@ public static class FitWidestItem
         if (double.IsNaN(combo.GetValue(BaseMinWidthProperty)))
         {
             combo.SetValue(BaseMinWidthProperty, combo.MinWidth);
+            combo.TemplateApplied += (_, e) =>
+            {
+                combo.SetValue(PopupBorderProperty, e.NameScope.Find<Border>("PopupBorder"));
+                ApplyDropDownWidth(combo);
+            };
+            combo.DropDownOpened += (_, _) => ApplyDropDownWidth(combo);
         }
 
         if (combo.ItemsSource is INotifyCollectionChanged incc)
@@ -82,18 +105,38 @@ public static class FitWidestItem
         }
 
         Typeface face = new(combo.FontFamily, combo.FontStyle, combo.FontWeight);
-        double widest = 0;
+        string? suffix = GetSuffix(combo);
+        double widestName = 0;
+        double widestEntry = 0;
         foreach (object? item in items)
         {
-            if (item?.ToString() is { Length: > 0 } text)
+            if (item?.ToString() is { Length: > 0 } label)
             {
-                FormattedText ft = new(text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, face, combo.FontSize, null);
-                widest = Math.Max(widest, ft.WidthIncludingTrailingWhitespace);
+                widestName = Math.Max(widestName, Width(label, face, combo.FontSize));
+                widestEntry = Math.Max(widestEntry, suffix is null ? 0 : Width(label + suffix, face, combo.FontSize));
             }
         }
 
         double baseMin = combo.GetValue(BaseMinWidthProperty);
-        combo.MinWidth = Math.Max(double.IsNaN(baseMin) ? 0 : baseMin, Math.Ceiling(widest + ChromeWidth));
+        combo.MinWidth = Math.Max(double.IsNaN(baseMin) ? 0 : baseMin, Math.Ceiling(widestName + ChromeWidth));
         combo.MaxWidth = combo.MinWidth;
+        combo.SetValue(DropDownWidthProperty, suffix is null ? 0 : Math.Ceiling(widestEntry + ListChromeWidth));
+        ApplyDropDownWidth(combo);
+    }
+
+    private static double Width(string text, Typeface face, double size)
+        => new FormattedText(text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, face, size, null).WidthIncludingTrailingWhitespace;
+
+    // The open list may be wider than the box (room for the counts); never narrower. The border's margin is the
+    // shadow room around the list.
+    private static void ApplyDropDownWidth(ComboBox combo)
+    {
+        double list = combo.GetValue(DropDownWidthProperty);
+        if (combo.GetValue(PopupBorderProperty) is not { } border || list <= 0)
+        {
+            return;
+        }
+
+        border.MinWidth = Math.Max(combo.Bounds.Width, list + border.Margin.Left + border.Margin.Right);
     }
 }

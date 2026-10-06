@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using UltrastarDJ.App.Game;
 using UltrastarDJ.App.Services;
 using UltrastarDJ.Core.Game;
+using UltrastarDJ.Core.Playback;
 using UltrastarDJ.Infrastructure;
 
 namespace UltrastarDJ.App.ViewModels;
@@ -12,10 +13,17 @@ public sealed partial class SettingsPanelViewModel : ViewModelBase
 {
     private readonly AppSettingsService _settings;
     private readonly AppPaths _paths;
+    private readonly PlaybackService _playback;
+
+    /// <summary>
+    /// Each player's scorer takes the tolerance when the song starts; a change mid-song would only apply to the next
+    /// one, so the drop-down is locked meanwhile (like Audio Input / Output and Displays).
+    /// </summary>
+    public bool DifficultyLocked => _playback.State is PlaybackState.Countdown or PlaybackState.Playing or PlaybackState.Paused;
     private bool _loading;
     private string? _newestCrashReport;
 
-    [ObservableProperty] private bool _lightTheme;
+    [ObservableProperty] private string _theme = LightName;
     [ObservableProperty] private bool _showTooltips;
     [ObservableProperty] private NoteBarStyle _noteBarStyle;
     [ObservableProperty] private Difficulty _difficulty;
@@ -23,12 +31,14 @@ public sealed partial class SettingsPanelViewModel : ViewModelBase
     [ObservableProperty] private string _crashReportsText = "";
     [ObservableProperty] private string _filesStatus = "";
 
-    public SettingsPanelViewModel(AppSettingsService settings, AppPaths paths)
+    public SettingsPanelViewModel(AppSettingsService settings, AppPaths paths, PlaybackService playback)
     {
         _settings = settings;
         _paths = paths;
+        _playback = playback;
+        playback.StateChanged += _ => OnPropertyChanged(nameof(DifficultyLocked));
         _loading = true;
-        LightTheme = settings.LightTheme;
+        Theme = settings.LightTheme ? LightName : DarkName;
         ShowTooltips = settings.ShowTooltips;
         NoteBarStyle = settings.NoteBarStyle;
         Difficulty = settings.Difficulty;
@@ -135,11 +145,15 @@ public sealed partial class SettingsPanelViewModel : ViewModelBase
         }
     }
 
-    partial void OnLightThemeChanged(bool value)
+    private const string LightName = "Light";
+    private const string DarkName = "Dark";
+    public IReadOnlyList<string> Themes { get; } = [LightName, DarkName];
+
+    partial void OnThemeChanged(string value)
     {
-        if (!_loading)
+        if (!_loading && value is not null)
         {
-            _settings.SetLightTheme(value);
+            _settings.SetLightTheme(value == LightName);
         }
     }
 

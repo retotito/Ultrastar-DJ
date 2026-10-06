@@ -34,36 +34,23 @@ public sealed record SongQuery
     public SongSort SortBy { get; init; } = SongSort.Artist;
     public bool Descending { get; init; }
 
+    // One predicate per filter, so SongFacets can count each filter's entries under all the others.
+    public bool MatchesSearch(Song s)
+    {
+        string q = Search.Trim();
+        return q.Length == 0 || s.Title.Contains(q, StringComparison.OrdinalIgnoreCase) || s.Artist.Contains(q, StringComparison.OrdinalIgnoreCase);
+    }
+
+    public bool MatchesLanguage(Song s) => Language is null || ValueList.Contains(s.Language, Language, ValueList.LanguageSeparators);
+    public bool MatchesGenre(Song s) => Genre is null || ValueList.Contains(s.Genre, Genre, ValueList.GenreSeparators);
+    public bool MatchesStars(Song s) => Stars is not { } stars || s.Stars == stars;
+    public bool MatchesSource(Song s) => SourceIds is null || SourceIds.Contains(s.SourceId);
+
     /// <param name="songs">The whole library.</param>
     /// <param name="sourceLabel">Display name of a source id; sorting by source orders by this, not by the id.</param>
     public IEnumerable<Song> Apply(IEnumerable<Song> songs, Func<string, string> sourceLabel)
     {
-        string q = Search.Trim();
-        IEnumerable<Song> filtered = songs;
-        if (q.Length > 0)
-        {
-            filtered = filtered.Where(s => s.Title.Contains(q, StringComparison.OrdinalIgnoreCase) || s.Artist.Contains(q, StringComparison.OrdinalIgnoreCase));
-        }
-
-        if (Language is not null)
-        {
-            filtered = filtered.Where(s => ValueList.Contains(s.Language, Language, ValueList.LanguageSeparators));
-        }
-
-        if (Genre is not null)
-        {
-            filtered = filtered.Where(s => ValueList.Contains(s.Genre, Genre, ValueList.GenreSeparators));
-        }
-
-        if (Stars is { } stars)
-        {
-            filtered = filtered.Where(s => s.Stars == stars);
-        }
-
-        if (SourceIds is not null)
-        {
-            filtered = filtered.Where(s => SourceIds.Contains(s.SourceId));
-        }
+        IEnumerable<Song> filtered = songs.Where(s => MatchesSearch(s) && MatchesLanguage(s) && MatchesGenre(s) && MatchesStars(s) && MatchesSource(s));
 
         IOrderedEnumerable<Song> sorted = SortBy switch
         {

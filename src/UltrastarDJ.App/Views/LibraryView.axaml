@@ -29,14 +29,108 @@
     <Border Grid.Row="0" Padding="{StaticResource Pad3}"
             BorderBrush="{DynamicResource BrushOutlineVariant}" BorderThickness="0,0,0,1">
       <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto,Auto">
-        <TextBox Grid.Column="0" Margin="0,0,16,0" Classes="clearButton" PlaceholderText="Search title or artist  —  double-click: preview · ⋮ or right-click: queue / game" Text="{Binding Search}" />
-        <ComboBox Grid.Column="1" ItemsSource="{Binding Ratings}" c:FitWidestItem.IsEnabled="True" SelectedItem="{Binding Rating}" MinWidth="110" Margin="0,0,8,0" ToolTip.Tip="Popularity on USDB (★ 100–499, ★★ 500–999, ★★★ 1000–1999, ★★★★ 2000+ views) — hides local songs" />
-        <ComboBox Grid.Column="2" ItemsSource="{Binding Languages}" c:FitWidestItem.IsEnabled="True" SelectedItem="{Binding Language}" MinWidth="120" Margin="0,0,8,0" ToolTip.Tip="Language" />
-        <ComboBox Grid.Column="3" ItemsSource="{Binding Genres}" c:FitWidestItem.IsEnabled="True" SelectedItem="{Binding Genre}" MinWidth="120" Margin="0,0,8,0" ToolTip.Tip="Genre" />
-        <ComboBox Grid.Column="4" ItemsSource="{Binding Sources}" c:FitWidestItem.IsEnabled="True" SelectedItem="{Binding Source}" MinWidth="140" ToolTip.Tip="Song source">
+        <TextBox Grid.Column="0" Margin="0,0,16,0" Classes="clearButton" PlaceholderText="Search title or artist" Text="{Binding Search}" />
+        <ComboBox Grid.Column="1" ItemsSource="{Binding Ratings}" c:FitWidestItem.IsEnabled="True" c:FitWidestItem.Suffix=" (88,888)" SelectedItem="{Binding Rating}" MinWidth="110" Margin="0,0,8,0" ToolTip.Tip="Popularity on USDB (★ 100–499, ★★ 500–999, ★★★ 1000–1999, ★★★★ 2000+ views) — hides local songs">
+          <!-- Closed box: just the name; the counts are for choosing, in the open list. -->
+          <ComboBox.SelectionBoxItemTemplate>
+            <DataTemplate x:DataType="vm:RatingOption">
+              <TextBlock Text="{Binding}" />
+            </DataTemplate>
+          </ComboBox.SelectionBoxItemTemplate>
           <ComboBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:RatingOption">
+              <TextBlock>
+                <TextBlock.Text>
+                  <MultiBinding Converter="{x:Static vm:FacetConverters.Label}" ConverterParameter="rating">
+                    <Binding />
+                    <Binding Path="$parent[UserControl].((vm:LibraryViewModel)DataContext).Facets" />
+                  </MultiBinding>
+                </TextBlock.Text>
+                <TextBlock.Opacity>
+                  <MultiBinding Converter="{x:Static vm:FacetConverters.Opacity}" ConverterParameter="rating">
+                    <Binding />
+                    <Binding Path="$parent[UserControl].((vm:LibraryViewModel)DataContext).Facets" />
+                  </MultiBinding>
+                </TextBlock.Opacity>
+              </TextBlock>
+            </DataTemplate>
+          </ComboBox.ItemTemplate>
+        </ComboBox>
+        <ComboBox Grid.Column="2" ItemsSource="{Binding Languages}" c:FitWidestItem.IsEnabled="True" c:FitWidestItem.Suffix=" (88,888)" SelectedItem="{Binding Language}" MinWidth="120" Margin="0,0,8,0" ToolTip.Tip="Language">
+          <!-- Closed box: just the name; the counts are for choosing, in the open list. -->
+          <ComboBox.SelectionBoxItemTemplate>
+            <DataTemplate x:DataType="x:String">
+              <TextBlock Text="{Binding}" />
+            </DataTemplate>
+          </ComboBox.SelectionBoxItemTemplate>
+          <ComboBox.ItemTemplate>
+            <DataTemplate x:DataType="x:String">
+              <TextBlock>
+                <TextBlock.Text>
+                  <MultiBinding Converter="{x:Static vm:FacetConverters.Label}" ConverterParameter="language">
+                    <Binding />
+                    <Binding Path="$parent[UserControl].((vm:LibraryViewModel)DataContext).Facets" />
+                  </MultiBinding>
+                </TextBlock.Text>
+                <TextBlock.Opacity>
+                  <MultiBinding Converter="{x:Static vm:FacetConverters.Opacity}" ConverterParameter="language">
+                    <Binding />
+                    <Binding Path="$parent[UserControl].((vm:LibraryViewModel)DataContext).Facets" />
+                  </MultiBinding>
+                </TextBlock.Opacity>
+              </TextBlock>
+            </DataTemplate>
+          </ComboBox.ItemTemplate>
+        </ComboBox>
+        <ComboBox Grid.Column="3" ItemsSource="{Binding Genres}" c:FitWidestItem.IsEnabled="True" c:FitWidestItem.Suffix=" (88,888)" SelectedItem="{Binding Genre}" MinWidth="120" Margin="0,0,8,0" ToolTip.Tip="Genre">
+          <!-- Closed box: just the name; the counts are for choosing, in the open list. -->
+          <ComboBox.SelectionBoxItemTemplate>
+            <DataTemplate x:DataType="x:String">
+              <TextBlock Text="{Binding}" />
+            </DataTemplate>
+          </ComboBox.SelectionBoxItemTemplate>
+          <ComboBox.ItemTemplate>
+            <DataTemplate x:DataType="x:String">
+              <TextBlock>
+                <TextBlock.Text>
+                  <MultiBinding Converter="{x:Static vm:FacetConverters.Label}" ConverterParameter="genre">
+                    <Binding />
+                    <Binding Path="$parent[UserControl].((vm:LibraryViewModel)DataContext).Facets" />
+                  </MultiBinding>
+                </TextBlock.Text>
+                <TextBlock.Opacity>
+                  <MultiBinding Converter="{x:Static vm:FacetConverters.Opacity}" ConverterParameter="genre">
+                    <Binding />
+                    <Binding Path="$parent[UserControl].((vm:LibraryViewModel)DataContext).Facets" />
+                  </MultiBinding>
+                </TextBlock.Opacity>
+              </TextBlock>
+            </DataTemplate>
+          </ComboBox.ItemTemplate>
+        </ComboBox>
+        <ComboBox Grid.Column="4" ItemsSource="{Binding Sources}" c:FitWidestItem.IsEnabled="True" c:FitWidestItem.Suffix=" (88,888)" SelectedItem="{Binding Source}" MinWidth="140" ToolTip.Tip="Song source">
+          <!-- Closed box: just the name; the counts are for choosing, in the open list. -->
+          <ComboBox.SelectionBoxItemTemplate>
             <DataTemplate x:DataType="vm:SourceOption">
               <TextBlock Text="{Binding}" Opacity="{Binding Opacity}" />
+            </DataTemplate>
+          </ComboBox.SelectionBoxItemTemplate>
+          <ComboBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:SourceOption">
+              <TextBlock>
+                <TextBlock.Text>
+                  <MultiBinding Converter="{x:Static vm:FacetConverters.Label}" ConverterParameter="source">
+                    <Binding />
+                    <Binding Path="$parent[UserControl].((vm:LibraryViewModel)DataContext).Facets" />
+                  </MultiBinding>
+                </TextBlock.Text>
+                <TextBlock.Opacity>
+                  <MultiBinding Converter="{x:Static vm:FacetConverters.Opacity}" ConverterParameter="source">
+                    <Binding />
+                    <Binding Path="$parent[UserControl].((vm:LibraryViewModel)DataContext).Facets" />
+                  </MultiBinding>
+                </TextBlock.Opacity>
+              </TextBlock>
             </DataTemplate>
           </ComboBox.ItemTemplate>
         </ComboBox>

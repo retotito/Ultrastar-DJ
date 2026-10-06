@@ -58,13 +58,15 @@ public sealed record SourceOption(string Key, string Label, bool IsAvailable = t
 public sealed partial class LibraryViewModel : ViewModelBase
 {
     // The first entry of each filter is "no filter" and is labelled with the filter's name.
-    private const string AnyLanguage = "Language";
-    private const string AnyGenre = "Genre";
+    public const string AnyLanguage = "Language";
+    public const string AnyGenre = "Genre";
     private static readonly RatingOption AnyRating = new(null, "Rating");
     private static readonly SourceOption AllSources = new(SourceOption.AllKey, "All sources");
 
     // Clearing Sources makes the ComboBox write null back into Source; that must not re-enter Refresh.
     private bool _rebuildingSources;
+    // Same for Language / Genre: rebuilding their lists (a source switched on or off) makes the ComboBoxes write null.
+    private bool _rebuildingLists;
 
     private readonly LibraryService _library;
     private readonly LoadFailureService _failures;
@@ -83,6 +85,8 @@ public sealed partial class LibraryViewModel : ViewModelBase
     /// <summary>Null while the ComboBox rebuilds its items; treated as "all sources".</summary>
     [ObservableProperty] private SourceOption? _source = AllSources;
     [ObservableProperty] private bool _descending;
+    /// <summary>Song count per filter entry under the search and the other filters (FacetConverters labels the entries).</summary>
+    [ObservableProperty] private SongFacets? _facets;
 
     public LibraryViewModel(LibraryService library, PreviewViewModel preview, QueueViewModel queue, NowPlayingViewModel nowPlaying, AppSettingsService settings,
         LoadFailureService failures)
@@ -203,8 +207,21 @@ public sealed partial class LibraryViewModel : ViewModelBase
     public Task PreviewSelectedAsync() => PreviewAsync(Selected);
 
     partial void OnSearchChanged(string value) => Refresh();
-    partial void OnLanguageChanged(string value) => Refresh();
-    partial void OnGenreChanged(string value) => Refresh();
+    partial void OnLanguageChanged(string value)
+    {
+        if (!_rebuildingLists)
+        {
+            Refresh();
+        }
+    }
+
+    partial void OnGenreChanged(string value)
+    {
+        if (!_rebuildingLists)
+        {
+            Refresh();
+        }
+    }
     partial void OnRatingChanged(RatingOption? value) => Refresh();
 
     partial void OnSourceChanged(SourceOption? value)
@@ -231,6 +248,7 @@ public sealed partial class LibraryViewModel : ViewModelBase
             SortBy = Sort,
             Descending = Descending,
         };
+        Facets = SongFacets.Of(all, query);
         Rows = query.Apply(all, _library.SourceLabel)
             .Select(s => new LibraryRow(s, _library.SourceLabel(s.SourceId), _library.IsAvailable(s.SourceId), _failures.For(s)))
             .ToList();
@@ -247,9 +265,23 @@ public sealed partial class LibraryViewModel : ViewModelBase
 
     private void RefreshFilterValues(IReadOnlyList<Song> all)
     {
-        // Each language / genre once, never "French, English" (ValueList, as usdb_syncer).
-        Sync(Languages, AnyLanguage, ValueList.Distinct(all.Select(s => s.Language), ValueList.LanguageSeparators));
-        Sync(Genres, AnyGenre, ValueList.Distinct(all.Select(s => s.Genre), ValueList.GenreSeparators));
+        // Each language / genre once, never "French, English" (ValueList, as usdb_syncer). Rebuilding a list makes its
+        // ComboBox write null into the filter (shown as an empty selection): keep the choice, restore it afterwards —
+        // or "no filter" if that value is gone with a switched-off source — and re-announce it so the box shows it.
+        string keepLanguage = Language;
+        string keepGenre = Genre;
+        _rebuildingLists = true;
+        bool rebuilt = Sync(Languages, AnyLanguage, ValueList.Distinct(all.Select(s => s.Language), ValueList.LanguageSeparators))
+            | Sync(Genres, AnyGenre, ValueList.Distinct(all.Select(s => s.Genre), ValueList.GenreSeparators));
+        if (rebuilt)
+        {
+            Language = keepLanguage is not null && Languages.Contains(keepLanguage) ? keepLanguage : AnyLanguage;
+            Genre = keepGenre is not null && Genres.Contains(keepGenre) ? keepGenre : AnyGenre;
+            OnPropertyChanged(nameof(Language));
+            OnPropertyChanged(nameof(Genre));
+        }
+
+        _rebuildingLists = false;
         List<SourceOption> sources = [AllSources];
         int folders = _library.Sources.Count(s => s.Enabled);
         if (folders > 1 || (folders > 0 && _library.UsdbCount > 0))
@@ -279,23 +311,15 @@ public sealed partial class LibraryViewModel : ViewModelBase
             _rebuildingSources = false;
         }
 
-        if (!Languages.Contains(Language))
-        {
-            Language = AnyLanguage;
-        }
-
-        if (!Genres.Contains(Genre))
-        {
-            Genre = AnyGenre;
-        }
     }
 
-    private static void Sync(ObservableCollection<string> target, string any, IEnumerable<string> values)
+    /// <returns>Whether the list changed (its ComboBox then lost its selection).</returns>
+    private static bool Sync(ObservableCollection<string> target, string any, IEnumerable<string> values)
     {
         List<string> wanted = [any, .. values];
         if (target.SequenceEqual(wanted))
         {
-            return;
+            return false;
         }
 
         target.Clear();
@@ -303,5 +327,7 @@ public sealed partial class LibraryViewModel : ViewModelBase
         {
             target.Add(v);
         }
+
+        return true;
     }
 }
