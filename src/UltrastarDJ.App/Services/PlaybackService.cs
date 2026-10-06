@@ -238,43 +238,67 @@ public sealed class PlaybackService : IDisposable
         PicturesChanged?.Invoke();
     }
 
-    public void Preview()
+    public async Task PreviewAsync()
     {
-        if (CanPreview)
+        if (CanPreview && await RewindIfFinishedAsync())
         {
-            RewindIfFinished();
             State = PlaybackState.Preview;
         }
     }
 
     /// <summary>Starts the countdown on every open beamer; the first one to finish starts the media. After Stop it replays from the start.</summary>
-    public void Play()
+    public async Task PlayAsync()
     {
-        if (!CanPlay)
+        if (CanPlay && await RewindIfFinishedAsync())
         {
-            return;
+            _countdownDone.Clear();
+            State = PlaybackState.Countdown;
         }
-
-        RewindIfFinished();
-        _countdownDone.Clear();
-        State = PlaybackState.Countdown;
     }
 
     /// <summary>Beamers back to their start view; the song stays loaded (rewound) and ready to play.</summary>
-    public void Home()
+    public async Task HomeAsync()
     {
-        if (CanHome)
+        if (CanHome && await RewindIfFinishedAsync())
         {
-            RewindIfFinished();
             State = PlaybackState.Loaded;
         }
     }
 
-    private void RewindIfFinished()
+    /// <summary>
+    /// After a song: back to its start. Stopped in the middle, the file is only paused and a seek does it. Played to
+    /// the very end of its file, mpv has closed it (keep-open=no) and a seek fails — the song was replayed on an
+    /// empty player and ended at once; it is loaded again instead. False if that failed (the DJ was told).
+    /// </summary>
+    private async Task<bool> RewindIfFinishedAsync()
     {
-        if (State == PlaybackState.Score)
+        if (State != PlaybackState.Score)
+        {
+            return true;
+        }
+
+        if (_media.Game.State is not (MediaState.Ended or MediaState.Idle) || Plan is not { } plan)
         {
             _media.Game.Seek(0);
+            return true;
+        }
+
+        _log.LogInformation("Replay: the song's file ended — loading it again");
+        IsBusy = true;
+        try
+        {
+            await _media.Game.LoadAsync(plan);
+            return true;
+        }
+        catch (MediaException ex)
+        {
+            SongLoadException explained = Explain(ex, plan);
+            _notifications.ShowError("Song cannot be played again", explained.Reasons, explained.Details);
+            return false;
+        }
+        finally
+        {
+            IsBusy = false;
         }
     }
 
@@ -399,7 +423,8 @@ public sealed class PlaybackService : IDisposable
         }
 
         Stop();
-        Home();
+        // Stopped mid-song: the file is only paused, so this rewinds at once (no reload, nothing to await).
+        _ = HomeAsync();
         foreach (DisplayId id in (ReadOnlySpan<DisplayId>)[DisplayId.Beamer1, DisplayId.Beamer2])
         {
             _displays.Close(id);

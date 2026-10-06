@@ -305,15 +305,41 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
         LoadAvailabilityChanged?.Invoke();
     }
 
-    [RelayCommand(CanExecute = nameof(CanPreview))] private void Preview() => _playback.Preview();
+    [RelayCommand(CanExecute = nameof(CanPreview))]
+    private async Task PreviewAsync()
+    {
+        Loading = true;
+        try
+        {
+            await _playback.PreviewAsync();
+        }
+        finally
+        {
+            Loading = false;
+        }
+    }
     private bool CanPreview() => _playback.CanPreview;
 
-    [RelayCommand(CanExecute = nameof(CanHome))] private void Home() => _playback.Home();
+    [RelayCommand(CanExecute = nameof(CanHome))]
+    private async Task HomeAsync()
+    {
+        // Loader while a song that ran to its end is loaded again (PlaybackService.RewindIfFinishedAsync).
+        Loading = true;
+        try
+        {
+            await _playback.HomeAsync();
+        }
+        finally
+        {
+            Loading = false;
+        }
+    }
+
     private bool CanHome() => _playback.CanHome;
 
     /// <summary>One button: play (countdown) → pause while playing → resume while paused. Disabled during the countdown.</summary>
     [RelayCommand(CanExecute = nameof(CanPlayPause))]
-    private void PlayPause()
+    private async Task PlayPauseAsync()
     {
         switch (PlaybackRules.PlayButtonFor(_playback.State))
         {
@@ -324,7 +350,16 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
                 _playback.Resume();
                 break;
             default:
-                _playback.Play();
+                Loading = true;
+                try
+                {
+                    await _playback.PlayAsync();
+                }
+                finally
+                {
+                    Loading = false;
+                }
+
                 break;
         }
     }

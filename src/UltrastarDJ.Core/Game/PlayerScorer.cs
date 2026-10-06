@@ -97,6 +97,38 @@ public sealed class PlayerScorer
     public int MaxScore { get; }
     public int Score { get; private set; }
 
+    /// <summary>
+    /// The most this player could have scored up to <paramref name="beat"/> (exclusive): every scorable beat before it,
+    /// plus the bonus of every line that ended by then. At or past the last note: <see cref="MaxScore"/>. The score
+    /// screen shows the score as a share of this, so stopping early does not look like a bad performance.
+    /// </summary>
+    public int MaxScoreUntil(double beat)
+    {
+        int max = 0;
+        foreach (LyricLine line in _track.Lines)
+        {
+            bool scorable = false;
+            foreach (Note n in line.Notes)
+            {
+                if (!n.IsScorable)
+                {
+                    continue;
+                }
+
+                scorable = true;
+                int beats = Math.Clamp((int)Math.Floor(beat) - n.StartBeat, 0, n.LengthBeats);
+                max += ScoreRules.PointsPerBeat(n.Type) * beats;
+            }
+
+            if (scorable && line.EndBeat <= beat)
+            {
+                max += ScoreRules.LineBonusPoints;
+            }
+        }
+
+        return max;
+    }
+
     /// <summary>Whether every scorable beat of <paramref name="line"/> has been sung correctly so far.</summary>
     public bool IsLinePerfect(LyricLine line)
     {

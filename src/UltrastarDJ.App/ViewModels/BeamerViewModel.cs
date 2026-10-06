@@ -40,6 +40,8 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private int _winnerId = -1;
     /// <summary>Score screen: the count-up has finished — the winner's stars start (only if they scored).</summary>
     [ObservableProperty] private bool _scoreCounted;
+    /// <summary>Score screen after an early stop: what the percentages mean. Empty when the song was sung through.</summary>
+    [ObservableProperty] private string _scoreNote = "";
     [ObservableProperty] private IBrush? _winnerBrush;
 
     public BeamerViewModel(DisplayId id, FrameBus gameFrames, PlaybackService playback, PlayersService players, IDisplayService displays,
@@ -236,12 +238,18 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
         }
 
         IReadOnlyList<(int PlayerId, int Score, int MaxScore)> standings = session.Standings();
+        // Stopped early: each score as a share of what was possible until then, not of the whole song.
+        double stoppedAt = _playback.GamePositionSec;
+        bool finished = standings.All(s => session.PossibleScoreAt(stoppedAt, s.PlayerId) >= s.MaxScore);
+        ScoreNote = finished || _playback.Timeline is not { } timeline
+            ? ""
+            : $"Stopped at {TimeSpan.FromSeconds(timeline.Elapsed(_playback.Clock?.PositionSec ?? 0)):m\\:ss} — percentages of the points possible until then";
         WinnerId = standings.Count > 0 && standings[0].Score > 0 ? standings[0].PlayerId : -1;
         WinnerBrush = WinnerId > 0 ? PlayerBrush(WinnerId) : null;
         foreach ((int pid, int score, int max) in standings.OrderBy(s => s.PlayerId))
         {
             PlayerConfig cfg = _players.Get(pid);
-            Scores.Add(new ScoreRowViewModel(pid, cfg.Name, PlayerBrush(pid), score, max, pid == WinnerId));
+            Scores.Add(new ScoreRowViewModel(pid, cfg.Name, PlayerBrush(pid), score, max, session.PossibleScoreAt(stoppedAt, pid), pid == WinnerId));
         }
 
         _scoreAnimStart = DateTime.UtcNow;
@@ -285,7 +293,7 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
     private void OnSyncTestChanged() => OnPropertyChanged(nameof(SyncTestRunning));
 }
 
-public sealed partial class ScoreRowViewModel(int playerId, string name, IBrush brush, int final, int max, bool isWinner) : ObservableObject
+public sealed partial class ScoreRowViewModel(int playerId, string name, IBrush brush, int final, int max, int possible, bool isWinner) : ObservableObject
 {
     [ObservableProperty] private int _displayed;
 
@@ -294,8 +302,16 @@ public sealed partial class ScoreRowViewModel(int playerId, string name, IBrush 
     public IBrush Brush { get; } = brush;
     public int Final { get; } = final;
     public int Max { get; } = max;
+    /// <summary>The most the player could have scored until the stop (the full maximum when sung through).</summary>
+    public int Possible { get; } = possible;
     public bool IsWinner { get; } = isWinner;
-    public double Fraction => Max > 0 ? (double)Displayed / Max : 0;
+    /// <summary>Bar and percentage: the counted-up score as a share of what was possible (count up together).</summary>
+    public double Fraction => Possible > 0 ? Math.Min(1, (double)Displayed / Possible) : 0;
+    public string Percent => $"{Math.Round(Fraction * 100):0} %";
 
-    partial void OnDisplayedChanged(int value) => OnPropertyChanged(nameof(Fraction));
+    partial void OnDisplayedChanged(int value)
+    {
+        OnPropertyChanged(nameof(Fraction));
+        OnPropertyChanged(nameof(Percent));
+    }
 }

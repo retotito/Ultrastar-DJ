@@ -151,6 +151,14 @@ or PERFECT! (8, ≈ 94 %+) pops up in the lane (0.35 s pop, 0.55 s rise to 70 %,
 (awful … good) are not shown. A 100 % phrase also bursts stars in the player's colour. On the score screen, once the count-up has finished, stars in the
 winner's colour twinkle and drift upwards for 5 s (`Controls.StarShower`).
 
+## Score screen
+
+One row per player: trophy for the winner, name, a 36 px bar in the player's colour, the percentage in that colour and
+the score; bar, percentage and score count up together (1.8 s). The percentage is the score as a share of the points
+possible — the whole song (`MaxScore`), or after an early stop what was possible until each player's sung beat
+(`PlayerScorer.MaxScoreUntil`: scorable beats before it plus the bonus of finished lines). An early stop adds the note
+"Stopped at m:ss — percentages of the points possible until then". Stars in the winner's colour once counted.
+
 ## Mic meter (beamer)
 
 Five bars in the player's colour after the name and score, as tall as the name's capitals: shows the singer their mic

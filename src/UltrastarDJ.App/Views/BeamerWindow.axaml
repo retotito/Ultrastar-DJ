@@ -62,16 +62,23 @@
       <Panel>
         <!-- Once the count-up is done: stars in the winner's colour (none when nobody scored). -->
         <c:StarShower IsRunning="{Binding ScoreCounted}" StarBrush="{Binding WinnerBrush}" />
-        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="{StaticResource Space6}" MinWidth="700">
-          <TextBlock Classes="beamer" Text="{Binding Title}" FontSize="40" FontWeight="{StaticResource WeightBold}" HorizontalAlignment="Center" />
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="{StaticResource Space6}" MinWidth="1100" Margin="48,0">
+          <StackPanel Spacing="{StaticResource Space2}">
+            <TextBlock Classes="beamer" Text="{Binding Title}" FontSize="40" FontWeight="{StaticResource WeightBold}" HorizontalAlignment="Center" />
+            <TextBlock Classes="beamer" Text="{Binding ScoreNote}" FontSize="{StaticResource TextXl}" Opacity="0.7" HorizontalAlignment="Center"
+                       IsVisible="{Binding ScoreNote, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+          </StackPanel>
           <ItemsControl ItemsSource="{Binding Scores}">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:ScoreRowViewModel">
-                <Grid ColumnDefinitions="56,280,*,200" Margin="0,10" VerticalAlignment="Center">
+                <Grid ColumnDefinitions="56,260,*,150,200" Margin="0,12" VerticalAlignment="Center">
                   <c:Icon Grid.Column="0" Glyph="emoji_events" FontSize="40" Foreground="{StaticResource BrushGolden}" IsVisible="{Binding IsWinner}" />
                   <TextBlock Grid.Column="1" Classes="beamer" Text="{Binding Name}" FontSize="40" FontWeight="{StaticResource WeightSemibold}" Foreground="{Binding Brush}" VerticalAlignment="Center" />
-                  <c:LevelMeter Grid.Column="2" Height="18" Level="{Binding Fraction}" Fill="{Binding Brush}" Track="#33FFFFFF" VerticalAlignment="Center" Margin="24,0" />
-                  <TextBlock Grid.Column="3" Classes="beamer" Text="{Binding Displayed}" FontSize="48" FontWeight="{StaticResource WeightBold}" TextAlignment="Right" VerticalAlignment="Center" />
+                  <!-- Bar and percentage: share of the points possible (whole song, or until an early stop). -->
+                  <c:LevelMeter Grid.Column="2" Height="36" Level="{Binding Fraction}" Fill="{Binding Brush}" Track="#33FFFFFF" VerticalAlignment="Center" Margin="24,0,16,0" />
+                  <TextBlock Grid.Column="3" Classes="beamer" Text="{Binding Percent}" Foreground="{Binding Brush}" FontSize="44" FontWeight="{StaticResource WeightBold}"
+                             TextAlignment="Right" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="4" Classes="beamer" Text="{Binding Displayed}" FontSize="48" FontWeight="{StaticResource WeightBold}" TextAlignment="Right" VerticalAlignment="Center" />
                 </Grid>
               </DataTemplate>
             </ItemsControl.ItemTemplate>

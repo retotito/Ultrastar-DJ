@@ -163,6 +163,26 @@ public class PlayerScorerTests
         Assert.False(s.IsNotePerfect(Track().Lines[1].Notes[1])); // freestyle never
     }
 
+    [Theory]
+    [InlineData(0, 0)]
+    [InlineData(2, 200)]                   // 2 normal beats
+    [InlineData(6, 400 + 400)]             // normal 4 + golden 2 × 200
+    [InlineData(8, 400 + 800 + 1000)]      // line 1 complete: its bonus counts
+    [InlineData(11, 2200 + 100)]           // 1 rap beat
+    [InlineData(100, 2200 + 1200)]         // past the end: the full maximum (freestyle adds nothing)
+    public void MaxScoreUntil_CountsBeatsAndFinishedLines(double beat, int expected)
+    {
+        Assert.Equal(expected, Scorer().MaxScoreUntil(beat));
+    }
+
+    [Fact]
+    public void MaxScoreUntil_TheEndIsTheMaxScore()
+    {
+        PlayerScorer s = Scorer();
+
+        Assert.Equal(s.MaxScore, s.MaxScoreUntil(1000));
+    }
+
     [Fact]
     public void Deterministic_SameInputSameScore()
     {

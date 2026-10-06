@@ -66,6 +66,12 @@ public sealed class GameSession
     public IReadOnlyList<(int PlayerId, int Score, int MaxScore)> Standings()
         => _players.Values.Select(p => (p.Scorer.PlayerId, p.Scorer.Score, p.Scorer.MaxScore)).OrderByDescending(x => x.Score).ToList();
 
+    /// <summary>
+    /// The most a player could have scored by <paramref name="positionSec"/> — up to the beat their mic had delivered
+    /// (<see cref="SungBeatAt"/>), since later beats were never judged. The full maximum once the song is through.
+    /// </summary>
+    public int PossibleScoreAt(double positionSec, int playerId) => Scorer(playerId).MaxScoreUntil(SungBeatAt(positionSec, playerId));
+
     /// <summary>Last beat of the song across all tracks — playback may stop shortly after.</summary>
     public int LastBeat => Song.Notes!.Max(t => t.Lines.Count > 0 ? t.Lines[^1].EndBeat : 0);
 }
