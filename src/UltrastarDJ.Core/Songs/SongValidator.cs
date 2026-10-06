@@ -91,7 +91,7 @@ public sealed class SongValidator(IFileExistence files)
         foreach (string line in text.Split('\n'))
         {
             string t = line.TrimStart();
-            if (t.Length > 1 && t[0] is ':' or '*' or 'F' or 'R' or 'G' && t[1] == ' ')
+            if (t.Length > 1 && t[0] is ':' or '*' or 'F' or 'R' or 'G' && (t[1] == ' ' || (t[0] is 'F' or 'R' or 'G' && t[1] == ':')))
             {
                 return true;
             }

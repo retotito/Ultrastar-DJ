@@ -265,7 +265,7 @@ Details: `03-game-engine.md` "Mic plug / unplug".
 
 ---
 
-## Sprint 8 — Beamers  *(in progress)*
+## Sprint 8 — Beamers  *(done)*
 
 - [x] A beamer without assigned players still shows the lyrics bar (lead-in, syllable sweep in the lead-in blue) and the progress line during a song — karaoke without scoring. Lyrics follow track 1.
 - [x] Elapsed / remaining time and progress bar under the lyrics (prototype's SongProgress) from `Core.Timing.SongTimeline` — #START, #END, #GAP, #VIDEOGAP and media length, tested; replaces the thin top progress line; auto-stop uses the same end.
@@ -278,7 +278,7 @@ Details: `03-game-engine.md` "Mic plug / unplug".
 - [x] Real cause of the crackling: PortAudio (macOS) sets the device IO buffer from an output stream's latency, per process — the low-latency monitor stream shrank the MacBook speakers' buffer to its minimum, and mpv's song output in our process crackled (preview on the headphones did not). Output streams now open with a fixed 512-frame block (`PortAudioBackend.OutputBlockFrames`).
 - [x] Crackling verified gone. (Recalibrate mic delays once: the calibration beep now uses 512-frame blocks.)
 - [x] Pitch analysis delay: measured ≈ 60 ms (`PitchPathDelayTests`); now part of the calibration (Sprint 9).
-- [ ] Verified live
+- [x] Verified live (played on the beamers through Sprints 9 and 10)
 
 ---
 
@@ -291,6 +291,24 @@ Details: `03-game-engine.md` "Mic plug / unplug".
 - [x] Test sync: click every second on the game output (`SyncClicks`, tested), disc flash on the open beamers when each click should be heard; needs an open beamer, stops with the panel, a song, or the last beamer.
 - [x] Settings → Lyrics offset removed; an existing value moves into the game output's latency once.
 - [x] Verified live: Calibrate gives a steady ~110 ms per mic (tone → recognised note; old beep method 36 ms); Test sync on the MacBook speakers lands on 0 ms, as expected for wired speakers.
+
+---
+
+## Sprint 10 — Scoring effects  *(done)*
+
+- [x] Rap notes: no sung fill (any voice counts, so the fill painted the whole bar) — the hit shows on the border only (solid, orange glow, white R). Freestyle: no fill either (not scored).
+- [x] Rap scoring checked against USDX (`UMusic.pas` ScoreFactor: freestyle 0, normal 1, golden 2, rap 1, golden rap 2) — ours matches (100 / 200 per beat).
+- [x] Fix: Play again after Stop kept the previous run's fill — the beamer reused its scene; a new game session now gets a new scene (resume after Pause keeps it).
+- [x] Fix: freestyle notes written "F:" (colon after the type letter, e.g. "Ben Harper - Golden Rapnotes") were dropped by the parser (test first); also "R:" / "G:".
+- [x] Freestyle look: thin white dots (1 px); lights up (solid border in the player colour + glow) once the player is heard on it, not just when reached.
+- [x] Phrase rating after USDX (`Core.Game.PhraseRating`, tested): share of the phrase's points × 8, rounded; only GREAT! (6), AWESOME! (7) and PERFECT! (8, from ~94 %) are shown, centred in the lane with USDX's popup timing (pop 0.35 s, rise 0.55 s, fade 0.2 s). Rated when the mic has delivered the phrase's last beat. Replaces the old every-beat PERFECT!.
+- [x] Perfect note (every beat right, `PlayerScorer.IsNotePerfect`, tested): three twinkling stars at the bar's top-right (left of the R badge) once it is sung through.
+- [x] Golden notes: gold sparkles on the sung part, a white-blue twinkle at the fill edge while it is hit.
+- [x] 100 % phrase: a star burst in the player's colour over the lane.
+- [x] The 50 % border flare stays (feedback while the note is still sung).
+- [x] Rating words 30 % smaller (11 % of the lane height, min 20 px).
+- [x] Score screen: once the count-up has finished, stars in the winner's colour twinkle over the screen and drift upwards for 5 s, fading out over the last second (`Controls.StarShower`); none when nobody scored (no trophy then either).
+- [x] Verified live: rap and freestyle looks, empty bars on replay, rating words, note stars, golden sparkles, star burst, score-screen stars.
 
 ---
 

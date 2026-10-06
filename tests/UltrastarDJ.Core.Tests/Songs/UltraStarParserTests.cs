@@ -96,6 +96,17 @@ public class UltraStarParserTests
     }
 
     [Fact]
+    public void ParseNotes_TypeLetterWithColon_IsTheSameNoteType()
+    {
+        // Some editors write freestyle as "F:" (seen in "Ben Harper - Golden Rapnotes"); the notes were dropped.
+        IReadOnlyList<NoteTrack> tracks = UltraStarParser.ParseNotes(": 0 1 2 I \nF: 25 6 7 you \nR: 40 2 3 rap\nE\n");
+
+        Note[] notes = [.. tracks[0].Lines[0].Notes];
+        Assert.Equal([NoteType.Normal, NoteType.Freestyle, NoteType.Rap], notes.Select(n => n.Type));
+        Assert.Equal((25, 6, 7, "you "), (notes[1].StartBeat, notes[1].LengthBeats, notes[1].UsPitch, notes[1].Syllable));
+    }
+
+    [Fact]
     public void ParseNotes_Duet_ProducesTwoTracks()
     {
         const string duet = "P1\n: 0 2 0 a\n- 4\nP2\n: 8 2 0 b\nE\n";

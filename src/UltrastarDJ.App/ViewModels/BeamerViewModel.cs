@@ -38,6 +38,9 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private NoteBarStyle _noteBarStyle;
     [ObservableProperty] private GameScene? _scene;
     [ObservableProperty] private int _winnerId = -1;
+    /// <summary>Score screen: the count-up has finished — the winner's stars start (only if they scored).</summary>
+    [ObservableProperty] private bool _scoreCounted;
+    [ObservableProperty] private IBrush? _winnerBrush;
 
     public BeamerViewModel(DisplayId id, FrameBus gameFrames, PlaybackService playback, PlayersService players, IDisplayService displays,
         AppSettingsService settings, SyncTestService syncTest)
@@ -117,6 +120,7 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
     private void OnPlaybackStateChanged(PlaybackState state)
     {
         State = state;
+        ScoreCounted = false;
         switch (state)
         {
             case PlaybackState.Idle:
@@ -145,7 +149,8 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
 
             case PlaybackState.Playing:
                 _countdown.Stop();
-                if (Scene is null && _playback.Session is { } session && _playback.Clock is not null)
+                // A new session (Play again after Stop) gets a fresh scene; resume after Pause keeps the sung fill.
+                if (_playback.Session is { } session && !ReferenceEquals(Scene?.Session, session) && _playback.Clock is not null)
                 {
                     RefreshAssignedPlayers();
                     Scene = new GameScene(session, [.. AssignedPlayers], () => _playback.GamePositionSec,
@@ -231,7 +236,8 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
         }
 
         IReadOnlyList<(int PlayerId, int Score, int MaxScore)> standings = session.Standings();
-        WinnerId = standings.Count > 0 ? standings[0].PlayerId : -1;
+        WinnerId = standings.Count > 0 && standings[0].Score > 0 ? standings[0].PlayerId : -1;
+        WinnerBrush = WinnerId > 0 ? PlayerBrush(WinnerId) : null;
         foreach ((int pid, int score, int max) in standings.OrderBy(s => s.PlayerId))
         {
             PlayerConfig cfg = _players.Get(pid);
@@ -255,6 +261,7 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
         if (t >= 1)
         {
             _scoreAnim.Stop();
+            ScoreCounted = WinnerId > 0;
         }
     }
 

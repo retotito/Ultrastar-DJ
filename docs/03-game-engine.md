@@ -139,11 +139,17 @@ signal and missed it; the tone-through-analysis calibration includes it.
 Prototype NoteLane.svelte, drawn in `GameOverlayControl`: ≤ 2 players on a beamer → 16 rows, bars ≥ 40 px, radius 8;
 3–4 players → 12 rows, ≥ 28 px, radius 4 (bar = max(80 % row, minimum)). Settings → **Note bar style**: White
 (white 18 % fill, white 35 % border) or Black (black 45 %, white 55 %); border mixed 55 % with the player colour,
-2 px, soft glow. Golden: gold tint + border, glow, shimmer (1.4 s). Rap: dashed orange; hit → solid with an orange
-glow settling over 0.5 s, badge R (★ golden rap). Freestyle: dotted, lights up in the player colour once reached,
-badge F. ≥ 50 % correct → border pulse (white; gold for golden) peaking at 40 % of 0.5 s, then a lasting glow.
+2 px, soft glow. Golden: gold tint + border, glow, shimmer (1.4 s). Rap: dashed orange, never filled; hit (any voice) → solid with an orange
+glow settling over 0.5 s, badge R (★ golden rap). Freestyle: thin white dots (1 px); once the player is heard on it, a solid border in their colour with a glow,
+badge F, never filled. ≥ 50 % correct → border pulse (white; gold for golden) peaking at 40 % of 0.5 s, then a lasting glow.
 Correct fill = player colour 85 % inside the bar (golden: gold); wrong = player colour 50 % on the sung row.
-PERFECT fades in / holds / out over 1.6 s.
+Scoring effects (`App.Game.ScoreEffects`, after USDX UGraphicClasses / USingScores, allocation-free): a perfect
+note (every beat right) gets three twinkling stars at its top-right corner once sung through; golden notes sparkle on
+the sung part with a twinkle at the fill edge while hit; at the end of each phrase (when the mic has delivered its
+last beat) `Core.Game.PhraseRating` rates it — round(share of the phrase's points × 8) — and GREAT! (6), AWESOME! (7)
+or PERFECT! (8, ≈ 94 %+) pops up in the lane (0.35 s pop, 0.55 s rise to 70 %, 0.2 s fade); USDX's lower words
+(awful … good) are not shown. A 100 % phrase also bursts stars in the player's colour. On the score screen, once the count-up has finished, stars in the
+winner's colour twinkle and drift upwards for 5 s (`Controls.StarShower`).
 
 ## Elapsed / remaining (beamer)
 

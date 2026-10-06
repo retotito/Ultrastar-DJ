@@ -121,6 +121,27 @@ public sealed class PlayerScorer
         return any;
     }
 
+    /// <summary>
+    /// Share of the phrase's points sung (0..1; golden weighs double, freestyle not at all) — USDX LinePerfection.
+    /// 0 for a phrase without scorable notes.
+    /// </summary>
+    public double LinePerfection(LyricLine line)
+    {
+        int max = 0;
+        int got = 0;
+        foreach (Note n in line.Notes)
+        {
+            int pts = ScoreRules.PointsPerBeat(n.Type);
+            max += pts * n.LengthBeats;
+            got += pts * CorrectBeats(n);
+        }
+
+        return max == 0 ? 0 : (double)got / max;
+    }
+
+    /// <summary>Every beat of a scorable note sung correctly — USDX's perfect note (its stars).</summary>
+    public bool IsNotePerfect(Note note) => note.IsScorable && note.LengthBeats > 0 && CorrectBeats(note) == note.LengthBeats;
+
     /// <summary>Correct beats recorded inside <paramref name="note"/>.</summary>
     public int CorrectBeats(Note note)
     {

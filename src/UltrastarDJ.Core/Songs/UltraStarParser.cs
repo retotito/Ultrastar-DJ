@@ -231,6 +231,11 @@ public static class UltraStarParser
         }
 
         i++; // type character
+        // "F:" / "R:" / "G:" — some editors put a colon after the type letter; it is not part of the start beat.
+        if (i < line.Length && line[i] == ':' && line[i - 1] != ':')
+        {
+            i++;
+        }
         Span<int> nums = stackalloc int[3];
         for (int n = 0; n < 3; n++)
         {

@@ -131,6 +131,39 @@ public class PlayerScorerTests
     }
 
     [Fact]
+    public void LinePerfection_WeighsGoldenDouble()
+    {
+        PlayerScorer s = Scorer();
+        Sing(s, 0, 4, 60);       // normal right: 400 of 1200
+
+        Assert.Equal(400.0 / 1200, s.LinePerfection(Track().Lines[0]), 6);
+        Sing(s, 4, 8, 62);       // golden right too
+        Assert.Equal(1.0, s.LinePerfection(Track().Lines[0]), 6);
+    }
+
+    [Fact]
+    public void LinePerfection_IgnoresFreestyle()
+    {
+        PlayerScorer s = Scorer();
+        Sing(s, 10, 12, 50);     // rap voiced, freestyle silent
+
+        Assert.Equal(1.0, s.LinePerfection(Track().Lines[1]), 6);
+    }
+
+    [Fact]
+    public void NotePerfect_NeedsEveryBeat()
+    {
+        PlayerScorer s = Scorer();
+        Note normal = Track().Lines[0].Notes[0];
+        Sing(s, 0, 3, 60);
+        Assert.False(s.IsNotePerfect(normal));
+
+        Sing(s, 3, 4, 60);
+        Assert.True(s.IsNotePerfect(normal));
+        Assert.False(s.IsNotePerfect(Track().Lines[1].Notes[1])); // freestyle never
+    }
+
+    [Fact]
     public void Deterministic_SameInputSameScore()
     {
         int Run()

@@ -39,7 +39,6 @@ public sealed class GameOverlayControl : Control
     private const double AboveBar = 8;
     // Room above the current line for the lead-in bar (drawn 10 px above it, 6 px high) plus a little air.
     private const double LeadInRoom = 22;
-    private const double PerfectFlashSec = 1.6;
 
     // ── Note bar look (prototype NoteLane.svelte) ──
     private sealed record BarLook(IBrush Background, Color Border);
@@ -52,7 +51,8 @@ public sealed class GameOverlayControl : Control
     private static readonly Color Orange = Color.FromRgb(255, 165, 50);
     private static readonly IBrush RapBarBg = new SolidColorBrush(Orange, 0.08);
     private static readonly Pen RapDashPen = new(new SolidColorBrush(Orange, 0.5), 2) { DashStyle = DashStyle.Dash };
-    private static readonly Pen FreestyleDotPen = new(new SolidColorBrush(Colors.White, 0.2), 2) { DashStyle = DashStyle.Dot };
+    // Not DashStyle.Dot: that is {0, 2} — zero-length dashes, invisible with the default flat caps.
+    private static readonly Pen FreestyleDotPen = new(new SolidColorBrush(Colors.White, 0.6), 1) { DashStyle = new DashStyle([2, 2], 0) };
     private static readonly IBrush BadgeBg = new SolidColorBrush(Colors.Black, 0.6);
     private static readonly IBrush RapBadge = new SolidColorBrush(Color.FromRgb(255, 140, 0));
     private static readonly IBrush FreestyleBadge = new SolidColorBrush(Colors.White, 0.55);
@@ -274,6 +274,14 @@ public sealed class GameOverlayControl : Control
             Rect rect = BoxRect(box, lane, rowH, barH);
             RoundedRect rr = new(rect, radius);
             DrawBar(ctx, rr, box.Note, paint, state, scorer, beat, pos, look);
+            if (!HasFill(box.Note))
+            {
+                DrawSyllable(ctx, box, rect);
+                DrawBadge(ctx, box.Note, rect, state);
+                DrawNoteStars(ctx, box.Note, rect, scorer, sungBeat, pos);
+                continue;
+            }
+
             using (ctx.PushClip(rr))
             {
                 IBrush fill = box.Note.Type == NoteType.Golden ? GoldFill : paint.Fill;
@@ -286,14 +294,34 @@ public sealed class GameOverlayControl : Control
                 }
             }
 
+            if (box.Note.Type == NoteType.Golden)
+            {
+                foreach ((double from, double to, BeatResult result) in SungSegments(box.Note, state, sungBeat))
+                {
+                    if (result.Correct)
+                    {
+                        // The segment ending at the sung beat is being hit right now: its edge twinkles.
+                        bool hitting = sungBeat < box.Note.EndBeat && Math.Abs(to - sungBeat) < 0.001;
+                        double x1 = BeatX(lane, cache, to);
+                        ScoreEffects.DrawGoldenSparkles(ctx, rect, BeatX(lane, cache, from), x1, pos, box.Note.StartBeat + (int)from, hitting ? x1 : null);
+                    }
+                }
+            }
+
             DrawSyllable(ctx, box, rect);
             DrawBadge(ctx, box.Note, rect, state);
+            DrawNoteStars(ctx, box.Note, rect, scorer, sungBeat, pos);
         }
 
         // Wrong pitch: the player's colour at half strength, on the row actually sung (above the bars).
         IBrush wrong = paint.Wrong;
         foreach (NoteBox box in cache.Boxes)
         {
+            if (!HasFill(box.Note))
+            {
+                continue;
+            }
+
             foreach ((double from, double to, BeatResult result) in SungSegments(box.Note, state, sungBeat))
             {
                 if (!result.Correct)
@@ -306,35 +334,42 @@ public sealed class GameOverlayControl : Control
             }
         }
 
-        // PERFECT: white with a soft glow, fades in (15 %), holds, fades out (prototype perfect-fade, 1.6 s).
-        if (scene.PerfectFlashAt.TryGetValue(player.Id, out double at) && pos - at is >= 0 and < PerfectFlashSec)
+        // End of a phrase: the 100 % star burst, then the rating word above everything (USDX, see ScoreEffects).
+        if (scene.Ratings.TryGetValue(player.Id, out PhraseResult rated))
         {
-            double t = (pos - at) / PerfectFlashSec;
-            double alpha = t < 0.15 ? t / 0.15 : t < 0.7 ? 1 : (1 - t) / 0.3;
-            double perfectSize = Math.Max(28, lane.Height * 0.16);
-            if (_perfect is not { } pf || pf.Size != perfectSize)
-            {
-                _perfect = pf = (perfectSize, new FormattedText("PERFECT!", System.Globalization.CultureInfo.InvariantCulture, FlowDirection.LeftToRight, Bold, perfectSize, Brushes.White));
-            }
-
-            FormattedText perfect = pf.Text;
-            Point p = new(lane.Center.X - perfect.Width / 2, lane.Center.Y - perfect.Height / 2);
-            using (ctx.PushOpacity(alpha))
-            {
-                perfect.SetForegroundBrush(PerfectGlow);
-                foreach ((double dx, double dy) in GlowOffsets)
-                {
-                    ctx.DrawText(perfect, p + new Point(dx, dy));
-                }
-
-                perfect.SetForegroundBrush(Brushes.White);
-                ctx.DrawText(perfect, p);
-            }
+            ScoreEffects.DrawBurst(ctx, lane, rated, pos, paint.StarHalo);
+            _effects.DrawRating(ctx, lane, rated, pos, paint.TextGlow);
         }
     }
 
-    private static readonly IBrush PerfectGlow = new SolidColorBrush(Colors.White, 0.18);
-    private static readonly (double, double)[] GlowOffsets = [(-3, 0), (3, 0), (0, -3), (0, 3), (-2, -2), (2, 2), (-2, 2), (2, -2)];
+    /// <summary>Any voice recorded on the note (freestyle ticks carry their beat when the mic is not silent).</summary>
+    private static bool Heard(Note note, LaneState state)
+    {
+        for (int b = note.StartBeat; b < note.EndBeat; b++)
+        {
+            if (state.Results.ContainsKey(b))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Rap shows a hit on its border only (any voice counts, so a fill would just paint the whole bar);
+    /// freestyle is not scored. Prototype NoteLane: neither gets a sung fill.
+    /// </summary>
+    private static bool HasFill(Note note) => !note.IsRap && note.Type != NoteType.Freestyle;
+
+    /// <summary>USDX perfect note: every beat right, and the mic is past its end (not while it is still sung).</summary>
+    private static void DrawNoteStars(DrawingContext ctx, Note note, Rect rect, PlayerScorer scorer, double sungBeat, double pos)
+    {
+        if (sungBeat >= note.EndBeat && scorer.IsNotePerfect(note))
+        {
+            ScoreEffects.DrawNoteStars(ctx, rect, pos, note.StartBeat, hasBadge: note.IsRap);
+        }
+    }
 
     private static double BeatX(Rect lane, PhraseCache cache, double beat) => lane.X + lane.Width * (beat - cache.PhraseStart) / cache.PhraseBeats;
 
@@ -426,8 +461,9 @@ public sealed class GameOverlayControl : Control
                 break;
 
             case NoteType.Freestyle:
-                // Freestyle: faint dots; lights up in the player's colour once reached.
-                if (beat >= note.StartBeat)
+                // Freestyle: thin white dots; once the player is heard on it, a solid border in their colour with a glow.
+                // Not scored — the voice alone lights it, like a rap hit.
+                if (Heard(note, state))
                 {
                     ctx.DrawRectangle(null, paint.FreestyleLit, rr, paint.FreestyleGlow);
                 }
@@ -526,14 +562,16 @@ public sealed class GameOverlayControl : Control
         public Pen BorderOnWhite { get; } = new(new SolidColorBrush(Mix(c, WhiteBars.Border, 0.55)), 2);
         public Pen BorderOnBlack { get; } = new(new SolidColorBrush(Mix(c, BlackBars.Border, 0.55)), 2);
         public BoxShadows Glow { get; } = GlowOf(c, 0.3, 7);
-        public Pen FreestyleLit { get; } = new(new SolidColorBrush(Mix(c, Colors.White, 0.9)), 2) { DashStyle = DashStyle.Dot };
+        public Pen FreestyleLit { get; } = new(new SolidColorBrush(Mix(c, Colors.White, 0.9)), 2);
         public BoxShadows FreestyleGlow { get; } = GlowOf(c, 0.5, 16);
+        public IBrush TextGlow { get; } = new SolidColorBrush(c, 0.35);
+        public IBrush StarHalo { get; } = new SolidColorBrush(c, 0.85);
     }
 
     private readonly Dictionary<Color, PlayerPaint> _paint = [];
     // "Name   score" per player, rebuilt when the score changes.
     private readonly Dictionary<int, (int Score, double Size, FormattedText Text)> _labels = [];
-    private (double Size, FormattedText Text)? _perfect;
+    private readonly ScoreEffects _effects = new();
 
     private PlayerPaint Paint(Color c) => _paint.TryGetValue(c, out PlayerPaint? p) ? p : _paint[c] = new PlayerPaint(c);
 
