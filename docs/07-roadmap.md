@@ -211,6 +211,13 @@ front of its owner), borderless and fullscreen on a screen picked in code.
 
 ---
 
+## Sprint 6k — Inspector in its own window  *(done)*
+
+- [x] F12 opens a separate always-on-top UI Inspector window instead of the tooltip box; the overlay only outlines. More detail (pseudo-classes, alignment, visibility/enabled/opacity, font family/weight, corners, full path), selectable text, Copy and Dump tree buttons. Alt/Option+click pins a control (orange) without clicking it; the next Alt+click anywhere or the Unpin button releases it.
+- [x] Verified live
+
+---
+
 ## Later / ideas
 
 - Cap mpv read-ahead (~60 s) so YouTube streams like a player instead of pulling the whole song into RAM

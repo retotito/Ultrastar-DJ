@@ -6,7 +6,9 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
+using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
+using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 using Microsoft.Extensions.Logging;
@@ -15,16 +17,22 @@ namespace UltrastarDJ.App.Diagnostics;
 
 /// <summary>
 /// Debug-only stand-in for browser devtools (Avalonia's own Developer Tools are paid).
-/// F12 toggles an overlay that outlines the control under the mouse and shows its type, name, classes,
-/// XAML file, DataContext and layout. Shift+F12 writes the window's visual tree to the logs folder,
-/// with the hovered control marked, so it can be read outside the app.
-/// Works in every <see cref="Window"/>; popups (ComboBox drop-downs, flyouts) are separate top levels and not covered.
+/// F12 in a window outlines the control under the mouse and opens the <see cref="UiInspectorWindow"/>, which shows
+/// its type, name, classes, XAML file, DataContext, layout and look. Alt/Option+click pins a control (the click does
+/// not reach the app), so the mouse can travel to the inspector window without changing the target; the next
+/// Alt+click anywhere, or the window's Unpin button, releases it.
+/// Shift+F12 (or "Dump tree") writes the window's visual tree to the logs folder with the target marked.
+/// Popups (ComboBox drop-downs, flyouts) are separate top levels and not covered.
 /// </summary>
 internal static class UiInspector
 {
     private static readonly ConditionalWeakTable<Window, UiInspectorOverlay> Overlays = new();
+    private static readonly List<WeakReference<Window>> Inspected = [];
     private static string _dumpDir = "";
     private static ILogger? _log;
+    private static UiInspectorWindow? _window;
+    private static Control? _target;
+    private static bool _pinned;
 
     public static void Attach(string dumpDir, ILogger log)
     {
@@ -32,11 +40,12 @@ internal static class UiInspector
         _log = log;
         InputElement.KeyDownEvent.AddClassHandler<Window>(OnKeyDown, RoutingStrategies.Tunnel, handledEventsToo: true);
         InputElement.PointerMovedEvent.AddClassHandler<Window>(OnPointerMoved, RoutingStrategies.Tunnel, handledEventsToo: true);
+        InputElement.PointerPressedEvent.AddClassHandler<Window>(OnPointerPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
     }
 
     private static void OnKeyDown(Window window, KeyEventArgs e)
     {
-        if (e.Key != Key.F12)
+        if (e.Key != Key.F12 || window is UiInspectorWindow)
         {
             return;
         }
@@ -48,49 +57,139 @@ internal static class UiInspector
             return;
         }
 
-        if (Overlays.TryGetValue(window, out UiInspectorOverlay? overlay))
+        if (Overlays.TryGetValue(window, out _))
         {
-            AdornerLayer.GetAdornerLayer(window)?.Children.Remove(overlay);
-            Overlays.Remove(window);
-            return;
+            Disable(window);
         }
+        else
+        {
+            Enable(window);
+        }
+    }
 
-        AdornerLayer? layer = AdornerLayer.GetAdornerLayer(window);
-        if (layer is null)
+    private static void Enable(Window window)
+    {
+        if (AdornerLayer.GetAdornerLayer(window) is not { } layer)
         {
             _log?.LogWarning("Inspector: {Window} has no adorner layer", window.GetType().Name);
             return;
         }
 
-        overlay = new UiInspectorOverlay();
+        UiInspectorOverlay overlay = new();
         layer.Children.Add(overlay);
         Overlays.Add(window, overlay);
+        Inspected.Add(new WeakReference<Window>(window));
+        window.Closed += (_, _) => Disable(window);
+
+        if (_window is null)
+        {
+            _window = new UiInspectorWindow(DumpTarget, Unpin);
+            _window.Closed += (_, _) =>
+            {
+                _window = null;
+                foreach (Window w in InspectedWindows())
+                {
+                    Disable(w);
+                }
+            };
+            _window.Show();
+        }
+
+        Refresh();
     }
+
+    private static void Disable(Window window)
+    {
+        if (Overlays.TryGetValue(window, out UiInspectorOverlay? overlay))
+        {
+            AdornerLayer.GetAdornerLayer(window)?.Children.Remove(overlay);
+            Overlays.Remove(window);
+        }
+
+        Inspected.RemoveAll(r => !r.TryGetTarget(out Window? w) || ReferenceEquals(w, window));
+        if (_target is not null && ReferenceEquals(TopLevel.GetTopLevel(_target), window))
+        {
+            _target = null;
+            _pinned = false;
+        }
+
+        if (Inspected.Count == 0)
+        {
+            _window?.Close();
+        }
+
+        Refresh();
+    }
+
+    private static List<Window> InspectedWindows()
+        => Inspected.Select(r => r.TryGetTarget(out Window? w) ? w : null).OfType<Window>().ToList();
 
     private static void OnPointerMoved(Window window, PointerEventArgs e)
     {
-        if (!Overlays.TryGetValue(window, out UiInspectorOverlay? overlay))
+        if (!_pinned && Overlays.TryGetValue(window, out UiInspectorOverlay? overlay))
+        {
+            _target = HitTest(window, overlay, e.GetPosition(window));
+            Refresh();
+        }
+    }
+
+    private static void OnPointerPressed(Window window, PointerPressedEventArgs e)
+    {
+        if (!e.KeyModifiers.HasFlag(KeyModifiers.Alt) || !Overlays.TryGetValue(window, out UiInspectorOverlay? overlay))
         {
             return;
         }
 
-        Point p = e.GetPosition(window);
-        Control? target = window.GetVisualsAt(p, v => v.IsVisible && v is not AdornerLayer && v != overlay)
-            .OfType<Control>()
-            .FirstOrDefault();
-        overlay.Show(target, e.GetPosition(overlay));
+        // Alt+click pins, the next Alt+click anywhere releases; it must not press the button underneath.
+        e.Handled = true;
+        if (_pinned)
+        {
+            Unpin();
+            return;
+        }
+
+        _target = HitTest(window, overlay, e.GetPosition(window));
+        _pinned = _target is not null;
+        Refresh();
     }
 
-    private static void Dump(Window window)
+    private static void Unpin()
     {
-        Overlays.TryGetValue(window, out UiInspectorOverlay? overlay);
-        Control? hovered = overlay?.Target;
+        _pinned = false;
+        Refresh();
+    }
+
+    private static Control? HitTest(Window window, UiInspectorOverlay overlay, Point p)
+        => window.GetVisualsAt(p, v => v.IsVisible && v is not AdornerLayer && v != overlay).OfType<Control>().FirstOrDefault();
+
+    private static void Refresh()
+    {
+        foreach (Window w in InspectedWindows())
+        {
+            if (Overlays.TryGetValue(w, out UiInspectorOverlay? overlay))
+            {
+                overlay.Show(_target is not null && ReferenceEquals(TopLevel.GetTopLevel(_target), w) ? _target : null, _pinned);
+            }
+        }
+
+        _window?.Show(_target is null ? null : DescribeDetailed(_target), _pinned);
+    }
+
+    private static string? DumpTarget()
+    {
+        Window? window = (_target is null ? null : TopLevel.GetTopLevel(_target) as Window) ?? InspectedWindows().FirstOrDefault();
+        return window is null ? null : Dump(window);
+    }
+
+    private static string Dump(Window window)
+    {
+        Control? marked = _target is not null && ReferenceEquals(TopLevel.GetTopLevel(_target), window) ? _target : null;
 
         StringBuilder sb = new();
-        if (hovered is not null)
+        if (marked is not null)
         {
-            sb.AppendLine("Hovered:");
-            foreach (string line in Describe(hovered))
+            sb.AppendLine("Inspected:");
+            foreach (string line in DescribeDetailed(marked).Split('\n'))
             {
                 sb.Append("  ").AppendLine(line);
             }
@@ -99,15 +198,16 @@ internal static class UiInspector
         }
 
         sb.AppendLine("Visual tree:");
-        DumpNode(window, 0, hovered, sb);
+        DumpNode(window, 0, marked, sb);
 
         Directory.CreateDirectory(_dumpDir);
         string path = Path.Combine(_dumpDir, $"visual-tree-{window.GetType().Name}-{DateTime.Now:HHmmss}.txt");
         File.WriteAllText(path, sb.ToString());
         _log?.LogInformation("Inspector: visual tree written to {Path}", path);
+        return path;
     }
 
-    private static void DumpNode(Visual v, int depth, Control? hovered, StringBuilder sb)
+    private static void DumpNode(Visual v, int depth, Control? marked, StringBuilder sb)
     {
         if (v is AdornerLayer)
         {
@@ -134,41 +234,45 @@ internal static class UiInspector
             sb.Append("  (hidden)");
         }
 
-        if (ReferenceEquals(v, hovered))
+        if (ReferenceEquals(v, marked))
         {
-            sb.Append("   ◀ HOVERED");
+            sb.Append("   ◀ INSPECTED");
         }
 
         sb.AppendLine();
         foreach (Visual child in v.GetVisualChildren())
         {
-            DumpNode(child, depth + 1, hovered, sb);
+            DumpNode(child, depth + 1, marked, sb);
         }
     }
 
-    /// <summary>Lines shown in the overlay box and at the top of a dump.</summary>
-    public static IReadOnlyList<string> Describe(Control c)
+    /// <summary>Everything the inspector window shows about a control, as plain text (also the head of a dump).</summary>
+    public static string DescribeDetailed(Control c)
     {
-        List<string> lines = [Headline(c)];
+        StringBuilder sb = new();
+        sb.AppendLine(Headline(c));
+        string pseudo = string.Join(' ', c.Classes.Where(x => x.StartsWith(':')));
+        if (pseudo.Length > 0)
+        {
+            sb.Append("state  ").AppendLine(pseudo);
+        }
 
+        sb.AppendLine().AppendLine("SOURCE");
         // The nearest UserControl/Window is the XAML file this control is written in (x:Class = file name).
         Control? view = c.GetSelfAndVisualAncestors().OfType<Control>().FirstOrDefault(a => a is UserControl or Window);
-        string where = view is null ? "" : $"in {view.GetType().Name}.axaml";
+        sb.Append("  file         ").AppendLine(view is null ? "—" : $"{view.GetType().Name}.axaml");
         if (c.TemplatedParent is Control tp && !ReferenceEquals(tp, c))
         {
-            where += $"  (template part of {tp.GetType().Name})";
+            sb.Append("  template of  ").AppendLine(Headline(tp));
         }
 
-        lines.Add(where.Trim());
-        lines.Add("DataContext: " + (c.DataContext?.GetType().Name ?? "—"));
+        sb.Append("  DataContext  ").AppendLine(c.DataContext?.GetType().Name ?? "—");
 
+        sb.AppendLine().AppendLine("LAYOUT");
         Point origin = c.TranslatePoint(default, (Visual?)TopLevel.GetTopLevel(c) ?? c) ?? default;
-        StringBuilder layout = new($"size {Size(c.Bounds)}  at {N(origin.X)},{N(origin.Y)}");
-        if (c.Margin != default)
-        {
-            layout.Append("  margin ").Append(Thick(c.Margin));
-        }
-
+        sb.Append("  size         ").AppendLine(Size(c.Bounds));
+        sb.Append("  position     ").AppendLine($"{N(origin.X)},{N(origin.Y)} in window");
+        sb.Append("  margin       ").AppendLine(Thick(c.Margin));
         Thickness? padding = c switch
         {
             TemplatedControl t => t.Padding,
@@ -176,55 +280,63 @@ internal static class UiInspector
             TextBlock t => t.Padding,
             _ => null,
         };
-        if (padding is { } pad && pad != default)
+        if (padding is { } pad)
         {
-            layout.Append("  padding ").Append(Thick(pad));
+            sb.Append("  padding      ").AppendLine(Thick(pad));
         }
 
-        lines.Add(layout.ToString());
-
-        (double? fontSize, IBrush? fg, IBrush? bg) = c switch
+        sb.Append("  align        ").AppendLine($"H {c.HorizontalAlignment}  V {c.VerticalAlignment}");
+        if (!double.IsNaN(c.Width) || !double.IsNaN(c.Height))
         {
-            TextBlock t => (t.FontSize, t.Foreground, t.Background),
-            TemplatedControl t => (t.FontSize, t.Foreground, t.Background),
-            Panel p => ((double?)null, (IBrush?)null, p.Background),
-            Border b => (null, null, b.Background),
-            _ => (null, null, null),
+            sb.Append("  set size     ").AppendLine($"{N(c.Width)} × {N(c.Height)}");
+        }
+
+        sb.Append("  state        ").AppendLine($"visible {Yes(c.IsEffectivelyVisible)}  enabled {Yes(c.IsEffectivelyEnabled)}  opacity {N(c.Opacity)}");
+
+        (string? Text, double? Size, FontFamily? Family, FontWeight? Weight, IBrush? Fg, IBrush? Bg) look = c switch
+        {
+            TextBlock t => (t.Text, t.FontSize, t.FontFamily, t.FontWeight, t.Foreground, t.Background),
+            TemplatedControl t => (null, t.FontSize, t.FontFamily, t.FontWeight, t.Foreground, t.Background),
+            Panel p => (null, null, null, null, null, p.Background),
+            Border b => (null, null, null, null, null, b.Background),
+            _ => (null, null, null, null, null, null),
         };
-        StringBuilder look = new();
-        if (c is TextBlock { Text: { Length: > 0 } text })
+        if (look.Text is not null || look.Size is not null || look.Fg is not null || look.Bg is not null)
         {
-            look.Append('"').Append(Shorten(text)).Append("\"  ");
+            sb.AppendLine().AppendLine("LOOK");
+            if (!string.IsNullOrEmpty(look.Text))
+            {
+                sb.Append("  text         ").AppendLine($"\"{Shorten(look.Text)}\"");
+            }
+
+            if (look.Size is { } fs)
+            {
+                sb.Append("  font         ").AppendLine($"{look.Family?.Name} {N(fs)} {look.Weight}");
+            }
+
+            if (look.Fg is not null)
+            {
+                sb.Append("  foreground   ").AppendLine(BrushText(look.Fg));
+            }
+
+            if (look.Bg is not null)
+            {
+                sb.Append("  background   ").AppendLine(BrushText(look.Bg));
+            }
+
+            if (c is Border { CornerRadius: var r } && r != default)
+            {
+                sb.Append("  corners      ").AppendLine($"{N(r.TopLeft)},{N(r.TopRight)},{N(r.BottomRight)},{N(r.BottomLeft)}");
+            }
         }
 
-        if (fontSize is { } fs)
+        sb.AppendLine().AppendLine("PATH");
+        foreach (Control a in c.GetSelfAndVisualAncestors().OfType<Control>().Reverse())
         {
-            look.Append("font ").Append(N(fs)).Append("  ");
+            sb.Append("  ").AppendLine(Headline(a));
         }
 
-        if (fg is not null)
-        {
-            look.Append("fg ").Append(BrushText(fg)).Append("  ");
-        }
-
-        if (bg is not null)
-        {
-            look.Append("bg ").Append(BrushText(bg));
-        }
-
-        if (look.Length > 0)
-        {
-            lines.Add(look.ToString().Trim());
-        }
-
-        List<string> path = c.GetSelfAndVisualAncestors()
-            .OfType<Control>()
-            .Where(a => a is UserControl or Window || !string.IsNullOrEmpty(a.Name) || ReferenceEquals(a, c))
-            .Select(a => string.IsNullOrEmpty(a.Name) ? a.GetType().Name : $"{a.GetType().Name}#{a.Name}")
-            .Reverse()
-            .ToList();
-        lines.Add(string.Join(" › ", path));
-        return lines;
+        return sb.ToString().TrimEnd();
     }
 
     private static string Headline(Visual v)
@@ -249,23 +361,24 @@ internal static class UiInspector
     private static string BrushText(IBrush brush) => brush is ISolidColorBrush s ? s.Color.ToString() : brush.GetType().Name;
     private static string Size(Rect r) => $"{N(r.Width)}×{N(r.Height)}";
     private static string Thick(Thickness t) => $"{N(t.Left)},{N(t.Top)},{N(t.Right)},{N(t.Bottom)}";
-    private static string N(double v) => v.ToString("0.#", CultureInfo.InvariantCulture);
-    private static string Shorten(string s) => s.Length > 40 ? s[..40] + "…" : s.ReplaceLineEndings(" ");
+    private static string N(double v) => double.IsNaN(v) ? "auto" : v.ToString("0.#", CultureInfo.InvariantCulture);
+    private static string Yes(bool b) => b ? "yes" : "no";
+    private static string Shorten(string s) => s.Length > 60 ? s[..60] + "…" : s.ReplaceLineEndings(" ");
 }
 
-/// <summary>Draws the outline and info box. Never hit-testable, so the app keeps working underneath.</summary>
+/// <summary>Outlines the inspected control (margin dashed). Never hit-testable, so the app keeps working underneath.</summary>
 internal sealed class UiInspectorOverlay : Control
 {
-    // Fixed devtools colours: must stand out on every theme and on the beamer's video.
+    // Fixed devtools colours: must stand out on every theme and on the beamer's video. Pinned = orange.
     private static readonly IBrush Fill = new SolidColorBrush(Color.FromArgb(0x33, 0x4F, 0x8E, 0xF7));
-    private static readonly Pen Outline = new Pen(new SolidColorBrush(Color.FromRgb(0x4F, 0x8E, 0xF7)), 1.5);
-    private static readonly Pen MarginPen = new Pen(new SolidColorBrush(Color.FromArgb(0xAA, 0xF7, 0xA6, 0x4F)), 1, DashStyle.Dash);
-    private static readonly IBrush BoxBackground = new SolidColorBrush(Color.FromArgb(0xEE, 0x10, 0x10, 0x14));
-    private static readonly IBrush BoxText = Brushes.White;
-    private static readonly IBrush BoxHeadline = new SolidColorBrush(Color.FromRgb(0x9C, 0xC2, 0xFF));
-    private static readonly Typeface Mono = new("Menlo, Consolas, monospace");
+    private static readonly IBrush PinnedFill = new SolidColorBrush(Color.FromArgb(0x33, 0xF7, 0xA6, 0x4F));
+    private static readonly Pen Outline = new(new SolidColorBrush(Color.FromRgb(0x4F, 0x8E, 0xF7)), 1.5);
+    private static readonly Pen PinnedOutline = new(new SolidColorBrush(Color.FromRgb(0xF7, 0xA6, 0x4F)), 2);
+    private static readonly Pen Frame = new(new SolidColorBrush(Color.FromRgb(0x4F, 0x8E, 0xF7)), 3);
+    private static readonly Pen MarginPen = new(new SolidColorBrush(Color.FromArgb(0xAA, 0xF7, 0xA6, 0x4F)), 1, DashStyle.Dash);
 
-    private Point _pointer;
+    private Control? _target;
+    private bool _pinned;
 
     public UiInspectorOverlay()
     {
@@ -273,58 +386,92 @@ internal sealed class UiInspectorOverlay : Control
         ClipToBounds = false;
     }
 
-    public Control? Target { get; private set; }
-
-    public void Show(Control? target, Point pointer)
+    public void Show(Control? target, bool pinned)
     {
-        Target = target;
-        _pointer = pointer;
+        _target = target;
+        _pinned = pinned;
         InvalidateVisual();
     }
 
     public override void Render(DrawingContext context)
     {
-        Rect area = new(Bounds.Size);
-        context.DrawRectangle(null, new Pen(Outline.Brush, 3), area.Deflate(1.5));
-
-        if (Target is null || Target.TranslatePoint(default, this) is not { } origin)
+        context.DrawRectangle(null, Frame, new Rect(Bounds.Size).Deflate(1.5));
+        if (_target is null || _target.TranslatePoint(default, this) is not { } origin)
         {
-            DrawBox(context, ["Inspector on — hover a control.  F12 off · Shift+F12 dump tree"], new Point(8, 8), area);
             return;
         }
 
-        Rect rect = new(origin, Target.Bounds.Size);
-        Thickness m = Target.Margin;
+        Rect rect = new(origin, _target.Bounds.Size);
+        Thickness m = _target.Margin;
         if (m != default)
         {
             context.DrawRectangle(null, MarginPen, new Rect(rect.X - m.Left, rect.Y - m.Top, rect.Width + m.Left + m.Right, rect.Height + m.Top + m.Bottom));
         }
 
-        context.DrawRectangle(Fill, Outline, rect);
-        DrawBox(context, UiInspector.Describe(Target), _pointer + new Point(16, 20), area);
+        context.DrawRectangle(_pinned ? PinnedFill : Fill, _pinned ? PinnedOutline : Outline, rect);
+    }
+}
+
+/// <summary>
+/// Separate, always-on-top window with the details of the inspected control. Text is selectable; Copy puts it on the
+/// clipboard, Dump tree writes the tree file and shows its path.
+/// </summary>
+internal sealed class UiInspectorWindow : Window
+{
+    private readonly TextBlock _status = new() { TextWrapping = TextWrapping.Wrap };
+    private readonly SelectableTextBlock _details = new() { FontFamily = new FontFamily("Menlo, Consolas, monospace"), FontSize = 13 };
+    private readonly Button _unpin = new() { Content = "Unpin", Margin = new Thickness(0, 0, 8, 0) };
+    private string _text = "";
+
+    public UiInspectorWindow(Func<string?> dump, Action unpin)
+    {
+        Title = "UI Inspector";
+        Width = 560;
+        Height = 680;
+        Topmost = true;
+        this[!BackgroundProperty] = this.GetResourceObservable("BrushSurfaceContainerLow").ToBinding();
+
+        Button copy = new() { Content = "Copy", Margin = new Thickness(0, 0, 8, 0) };
+        copy.Click += async (_, _) =>
+        {
+            if (Clipboard is { } clipboard && _text.Length > 0)
+            {
+                await clipboard.SetTextAsync(_text);
+            }
+        };
+        Button dumpTree = new() { Content = "Dump tree" };
+        dumpTree.Click += (_, _) =>
+        {
+            if (dump() is { } path)
+            {
+                _status.Text = "Tree written to " + path;
+            }
+        };
+
+        DockPanel root = new() { Margin = new Thickness(12) };
+        StackPanel header = new() { Spacing = 8, Margin = new Thickness(0, 0, 0, 12) };
+        header.Children.Add(_status);
+        _unpin.Click += (_, _) => unpin();
+        StackPanel buttons = new() { Orientation = Orientation.Horizontal };
+        buttons.Children.Add(_unpin);
+        buttons.Children.Add(copy);
+        buttons.Children.Add(dumpTree);
+        header.Children.Add(buttons);
+        DockPanel.SetDock(header, Dock.Top);
+        root.Children.Add(header);
+        root.Children.Add(new ScrollViewer { Content = _details, HorizontalScrollBarVisibility = ScrollBarVisibility.Auto });
+        Content = root;
+        Show(null, false);
     }
 
-    private static void DrawBox(DrawingContext context, IReadOnlyList<string> lines, Point at, Rect area)
+    public void Show(string? details, bool pinned)
     {
-        const double pad = 8;
-        List<FormattedText> texts = lines
-            .Where(l => l.Length > 0)
-            .Select((l, i) => new FormattedText(l, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, Mono, 12, i == 0 ? BoxHeadline : BoxText))
-            .ToList();
-        double w = texts.Max(t => t.Width) + 2 * pad;
-        double h = texts.Sum(t => t.Height) + 2 * pad;
-
-        // Keep the box inside the window: flip to the other side of the pointer when it would overflow.
-        double x = at.X + w > area.Right ? Math.Max(area.X, at.X - w - 32) : at.X;
-        double y = at.Y + h > area.Bottom ? Math.Max(area.Y, at.Y - h - 40) : at.Y;
-
-        context.DrawRectangle(BoxBackground, null, new RoundedRect(new Rect(x, y, w, h), 6));
-        double ty = y + pad;
-        foreach (FormattedText t in texts)
-        {
-            context.DrawText(t, new Point(x + pad, ty));
-            ty += t.Height;
-        }
+        _text = details ?? "";
+        _details.Text = details ?? "Hover a control in a window with F12 on.";
+        _unpin.IsVisible = pinned;
+        _status.Text = pinned
+            ? "📌 Pinned — Unpin, or Alt/Option+click anywhere, to follow the mouse again."
+            : "Live — follows the mouse. Alt/Option+click pins a control. F12 in a window toggles it, Shift+F12 dumps its tree.";
     }
 }
 #endif
