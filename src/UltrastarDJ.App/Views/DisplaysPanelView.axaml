@@ -54,13 +54,13 @@
   </UserControl.Resources>
 
   <StackPanel Spacing="{StaticResource Space2}">
-    <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap"
+    <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap" MaxWidth="{StaticResource PopoverTextWidth}" HorizontalAlignment="Left"
                Text="A beamer opens next to this window: drag it to the projector, then go fullscreen (button, double-click or F)." />
 
     <ContentControl Content="{Binding Beamer1}" ContentTemplate="{StaticResource DisplayRow}" />
     <ContentControl Content="{Binding Beamer2}" ContentTemplate="{StaticResource DisplayRow}" />
 
-    <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap"
+    <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap" MaxWidth="{StaticResource PopoverTextWidth}" HorizontalAlignment="Left"
                Text="Players need a microphone (Audio Input) before they can be put on a screen." />
   </StackPanel>
 </UserControl>

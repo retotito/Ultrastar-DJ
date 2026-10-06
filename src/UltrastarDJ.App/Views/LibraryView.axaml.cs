@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using UltrastarDJ.App.ViewModels;
 
 namespace UltrastarDJ.App.Views;
@@ -21,6 +22,32 @@ public sealed partial class LibraryView : UserControl
             }
         };
         TableScroll.SizeChanged += (_, _) => FitTable();
+        // Tunnel: the song list's own ScrollViewer would take every wheel / trackpad event (it scrolls vertically)
+        // and the table's horizontal scrolling would never see a sideways swipe.
+        TableScroll.AddHandler(PointerWheelChangedEvent, OnTableWheel, RoutingStrategies.Tunnel);
+    }
+
+    // Pixels per wheel step, as Avalonia's ScrollViewer uses for a line.
+    private const double WheelStepPx = 50;
+
+    /// <summary>Sideways swipes and Shift + wheel scroll the table horizontally; up / down stays with the list.</summary>
+    private void OnTableWheel(object? sender, PointerWheelEventArgs e)
+    {
+        bool shift = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
+        double dx = shift && e.Delta.X == 0 ? e.Delta.Y : e.Delta.X;
+        if (dx == 0 || (!shift && Math.Abs(e.Delta.X) < Math.Abs(e.Delta.Y)))
+        {
+            return;
+        }
+
+        double max = Math.Max(0, TableScroll.Extent.Width - TableScroll.Viewport.Width);
+        if (max <= 0)
+        {
+            return;
+        }
+
+        TableScroll.Offset = TableScroll.Offset.WithX(Math.Clamp(TableScroll.Offset.X - dx * WheelStepPx, 0, max));
+        e.Handled = true;
     }
 
     protected override void OnDataContextChanged(EventArgs e)

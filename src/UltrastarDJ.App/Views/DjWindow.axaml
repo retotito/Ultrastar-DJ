@@ -113,7 +113,7 @@
 
     <!-- Sidebar popover (above the Game Player card, ZIndex 2) anchored to the sidebar edge; capped to the window height, content scrolls.
          Closes on a press anywhere outside it and the sidebar (DjWindow.axaml.cs). -->
-    <Border Grid.Column="1" ZIndex="2" Classes="popover" x:Name="Popover" Classes.bottom="{Binding PanelAtBottom}"
+    <Border Grid.Column="1" ZIndex="2" Classes="popover" x:Name="Popover" Classes.bottom="{Binding PanelAtBottom}" Classes.fit="{Binding PanelFitsContent}"
             HorizontalAlignment="Left"
             Margin="{StaticResource Pad2}"
             IsVisible="{Binding PanelContent, Converter={x:Static ObjectConverters.IsNotNull}}">

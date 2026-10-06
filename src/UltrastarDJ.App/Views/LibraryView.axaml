@@ -46,7 +46,7 @@
 
     <!-- Table: header + rows share the column definitions (LibraryTableLayout). Wider than the window → it scrolls
          horizontally (TableGrid width set in code-behind); the list keeps its own vertical scrolling. -->
-    <ScrollViewer Grid.Row="1" Grid.RowSpan="2" x:Name="TableScroll" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+    <ScrollViewer Grid.Row="1" Grid.RowSpan="2" x:Name="TableScroll" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" AllowAutoHide="False">
       <Grid x:Name="TableGrid" RowDefinitions="Auto,*" HorizontalAlignment="Left">
         <!-- Header row: click to sort -->
         <Grid Grid.Row="0" Margin="16,6">

@@ -247,6 +247,11 @@
     <Setter Property="Width" Value="{StaticResource PopoverWidth}" />
     <Setter Property="VerticalAlignment" Value="Top" />
   </Style>
+  <!-- Content decides the width (at least the usual one): the Displays panel's player buttons stay on one line. -->
+  <Style Selector="Border.popover.fit">
+    <Setter Property="Width" Value="NaN" />
+    <Setter Property="MinWidth" Value="{StaticResource PopoverWidth}" />
+  </Style>
   <Style Selector="Border.popover.bottom">
     <Setter Property="VerticalAlignment" Value="Bottom" />
   </Style>

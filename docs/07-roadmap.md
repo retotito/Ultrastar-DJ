@@ -333,6 +333,8 @@ Details: `03-game-engine.md` "Mic plug / unplug".
 - [x] Fix: cached USDB song texts were never refreshed — a text older than the song's last change on USDB is fetched again (cached text used if that fails).
 - [x] Score screen: thicker (36 px), longer bars and the percentage in each player's colour, counting up with the score. Share of the points possible: the whole song when sung through; after an early stop, of what was possible until then (`PlayerScorer.MaxScoreUntil`, `GameSession.PossibleScoreAt` — up to each player's sung beat; tested) with a note "Stopped at m:ss — …".
 - [x] Fix: Play again after a song ran to the very end of its file did nothing (elapsed stuck at the end, 0 s to go) — mpv closes a finished file (keep-open=no), so the rewind seek failed. Play / Get ready / Home now load the song again in that case (loader in the Game Player); after a stop mid-song they still just rewind.
+- [x] Fix: the library's horizontal scrolling was unusable — the scrollbar auto-hid, and the song list's own ScrollViewer swallowed sideways swipes. The horizontal bar now stays visible when the table is wider than the window; sideways swipes and Shift + wheel scroll it (tunnel handler in `LibraryView`), up / down stays with the list.
+- [x] Displays popover sizes to its content (at least the usual 420 px): all four player buttons on one line, wider for longer names; wraps only when the window runs out of room. Hints keep the usual text width (`PopoverTextWidth`).
 - [ ] Verified live
 
 ---
