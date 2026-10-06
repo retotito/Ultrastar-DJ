@@ -5,8 +5,14 @@
              x:Class="UltrastarDJ.App.Views.PreviewView"
              x:DataType="vm:PreviewViewModel">
 
+  <StackPanel>
+  <!-- Section title, same style as QUEUE below it -->
+  <Border Padding="{StaticResource Pad3}" BorderBrush="{DynamicResource BrushOutlineVariant}" BorderThickness="0,0,0,1">
+    <TextBlock Classes="label" Text="PREVIEW PLAYER" />
+  </Border>
+
   <StackPanel Spacing="{StaticResource Space2}" Margin="{StaticResource Pad3}">
-    <Border Background="{DynamicResource BrushBeamerBackground}" CornerRadius="{StaticResource RadiusMd}" Height="170" ClipToBounds="True">
+    <Border Background="{DynamicResource BrushBeamerBackground}" CornerRadius="{StaticResource RadiusMd}" Height="{StaticResource PlayerPictureHeight}" ClipToBounds="True">
       <Panel>
         <Image Source="{Binding Cover}" Stretch="UniformToFill" IsVisible="{Binding ShowCover}" />
         <c:VideoSurface Source="{Binding Frames}" IsVisible="{Binding HasVideo}" />
@@ -44,7 +50,7 @@
           <TextBlock Text="Add to queue" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
         </StackPanel>
       </Button>
-      <Button Classes="tonal" Command="{Binding LoadIntoGameCommand}">
+      <Button Classes="tonal" Command="{Binding LoadIntoGameCommand}" ToolTip.Tip="{Binding LoadSongTip}">
         <StackPanel Orientation="Horizontal" Spacing="6">
           <c:Icon Glyph="play_circle" FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
           <TextBlock Text="Load" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
@@ -52,5 +58,6 @@
       </Button>
     </StackPanel>
 
+  </StackPanel>
   </StackPanel>
 </UserControl>

@@ -22,7 +22,7 @@
               Padding="0,0,0,8" Margin="0,0,0,4">
         <Grid ColumnDefinitions="Auto,*,Auto,Auto">
           <c:Icon Grid.Column="0" Glyph="play_circle" Margin="0,0,8,0" VerticalAlignment="Center" />
-          <TextBlock Grid.Column="1" Classes="title" Text="Now Playing" VerticalAlignment="Center" />
+          <TextBlock Grid.Column="1" Classes="title" Text="Game Player" VerticalAlignment="Center" />
           <c:Icon Grid.Column="2" Glyph="drag_indicator" Classes="muted" FontSize="{StaticResource IconMd}" VerticalAlignment="Center" Margin="0,0,4,0" />
           <Button Grid.Column="3" Classes="sidebar" Width="28" Height="28" Command="{Binding HideCommand}" ToolTip.Tip="Close (reopen from the sidebar)">
             <c:Icon Glyph="close" FontSize="{StaticResource IconMd}" />
@@ -30,26 +30,48 @@
         </Grid>
       </Border>
 
-      <Border Background="{DynamicResource BrushBeamerBackground}" CornerRadius="{StaticResource RadiusMd}" Height="110" ClipToBounds="True"
-              IsVisible="{Binding HasSong}">
-        <c:VideoSurface Source="{Binding GameFrames}" />
+      <!-- Always there (fixed size), like the preview player: note when empty, loader while loading, then what the
+           beamers show behind the game (Core.Playback.StageView): song picture, video while it runs, or backdrop. -->
+      <Border Background="{DynamicResource BrushBeamerBackground}" CornerRadius="{StaticResource RadiusMd}" Height="{StaticResource PlayerPictureHeight}" ClipToBounds="True">
+        <Panel>
+          <Image Source="{Binding BoxImage}" Stretch="UniformToFill" IsVisible="{Binding ShowBoxImage}" />
+          <c:VideoSurface Source="{Binding GameFrames}" IsVisible="{Binding ShowVideo}" />
+          <c:Icon Glyph="music_note" FontSize="{StaticResource IconXl}" IsVisible="{Binding !HasSong}" />
+          <ProgressBar IsIndeterminate="True" IsVisible="{Binding Loading}" VerticalAlignment="Bottom" Height="3" />
+        </Panel>
       </Border>
       <TextBlock Classes="title" Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
       <TextBlock Classes="muted" Text="{Binding Artist}" TextTrimming="CharacterEllipsis" />
 
       <Grid ColumnDefinitions="*,Auto">
-        <TextBlock Classes="muted" FontSize="{StaticResource TextSm}" Text="{Binding Status}" VerticalAlignment="Center" TextWrapping="Wrap" />
+        <!-- Status line hidden on purpose (the DJ doesn't need it); NowPlayingViewModel.Status still computes it. -->
+        <TextBlock Classes="muted" FontSize="{StaticResource TextSm}" Text="{Binding Status}" VerticalAlignment="Center" TextWrapping="Wrap"
+                   IsVisible="False" />
         <TextBlock Grid.Column="1" Classes="muted" FontFamily="{StaticResource FontMono}" Text="{Binding Position}" VerticalAlignment="Center" />
       </Grid>
 
       <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}" HorizontalAlignment="Center">
-        <Button Classes="sidebar" Command="{Binding ClearCommand}" ToolTip.Tip="Clear — beamers back to idle"><c:Icon Glyph="tv_off" /></Button>
-        <Button Classes="sidebar" Command="{Binding PreviewCommand}" ToolTip.Tip="Show get-ready screen"><c:Icon Glyph="tv" /></Button>
-        <Button Classes="sidebar" Command="{Binding PlayCommand}" ToolTip.Tip="Play (countdown on the beamers)"><c:Icon Glyph="play_arrow" FontSize="{StaticResource IconXl}" /></Button>
-        <Button Classes="sidebar" Command="{Binding PauseCommand}" ToolTip.Tip="Pause"><c:Icon Glyph="pause" /></Button>
-        <Button Classes="sidebar" Command="{Binding ResumeCommand}" ToolTip.Tip="Resume"><c:Icon Glyph="resume" /></Button>
-        <Button Classes="sidebar" Command="{Binding StopCommand}" ToolTip.Tip="Stop — show scores"><c:Icon Glyph="stop" /></Button>
-        <Button Classes="sidebar" Command="{Binding DismissCommand}" ToolTip.Tip="Leave the score screen"><c:Icon Glyph="check" /></Button>
+        <!-- Four buttons (prototype): rules in Core.Playback.PlaybackRules. Hidden while no beamer is open. -->
+        <Button Classes="sidebar" Command="{Binding HomeCommand}" ToolTip.Tip="Beamers to the start view (the song stays loaded)"
+                IsVisible="{Binding !NoBeamerOpen}" VerticalAlignment="Center"><c:Icon Glyph="home" /></Button>
+        <Button Classes="sidebar" Command="{Binding PreviewCommand}" ToolTip.Tip="Show the get-ready screen"
+                IsVisible="{Binding !NoBeamerOpen}" VerticalAlignment="Center"><c:Icon Glyph="tv" /></Button>
+        <Button Classes="transport" Classes.play="{Binding !IsPauseButton}" Classes.pause="{Binding IsPauseButton}"
+                Command="{Binding PlayPauseCommand}" ToolTip.Tip="{Binding PlayTip}" IsVisible="{Binding !NoBeamerOpen}">
+          <c:Icon Glyph="{Binding PlayGlyph}" FontSize="{StaticResource IconXl}" />
+        </Button>
+        <Button Classes="transport stop" Command="{Binding StopCommand}" ToolTip.Tip="Stop — show the scores" IsVisible="{Binding !NoBeamerOpen}">
+          <c:Icon Glyph="stop" FontSize="{StaticResource IconLg}" />
+        </Button>
+
+        <!-- Nothing to play on yet: one clear action instead of four dead buttons -->
+        <Button Classes="tonal" Command="{Binding SelectDisplaysCommand}" IsVisible="{Binding NoBeamerOpen}"
+                ToolTip.Tip="Opens the Displays panel: open a beamer and choose which players sing on it">
+          <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space2}">
+            <c:Icon Glyph="tv" FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
+            <TextBlock Text="Select displays" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
+          </StackPanel>
+        </Button>
       </StackPanel>
 
       <!-- Song fader (game output) -->

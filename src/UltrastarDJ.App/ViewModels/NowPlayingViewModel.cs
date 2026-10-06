@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -41,7 +42,8 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private double _cardY;
 
     public NowPlayingViewModel(PlaybackService playback, IDisplayService displays, MediaService media, AudioInputService audio,
-        PlayersService players, AppSettingsService settings, OutputsService outputs, NotificationService notifications, ILogger<NowPlayingViewModel> log)
+        PlayersService players, AppSettingsService settings, OutputsService outputs, NotificationService notifications,
+        ILogger<NowPlayingViewModel> log)
     {
         _outputs = outputs;
         _playback = playback;
@@ -68,8 +70,10 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
         }
 
         _playback.StateChanged += _ => Refresh();
+        _playback.PicturesChanged += RefreshBox;
         _displays.OpenStateChanged += (_, _) => Refresh();
         _players.Changed += OnPlayerChanged;
+        media.Game.Frames.SourceChanged += () => Dispatcher.UIThread.Post(() => HasVideo = media.Game.Frames.HasSource);
         _poll = new DispatcherTimer(TimeSpan.FromMilliseconds(100), DispatcherPriority.Background, (_, _) => Poll());
         _poll.Start();
         Refresh();
@@ -77,6 +81,24 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
 
     public PlaybackState State => _playback.State;
     public bool HasSong => _playback.Song is not null;
+    /// <summary>The game channel has video (cases 2, 3, 4, 6).</summary>
+    [ObservableProperty] private bool _hasVideo;
+
+    // What the box shows: Core.Playback.StageView — the same rule as the beamers' background.
+    private StageLayer Layer => StageView.GamePlayerBox(_playback.State, HasVideo);
+    /// <summary>Song picture, or the backdrop while a song without video plays. Under the video when there is one.</summary>
+    public Bitmap? BoxImage => Layer == StageLayer.Backdrop ? _playback.Backdrop ?? _playback.Picture : _playback.Picture;
+    public bool ShowBoxImage => Layer != StageLayer.None && BoxImage is not null;
+    public bool ShowVideo => Layer == StageLayer.Video;
+
+    partial void OnHasVideoChanged(bool value) => RefreshBox();
+
+    private void RefreshBox()
+    {
+        OnPropertyChanged(nameof(BoxImage));
+        OnPropertyChanged(nameof(ShowBoxImage));
+        OnPropertyChanged(nameof(ShowVideo));
+    }
     public double Level => _media.Game.LevelRms;
     /// <summary>Small monitor of what the beamers show.</summary>
     public Media.FrameBus GameFrames => _media.Game.Frames;
@@ -133,31 +155,33 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
     private void Refresh()
     {
         Song? song = _playback.Song;
+        RefreshBox();
         Title = song?.Title ?? "No song loaded";
         Artist = song?.Artist ?? "";
         SyncRows();
         Status = _playback.State switch
         {
             PlaybackState.Idle => "Load a song from the library",
-            PlaybackState.Loaded when !_playback.AnyDisplayOpen => "Open a beamer under Displays",
             PlaybackState.Loaded => "Ready",
             PlaybackState.Preview => "Get-ready screen on the beamers",
             PlaybackState.Countdown => "3 – 2 – 1 …",
             PlaybackState.Playing => "Playing",
             PlaybackState.Paused => "Paused",
-            PlaybackState.Score => "Score screen — Dismiss to play again",
+            PlaybackState.Score => "Score screen — Play to sing it again, Home for the start view",
             _ => "",
         };
         OnPropertyChanged(nameof(State));
         OnPropertyChanged(nameof(HasSong));
+        OnPropertyChanged(nameof(PlayGlyph));
+        OnPropertyChanged(nameof(IsPauseButton));
+        OnPropertyChanged(nameof(NoBeamerOpen));
+        OnPropertyChanged(nameof(PlayTip));
         LoadCommand.NotifyCanExecuteChanged();
+        NotifyLoadAvailability();
+        HomeCommand.NotifyCanExecuteChanged();
         PreviewCommand.NotifyCanExecuteChanged();
-        PlayCommand.NotifyCanExecuteChanged();
-        PauseCommand.NotifyCanExecuteChanged();
-        ResumeCommand.NotifyCanExecuteChanged();
+        PlayPauseCommand.NotifyCanExecuteChanged();
         StopCommand.NotifyCanExecuteChanged();
-        DismissCommand.NotifyCanExecuteChanged();
-        ClearCommand.NotifyCanExecuteChanged();
     }
 
     private void Poll()
@@ -209,28 +233,79 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
         }
     }
 
-    private bool CanLoad(Song? song) => _playback.CanLoad && !Loading;
+    private bool CanLoad(Song? song) => CanLoadSong;
+
+    /// <summary>
+    /// Whether a song can be loaded into the game now. Every "Load" entry point (library menus, preview Load,
+    /// queue Load / Load next) disables itself with this and shows <see cref="LoadSongTip"/>.
+    /// </summary>
+    public bool CanLoadSong => _playback.CanLoad && !Loading;
+
+    public string LoadSongTip => Loading
+        ? "A song is loading…"
+        : _playback.CanLoad ? "Load into the Game Player" : "A song is playing — stop it (⏹) to load another one";
+
+    /// <summary>Raised when <see cref="CanLoadSong"/> may have changed.</summary>
+    public event Action? LoadAvailabilityChanged;
+
+    partial void OnLoadingChanged(bool value) => NotifyLoadAvailability();
+
+    private void NotifyLoadAvailability()
+    {
+        OnPropertyChanged(nameof(CanLoadSong));
+        OnPropertyChanged(nameof(LoadSongTip));
+        LoadAvailabilityChanged?.Invoke();
+    }
 
     [RelayCommand(CanExecute = nameof(CanPreview))] private void Preview() => _playback.Preview();
     private bool CanPreview() => _playback.CanPreview;
 
-    [RelayCommand(CanExecute = nameof(CanPlay))] private void Play() => _playback.Play();
-    private bool CanPlay() => _playback.CanPlay;
+    [RelayCommand(CanExecute = nameof(CanHome))] private void Home() => _playback.Home();
+    private bool CanHome() => _playback.CanHome;
 
-    [RelayCommand(CanExecute = nameof(CanPause))] private void Pause() => _playback.Pause();
-    private bool CanPause() => _playback.CanPause;
+    /// <summary>One button: play (countdown) → pause while playing → resume while paused. Disabled during the countdown.</summary>
+    [RelayCommand(CanExecute = nameof(CanPlayPause))]
+    private void PlayPause()
+    {
+        switch (PlaybackRules.PlayButtonFor(_playback.State))
+        {
+            case PlayButton.Pause:
+                _playback.Pause();
+                break;
+            case PlayButton.Resume:
+                _playback.Resume();
+                break;
+            default:
+                _playback.Play();
+                break;
+        }
+    }
 
-    [RelayCommand(CanExecute = nameof(CanResume))] private void Resume() => _playback.Resume();
-    private bool CanResume() => _playback.CanResume;
+    private bool CanPlayPause() => PlaybackRules.PlayButtonEnabled(_playback.State, _playback.AnyDisplayOpen) && !_playback.IsBusy;
+
+    /// <summary>The play button shows pause (light blue) instead of play (blue).</summary>
+    public bool IsPauseButton => PlaybackRules.PlayButtonFor(_playback.State) == PlayButton.Pause;
+
+    /// <summary>No beamer open: the transport is replaced by one "Select displays" button.</summary>
+    public bool NoBeamerOpen => !_playback.AnyDisplayOpen;
+
+    /// <summary>"Select displays": the DJ window opens its Displays panel (beamers, players per screen).</summary>
+    public event Action? DisplaysRequested;
+
+    [RelayCommand] private void SelectDisplays() => DisplaysRequested?.Invoke();
+
+    public string PlayGlyph => PlaybackRules.PlayButtonFor(_playback.State) == PlayButton.Pause ? "pause" : "play_arrow";
+    public string PlayTip => _playback.State switch
+    {
+        PlaybackState.Playing => "Pause",
+        PlaybackState.Paused => "Resume",
+        PlaybackState.Countdown => "Starting…",
+        PlaybackState.Score => "Play again from the start (countdown on the beamers)",
+        _ => "Play (countdown on the beamers)",
+    };
 
     [RelayCommand(CanExecute = nameof(CanStop))] private void Stop() => _playback.Stop();
     private bool CanStop() => _playback.CanStop;
-
-    [RelayCommand(CanExecute = nameof(CanDismiss))] private void Dismiss() => _playback.Dismiss();
-    private bool CanDismiss() => _playback.State == PlaybackState.Score;
-
-    [RelayCommand(CanExecute = nameof(CanClear))] private Task ClearAsync() => _playback.ClearAsync();
-    private bool CanClear() => _playback.State is not PlaybackState.Idle && !Loading;
 
     public void Dispose()
     {

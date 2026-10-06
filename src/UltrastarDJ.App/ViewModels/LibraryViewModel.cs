@@ -74,6 +74,11 @@ public sealed partial class LibraryViewModel : ViewModelBase
         _preview = preview;
         _queue = queue;
         _nowPlaying = nowPlaying;
+        _nowPlaying.LoadAvailabilityChanged += () =>
+        {
+            LoadIntoGameCommand.NotifyCanExecuteChanged();
+            OnPropertyChanged(nameof(LoadSongTip));
+        };
         Refresh();
         _library.Changed += () => Dispatcher.UIThread.Post(Refresh);
         _library.AvailabilityChanged += () => Dispatcher.UIThread.Post(Refresh);
@@ -142,8 +147,12 @@ public sealed partial class LibraryViewModel : ViewModelBase
         }
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanLoadIntoGame))]
     private Task LoadIntoGameAsync(LibraryRow? row) => row is null ? Task.CompletedTask : _nowPlaying.LoadCommand.ExecuteAsync(row.Song);
+
+    private bool CanLoadIntoGame(LibraryRow? row) => _nowPlaying.CanLoadSong;
+
+    public string LoadSongTip => _nowPlaying.LoadSongTip;
 
     public Task PreviewSelectedAsync() => PreviewAsync(Selected);
 

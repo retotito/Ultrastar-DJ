@@ -116,6 +116,7 @@ public sealed partial class App : Application
         // App services
         services.AddSingleton<NotificationService>();
         services.AddSingleton<ConnectivityService>();
+        services.AddSingleton<ThumbnailService>();
         services.AddSingleton<AppSettingsService>();
         services.AddSingleton<MediaService>();
         services.AddSingleton<IAudioBackend, PortAudioBackend>();

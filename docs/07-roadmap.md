@@ -249,6 +249,26 @@ Details: `03-game-engine.md` "Mic plug / unplug".
 - [x] Verified live
 ---
 
+## Sprint 7 — Gameplay: the Game Player  *(done)*
+
+- [x] "Now Playing" card renamed **Game Player** (UI text only; `NowPlaying*` stays in code); right column gets a **PREVIEW PLAYER** section title like QUEUE; empty preview shows "No song loaded".
+- [x] Game Player transport reduced to four buttons (prototype): Home (start view, song stays loaded — replaces Clear and Leave score screen), Get ready, Play/Pause (one button; disabled during the countdown), Stop (score screen; Play replays from the start). Rules in `Core.Playback.PlaybackRules` with tests.
+- [x] Game Player picture box always shown (fixed size, note when empty), loader while loading, then the video's first frame or the cover / background — same as the preview player (`SongImages` shared). Same height token (`PlayerPictureHeight`). YouTube 16:9 thumbnails cached by `ThumbnailService` (`cache/thumbs`). `VideoSurface` clears when its `FrameBus` gets a new song and stays transparent until its first frame, so the picture lies under the video.
+- [x] One picture rule for all displays (6 media cases): `SongPicture` picture (cover → YouTube thumbnail → background) and backdrop (background → cover); `StageView` decides beamer background and Game Player box per state (get ready / score blurred, countdown picture, song = video or sharp dimmed backdrop). Beamer get-ready no longer black for YouTube / USDB songs. Tested.
+- [x] Beamer text (countdown, PAUSED, get ready, score) gets a soft drop shadow — readable on bright frames.
+- [x] A beamer closed while a song runs stops the song (score screen) with a warning toast.
+- [x] All load-into-game entry points (library ⋮ and right-click menus, preview Load, queue Load next and row Load) disable while a song runs or loads (`NowPlayingViewModel.CanLoadSong`), with a tooltip saying why; menu items join the disabled look.
+- [x] Transport colours: play solid accent blue, pause light blue (`BrushStateSelected`), stop red (`BrushError`); round 48 px (`Button.transport`). No beamer open → one "Select displays" button (opens the Displays panel) instead of the four buttons and the status hint.
+- [x] Verified live
+
+---
+
+## Sprint 8 — Beamers  *(in progress)*
+
+- [ ] (to be defined with the user)
+
+---
+
 ## Later / ideas
 
 - Cap mpv read-ahead (~60 s) so YouTube streams like a player instead of pulling the whole song into RAM

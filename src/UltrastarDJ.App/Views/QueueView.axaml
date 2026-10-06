@@ -41,7 +41,7 @@
     <Border Grid.Row="1" Padding="{StaticResource Pad3}" BorderBrush="{DynamicResource BrushOutlineVariant}" BorderThickness="0,1,0,1">
       <Grid ColumnDefinitions="*,Auto,Auto">
         <TextBlock Classes="label" VerticalAlignment="Center" Text="{Binding Count, StringFormat='QUEUE ({0})'}" />
-        <Button Grid.Column="1" Classes="sidebar" Width="28" Height="28" Command="{Binding LoadNextCommand}" ToolTip.Tip="Load next song into the game">
+        <Button Grid.Column="1" Classes="sidebar" Width="28" Height="28" Command="{Binding LoadNextCommand}" ToolTip.Tip="{Binding LoadNextTip}">
           <c:Icon Glyph="skip_next" FontSize="{StaticResource IconMd}" />
         </Button>
         <Button Grid.Column="2" Classes="sidebar" Width="28" Height="28" Command="{Binding ClearCommand}" ToolTip.Tip="Clear queue">
@@ -78,7 +78,7 @@
                 </StackPanel>
                 <Button Grid.Column="2" Classes="sidebar" Width="26" Height="26" Command="{Binding MoveUpCommand}" ToolTip.Tip="Move up"><c:Icon Glyph="arrow_upward" FontSize="{StaticResource IconSm}" /></Button>
                 <Button Grid.Column="3" Classes="sidebar" Width="26" Height="26" Command="{Binding MoveDownCommand}" ToolTip.Tip="Move down"><c:Icon Glyph="arrow_downward" FontSize="{StaticResource IconSm}" /></Button>
-                <Button Grid.Column="4" Classes="sidebar" Width="26" Height="26" Command="{Binding LoadCommand}" ToolTip.Tip="Load into game"><c:Icon Glyph="play_circle" FontSize="{StaticResource IconSm}" /></Button>
+                <Button Grid.Column="4" Classes="sidebar" Width="26" Height="26" Command="{Binding LoadCommand}" ToolTip.Tip="{Binding $parent[UserControl].((vm:QueueViewModel)DataContext).LoadSongTip}"><c:Icon Glyph="play_circle" FontSize="{StaticResource IconSm}" /></Button>
                 <Button Grid.Column="5" Classes="sidebar" Width="26" Height="26" Command="{Binding RemoveCommand}" ToolTip.Tip="Remove"><c:Icon Glyph="close" FontSize="{StaticResource IconSm}" /></Button>
               </Grid>
             </Border>

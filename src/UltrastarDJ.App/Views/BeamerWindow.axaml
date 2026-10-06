@@ -21,16 +21,23 @@
     <Style Selector="TextBlock.beamer">
       <Setter Property="Foreground" Value="{DynamicResource BrushBeamerText}" />
       <Setter Property="FontFamily" Value="{StaticResource FontSans}" />
+      <!-- Text sits on pictures and video: a soft dark shadow keeps it readable on bright frames (white screens). -->
+      <Setter Property="Effect">
+        <DropShadowEffect OffsetX="0" OffsetY="2" BlurRadius="16" Color="Black" Opacity="0.85" />
+      </Setter>
     </Style>
   </Window.Styles>
 
   <Panel>
-    <!-- Background layer: the song's image (blurred for preview/score, dim behind the game), video on top while playing -->
-    <Image Source="{Binding Background}" Stretch="UniformToFill" IsVisible="{Binding ShowBackground}" Opacity="0.55">
+    <!-- Background (Core.Playback.StageView, same rule as the Game Player box): get ready / score = song picture blurred;
+         countdown = picture; song = video (picture under it until the first frame) or, without video, the backdrop.
+         Sharp layers are dimmed so lyrics and notes stay readable. -->
+    <Image Source="{Binding BlurredImage}" Stretch="UniformToFill" IsVisible="{Binding ShowBlurredImage}" Opacity="0.55">
       <Image.Effect>
         <BlurEffect Radius="18" />
       </Image.Effect>
     </Image>
+    <Image Source="{Binding StageImage}" Stretch="UniformToFill" IsVisible="{Binding ShowStageImage}" Opacity="0.55" />
     <c:VideoSurface Source="{Binding GameFrames}" IsVisible="{Binding ShowVideo}" />
 
     <!-- Idle -->

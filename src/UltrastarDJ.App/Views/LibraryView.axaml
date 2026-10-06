@@ -70,7 +70,8 @@
               <ContextMenu>
                 <MenuItem Header="Preview" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).PreviewCommand}" CommandParameter="{Binding}" />
                 <MenuItem Header="Add to queue" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).AddToQueueCommand}" CommandParameter="{Binding}" />
-                <MenuItem Header="Load into game" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).LoadIntoGameCommand}" CommandParameter="{Binding}" />
+                <MenuItem Header="Load into game" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).LoadIntoGameCommand}" CommandParameter="{Binding}"
+                          ToolTip.Tip="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).LoadSongTip}" />
               </ContextMenu>
             </Grid.ContextMenu>
             <TextBlock Grid.Column="0" Text="{Binding Title}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
@@ -103,7 +104,8 @@
                 <MenuFlyout>
                   <MenuItem Header="Preview" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).PreviewCommand}" CommandParameter="{Binding}" />
                   <MenuItem Header="Add to queue" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).AddToQueueCommand}" CommandParameter="{Binding}" />
-                  <MenuItem Header="Load into game" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).LoadIntoGameCommand}" CommandParameter="{Binding}" />
+                  <MenuItem Header="Load into game" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).LoadIntoGameCommand}" CommandParameter="{Binding}"
+                          ToolTip.Tip="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).LoadSongTip}" />
                 </MenuFlyout>
               </Button.Flyout>
               <c:Icon Glyph="more_vert" FontSize="{StaticResource IconMd}" />

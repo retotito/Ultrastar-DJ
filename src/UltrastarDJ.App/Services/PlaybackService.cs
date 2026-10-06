@@ -1,3 +1,4 @@
+using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Microsoft.Extensions.Logging;
 using UltrastarDJ.Audio;
@@ -32,6 +33,7 @@ public sealed class PlaybackService : IDisposable
     private readonly AppSettingsService _settings;
     private readonly SongResolver _resolver;
     private readonly NotificationService _notifications;
+    private readonly ThumbnailService _thumbnails;
     private readonly ILogger<PlaybackService> _log;
     private readonly HashSet<DisplayId> _countdownDone = [];
     private CancellationTokenSource? _tickCts;
@@ -39,7 +41,7 @@ public sealed class PlaybackService : IDisposable
     private PlaybackState _state = PlaybackState.Idle;
 
     public PlaybackService(MediaService media, AudioInputService audio, PlayersService players, IDisplayService displays, AppSettingsService settings, SongResolver resolver,
-        NotificationService notifications, ILogger<PlaybackService> log)
+        NotificationService notifications, ThumbnailService thumbnails, ILogger<PlaybackService> log)
     {
         _media = media;
         _audio = audio;
@@ -48,10 +50,12 @@ public sealed class PlaybackService : IDisposable
         _settings = settings;
         _resolver = resolver;
         _notifications = notifications;
+        _thumbnails = thumbnails;
         _log = log;
         _media.Game.EndReached += () => Dispatcher.UIThread.Post(() => { if (State is PlaybackState.Playing or PlaybackState.Paused) { Stop(); } });
         _media.Game.ErrorOccurred += e => Dispatcher.UIThread.Post(() => OnPlaybackError(e));
         _audio.GameMicLost += OnGameMicLost;
+        _displays.OpenStateChanged += OnDisplayOpenStateChanged;
     }
 
     /// <summary>The game media failed (stream dropped, YouTube refused): stop and tell the DJ why.</summary>
@@ -90,6 +94,15 @@ public sealed class PlaybackService : IDisposable
     }
 
     public Song? Song { get; private set; }
+
+    /// <summary>Song picture (cover, YouTube thumbnail, background) — get ready, countdown, score, Game Player box.</summary>
+    public Bitmap? Picture { get; private set; }
+
+    /// <summary>Backdrop (background, cover) behind the game for songs without video.</summary>
+    public Bitmap? Backdrop { get; private set; }
+
+    /// <summary>UI thread: <see cref="Picture"/> / <see cref="Backdrop"/> changed (they load after the song).</summary>
+    public event Action? PicturesChanged;
     public MediaPlan? Plan { get; private set; }
     public GameSession? Session { get; private set; }
     public IGameClock? Clock => _media.Game.Clock;
@@ -103,11 +116,12 @@ public sealed class PlaybackService : IDisposable
 
     public bool CanLoad => State is PlaybackState.Idle or PlaybackState.Loaded or PlaybackState.Preview or PlaybackState.Score && !IsBusy;
     public bool AnyDisplayOpen => _displays.IsOpen(DisplayId.Beamer1) || _displays.IsOpen(DisplayId.Beamer2);
-    public bool CanPlay => State is PlaybackState.Loaded or PlaybackState.Preview && AnyDisplayOpen && !IsBusy;
-    public bool CanPreview => State is PlaybackState.Loaded && AnyDisplayOpen;
-    public bool CanPause => State == PlaybackState.Playing;
-    public bool CanResume => State == PlaybackState.Paused;
-    public bool CanStop => State is PlaybackState.Playing or PlaybackState.Paused or PlaybackState.Countdown;
+    public bool CanPlay => PlaybackRules.CanPlay(State, AnyDisplayOpen) && !IsBusy;
+    public bool CanPreview => PlaybackRules.CanGetReady(State, AnyDisplayOpen);
+    public bool CanHome => PlaybackRules.CanHome(State);
+    public bool CanPause => PlaybackRules.CanPause(State);
+    public bool CanResume => PlaybackRules.CanResume(State);
+    public bool CanStop => PlaybackRules.CanStop(State);
 
     /// <summary>Players that will sing: mic bound and assigned to an open display.</summary>
     public IReadOnlyList<PlayerConfig> ActivePlayers()
@@ -159,6 +173,7 @@ public sealed class PlaybackService : IDisposable
             Song = loaded;
             Plan = plan;
             State = PlaybackState.Loaded;
+            _ = LoadPicturesAsync(loaded);
         }
         catch (MediaException ex)
         {
@@ -172,15 +187,34 @@ public sealed class PlaybackService : IDisposable
         }
     }
 
+    /// <summary>Thumbnail download must not hold up the load: pictures follow; ignored if another song came meanwhile.</summary>
+    private async Task LoadPicturesAsync(Song song)
+    {
+        Bitmap? picture = await SongImages.PictureAsync(song, _thumbnails);
+        Bitmap? backdrop = await SongImages.BackdropAsync(song, _thumbnails);
+        if (ReferenceEquals(Song, song))
+        {
+            SetPictures(picture, backdrop);
+        }
+    }
+
+    private void SetPictures(Bitmap? picture, Bitmap? backdrop)
+    {
+        Picture = picture;
+        Backdrop = backdrop;
+        PicturesChanged?.Invoke();
+    }
+
     public void Preview()
     {
         if (CanPreview)
         {
+            RewindIfFinished();
             State = PlaybackState.Preview;
         }
     }
 
-    /// <summary>Starts the countdown on every open beamer; the first one to finish starts the media.</summary>
+    /// <summary>Starts the countdown on every open beamer; the first one to finish starts the media. After Stop it replays from the start.</summary>
     public void Play()
     {
         if (!CanPlay)
@@ -188,8 +222,27 @@ public sealed class PlaybackService : IDisposable
             return;
         }
 
+        RewindIfFinished();
         _countdownDone.Clear();
         State = PlaybackState.Countdown;
+    }
+
+    /// <summary>Beamers back to their start view; the song stays loaded (rewound) and ready to play.</summary>
+    public void Home()
+    {
+        if (CanHome)
+        {
+            RewindIfFinished();
+            State = PlaybackState.Loaded;
+        }
+    }
+
+    private void RewindIfFinished()
+    {
+        if (State == PlaybackState.Score)
+        {
+            _media.Game.Seek(0);
+        }
     }
 
     /// <summary>Called by each beamer when its 3-2-1 finishes. The first call starts the song; later ones are ignored.</summary>
@@ -255,6 +308,21 @@ public sealed class PlaybackService : IDisposable
     }
 
     /// <summary>
+    /// A beamer closed while a song runs (by hand, from the Displays panel, or a failure): its singers can no longer
+    /// see the notes, so the song stops like with Stop (score screen, song stays loaded).
+    /// </summary>
+    private void OnDisplayOpenStateChanged(DisplayId id, bool isOpen)
+    {
+        if (isOpen || !CanStop)
+        {
+            return;
+        }
+
+        Stop();
+        _notifications.Warn($"Beamer {(int)id} closed — song stopped", "Open it again under Displays and press Play to sing the song again.");
+    }
+
+    /// <summary>
     /// A singer's mic died mid-song: stop the song (rewound, still loaded) and close the beamers — the setup has
     /// changed, the DJ sets it up again. The mic is unassigned by <see cref="AudioInputService"/> right after.
     /// </summary>
@@ -266,7 +334,7 @@ public sealed class PlaybackService : IDisposable
         }
 
         Stop();
-        Dismiss();
+        Home();
         foreach (DisplayId id in (ReadOnlySpan<DisplayId>)[DisplayId.Beamer1, DisplayId.Beamer2])
         {
             _displays.Close(id);
@@ -292,33 +360,13 @@ public sealed class PlaybackService : IDisposable
         State = PlaybackState.Score;
     }
 
-    /// <summary>Leaves the score screen; song rewound and ready to play again.</summary>
-    public void Dismiss()
-    {
-        if (State == PlaybackState.Score)
-        {
-            _media.Game.Seek(0);
-            State = PlaybackState.Loaded;
-        }
-    }
-
-    /// <summary>Beamers back to idle; song unloaded.</summary>
-    public async Task ClearAsync()
-    {
-        if (State is PlaybackState.Playing or PlaybackState.Paused or PlaybackState.Countdown)
-        {
-            Stop();
-        }
-
-        await ClearCoreAsync();
-    }
-
     private async Task ClearCoreAsync()
     {
         StopTicker();
         _audio.StopAll();
         await _media.Game.UnloadAsync();
         Song = null;
+        SetPictures(null, null);
         Plan = null;
         Session = null;
         State = PlaybackState.Idle;

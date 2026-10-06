@@ -32,7 +32,6 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private bool _hasVideo;
     [ObservableProperty] private string _title = "";
     [ObservableProperty] private string _artist = "";
-    [ObservableProperty] private Bitmap? _background;
     [ObservableProperty] private int _countdownValue;
     [ObservableProperty] private GameScene? _scene;
     [ObservableProperty] private int _winnerId = -1;
@@ -47,6 +46,7 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
         HasVideo = gameFrames.HasSource;
         gameFrames.SourceChanged += OnFramesChanged;
         _playback.StateChanged += OnPlaybackStateChanged;
+        _playback.PicturesChanged += RefreshStage;
         _playback.PitchTicked += OnPitchTicked;
         _displays.PlayersChanged += OnAssignmentChanged;
         _players.Changed += OnPlayerConfigChanged;
@@ -69,8 +69,24 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
     public bool IsGame => State is PlaybackState.Playing or PlaybackState.Paused;
     public bool IsPaused => State == PlaybackState.Paused;
     public bool IsScore => State == PlaybackState.Score;
-    public bool ShowBackground => !IsIdle;
-    public bool ShowVideo => HasVideo && State is PlaybackState.Countdown or PlaybackState.Playing or PlaybackState.Paused;
+    // Background layers: Core.Playback.StageView — the same rule as the Game Player box.
+    private StageLayer Layer => StageView.Beamer(State, HasVideo);
+    /// <summary>Get ready / score: the song picture, blurred.</summary>
+    public Bitmap? BlurredImage => _playback.Picture;
+    public bool ShowBlurredImage => Layer == StageLayer.BlurredPicture && BlurredImage is not null;
+    /// <summary>Countdown and song: the picture (or, without video, the backdrop), sharp and dimmed; under the video.</summary>
+    public Bitmap? StageImage => Layer == StageLayer.Backdrop ? _playback.Backdrop ?? _playback.Picture : _playback.Picture;
+    public bool ShowStageImage => Layer is StageLayer.Picture or StageLayer.Backdrop or StageLayer.Video && StageImage is not null;
+    public bool ShowVideo => Layer == StageLayer.Video;
+
+    private void RefreshStage()
+    {
+        OnPropertyChanged(nameof(BlurredImage));
+        OnPropertyChanged(nameof(ShowBlurredImage));
+        OnPropertyChanged(nameof(StageImage));
+        OnPropertyChanged(nameof(ShowStageImage));
+        OnPropertyChanged(nameof(ShowVideo));
+    }
 
     partial void OnStateChanged(PlaybackState value)
     {
@@ -80,11 +96,10 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(IsGame));
         OnPropertyChanged(nameof(IsPaused));
         OnPropertyChanged(nameof(IsScore));
-        OnPropertyChanged(nameof(ShowBackground));
-        OnPropertyChanged(nameof(ShowVideo));
+        RefreshStage();
     }
 
-    partial void OnHasVideoChanged(bool value) => OnPropertyChanged(nameof(ShowVideo));
+    partial void OnHasVideoChanged(bool value) => RefreshStage();
 
     private void OnFramesChanged() => Dispatcher.UIThread.Post(() => HasVideo = GameFrames.HasSource);
 
@@ -97,7 +112,6 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
                 _countdown.Stop();
                 _scoreAnim.Stop();
                 Scene = null;
-                Background = null;
                 Title = Artist = "";
                 break;
 
@@ -144,25 +158,6 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
 
         Title = song.Title;
         Artist = song.Artist;
-        string? image = _playback.Plan?.Background == StaticBackground.Image ? song.BackgroundPath : song.CoverPath ?? song.BackgroundPath;
-        Background = LoadBitmap(image);
-    }
-
-    private static Bitmap? LoadBitmap(string? path)
-    {
-        if (path is null || !File.Exists(path))
-        {
-            return null;
-        }
-
-        try
-        {
-            return new Bitmap(path);
-        }
-        catch (Exception ex) when (ex is IOException or ArgumentException or NotSupportedException)
-        {
-            return null;
-        }
     }
 
     private void RefreshAssignedPlayers()

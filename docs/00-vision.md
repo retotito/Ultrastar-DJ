@@ -81,7 +81,7 @@ Everything below exists in the prototype and must exist in v2 unless marked *(la
 - Per player: input gain 0–2, noise gate threshold 0–0.5, mix gain 0–2, mute, mic delay ms (default 40, cap 250 in UI).
 - Live level meters; mic test mode; hot-plug detection (disconnected / reconnected toasts, auto-clear at startup if device gone).
 - Mic delay calibration dialog: beep → echo detection, 5 trials, median, apply per player.
-- Mic monitoring: mic audio mixed into the game output during the song (mix fader + mute per player in the Now Playing card).
+- Mic monitoring: mic audio mixed into the game output during the song (mix fader + mute per player in the Game Player card).
 
 ### Audio outputs
 - Two channels: **game** and **preview**. Each: device selection (including channel pairs on multichannel interfaces, e.g. "MOTU — Ch 3–4"), volume fader, level meter, persisted.
@@ -91,7 +91,7 @@ Everything below exists in the prototype and must exist in v2 unless marked *(la
 ### Displays
 - Beamer 1 and 2: open/close on a chosen monitor (fullscreen), assign player IDs (a player is on at most one display). Display 2 offered when ≥3 players active.
 
-### Transport (Now Playing card, floating/draggable in DJ window)
+### Transport (Game Player card, floating/draggable in DJ window)
 - States: idle → loaded → preview → countdown → playing ⇄ paused → score/stopped.
 - Buttons: home screen (clear beamers), preview (title screen), play, pause, stop.
 - Song volume fader (game channel) with meter, player badges, status text (buffering, no display, …).

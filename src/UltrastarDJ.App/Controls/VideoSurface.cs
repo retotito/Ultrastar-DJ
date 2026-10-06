@@ -11,7 +11,8 @@ namespace UltrastarDJ.App.Controls;
 /// <summary>
 /// Draws frames from an <see cref="IFrameSource"/>, letterboxed. Frames arrive on the source's
 /// render thread and are copied into a <see cref="WriteableBitmap"/> there; the UI thread only blits.
-/// Several surfaces may share one source (DJ monitor + beamers).
+/// Several surfaces may share one source (DJ monitor + beamers). Transparent until the first frame (a cover behind it
+/// stays visible); cleared when a <see cref="FrameBus"/> switches to a new song, so an old frame never lingers.
 /// </summary>
 // The bitmap is released when the control leaves the visual tree; controls are not IDisposable in Avalonia.
 [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable")]
@@ -41,13 +42,29 @@ public sealed class VideoSurface : Control
         if (e.OldValue is IFrameSource old)
         {
             old.FrameReady -= OnFrame;
+            if (old is FrameBus oldBus)
+            {
+                oldBus.SourceChanged -= OnUpstreamChanged;
+            }
         }
 
         if (e.NewValue is IFrameSource next)
         {
             next.FrameReady += OnFrame;
+            if (next is FrameBus bus)
+            {
+                bus.SourceChanged += OnUpstreamChanged;
+            }
         }
 
+        ClearFrame();
+    }
+
+    // A channel loaded a new song (new player behind the bus): drop the previous song's last frame.
+    private void OnUpstreamChanged() => Dispatcher.UIThread.Post(ClearFrame);
+
+    private void ClearFrame()
+    {
         lock (_bitmapLock)
         {
             _bitmap?.Dispose();
@@ -124,14 +141,14 @@ public sealed class VideoSurface : Control
     public override void Render(DrawingContext context)
     {
         Rect bounds = Bounds.WithX(0).WithY(0);
-        context.FillRectangle(Brushes.Black, bounds);
-
         lock (_bitmapLock)
         {
             if (_bitmap is null)
             {
                 return;
             }
+
+            context.FillRectangle(Brushes.Black, bounds);
 
             Size size = _bitmap.Size;
             double scale = Math.Min(bounds.Width / size.Width, bounds.Height / size.Height);

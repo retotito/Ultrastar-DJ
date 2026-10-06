@@ -37,7 +37,7 @@
   </Style>
 
   <!-- The app's disabled state: dimmed to OpacityDisabled, normal arrow (Fluent's own disabled look is too subtle) -->
-  <Style Selector=":is(Button):disabled, ComboBox:disabled, ToggleSwitch:disabled, CheckBox:disabled, Slider:disabled, TextBox:disabled">
+  <Style Selector=":is(Button):disabled, ComboBox:disabled, ToggleSwitch:disabled, CheckBox:disabled, Slider:disabled, TextBox:disabled, MenuItem:disabled">
     <Setter Property="Opacity" Value="{StaticResource OpacityDisabled}" />
     <Setter Property="Cursor" Value="Arrow" />
   </Style>
@@ -136,6 +136,41 @@
   </Style>
   <Style Selector="ListBoxItem:selected:pressed /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="{DynamicResource BrushStatePressed}" />
+  </Style>
+
+  <!-- Game Player transport: round buttons — play blue (accent), pause light blue (selected state), stop red -->
+  <Style Selector="Button.transport">
+    <Setter Property="Width" Value="48" />
+    <Setter Property="Height" Value="48" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="{StaticResource RadiusFull}" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Button.transport:pointerover">
+    <Setter Property="Opacity" Value="0.85" />
+  </Style>
+  <Style Selector="Button.transport:pressed">
+    <Setter Property="Opacity" Value="0.7" />
+  </Style>
+  <Style Selector="Button.transport.play /template/ ContentPresenter, Button.transport.play:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BrushAccent}" />
+  </Style>
+  <Style Selector="Button.transport.play c|Icon">
+    <Setter Property="Foreground" Value="{DynamicResource BrushOnAccent}" />
+  </Style>
+  <Style Selector="Button.transport.pause /template/ ContentPresenter, Button.transport.pause:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BrushStateSelected}" />
+  </Style>
+  <Style Selector="Button.transport.pause c|Icon">
+    <Setter Property="Foreground" Value="{DynamicResource BrushOnSurface}" />
+  </Style>
+  <Style Selector="Button.transport.stop /template/ ContentPresenter, Button.transport.stop:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BrushError}" />
+  </Style>
+  <Style Selector="Button.transport.stop c|Icon">
+    <Setter Property="Foreground" Value="{DynamicResource BrushOnError}" />
   </Style>
 
   <!-- Text button (low-emphasis action, e.g. "Clear" filters) -->

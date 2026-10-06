@@ -93,6 +93,13 @@ public sealed partial class DjWindowViewModel : ViewModelBase
             DialogDetailsShown = false;
         };
         playback.StateChanged += _ => UpdateLock();
+        nowPlaying.DisplaysRequested += () =>
+        {
+            if (ActivePanel != SidebarPanel.Displays)
+            {
+                TogglePanel(SidebarPanel.Displays);
+            }
+        };
         UpdateLock();
     }
 

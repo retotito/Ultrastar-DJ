@@ -18,6 +18,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
 {
     private readonly MediaService _media;
     private readonly OutputsService _outputs;
+    private readonly ThumbnailService _thumbnails;
     private readonly SongResolver _resolver;
     private readonly QueueViewModel _queue;
     private readonly NowPlayingViewModel _nowPlaying;
@@ -36,13 +37,20 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private double _gain;
     [ObservableProperty] private double _level;
 
-    public PreviewViewModel(MediaService media, OutputsService outputs, SongResolver resolver, QueueViewModel queue, NowPlayingViewModel nowPlaying, NotificationService notifications, ILogger<PreviewViewModel> log)
+    public PreviewViewModel(MediaService media, OutputsService outputs, SongResolver resolver, QueueViewModel queue, NowPlayingViewModel nowPlaying,
+        NotificationService notifications, ThumbnailService thumbnails, ILogger<PreviewViewModel> log)
     {
+        _thumbnails = thumbnails;
         _media = media;
         _outputs = outputs;
         _resolver = resolver;
         _queue = queue;
         _nowPlaying = nowPlaying;
+        _nowPlaying.LoadAvailabilityChanged += () =>
+        {
+            LoadIntoGameCommand.NotifyCanExecuteChanged();
+            OnPropertyChanged(nameof(LoadSongTip));
+        };
         _notifications = notifications;
         _log = log;
         _gain = outputs.Preview.Gain;
@@ -54,8 +62,10 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
 
     public FrameBus Frames => _media.Preview.Frames;
     public bool HasSong => Song is not null;
-    public bool ShowCover => HasSong && !HasVideo;
-    public string Title => Song?.Title ?? "Preview player";
+    /// <summary>The still picture lies under the video, which stays transparent until its first frame.</summary>
+    public bool ShowCover => HasSong && Cover is not null;
+    partial void OnCoverChanged(Bitmap? value) => OnPropertyChanged(nameof(ShowCover));
+    public string Title => Song?.Title ?? "No song loaded";
     public string Artist => Song?.Artist ?? "Double-click a song in the library";
 
     partial void OnSongChanged(Song? value)
@@ -100,7 +110,8 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
         {
             Song resolved = await _resolver.ResolveAsync(song);
             Song = resolved;
-            Cover = LoadBitmap(resolved.CoverPath ?? resolved.BackgroundPath);
+            Cover = null;
+            _ = ShowPictureAsync(resolved);
             MediaPlan plan = MediaSourceResolver.Resolve(new SongMedia
             {
                 AudioPath = resolved.AudioPath,
@@ -129,6 +140,16 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
         }
     }
 
+    /// <summary>Thumbnail / cover in parallel with loading the media; ignored if another song came meanwhile.</summary>
+    private async Task ShowPictureAsync(Song song)
+    {
+        Bitmap? picture = await SongImages.PictureAsync(song, _thumbnails);
+        if (ReferenceEquals(Song, song))
+        {
+            Cover = picture;
+        }
+    }
+
     [RelayCommand]
     private void TogglePlay()
     {
@@ -145,8 +166,12 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
     [RelayCommand(CanExecute = nameof(HasSong))]
     private void AddToQueue() => _queue.Add(Song!);
 
-    [RelayCommand(CanExecute = nameof(HasSong))]
+    [RelayCommand(CanExecute = nameof(CanLoadIntoGame))]
     private Task LoadIntoGameAsync() => _nowPlaying.LoadCommand.ExecuteAsync(Song);
+
+    private bool CanLoadIntoGame() => HasSong && _nowPlaying.CanLoadSong;
+
+    public string LoadSongTip => _nowPlaying.LoadSongTip;
 
     private void Poll()
     {
@@ -162,23 +187,6 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
     }
 
     private static string Fmt(double s) => $"{(int)s / 60}:{(int)s % 60:00}";
-
-    private static Bitmap? LoadBitmap(string? path)
-    {
-        if (path is null || !File.Exists(path))
-        {
-            return null;
-        }
-
-        try
-        {
-            return new Bitmap(path);
-        }
-        catch (Exception ex) when (ex is IOException or ArgumentException or NotSupportedException)
-        {
-            return null;
-        }
-    }
 
     public void Dispose() => _poll.Stop();
 }

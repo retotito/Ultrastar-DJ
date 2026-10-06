@@ -34,25 +34,34 @@ Syllable spacing: trailing/leading spaces in the note text are word boundaries �
 stateDiagram-v2
   [*] --> Idle
   Idle --> Loaded: Load(song)   [validate, resolve MediaPlan, players load, wait Ready]
-  Loaded --> Preview: Preview()  [beamers show title/cover "get ready"]
-  Preview --> Loaded: ClearBeamers()
-  Loaded --> Countdown: Play()
-  Preview --> Countdown: Play()
+  Loaded --> Preview: Get ready  [beamers show title/cover]
+  Preview --> Loaded: Home
+  Loaded --> Countdown: Play
+  Preview --> Countdown: Play
   Countdown --> Playing: after 3-2-1 [start GameAudio, start mics, start ticker]
-  Playing --> Paused: Pause()
-  Paused --> Playing: Resume()
-  Playing --> Score: end reached or Stop()
-  Paused --> Score: Stop()
-  Score --> Loaded: Dismiss() [song stays loaded, ticks retained for score screen]
-  Loaded --> Idle: Clear()
+  Playing --> Paused: Pause
+  Paused --> Playing: Resume
+  Playing --> Score: end reached or Stop
+  Paused --> Score: Stop
+  Countdown --> Score: Stop
+  Score --> Loaded: Home [rewound]
+  Score --> Preview: Get ready [rewound]
+  Score --> Countdown: Play [rewound — sing it again]
 ```
 
-Owner: `PlaybackService` (App). Rules from the prototype:
-- `Load` allowed only in `Idle`/`Loaded`/`Preview`.
-- `Play` allowed only when a beamer is open **and** media is `Ready` **and** every open beamer reported `BeamerReady`.
-- Audio-config views are locked while `Playing`/`Paused`.
+Owner: `PlaybackService` (App); which action is allowed when: `Core.Playback.PlaybackRules` (tested).
+The Game Player card has four buttons (prototype): **Home** (beamers to the start view, song stays loaded),
+**Get ready**, **Play/Pause** (one button: play → pause while playing → resume; shows play and is disabled during
+the countdown) and **Stop** (score screen). Home is disabled while a song runs — Stop ends a song, never Home.
+A song is only unloaded by loading another one.
+
+Rules from the prototype:
+- `Load` allowed only in `Idle`/`Loaded`/`Preview`/`Score`.
+- `Play` allowed only when a beamer is open **and** media is `Ready`.
+- Audio-config views are locked while `Countdown`/`Playing`/`Paused`.
+- A beamer that closes while `Countdown`/`Playing`/`Paused` (by hand, Displays panel, failure) stops the song like Stop
+  (score screen) with a warning toast; the DJ reopens it and presses Play.
 - The countdown runs **on the beamer clock**: `BeamerWindow` shows 3-2-1 and reports `CountdownDone`; the first report starts the media (dedupe when two beamers report). This is what makes the visual countdown and audio start coincide.
-- `Stop` keeps the song loaded (`Loaded`), it does not clear it.
 
 ---
 

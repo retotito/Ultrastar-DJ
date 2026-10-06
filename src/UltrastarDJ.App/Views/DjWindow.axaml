@@ -37,7 +37,7 @@
         <StackPanel Spacing="{StaticResource Space5}">
           <Button Classes="sidebar" Classes.active="{Binding NowPlaying.IsVisible}"
                   Command="{Binding ToggleNowPlayingCommand}"
-                  ToolTip.Tip="Now Playing (transport, song &amp; mic mix)">
+                  ToolTip.Tip="Game Player (transport, song &amp; mic mix)">
             <c:Icon Glyph="play_circle" />
           </Button>
           <Button Classes="sidebar" Classes.active="{Binding ActivePanel, Converter={x:Static vm:SidebarPanelConverters.Is}, ConverterParameter=Layout}"
@@ -81,29 +81,6 @@
     <Panel Grid.Column="1">
       <ContentControl Content="{Binding Library}" />
 
-      <!-- Popover anchored to the sidebar edge; capped to the window height, content scrolls.
-           Closes on a press anywhere outside it and the sidebar (DjWindow.axaml.cs). -->
-      <Border Classes="popover" x:Name="Popover" Classes.bottom="{Binding PanelAtBottom}"
-              HorizontalAlignment="Left"
-              Margin="{StaticResource Pad2}"
-              IsVisible="{Binding PanelContent, Converter={x:Static ObjectConverters.IsNotNull}}">
-        <DockPanel>
-          <Border DockPanel.Dock="Top" BorderBrush="{DynamicResource BrushOutlineVariant}" BorderThickness="0,0,0,1"
-                  Padding="0,0,0,8" Margin="0,0,0,12">
-            <Grid ColumnDefinitions="Auto,*,Auto">
-              <c:Icon Grid.Column="0" Glyph="{Binding PanelGlyph}" Margin="0,0,8,0" VerticalAlignment="Center" />
-              <TextBlock Grid.Column="1" Classes="title" Text="{Binding PanelTitle}" VerticalAlignment="Center" />
-              <Button Grid.Column="2" Classes="sidebar" Width="28" Height="28" Command="{Binding ClosePanelCommand}" ToolTip.Tip="Close">
-                <c:Icon Glyph="close" FontSize="{StaticResource IconMd}" />
-              </Button>
-            </Grid>
-          </Border>
-          <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
-                        Padding="0,0,4,0">
-            <ContentControl Content="{Binding PanelContent}" />
-          </ScrollViewer>
-        </DockPanel>
-      </Border>
     </Panel>
 
     <!-- ── Right panel: preview player + queue ──────────────────────────────────── -->
@@ -118,20 +95,46 @@
       </Grid>
     </Border>
 
-  </Grid>
 
-  <!-- Floating Now Playing card (draggable by its header; position persisted).
-       Nothing between the Canvas and the card may clip, or the card's shadow is cut to a square. -->
-  <Canvas>
-    <Canvas.Styles>
-      <Style Selector="ContentControl.unclipped, ContentControl.unclipped /template/ ContentPresenter">
-        <Setter Property="ClipToBounds" Value="False" />
-      </Style>
-    </Canvas.Styles>
-    <ContentControl Classes="unclipped" Content="{Binding NowPlaying}"
-                    Canvas.Left="{Binding NowPlaying.CardX}" Canvas.Top="{Binding NowPlaying.CardY}"
-                    IsVisible="{Binding NowPlaying.IsVisible}" />
-  </Canvas>
+    <!-- Floating layers of the main grid: the Game Player card lies over library and right column (ZIndex 1),
+         the sidebar popover over the card (ZIndex 2). Toasts and the dialog stay above everything. -->
+    <!-- Floating Game Player card (NowPlaying* in code) (draggable by its header; position persisted).
+         Nothing between the Canvas and the card may clip, or the card's shadow is cut to a square. -->
+    <Canvas Grid.ColumnSpan="3" ZIndex="1">
+      <Canvas.Styles>
+        <Style Selector="ContentControl.unclipped, ContentControl.unclipped /template/ ContentPresenter">
+          <Setter Property="ClipToBounds" Value="False" />
+        </Style>
+      </Canvas.Styles>
+      <ContentControl Classes="unclipped" Content="{Binding NowPlaying}"
+                      Canvas.Left="{Binding NowPlaying.CardX}" Canvas.Top="{Binding NowPlaying.CardY}"
+                      IsVisible="{Binding NowPlaying.IsVisible}" />
+    </Canvas>
+
+    <!-- Sidebar popover (above the Game Player card, ZIndex 2) anchored to the sidebar edge; capped to the window height, content scrolls.
+         Closes on a press anywhere outside it and the sidebar (DjWindow.axaml.cs). -->
+    <Border Grid.Column="1" ZIndex="2" Classes="popover" x:Name="Popover" Classes.bottom="{Binding PanelAtBottom}"
+            HorizontalAlignment="Left"
+            Margin="{StaticResource Pad2}"
+            IsVisible="{Binding PanelContent, Converter={x:Static ObjectConverters.IsNotNull}}">
+      <DockPanel>
+        <Border DockPanel.Dock="Top" BorderBrush="{DynamicResource BrushOutlineVariant}" BorderThickness="0,0,0,1"
+                Padding="0,0,0,8" Margin="0,0,0,12">
+          <Grid ColumnDefinitions="Auto,*,Auto">
+            <c:Icon Grid.Column="0" Glyph="{Binding PanelGlyph}" Margin="0,0,8,0" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" Classes="title" Text="{Binding PanelTitle}" VerticalAlignment="Center" />
+            <Button Grid.Column="2" Classes="sidebar" Width="28" Height="28" Command="{Binding ClosePanelCommand}" ToolTip.Tip="Close">
+              <c:Icon Glyph="close" FontSize="{StaticResource IconMd}" />
+            </Button>
+          </Grid>
+        </Border>
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                      Padding="0,0,4,0">
+          <ContentControl Content="{Binding PanelContent}" />
+        </ScrollViewer>
+      </DockPanel>
+    </Border>
+  </Grid>
 
   <!-- Toasts (top-right): things that happened. Auto-dismiss (warnings stay longer), ✕ closes early. -->
   <ItemsControl Classes="toasts" ItemsSource="{Binding Notifications.Toasts}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,12,360,0" Width="340">

@@ -20,6 +20,17 @@ public sealed partial class QueueViewModel : ViewModelBase
     {
         _playlist = playlist;
         _nowPlaying = nowPlaying;
+        _nowPlaying.LoadAvailabilityChanged += () =>
+        {
+            LoadNextCommand.NotifyCanExecuteChanged();
+            foreach (QueueRowViewModel row in Items)
+            {
+                row.LoadCommand.NotifyCanExecuteChanged();
+            }
+
+            OnPropertyChanged(nameof(LoadSongTip));
+            OnPropertyChanged(nameof(LoadNextTip));
+        };
         _songbook = songbook;
         _playlist.Changed += Refresh;
         _songbook.Changed += () => OnPropertyChanged(nameof(HasRequests));
@@ -66,7 +77,13 @@ public sealed partial class QueueViewModel : ViewModelBase
 
     [RelayCommand(CanExecute = nameof(CanLoadNext))]
     private Task LoadNextAsync() => _playlist.Next is { } next ? LoadAsync(next) : Task.CompletedTask;
-    private bool CanLoadNext() => _playlist.Next is not null;
+    private bool CanLoadNext() => _playlist.Next is not null && _nowPlaying.CanLoadSong;
+
+    internal bool CanLoadSong => _nowPlaying.CanLoadSong;
+
+    public string LoadSongTip => _nowPlaying.LoadSongTip;
+
+    public string LoadNextTip => _nowPlaying.CanLoadSong ? "Load the next song into the Game Player" : _nowPlaying.LoadSongTip;
 
     [RelayCommand(CanExecute = nameof(HasItems))]
     private void Clear() => _playlist.Clear();
@@ -81,7 +98,8 @@ public sealed partial class QueueRowViewModel(Song song, int number, bool isActi
     public string Title => Song.Title;
     public string Artist => Song.Artist;
 
-    [RelayCommand] private Task LoadAsync() => owner.LoadAsync(Song);
+    [RelayCommand(CanExecute = nameof(CanLoad))] private Task LoadAsync() => owner.LoadAsync(Song);
+    private bool CanLoad() => owner.CanLoadSong;
     [RelayCommand] private void Remove() => owner.Remove(Song);
     [RelayCommand] private void MoveUp() => owner.MoveUp(Song);
     [RelayCommand] private void MoveDown() => owner.MoveDown(Song);
