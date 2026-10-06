@@ -1,0 +1,182 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:UltrastarDJ.App.ViewModels"
+             xmlns:c="using:UltrastarDJ.App.Controls"
+             x:Class="UltrastarDJ.App.Views.SongDetailsView"
+             x:DataType="vm:SongDetailsViewModel">
+
+  <UserControl.Resources>
+    <DataTemplate x:Key="FieldRow" x:DataType="vm:DetailField">
+      <Grid ColumnDefinitions="120,*" Margin="0,2">
+        <TextBlock Classes="muted" Text="{Binding Label}" FontSize="{StaticResource TextSm}" />
+        <SelectableTextBlock Grid.Column="1" Text="{Binding Value}" FontSize="{StaticResource TextSm}" TextWrapping="Wrap" />
+      </Grid>
+    </DataTemplate>
+  </UserControl.Resources>
+
+  <Border Classes="card floating" Width="860" Padding="{StaticResource Pad6}">
+    <DockPanel>
+      <!-- Header: picture, title, artist, source; close -->
+      <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,16">
+        <Border Width="96" Height="96" CornerRadius="{StaticResource RadiusMd}" ClipToBounds="True"
+                Background="{DynamicResource BrushSurfaceContainerHighest}">
+          <Panel>
+            <c:Icon Glyph="music_note" FontSize="{StaticResource IconXl}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                    IsVisible="{Binding Picture, Converter={x:Static ObjectConverters.IsNull}}" />
+            <Image Source="{Binding Picture}" Stretch="UniformToFill" />
+          </Panel>
+        </Border>
+        <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center" Spacing="{StaticResource Space1}">
+          <SelectableTextBlock Text="{Binding Title}" FontSize="{StaticResource Text2Xl}" FontWeight="{StaticResource WeightBold}" TextWrapping="Wrap" />
+          <SelectableTextBlock Text="{Binding Artist}" Classes="muted" FontSize="{StaticResource TextLg}" TextWrapping="Wrap" />
+          <Border Background="{DynamicResource BrushSecondaryContainer}" CornerRadius="{StaticResource RadiusFull}" Padding="8,2"
+                  HorizontalAlignment="Left" Margin="0,4,0,0" Classes.usdb="{Binding IsUsdb}">
+            <Border.Styles>
+              <Style Selector="Border.usdb">
+                <Setter Property="Background" Value="{DynamicResource BrushUsdb}" />
+              </Style>
+            </Border.Styles>
+            <TextBlock Text="{Binding Source}" FontSize="{StaticResource TextXs}" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
+          </Border>
+        </StackPanel>
+        <Button Grid.Column="2" Classes="sidebar" VerticalAlignment="Top" Command="{Binding CloseCommand}" ToolTip.Tip="Close (Esc)">
+          <c:Icon Glyph="close" FontSize="{StaticResource IconLg}" />
+        </Button>
+      </Grid>
+
+      <!-- Footer: open elsewhere (left), song actions (right) -->
+      <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto" Margin="0,16,0,0">
+        <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space2}">
+          <Button Classes="text" Click="OnShowInFolder" IsVisible="{Binding Folder, Converter={x:Static ObjectConverters.IsNotNull}}"
+                  ToolTip.Tip="Show the song's .txt in Finder (Explorer on Windows)">
+            <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
+              <c:Icon Glyph="folder_open" FontSize="{StaticResource IconLg}" VerticalAlignment="Center" />
+              <TextBlock Text="Show in Finder" VerticalAlignment="Center" />
+            </StackPanel>
+          </Button>
+          <Button Classes="text" Click="OnOpenUsdb" IsVisible="{Binding IsUsdb}" ToolTip.Tip="Open this song's page on usdb.animux.de">
+            <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
+              <c:Icon Glyph="open_in_new" FontSize="{StaticResource IconLg}" VerticalAlignment="Center" />
+              <TextBlock Text="Open on USDB" VerticalAlignment="Center" />
+            </StackPanel>
+          </Button>
+          <Button Classes="text" Click="OnOpenYouTube" IsVisible="{Binding HasYouTube}" ToolTip.Tip="Open the song's video on YouTube">
+            <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
+              <c:Icon Glyph="smart_display" FontSize="{StaticResource IconLg}" VerticalAlignment="Center" />
+              <TextBlock Text="Open on YouTube" VerticalAlignment="Center" />
+            </StackPanel>
+          </Button>
+        </StackPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="{StaticResource Space2}">
+          <Button Classes="text" Command="{Binding PreviewCommand}">
+            <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
+              <c:Icon Glyph="play_arrow" FontSize="{StaticResource IconLg}" VerticalAlignment="Center" />
+              <TextBlock Text="Preview" VerticalAlignment="Center" />
+            </StackPanel>
+          </Button>
+          <Button Classes="text" Command="{Binding AddToQueueCommand}">
+            <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
+              <c:Icon Glyph="queue_music" FontSize="{StaticResource IconLg}" VerticalAlignment="Center" />
+              <TextBlock Text="Add to queue" VerticalAlignment="Center" />
+            </StackPanel>
+          </Button>
+          <Button Classes="tonal" Command="{Binding LoadIntoGameCommand}" ToolTip.Tip="{Binding LoadTip}" ToolTip.ShowOnDisabled="True">
+            <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
+              <c:Icon Glyph="play_circle" FontSize="{StaticResource IconLg}" Foreground="{DynamicResource BrushOnSecondaryContainer}" VerticalAlignment="Center" />
+              <TextBlock Text="Load into game" Foreground="{DynamicResource BrushOnSecondaryContainer}" VerticalAlignment="Center" />
+            </StackPanel>
+          </Button>
+        </StackPanel>
+      </Grid>
+
+      <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="{StaticResource Space3}">
+          <TextBlock Classes="muted" Text="{Binding Status}" TextWrapping="Wrap"
+                     IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+          <Grid ColumnDefinitions="*,16,*">
+            <Border Classes="card">
+              <StackPanel Spacing="{StaticResource Space2}">
+                <TextBlock Classes="label" Text="SONG" />
+                <ItemsControl ItemsSource="{Binding Fields}" ItemTemplate="{StaticResource FieldRow}" />
+              </StackPanel>
+            </Border>
+            <Border Grid.Column="2" Classes="card">
+              <StackPanel Spacing="{StaticResource Space2}">
+                <TextBlock Classes="label" Text="NOTES" />
+                <ItemsControl ItemsSource="{Binding Summary}" ItemTemplate="{StaticResource FieldRow}" />
+                <TextBlock Classes="muted" Text="Loading…" FontSize="{StaticResource TextSm}" IsVisible="{Binding Loading}" />
+              </StackPanel>
+            </Border>
+          </Grid>
+
+          <Border Classes="card" IsVisible="{Binding HasFiles}">
+            <StackPanel Spacing="{StaticResource Space2}">
+              <TextBlock Classes="label" Text="FILES" />
+              <SelectableTextBlock Classes="muted" Text="{Binding Folder}" FontSize="{StaticResource TextXs}" FontFamily="{StaticResource FontMono}" TextWrapping="Wrap" />
+              <ItemsControl ItemsSource="{Binding Files}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:DetailFile">
+                    <Grid ColumnDefinitions="30,96,*" Margin="0,2" ToolTip.Tip="{Binding Path}">
+                      <c:Icon Glyph="{Binding Glyph}" FontSize="{StaticResource IconLg}" Classes.missing="{Binding !Exists}" VerticalAlignment="Center">
+                        <c:Icon.Styles>
+                          <Style Selector="c|Icon">
+                            <Setter Property="Foreground" Value="{DynamicResource BrushPrimary}" />
+                          </Style>
+                          <Style Selector="c|Icon.missing">
+                            <Setter Property="Foreground" Value="{DynamicResource BrushError}" />
+                          </Style>
+                        </c:Icon.Styles>
+                      </c:Icon>
+                      <TextBlock Grid.Column="1" Classes="muted" Text="{Binding Label}" FontSize="{StaticResource TextSm}" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="2" Text="{Binding Name}" FontSize="{StaticResource TextSm}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </Border>
+
+          <Border Classes="card" IsVisible="{Binding HasProblems}">
+            <StackPanel Spacing="{StaticResource Space2}">
+              <TextBlock Classes="label" Text="PROBLEMS" />
+              <ItemsControl ItemsSource="{Binding Problems}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="x:String">
+                    <Grid ColumnDefinitions="30,*" Margin="0,2">
+                      <c:Icon Glyph="warning" FontSize="{StaticResource IconLg}" Foreground="{DynamicResource BrushError}" VerticalAlignment="Top" />
+                      <TextBlock Grid.Column="1" Text="{Binding}" FontSize="{StaticResource TextSm}" TextWrapping="Wrap" />
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </Border>
+          <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space2}" IsVisible="{Binding NoProblems}" Margin="4,0">
+            <c:Icon Glyph="check_circle" FontSize="{StaticResource IconLg}" Foreground="{DynamicResource BrushPrimary}" VerticalAlignment="Center" />
+            <TextBlock Classes="muted" Text="No problems found in the song file" FontSize="{StaticResource TextSm}" VerticalAlignment="Center" />
+          </StackPanel>
+
+          <Border Classes="card" IsVisible="{Binding HasTxt}">
+            <StackPanel Spacing="{StaticResource Space2}">
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Classes="label" Text=".TXT FILE" VerticalAlignment="Center" />
+                <Button Grid.Column="1" Classes="text" Click="OnCopyTxt" ToolTip.Tip="Copy the whole song text">
+                  <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
+                    <c:Icon Glyph="content_copy" FontSize="{StaticResource IconLg}" VerticalAlignment="Center" />
+                    <TextBlock Text="Copy" VerticalAlignment="Center" />
+                  </StackPanel>
+                </Button>
+              </Grid>
+              <Border Background="{DynamicResource BrushSurfaceContainerLowest}" CornerRadius="{StaticResource RadiusMd}" Padding="{StaticResource Pad2}">
+                <ScrollViewer MaxHeight="280" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                  <SelectableTextBlock Text="{Binding Txt}" FontFamily="{StaticResource FontMono}" FontSize="{StaticResource TextXs}" />
+                </ScrollViewer>
+              </Border>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </ScrollViewer>
+    </DockPanel>
+  </Border>
+</UserControl>

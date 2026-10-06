@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Styling;
 using UltrastarDJ.App.Game;
+using UltrastarDJ.App.Library;
 using UltrastarDJ.Core.Abstractions;
 using UltrastarDJ.Core.Game;
 
@@ -31,6 +32,18 @@ public sealed class AppSettingsService
     public bool NowPlayingHidden => _doc.NowPlayingHidden;
     /// <summary>Top-left of the floating Now Playing card in window coordinates; null = default placement.</summary>
     public (double X, double Y)? NowPlayingPosition => _doc.NowPlayingX is { } x && _doc.NowPlayingY is { } y ? (x, y) : null;
+
+    /// <summary>Library columns to show (Layout panel).</summary>
+    public IReadOnlySet<LibraryColumn> VisibleColumns => _doc.VisibleColumns is { } v ? v.ToHashSet() : LibraryColumns.DefaultVisible;
+
+    public void SetColumnVisible(LibraryColumn column, bool visible)
+    {
+        HashSet<LibraryColumn> set = [.. VisibleColumns];
+        if (visible ? set.Add(column) : set.Remove(column))
+        {
+            Update(_doc with { VisibleColumns = [.. LibraryColumns.All.Where(set.Contains)] });
+        }
+    }
 
     public void SetLightTheme(bool light) => Update(_doc with { LightTheme = light });
     public void SetShowTooltips(bool show) => Update(_doc with { HideTooltips = !show });
@@ -67,6 +80,8 @@ public sealed class AppSettingsService
         public NoteBarStyle NoteBarStyle { get; init; }
         public double? NowPlayingX { get; init; }
         public double? NowPlayingY { get; init; }
+        /// <summary>Null = <see cref="LibraryColumns.DefaultVisible"/> (files written before the Layout panel).</summary>
+        public IReadOnlyList<LibraryColumn>? VisibleColumns { get; init; }
 
         public static AppSettingsDocument Default() => new(false, Difficulty.Medium, 0);
     }

@@ -312,6 +312,19 @@ Details: `03-game-engine.md` "Mic plug / unplug".
 
 ---
 
+## Sprint 11 — Fixes  *(in progress)*
+
+- [x] Library filters: Language and Genre list each value once, never "French, English" (`Core.Songs.ValueList`, tested, as usdb_syncer: languages split on `, ; / |`, genres on commas; "(romanized)" stays its own entry). Choosing a value finds every song that has it among its entries ("French" → "French", "English, French", "Chinese (romanized), French"). USDB catalog: 148 → 85 languages, 946 → 700 genres. The table column keeps the original text.
+- [x] Filter drop-downs have a fixed width — that of their widest entry (`Controls.FitWidestItem`); they no longer jump while scrolling through genres.
+- [x] Layout panel (was a placeholder): toggles for every library column — Artist, Year, Language, Genre, Edition, Creator, BPM, Rating, Source, Media (Title always shown); persisted in the app settings; defaults as before plus Genre. New columns sortable (`SongSort` Genre/Edition/Creator/Bpm, tested).
+- [x] Library table: fixed column widths (Language 170 px fits "(romanized)"), Title and Artist share the rest; when the visible columns need more than the window, the table scrolls horizontally instead of squeezing them.
+- [x] Song menus (right-click and ⋮): icons as in the prototype (Preview ▶, Add to queue, Load into game), divider, **Details**.
+- [x] Details popup (centre of the window; ✕, Esc or a click outside closes): picture, title, artist, source; tags (year … END, USDB id/views); notes summary (`Core.Songs.SongSummary`, tested — singing ends at, solo/duet with names, phrases/notes, golden share, rap/freestyle, pitch range e.g. G3 – G4); files with ✓/✗ and the folder (Show in Finder); problems (`Core.Songs.SongCheck`, tested — validator errors, missing files, #VIDEOGAP without video, no #LANGUAGE, overlapping or zero-length notes, #START/#END outside the notes); the .txt with Copy; Open on USDB / YouTube; Preview, Add to queue, Load into game. USDB songs fetch their text like Preview (cached).
+- [x] Menu icons 24 px (Fluent's 16 px icon box widened for all menus).
+- [x] Verified live: filters, Layout panel, table scrolling, menus, Details popup.
+
+---
+
 ## Later / ideas
 
 - Cap mpv read-ahead (~60 s) so YouTube streams like a player instead of pulling the whole song into RAM

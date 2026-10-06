@@ -9,6 +9,10 @@ public enum SongSort
     Source,
     /// <summary>By USDB views; local songs (no views) count as lowest.</summary>
     Rating,
+    Genre,
+    Edition,
+    Creator,
+    Bpm,
 }
 
 /// <summary>
@@ -19,9 +23,9 @@ public sealed record SongQuery
 {
     /// <summary>Substring of title or artist; empty matches everything.</summary>
     public string Search { get; init; } = "";
-    /// <summary><c>null</c> = any language.</summary>
+    /// <summary><c>null</c> = any language. One entry of the song's list ("French" finds "English, French").</summary>
     public string? Language { get; init; }
-    /// <summary><c>null</c> = any genre.</summary>
+    /// <summary><c>null</c> = any genre. One entry of the song's list, like <see cref="Language"/>.</summary>
     public string? Genre { get; init; }
     /// <summary>Song sources to keep (<see cref="Song.SourceId"/>); <c>null</c> = all sources.</summary>
     public IReadOnlySet<string>? SourceIds { get; init; }
@@ -43,12 +47,12 @@ public sealed record SongQuery
 
         if (Language is not null)
         {
-            filtered = filtered.Where(s => string.Equals(s.Language, Language, StringComparison.OrdinalIgnoreCase));
+            filtered = filtered.Where(s => ValueList.Contains(s.Language, Language, ValueList.LanguageSeparators));
         }
 
         if (Genre is not null)
         {
-            filtered = filtered.Where(s => string.Equals(s.Genre, Genre, StringComparison.OrdinalIgnoreCase));
+            filtered = filtered.Where(s => ValueList.Contains(s.Genre, Genre, ValueList.GenreSeparators));
         }
 
         if (Stars is { } stars)
@@ -68,6 +72,10 @@ public sealed record SongQuery
             SongSort.Language => Order(filtered, s => s.Language ?? ""),
             SongSort.Source => Order(filtered, s => sourceLabel(s.SourceId)),
             SongSort.Rating => Order(filtered, s => s.UsdbViews ?? -1),
+            SongSort.Genre => Order(filtered, s => s.Genre ?? ""),
+            SongSort.Edition => Order(filtered, s => s.Edition ?? ""),
+            SongSort.Creator => Order(filtered, s => s.Creator ?? ""),
+            SongSort.Bpm => Order(filtered, s => s.Bpm),
             _ => Order(filtered, s => s.Artist),
         };
 

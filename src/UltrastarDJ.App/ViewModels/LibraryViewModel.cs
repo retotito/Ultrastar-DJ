@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using UltrastarDJ.App.Library;
 using UltrastarDJ.App.Services;
 using UltrastarDJ.Core.Songs;
 
@@ -15,6 +16,10 @@ public sealed record LibraryRow(Song Song, string Source, bool IsAvailable)
     public int? Year => Song.Year;
     public string? Language => Song.Language;
     public string? Genre => Song.Genre;
+    public string? Edition => Song.Edition;
+    public string? Creator => Song.Creator;
+    /// <summary>The file's #BPM; USDB catalog entries without a txt yet have none.</summary>
+    public string Bpm => Song.Bpm > 0 ? Song.Bpm.ToString("0", System.Globalization.CultureInfo.InvariantCulture) : "—";
     public bool IsUsdb => Song.UsdbId is not null;
     public bool HasLocalAudio => Song.HasLocalAudio;
     public bool HasLocalVideo => Song.HasLocalVideo;
@@ -68,8 +73,9 @@ public sealed partial class LibraryViewModel : ViewModelBase
     [ObservableProperty] private SourceOption? _source = AllSources;
     [ObservableProperty] private bool _descending;
 
-    public LibraryViewModel(LibraryService library, PreviewViewModel preview, QueueViewModel queue, NowPlayingViewModel nowPlaying)
+    public LibraryViewModel(LibraryService library, PreviewViewModel preview, QueueViewModel queue, NowPlayingViewModel nowPlaying, AppSettingsService settings)
     {
+        Table = new LibraryTableLayout(settings);
         _library = library;
         _preview = preview;
         _queue = queue;
@@ -111,6 +117,13 @@ public sealed partial class LibraryViewModel : ViewModelBase
     public string LanguageHeader => "LANGUAGE" + SortIndicator(SongSort.Language);
     public string SourceHeader => "SOURCE" + SortIndicator(SongSort.Source);
     public string RatingHeader => "RATING" + SortIndicator(SongSort.Rating);
+    public string GenreHeader => "GENRE" + SortIndicator(SongSort.Genre);
+    public string EditionHeader => "EDITION" + SortIndicator(SongSort.Edition);
+    public string CreatorHeader => "CREATOR" + SortIndicator(SongSort.Creator);
+    public string BpmHeader => "BPM" + SortIndicator(SongSort.Bpm);
+
+    /// <summary>Column widths and visibility (Layout panel).</summary>
+    public LibraryTableLayout Table { get; }
 
     [RelayCommand]
     private void SortBy(SongSort column)
@@ -131,12 +144,28 @@ public sealed partial class LibraryViewModel : ViewModelBase
         OnPropertyChanged(nameof(LanguageHeader));
         OnPropertyChanged(nameof(SourceHeader));
         OnPropertyChanged(nameof(RatingHeader));
+        OnPropertyChanged(nameof(GenreHeader));
+        OnPropertyChanged(nameof(EditionHeader));
+        OnPropertyChanged(nameof(CreatorHeader));
+        OnPropertyChanged(nameof(BpmHeader));
         Refresh();
     }
 
     /// <summary>Double-click / Enter.</summary>
     [RelayCommand]
     private Task PreviewAsync(LibraryRow? row) => row is null ? Task.CompletedTask : _preview.LoadCommand.ExecuteAsync(row.Song);
+
+    /// <summary>The DJ window shows the Details popup (it owns the overlay).</summary>
+    public event Action<LibraryRow>? DetailsRequested;
+
+    [RelayCommand]
+    private void ShowDetails(LibraryRow? row)
+    {
+        if (row is not null)
+        {
+            DetailsRequested?.Invoke(row);
+        }
+    }
 
     [RelayCommand]
     private void AddToQueue(LibraryRow? row)
@@ -201,8 +230,9 @@ public sealed partial class LibraryViewModel : ViewModelBase
 
     private void RefreshFilterValues(IReadOnlyList<Song> all)
     {
-        Sync(Languages, AnyLanguage, all.Select(s => s.Language).Where(l => !string.IsNullOrWhiteSpace(l)).Select(l => l!).Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase));
-        Sync(Genres, AnyGenre, all.Select(s => s.Genre).Where(g => !string.IsNullOrWhiteSpace(g)).Select(g => g!).Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase));
+        // Each language / genre once, never "French, English" (ValueList, as usdb_syncer).
+        Sync(Languages, AnyLanguage, ValueList.Distinct(all.Select(s => s.Language), ValueList.LanguageSeparators));
+        Sync(Genres, AnyGenre, ValueList.Distinct(all.Select(s => s.Genre), ValueList.GenreSeparators));
         List<SourceOption> sources = [AllSources];
         if (_library.Sources.Count > 1 || (_library.Sources.Count > 0 && _library.UsdbCount > 0))
         {

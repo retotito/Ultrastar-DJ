@@ -30,10 +30,10 @@
             BorderBrush="{DynamicResource BrushOutlineVariant}" BorderThickness="0,0,0,1">
       <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto,Auto">
         <TextBox Grid.Column="0" Margin="0,0,16,0" Classes="clearButton" PlaceholderText="Search title or artist  —  double-click: preview · ⋮ or right-click: queue / game" Text="{Binding Search}" />
-        <ComboBox Grid.Column="1" ItemsSource="{Binding Ratings}" SelectedItem="{Binding Rating}" MinWidth="110" Margin="0,0,8,0" ToolTip.Tip="Popularity on USDB (★ 100–499, ★★ 500–999, ★★★ 1000–1999, ★★★★ 2000+ views) — hides local songs" />
-        <ComboBox Grid.Column="2" ItemsSource="{Binding Languages}" SelectedItem="{Binding Language}" MinWidth="120" Margin="0,0,8,0" ToolTip.Tip="Language" />
-        <ComboBox Grid.Column="3" ItemsSource="{Binding Genres}" SelectedItem="{Binding Genre}" MinWidth="120" Margin="0,0,8,0" ToolTip.Tip="Genre" />
-        <ComboBox Grid.Column="4" ItemsSource="{Binding Sources}" SelectedItem="{Binding Source}" MinWidth="140" ToolTip.Tip="Song source" />
+        <ComboBox Grid.Column="1" ItemsSource="{Binding Ratings}" c:FitWidestItem.IsEnabled="True" SelectedItem="{Binding Rating}" MinWidth="110" Margin="0,0,8,0" ToolTip.Tip="Popularity on USDB (★ 100–499, ★★ 500–999, ★★★ 1000–1999, ★★★★ 2000+ views) — hides local songs" />
+        <ComboBox Grid.Column="2" ItemsSource="{Binding Languages}" c:FitWidestItem.IsEnabled="True" SelectedItem="{Binding Language}" MinWidth="120" Margin="0,0,8,0" ToolTip.Tip="Language" />
+        <ComboBox Grid.Column="3" ItemsSource="{Binding Genres}" c:FitWidestItem.IsEnabled="True" SelectedItem="{Binding Genre}" MinWidth="120" Margin="0,0,8,0" ToolTip.Tip="Genre" />
+        <ComboBox Grid.Column="4" ItemsSource="{Binding Sources}" c:FitWidestItem.IsEnabled="True" SelectedItem="{Binding Source}" MinWidth="140" ToolTip.Tip="Song source" />
         <Button Grid.Column="5" Classes="text" Margin="8,0,0,0" Command="{Binding ClearFiltersCommand}"
                 IsVisible="{Binding HasActiveFilters}" ToolTip.Tip="Reset rating, language, genre and source">
           <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
@@ -44,76 +44,146 @@
       </Grid>
     </Border>
 
-    <!-- Header row: click to sort -->
-    <Grid Grid.Row="1" ColumnDefinitions="2*,2*,60,90,70,90,60,36" Margin="12,6">
-      <Button Grid.Column="0" Classes="header" Command="{Binding SortByCommand}" CommandParameter="{x:Static core:SongSort.Title}"><TextBlock Classes="label" Text="{Binding TitleHeader}" /></Button>
-      <Button Grid.Column="1" Classes="header" Command="{Binding SortByCommand}" CommandParameter="{x:Static core:SongSort.Artist}"><TextBlock Classes="label" Text="{Binding ArtistHeader}" /></Button>
-      <Button Grid.Column="2" Classes="header" Command="{Binding SortByCommand}" CommandParameter="{x:Static core:SongSort.Year}"><TextBlock Classes="label" Text="{Binding YearHeader}" /></Button>
-      <Button Grid.Column="3" Classes="header" Command="{Binding SortByCommand}" CommandParameter="{x:Static core:SongSort.Language}"><TextBlock Classes="label" Text="{Binding LanguageHeader}" /></Button>
-      <Button Grid.Column="4" Classes="header" Command="{Binding SortByCommand}" CommandParameter="{x:Static core:SongSort.Rating}"><TextBlock Classes="label" Text="{Binding RatingHeader}" /></Button>
-      <Button Grid.Column="5" Classes="header" Command="{Binding SortByCommand}" CommandParameter="{x:Static core:SongSort.Source}"><TextBlock Classes="label" Text="{Binding SourceHeader}" /></Button>
-      <TextBlock Grid.Column="6" Classes="label" Text="MEDIA" />
-    </Grid>
+    <!-- Table: header + rows share the column definitions (LibraryTableLayout). Wider than the window → it scrolls
+         horizontally (TableGrid width set in code-behind); the list keeps its own vertical scrolling. -->
+    <ScrollViewer Grid.Row="1" Grid.RowSpan="2" x:Name="TableScroll" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+      <Grid x:Name="TableGrid" RowDefinitions="Auto,*" HorizontalAlignment="Left">
+        <!-- Header row: click to sort -->
+        <Grid Grid.Row="0" Margin="16,6">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2*" MinWidth="{Binding Table.TitleMinWidth}" />
+            <ColumnDefinition Width="{Binding Table.ArtistWidth}" MinWidth="{Binding Table.ArtistMinWidth}" />
+            <ColumnDefinition Width="{Binding Table.YearWidth}" />
+            <ColumnDefinition Width="{Binding Table.LanguageWidth}" />
+            <ColumnDefinition Width="{Binding Table.GenreWidth}" />
+            <ColumnDefinition Width="{Binding Table.EditionWidth}" />
+            <ColumnDefinition Width="{Binding Table.CreatorWidth}" />
+            <ColumnDefinition Width="{Binding Table.BpmWidth}" />
+            <ColumnDefinition Width="{Binding Table.RatingWidth}" />
+            <ColumnDefinition Width="{Binding Table.SourceWidth}" />
+            <ColumnDefinition Width="{Binding Table.MediaWidth}" />
+            <ColumnDefinition Width="{Binding Table.ActionsWidth}" />
+          </Grid.ColumnDefinitions>
+          <Button Grid.Column="0" Classes="header" Command="{Binding SortByCommand}" CommandParameter="{x:Static core:SongSort.Title}"><TextBlock Classes="label" Text="{Binding TitleHeader}" /></Button>
+          <Button Grid.Column="1" Classes="header" IsVisible="{Binding Table.ShowArtist}" Command="{Binding SortByCommand}" CommandParameter="{x:Static core:SongSort.Artist}"><TextBlock Classes="label" Text="{Binding ArtistHeader}" TextTrimming="CharacterEllipsis" /></Button>
+          <Button Grid.Column="2" Classes="header" IsVisible="{Binding Table.ShowYear}" Command="{Binding SortByCommand}" CommandParameter="{x:Static core:SongSort.Year}"><TextBlock Classes="label" Text="{Binding YearHeader}" TextTrimming="CharacterEllipsis" /></Button>
+          <Button Grid.Column="3" Classes="header" IsVisible="{Binding Table.ShowLanguage}" Command="{Binding SortByCommand}" CommandParameter="{x:Static core:SongSort.Language}"><TextBlock Classes="label" Text="{Binding LanguageHeader}" TextTrimming="CharacterEllipsis" /></Button>
+          <Button Grid.Column="4" Classes="header" IsVisible="{Binding Table.ShowGenre}" Command="{Binding SortByCommand}" CommandParameter="{x:Static core:SongSort.Genre}"><TextBlock Classes="label" Text="{Binding GenreHeader}" TextTrimming="CharacterEllipsis" /></Button>
+          <Button Grid.Column="5" Classes="header" IsVisible="{Binding Table.ShowEdition}" Command="{Binding SortByCommand}" CommandParameter="{x:Static core:SongSort.Edition}"><TextBlock Classes="label" Text="{Binding EditionHeader}" TextTrimming="CharacterEllipsis" /></Button>
+          <Button Grid.Column="6" Classes="header" IsVisible="{Binding Table.ShowCreator}" Command="{Binding SortByCommand}" CommandParameter="{x:Static core:SongSort.Creator}"><TextBlock Classes="label" Text="{Binding CreatorHeader}" TextTrimming="CharacterEllipsis" /></Button>
+          <Button Grid.Column="7" Classes="header" IsVisible="{Binding Table.ShowBpm}" Command="{Binding SortByCommand}" CommandParameter="{x:Static core:SongSort.Bpm}"><TextBlock Classes="label" Text="{Binding BpmHeader}" TextTrimming="CharacterEllipsis" /></Button>
+          <Button Grid.Column="8" Classes="header" IsVisible="{Binding Table.ShowRating}" Command="{Binding SortByCommand}" CommandParameter="{x:Static core:SongSort.Rating}"><TextBlock Classes="label" Text="{Binding RatingHeader}" TextTrimming="CharacterEllipsis" /></Button>
+          <Button Grid.Column="9" Classes="header" IsVisible="{Binding Table.ShowSource}" Command="{Binding SortByCommand}" CommandParameter="{x:Static core:SongSort.Source}"><TextBlock Classes="label" Text="{Binding SourceHeader}" TextTrimming="CharacterEllipsis" /></Button>
+          <TextBlock Grid.Column="10" Classes="label" Text="MEDIA" IsVisible="{Binding Table.ShowMedia}" />
+        </Grid>
 
-    <ListBox Grid.Row="2" x:Name="SongList" ItemsSource="{Binding Rows}" SelectedItem="{Binding Selected}"
-             Background="Transparent" BorderThickness="0" Padding="4,0">
-      <ListBox.ItemsPanel>
-        <ItemsPanelTemplate>
-          <VirtualizingStackPanel />
-        </ItemsPanelTemplate>
-      </ListBox.ItemsPanel>
-      <ListBox.ItemTemplate>
-        <DataTemplate x:DataType="vm:LibraryRow">
-          <Grid ColumnDefinitions="2*,2*,60,90,70,90,60,36" Height="32" Background="Transparent" Opacity="{Binding Opacity}"
-                ToolTip.Tip="{Binding IsAvailable, Converter={x:Static vm:PlayerConverters.AvailabilityTooltip}}">
-            <Grid.ContextMenu>
-              <ContextMenu>
-                <MenuItem Header="Preview" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).PreviewCommand}" CommandParameter="{Binding}" />
-                <MenuItem Header="Add to queue" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).AddToQueueCommand}" CommandParameter="{Binding}" />
-                <MenuItem Header="Load into game" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).LoadIntoGameCommand}" CommandParameter="{Binding}"
-                          ToolTip.Tip="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).LoadSongTip}" />
-              </ContextMenu>
-            </Grid.ContextMenu>
-            <TextBlock Grid.Column="0" Text="{Binding Title}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-            <TextBlock Grid.Column="1" Text="{Binding Artist}" Classes="muted" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-            <TextBlock Grid.Column="2" Text="{Binding Year}" Classes="muted" VerticalAlignment="Center" />
-            <TextBlock Grid.Column="3" Text="{Binding Language}" Classes="muted" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-            <TextBlock Grid.Column="4" Text="{Binding Stars}" Classes="muted" VerticalAlignment="Center" />
-            <Border Grid.Column="5" Background="{DynamicResource BrushSecondaryContainer}" CornerRadius="{StaticResource RadiusFull}" Padding="8,2" HorizontalAlignment="Left" VerticalAlignment="Center"
-                    Classes.usdb="{Binding IsUsdb}">
-              <Border.Styles>
-                <Style Selector="TextBlock">
-                  <Setter Property="Foreground" Value="{DynamicResource BrushOnSecondaryContainer}" />
-                </Style>
-                <Style Selector="Border.usdb">
-                  <Setter Property="Background" Value="{DynamicResource BrushUsdb}" />
-                </Style>
-                <Style Selector="Border.usdb TextBlock">
-                  <Setter Property="Foreground" Value="White" />
-                </Style>
-              </Border.Styles>
-              <TextBlock Text="{Binding Source}" FontSize="{StaticResource TextXs}" TextTrimming="CharacterEllipsis" MaxWidth="70" />
-            </Border>
-            <StackPanel Grid.Column="6" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
-              <c:Icon Glyph="music_note" FontSize="{StaticResource IconSm}" IsVisible="{Binding HasLocalAudio}" ToolTip.Tip="Local audio" />
-              <c:Icon Glyph="movie" FontSize="{StaticResource IconSm}" IsVisible="{Binding HasLocalVideo}" ToolTip.Tip="Local video" />
-              <c:Icon Glyph="smart_display" FontSize="{StaticResource IconSm}" IsVisible="{Binding HasYouTube}" ToolTip.Tip="YouTube" />
-            </StackPanel>
-            <Button Grid.Column="7" Classes="sidebar" Width="28" Height="28" ToolTip.Tip="Actions">
-              <Button.Flyout>
-                <MenuFlyout>
-                  <MenuItem Header="Preview" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).PreviewCommand}" CommandParameter="{Binding}" />
-                  <MenuItem Header="Add to queue" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).AddToQueueCommand}" CommandParameter="{Binding}" />
-                  <MenuItem Header="Load into game" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).LoadIntoGameCommand}" CommandParameter="{Binding}"
-                          ToolTip.Tip="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).LoadSongTip}" />
-                </MenuFlyout>
-              </Button.Flyout>
-              <c:Icon Glyph="more_vert" FontSize="{StaticResource IconMd}" />
-            </Button>
-          </Grid>
-        </DataTemplate>
-      </ListBox.ItemTemplate>
-    </ListBox>
+        <ListBox Grid.Row="1" x:Name="SongList" ItemsSource="{Binding Rows}" SelectedItem="{Binding Selected}"
+                 Background="Transparent" BorderThickness="0" Padding="4,0">
+          <ListBox.ItemsPanel>
+            <ItemsPanelTemplate>
+              <VirtualizingStackPanel />
+            </ItemsPanelTemplate>
+          </ListBox.ItemsPanel>
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:LibraryRow">
+              <Grid Height="32" Background="Transparent" Opacity="{Binding Opacity}"
+                    ToolTip.Tip="{Binding IsAvailable, Converter={x:Static vm:PlayerConverters.AvailabilityTooltip}}">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="2*" MinWidth="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).Table.TitleMinWidth}" />
+                  <ColumnDefinition Width="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).Table.ArtistWidth}" MinWidth="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).Table.ArtistMinWidth}" />
+                  <ColumnDefinition Width="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).Table.YearWidth}" />
+                  <ColumnDefinition Width="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).Table.LanguageWidth}" />
+                  <ColumnDefinition Width="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).Table.GenreWidth}" />
+                  <ColumnDefinition Width="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).Table.EditionWidth}" />
+                  <ColumnDefinition Width="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).Table.CreatorWidth}" />
+                  <ColumnDefinition Width="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).Table.BpmWidth}" />
+                  <ColumnDefinition Width="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).Table.RatingWidth}" />
+                  <ColumnDefinition Width="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).Table.SourceWidth}" />
+                  <ColumnDefinition Width="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).Table.MediaWidth}" />
+                  <ColumnDefinition Width="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).Table.ActionsWidth}" />
+                </Grid.ColumnDefinitions>
+                <Grid.ContextMenu>
+                  <ContextMenu>
+                    <MenuItem Header="Preview" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).PreviewCommand}" CommandParameter="{Binding}">
+                      <MenuItem.Icon><c:Icon Glyph="play_arrow" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Add to queue" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).AddToQueueCommand}" CommandParameter="{Binding}">
+                      <MenuItem.Icon><c:Icon Glyph="queue_music" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Load into game" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).LoadIntoGameCommand}" CommandParameter="{Binding}"
+                              ToolTip.Tip="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).LoadSongTip}">
+                      <MenuItem.Icon><c:Icon Glyph="play_circle" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
+                    </MenuItem>
+                    <Separator />
+                    <MenuItem Header="Details" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).ShowDetailsCommand}" CommandParameter="{Binding}">
+                      <MenuItem.Icon><c:Icon Glyph="info" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
+                    </MenuItem>
+                  </ContextMenu>
+                </Grid.ContextMenu>
+                <TextBlock Grid.Column="0" Text="{Binding Title}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                <TextBlock Grid.Column="1" Text="{Binding Artist}" Classes="muted" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,8,0"
+                           IsVisible="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).Table.ShowArtist}" />
+                <TextBlock Grid.Column="2" Text="{Binding Year}" Classes="muted" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,8,0"
+                           IsVisible="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).Table.ShowYear}" />
+                <TextBlock Grid.Column="3" Text="{Binding Language}" Classes="muted" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,8,0"
+                           IsVisible="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).Table.ShowLanguage}" />
+                <TextBlock Grid.Column="4" Text="{Binding Genre}" Classes="muted" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,8,0"
+                           IsVisible="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).Table.ShowGenre}" />
+                <TextBlock Grid.Column="5" Text="{Binding Edition}" Classes="muted" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,8,0"
+                           IsVisible="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).Table.ShowEdition}" />
+                <TextBlock Grid.Column="6" Text="{Binding Creator}" Classes="muted" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,8,0"
+                           IsVisible="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).Table.ShowCreator}" />
+                <TextBlock Grid.Column="7" Text="{Binding Bpm}" Classes="muted" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,8,0"
+                           IsVisible="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).Table.ShowBpm}" />
+                <TextBlock Grid.Column="8" Text="{Binding Stars}" Classes="muted" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,8,0"
+                           IsVisible="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).Table.ShowRating}" />
+                <Border Grid.Column="9" IsVisible="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).Table.ShowSource}" Background="{DynamicResource BrushSecondaryContainer}" CornerRadius="{StaticResource RadiusFull}" Padding="8,2" HorizontalAlignment="Left" VerticalAlignment="Center"
+                        Classes.usdb="{Binding IsUsdb}">
+                  <Border.Styles>
+                    <Style Selector="TextBlock">
+                      <Setter Property="Foreground" Value="{DynamicResource BrushOnSecondaryContainer}" />
+                    </Style>
+                    <Style Selector="Border.usdb">
+                      <Setter Property="Background" Value="{DynamicResource BrushUsdb}" />
+                    </Style>
+                    <Style Selector="Border.usdb TextBlock">
+                      <Setter Property="Foreground" Value="White" />
+                    </Style>
+                  </Border.Styles>
+                  <TextBlock Text="{Binding Source}" FontSize="{StaticResource TextXs}" TextTrimming="CharacterEllipsis" MaxWidth="70" />
+                </Border>
+                <StackPanel Grid.Column="10" IsVisible="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).Table.ShowMedia}" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
+                  <c:Icon Glyph="music_note" FontSize="{StaticResource IconSm}" IsVisible="{Binding HasLocalAudio}" ToolTip.Tip="Local audio" />
+                  <c:Icon Glyph="movie" FontSize="{StaticResource IconSm}" IsVisible="{Binding HasLocalVideo}" ToolTip.Tip="Local video" />
+                  <c:Icon Glyph="smart_display" FontSize="{StaticResource IconSm}" IsVisible="{Binding HasYouTube}" ToolTip.Tip="YouTube" />
+                </StackPanel>
+                <Button Grid.Column="11" Classes="sidebar" Width="28" Height="28" ToolTip.Tip="Actions">
+                  <Button.Flyout>
+                    <MenuFlyout>
+                      <MenuItem Header="Preview" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).PreviewCommand}" CommandParameter="{Binding}">
+                        <MenuItem.Icon><c:Icon Glyph="play_arrow" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
+                      </MenuItem>
+                      <MenuItem Header="Add to queue" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).AddToQueueCommand}" CommandParameter="{Binding}">
+                        <MenuItem.Icon><c:Icon Glyph="queue_music" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
+                      </MenuItem>
+                      <MenuItem Header="Load into game" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).LoadIntoGameCommand}" CommandParameter="{Binding}"
+                              ToolTip.Tip="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).LoadSongTip}">
+                        <MenuItem.Icon><c:Icon Glyph="play_circle" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
+                      </MenuItem>
+                      <Separator />
+                      <MenuItem Header="Details" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).ShowDetailsCommand}" CommandParameter="{Binding}">
+                        <MenuItem.Icon><c:Icon Glyph="info" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
+                      </MenuItem>
+                    </MenuFlyout>
+                  </Button.Flyout>
+                  <c:Icon Glyph="more_vert" FontSize="{StaticResource IconMd}" />
+                </Button>
+              </Grid>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </Grid>
+    </ScrollViewer>
 
     <!-- Footer: shown / total -->
     <Border Grid.Row="3" Padding="{StaticResource Pad2}"

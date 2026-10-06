@@ -251,4 +251,10 @@
     <Setter Property="VerticalAlignment" Value="Bottom" />
   </Style>
 
+  <!-- Menu icons: Fluent squeezes the icon into a 16 × 16 box with a 12 px gap; ours are 24 px with a small gap. -->
+  <Style Selector="MenuItem /template/ :is(Control)#PART_IconPresenter">
+    <Setter Property="Width" Value="{StaticResource IconLg}" />
+    <Setter Property="Height" Value="{StaticResource IconLg}" />
+    <Setter Property="Margin" Value="0,0,8,0" />
+  </Style>
 </Styles>

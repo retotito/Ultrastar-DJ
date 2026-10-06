@@ -59,6 +59,29 @@ public class SongQueryTests
     }
 
     [Fact]
+    public void Apply_LanguageAndGenre_MatchOneEntryOfAList()
+    {
+        Song[] songs =
+        [
+            S("Duo", "X", "a", language: "English, French", genre: "Pop, Rock"),
+            S("Solo", "Y", "a", language: "French", genre: "Chanson"),
+            S("Other", "Z", "a", language: "German, Suisse German", genre: "Rock"),
+        ];
+
+        Assert.Equal(["Duo", "Solo"], new SongQuery { Language = "french" }.Apply(songs, id => Labels[id]).Select(s => s.Title));
+        Assert.Equal(["Duo", "Other"], new SongQuery { Genre = "Rock" }.Apply(songs, id => Labels[id]).Select(s => s.Title));
+    }
+
+    [Fact]
+    public void Apply_SortByGenreAndBpm()
+    {
+        Song[] songs = [S("B", "X", "a", genre: "Rock") with { Bpm = 120 }, S("A", "Y", "a", genre: "Pop") with { Bpm = 300 }, S("C", "Z", "a") with { Bpm = 90 }];
+
+        Assert.Equal(["C", "A", "B"], new SongQuery { SortBy = SongSort.Genre }.Apply(songs, id => Labels[id]).Select(s => s.Title));
+        Assert.Equal(["A", "B", "C"], new SongQuery { SortBy = SongSort.Bpm, Descending = true }.Apply(songs, id => Labels[id]).Select(s => s.Title));
+    }
+
+    [Fact]
     public void Apply_SortByYear_MissingYearFirst()
     {
         Song[] songs = [S("New", "X", "a", 2010), S("None", "Y", "a"), S("Old", "Z", "a", 1970)];

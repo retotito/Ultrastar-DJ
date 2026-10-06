@@ -77,6 +77,10 @@ public sealed partial class DjWindowViewModel : ViewModelBase
     [ObservableProperty]
     private DialogMessage? _dialog;
 
+    /// <summary>Library → Details: the song popup in the middle of the window; null = closed.</summary>
+    [ObservableProperty]
+    private SongDetailsViewModel? _songDetails;
+
     /// <summary>"Show details" in the dialog: the raw message / stack trace.</summary>
     [ObservableProperty]
     private bool _dialogDetailsShown;
@@ -88,6 +92,9 @@ public sealed partial class DjWindowViewModel : ViewModelBase
         _services = services;
         _playback = playback;
         Library = library;
+        library.DetailsRequested += row => SongDetails = new SongDetailsViewModel(row, library,
+            services.GetRequiredService<UsdbService>(), services.GetRequiredService<ThumbnailService>(),
+            services.GetRequiredService<ConnectivityService>(), () => SongDetails = null);
         NowPlaying = nowPlaying;
         Preview = preview;
         Queue = queue;
@@ -158,6 +165,7 @@ public sealed partial class DjWindowViewModel : ViewModelBase
             SidebarPanel.AudioOutput => _services.GetRequiredService<AudioOutputPanelViewModel>(),
             SidebarPanel.Songbook => _services.GetRequiredService<SongbookPanelViewModel>(),
             SidebarPanel.Settings => _services.GetRequiredService<SettingsPanelViewModel>(),
+            SidebarPanel.Layout => _services.GetRequiredService<LayoutPanelViewModel>(),
             _ => new PlaceholderPanelViewModel(panel.ToString()),
         };
     }

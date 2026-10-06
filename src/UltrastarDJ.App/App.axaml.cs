@@ -143,6 +143,7 @@ public sealed partial class App : Application
         services.AddSingleton<PlayersPanelViewModel>();
         services.AddSingleton<AudioOutputPanelViewModel>();
         services.AddSingleton<SettingsPanelViewModel>();
+        services.AddSingleton<LayoutPanelViewModel>();
         services.AddSingleton<SongbookPanelViewModel>();
         services.AddTransient<DisplaysPanelViewModel>();
 

@@ -1,0 +1,26 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:UltrastarDJ.App.ViewModels"
+             x:Class="UltrastarDJ.App.Views.LayoutPanelView"
+             x:DataType="vm:LayoutPanelViewModel">
+
+  <StackPanel Spacing="{StaticResource Space2}">
+    <Border Classes="card">
+      <StackPanel Spacing="{StaticResource Space2}">
+        <TextBlock Classes="label" Text="LIBRARY COLUMNS" />
+        <ItemsControl ItemsSource="{Binding Columns}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:ColumnToggle">
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Text="{Binding Label}" VerticalAlignment="Center" />
+                <ToggleSwitch Grid.Column="1" IsChecked="{Binding IsVisible}" OnContent="" OffContent="" />
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap"
+                   Text="Title is always shown. When the columns need more room than the window, the table scrolls sideways." />
+      </StackPanel>
+    </Border>
+  </StackPanel>
+</UserControl>

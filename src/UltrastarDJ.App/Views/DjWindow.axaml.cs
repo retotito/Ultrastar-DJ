@@ -16,6 +16,26 @@ public sealed partial class DjWindow : Window
     {
         InitializeComponent();
         AddHandler(PointerPressedEvent, OnPointerPressedAnywhere, RoutingStrategies.Tunnel, handledEventsToo: true);
+        AddHandler(KeyDownEvent, OnKeyDownAnywhere, RoutingStrategies.Tunnel);
+    }
+
+    // Esc closes the Details popup before anything else sees the key.
+    private void OnKeyDownAnywhere(object? sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Escape && DataContext is DjWindowViewModel { SongDetails: not null } vm)
+        {
+            vm.SongDetails = null;
+            e.Handled = true;
+        }
+    }
+
+    // Only a press on the dimmed backdrop itself closes; presses inside the popup bubble up with another source.
+    private void OnDetailsBackdropPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (ReferenceEquals(e.Source, DetailsLayer) && DataContext is DjWindowViewModel vm)
+        {
+            vm.SongDetails = null;
+        }
     }
 
     /// <summary>

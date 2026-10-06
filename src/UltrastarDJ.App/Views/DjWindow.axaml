@@ -174,6 +174,12 @@
     </ItemsControl.ItemTemplate>
   </ItemsControl>
 
+  <!-- Library → Details: song popup in the middle of the window. A press on the dimmed area or Esc closes it. -->
+  <Border x:Name="DetailsLayer" Background="#99000000" Padding="40" IsVisible="{Binding SongDetails, Converter={x:Static ObjectConverters.IsNotNull}}"
+          PointerPressed="OnDetailsBackdropPressed">
+    <ContentControl Content="{Binding SongDetails}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+  </Border>
+
   <!-- Error / bug dialog: an action the DJ started failed, or an unexpected exception. Queued; OK shows the next. -->
   <Border Background="#99000000" IsVisible="{Binding Dialog, Converter={x:Static ObjectConverters.IsNotNull}}">
     <Border Classes="card floating" Width="520" MaxHeight="640" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="{StaticResource Pad6}">
