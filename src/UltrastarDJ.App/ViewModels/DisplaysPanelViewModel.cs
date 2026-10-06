@@ -21,6 +21,9 @@ public sealed partial class DisplaysPanelViewModel : ViewModelBase
         Beamer2 = new DisplayRowViewModel(DisplayId.Beamer2, _displays, _players, this);
         _displays.OpenStateChanged += OnOpenStateChanged;
         _displays.FullScreenChanged += OnFullScreenChanged;
+        // A player that loses its mic (unplugged, or set to none) leaves its beamer and its toggle disables.
+        _displays.PlayersChanged += SyncAssignments;
+        _players.Changed += _ => SyncAssignments();
     }
 
     public DisplayRowViewModel Beamer1 { get; }

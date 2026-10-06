@@ -7,6 +7,7 @@ using UltrastarDJ.App.ViewModels;
 using UltrastarDJ.App.Views;
 using UltrastarDJ.Core.Abstractions;
 using UltrastarDJ.Core.Displays;
+using UltrastarDJ.Core.Players;
 
 namespace UltrastarDJ.App.Services;
 
@@ -36,6 +37,25 @@ public sealed class DisplayService : IDisplayService
         _services = services;
         _log = log;
         _doc = settings.Load(SettingsName, DisplaysDocument.Default());
+        players.Changed += OnPlayerChanged;
+    }
+
+    /// <summary>A player without a mic cannot sing: take it off its beamer (also when the mic was unplugged).</summary>
+    private void OnPlayerChanged(PlayerConfig player)
+    {
+        if (player.Mic is not null)
+        {
+            return;
+        }
+
+        foreach (DisplayId id in (ReadOnlySpan<DisplayId>)[DisplayId.Beamer1, DisplayId.Beamer2])
+        {
+            DisplayConfig cfg = _doc.Get(id);
+            if (cfg.PlayerIds.Contains(player.Id))
+            {
+                SetPlayers(id, cfg.PlayerIds.Where(p => p != player.Id).ToList());
+            }
+        }
     }
 
     public event Action<DisplayId, bool>? OpenStateChanged;

@@ -5,7 +5,7 @@ using UltrastarDJ.Core.Game;
 
 namespace UltrastarDJ.App.Services;
 
-/// <summary>General app settings (theme, difficulty, lyrics offset), persisted and applied on change.</summary>
+/// <summary>General app settings (theme, tooltips, difficulty, lyrics offset), persisted and applied on change.</summary>
 public sealed class AppSettingsService
 {
     private const string SettingsName = "app";
@@ -16,12 +16,13 @@ public sealed class AppSettingsService
     {
         _settings = settings;
         _doc = settings.Load(SettingsName, AppSettingsDocument.Default());
-        ApplyTheme();
+        Apply();
     }
 
     public event Action? Changed;
 
     public bool LightTheme => _doc.LightTheme;
+    public bool ShowTooltips => !_doc.HideTooltips;
     public Difficulty Difficulty => _doc.Difficulty;
     /// <summary>Positive = lyrics/notes appear later relative to the audio.</summary>
     public double LyricsOffsetMs => _doc.LyricsOffsetMs;
@@ -30,6 +31,7 @@ public sealed class AppSettingsService
     public (double X, double Y)? NowPlayingPosition => _doc.NowPlayingX is { } x && _doc.NowPlayingY is { } y ? (x, y) : null;
 
     public void SetLightTheme(bool light) => Update(_doc with { LightTheme = light });
+    public void SetShowTooltips(bool show) => Update(_doc with { HideTooltips = !show });
     public void SetDifficulty(Difficulty d) => Update(_doc with { Difficulty = d });
     public void SetLyricsOffsetMs(double ms) => Update(_doc with { LyricsOffsetMs = Math.Clamp(Math.Round(ms), -500, 500) });
     public void SetNowPlayingHidden(bool hidden) => Update(_doc with { NowPlayingHidden = hidden });
@@ -39,21 +41,25 @@ public sealed class AppSettingsService
     {
         _doc = doc;
         _settings.Save(SettingsName, _doc);
-        ApplyTheme();
+        Apply();
         Changed?.Invoke();
     }
 
-    private void ApplyTheme()
+    private void Apply()
     {
         if (Application.Current is { } app)
         {
             app.RequestedThemeVariant = _doc.LightTheme ? ThemeVariant.Light : ThemeVariant.Dark;
+            // Every window binds ToolTip.ServiceEnabled (inherited) to this resource: one switch for all tooltips.
+            app.Resources["ShowTooltips"] = ShowTooltips;
         }
     }
 
     public sealed record AppSettingsDocument(bool LightTheme, Difficulty Difficulty, double LyricsOffsetMs)
     {
         public bool NowPlayingHidden { get; init; }
+        /// <summary>Stored inverted so settings files written before this option keep tooltips on.</summary>
+        public bool HideTooltips { get; init; }
         public double? NowPlayingX { get; init; }
         public double? NowPlayingY { get; init; }
 

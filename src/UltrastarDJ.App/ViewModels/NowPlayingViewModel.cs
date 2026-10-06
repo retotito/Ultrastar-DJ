@@ -19,6 +19,8 @@ namespace UltrastarDJ.App.ViewModels;
 public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
 {
     private readonly PlaybackService _playback;
+    private readonly OutputsService _outputs;
+    private bool _syncingGain;
     private readonly IDisplayService _displays;
     private readonly MediaService _media;
     private readonly AudioInputService _audio;
@@ -39,8 +41,9 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private double _cardY;
 
     public NowPlayingViewModel(PlaybackService playback, IDisplayService displays, MediaService media, AudioInputService audio,
-        PlayersService players, AppSettingsService settings, NotificationService notifications, ILogger<NowPlayingViewModel> log)
+        PlayersService players, AppSettingsService settings, OutputsService outputs, NotificationService notifications, ILogger<NowPlayingViewModel> log)
     {
+        _outputs = outputs;
         _playback = playback;
         _displays = displays;
         _media = media;
@@ -49,7 +52,14 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
         _settings = settings;
         _notifications = notifications;
         _log = log;
-        _gain = media.Game.Gain;
+        // Same setting as the Game volume in Audio Output: persisted there, both sliders follow each other.
+        _gain = outputs.Game.Gain;
+        outputs.Changed += () =>
+        {
+            _syncingGain = true;
+            Gain = outputs.Game.Gain;
+            _syncingGain = false;
+        };
         _isVisible = !settings.NowPlayingHidden;
         if (settings.NowPlayingPosition is { } pos)
         {
@@ -76,7 +86,13 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
     /// <summary>False until the user has dragged the card once; the view then places it at its default spot.</summary>
     public bool HasSavedPosition { get; private set; }
 
-    partial void OnGainChanged(double value) => _media.Game.Gain = value;
+    partial void OnGainChanged(double value)
+    {
+        if (!_syncingGain)
+        {
+            _outputs.SetGameGain(value);
+        }
+    }
     partial void OnIsVisibleChanged(bool value) => _settings.SetNowPlayingHidden(!value);
 
     public void ToggleVisible() => IsVisible = !IsVisible;

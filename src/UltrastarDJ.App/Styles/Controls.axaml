@@ -9,6 +9,10 @@
   <!-- Base text: windows set the inherited size; TextBlocks without an explicit size follow it -->
   <Style Selector="Window">
     <Setter Property="FontSize" Value="{StaticResource TextBase}" />
+    <!-- Settings → Show tooltips. Inherited by every control in the window. -->
+    <Setter Property="ToolTip.ServiceEnabled" Value="{DynamicResource ShowTooltips}" />
+    <!-- Disabled controls still explain themselves ("why can't I click this?"). Inherited. -->
+    <Setter Property="ToolTip.ShowOnDisabled" Value="True" />
   </Style>
   <Style Selector="TextBlock">
     <Setter Property="FontFamily" Value="{StaticResource FontSans}" />
@@ -32,6 +36,12 @@
     <Setter Property="Cursor" Value="Hand" />
   </Style>
 
+  <!-- The app's disabled state: dimmed to OpacityDisabled, normal arrow (Fluent's own disabled look is too subtle) -->
+  <Style Selector=":is(Button):disabled, ComboBox:disabled, ToggleSwitch:disabled, CheckBox:disabled, Slider:disabled, TextBox:disabled">
+    <Setter Property="Opacity" Value="{StaticResource OpacityDisabled}" />
+    <Setter Property="Cursor" Value="Arrow" />
+  </Style>
+
   <!-- Icon glyphs -->
   <Style Selector="c|Icon">
     <Setter Property="FontFamily" Value="{StaticResource FontIcons}" />
@@ -52,14 +62,21 @@
     <Setter Property="HorizontalContentAlignment" Value="Center" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
   </Style>
+  <!-- Interaction states shared with library rows and toggles (BrushState* tokens) -->
   <Style Selector="Button.sidebar:pointerover /template/ ContentPresenter">
-    <Setter Property="Background" Value="{DynamicResource BrushSurfaceContainerHigh}" />
+    <Setter Property="Background" Value="{DynamicResource BrushStateHover}" />
+  </Style>
+  <Style Selector="Button.sidebar:pressed /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BrushStatePressed}" />
   </Style>
   <Style Selector="Button.sidebar.active /template/ ContentPresenter">
-    <Setter Property="Background" Value="{DynamicResource BrushSecondaryContainer}" />
+    <Setter Property="Background" Value="{DynamicResource BrushStateSelected}" />
+  </Style>
+  <Style Selector="Button.sidebar.active:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BrushStateSelectedHover}" />
   </Style>
   <Style Selector="Button.sidebar.active c|Icon">
-    <Setter Property="Foreground" Value="{DynamicResource BrushOnSecondaryContainer}" />
+    <Setter Property="Foreground" Value="{DynamicResource BrushOnSurface}" />
   </Style>
   <Style Selector="Button.sidebar.small">
     <Setter Property="Width" Value="28" />
@@ -76,6 +93,49 @@
   </Style>
   <Style Selector="Button.tonal:pointerover /template/ ContentPresenter">
     <Setter Property="Background" Value="{DynamicResource BrushSurfaceContainerHighest}" />
+  </Style>
+  <Style Selector="Button.tonal.active /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BrushStateSelected}" />
+  </Style>
+  <Style Selector="Button.tonal.active:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BrushStateSelectedHover}" />
+  </Style>
+
+  <!-- Toggle buttons (player chips, monitor): checked = selected state, not Fluent's solid accent -->
+  <Style Selector="ToggleButton:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BrushStateHover}" />
+  </Style>
+  <Style Selector="ToggleButton:pressed /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BrushStatePressed}" />
+  </Style>
+  <Style Selector="ToggleButton:checked /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BrushStateSelected}" />
+    <Setter Property="Foreground" Value="{DynamicResource BrushOnSurface}" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+  </Style>
+  <Style Selector="ToggleButton:checked:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BrushStateSelectedHover}" />
+    <Setter Property="Foreground" Value="{DynamicResource BrushOnSurface}" />
+  </Style>
+  <Style Selector="ToggleButton:checked c|Icon, ToggleButton:checked TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource BrushOnSurface}" />
+  </Style>
+
+  <!-- List rows (library, drop-down lists): the same states, explicitly, so they follow the tokens -->
+  <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BrushStateHover}" />
+  </Style>
+  <Style Selector="ListBoxItem:pressed /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BrushStatePressed}" />
+  </Style>
+  <Style Selector="ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BrushStateSelected}" />
+  </Style>
+  <Style Selector="ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BrushStateSelectedHover}" />
+  </Style>
+  <Style Selector="ListBoxItem:selected:pressed /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BrushStatePressed}" />
   </Style>
 
   <!-- Text button (low-emphasis action, e.g. "Clear" filters) -->

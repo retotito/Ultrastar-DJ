@@ -6,7 +6,8 @@ namespace UltrastarDJ.Audio.PortAudio;
 
 /// <summary>
 /// <see cref="IAudioBackend"/> over PortAudio. Holds Pa_Initialize for its lifetime; device refresh
-/// re-initialises, which is why it is refused while streams exist.
+/// re-initialises, which is why it is refused while streams exist. Refresh runs on a background poll, so opening a
+/// stream takes the same lock: a re-initialise can never happen between resolving a device index and opening it.
 /// </summary>
 public sealed class PortAudioBackend : IAudioBackend
 {
@@ -80,6 +81,22 @@ public sealed class PortAudioBackend : IAudioBackend
 
     public IAudioLine OpenInput(string deviceId, int channels, double? sampleRateHz, AudioInputCallback callback)
     {
+        lock (InitLock)
+        {
+            return OpenInputLocked(deviceId, channels, sampleRateHz, callback);
+        }
+    }
+
+    public IAudioLine OpenOutput(string deviceId, int channelOffset, double? sampleRateHz, AudioOutputCallback callback)
+    {
+        lock (InitLock)
+        {
+            return OpenOutputLocked(deviceId, channelOffset, sampleRateHz, callback);
+        }
+    }
+
+    private PaStream OpenInputLocked(string deviceId, int channels, double? sampleRateHz, AudioInputCallback callback)
+    {
         (int index, DeviceInfo info) = Resolve(deviceId);
         channels = Math.Clamp(channels, 1, Math.Max(1, info.maxInputChannels));
         double rate = sampleRateHz ?? info.defaultSampleRate;
@@ -98,7 +115,7 @@ public sealed class PortAudioBackend : IAudioBackend
         return stream;
     }
 
-    public IAudioLine OpenOutput(string deviceId, int channelOffset, double? sampleRateHz, AudioOutputCallback callback)
+    private PaStream OpenOutputLocked(string deviceId, int channelOffset, double? sampleRateHz, AudioOutputCallback callback)
     {
         (int index, DeviceInfo info) = Resolve(deviceId);
         int channels = Math.Clamp(channelOffset + 2, 2, Math.Max(2, info.maxOutputChannels));

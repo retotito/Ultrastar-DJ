@@ -52,6 +52,7 @@ public sealed partial class App : Application
         _services.GetRequiredService<OutputsService>();
         _services.GetRequiredService<AppSettingsService>();
         desktop.MainWindow = window;
+        _services.GetRequiredService<AudioInputService>().ReleaseMissingMicsAtStartup();
         // First connectivity probe, then USDB auto-login (skipped while offline; it reconnects when back online).
         _ = StartNetworkAsync(_services);
         _ = _services.GetRequiredService<SongbookService>().AutoStartAsync();

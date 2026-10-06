@@ -56,6 +56,15 @@ public sealed partial class DjWindowViewModel : ViewModelBase
     [ObservableProperty]
     private ViewModelBase? _panelContent;
 
+    // However the Audio Input panel closes, its mic tests end with it.
+    partial void OnPanelContentChanged(ViewModelBase? oldValue, ViewModelBase? newValue)
+    {
+        if (oldValue is PlayersPanelViewModel players && !ReferenceEquals(oldValue, newValue))
+        {
+            players.StopTests();
+        }
+    }
+
     /// <summary>Audio/display configuration is locked while a song is active (prototype rule).</summary>
     [ObservableProperty]
     private bool _audioLocked;

@@ -101,6 +101,23 @@ mic ≈ 119 ms (these include output latency; we accept round-trip as the practi
 
 ---
 
+## Mic plug / unplug
+
+Rule: **a player only has a mic while it is plugged in.** Device ids are device names; `AudioInputService` tracks
+presence, the rules are in `Core.Players.MicPresence` (tested).
+
+- **Detection:** PortAudio can only re-enumerate with no stream open. Idle (no mic test, no song, no monitor): the
+  device list is re-read every 3 s. With streams open, a dying stream reports its device (`MicEngine.DeviceLost`).
+  Opening a stream and re-enumerating share one lock in `PortAudioBackend`.
+- **Unplugged** (idle, during a mic test, or at start for a saved mic that is not there): the mic is **unassigned**
+  (dropdown shows "— no microphone —"), a toast names the players. `DisplayService` takes a player without a mic off
+  its beamer; that card's mic test stops. Nothing is restored automatically.
+- **Plugged in:** toast "Microphone connected — assign it under Audio Input"; the device lists update by themselves.
+- **Mid-song loss** (`GameMicLost`): the song **stops** (rewound, still loaded), **both beamers close**, a warning
+  toast in the DJ window explains: plug in, assign, start again.
+- **Mic test is per player card** (Test / Stop); tested mics are one set opened together (L/R of one dongle share a
+  stream); the monitor follows the tested mics. Closing the Audio Input panel (any way) stops all tests.
+
 ## Scoring (`Core.ScoreEngine`)
 
 Runs on the 60 Hz `GameTick` (throttle beat evaluation to **once per beat**, not per tick — at 480 beats/min

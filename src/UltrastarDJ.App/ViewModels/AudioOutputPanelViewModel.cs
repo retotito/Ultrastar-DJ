@@ -24,7 +24,15 @@ public sealed partial class AudioOutputPanelViewModel : ViewModelBase, IDisposab
         Preview = new OutputChannelViewModel("Preview", "DJ headphones / monitor", "headphones", media.Preview, Options, o => outputs.SetPreviewOutput(o), g => outputs.SetPreviewGain(g));
         _meter = new DispatcherTimer(TimeSpan.FromMilliseconds(50), DispatcherPriority.Background, (_, _) => { Game.Poll(); Preview.Poll(); });
         _meter.Start();
+        // Volumes are also changed from the preview player and the Now Playing card: follow them live.
+        _outputs.Changed += OnOutputsChanged;
         _ = RefreshAsync();
+    }
+
+    private void OnOutputsChanged()
+    {
+        Game.SyncGain(_outputs.Game.Gain);
+        Preview.SyncGain(_outputs.Preview.Gain);
     }
 
     public OutputChannelViewModel Game { get; }
@@ -47,7 +55,11 @@ public sealed partial class AudioOutputPanelViewModel : ViewModelBase, IDisposab
         Status = list.Count <= 1 ? "Only the system output was found — connect a USB or Bluetooth device and refresh" : "";
     }
 
-    public void Dispose() => _meter.Stop();
+    public void Dispose()
+    {
+        _meter.Stop();
+        _outputs.Changed -= OnOutputsChanged;
+    }
 }
 
 public sealed partial class OutputChannelViewModel : ObservableObject
@@ -85,6 +97,14 @@ public sealed partial class OutputChannelViewModel : ObservableObject
     {
         _loading = true;
         Selected = options.FirstOrDefault(o => o.MpvDeviceId == mpvId && o.ChannelOffset == offset) ?? options.FirstOrDefault();
+        Gain = gain;
+        _loading = false;
+    }
+
+    /// <summary>Volume changed elsewhere: mirror it without writing it back.</summary>
+    public void SyncGain(double gain)
+    {
+        _loading = true;
         Gain = gain;
         _loading = false;
     }

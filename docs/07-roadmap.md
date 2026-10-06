@@ -231,14 +231,22 @@ no handler at all. The prototype had one error dialog and mic toasts.
 - [x] Toast shadow was cut square by its list's wrappers (same cause as the Now Playing card): clipping off. Debug: Shift+F8 test toasts.
 - [x] Verified live
 
-## Sprint 6m — Mic plug / unplug  *(planned)*
+## Sprint 6m — Mic plug / unplug, mic test, UI consistency  *(done)*
 
-Decided: keep the player's mic assignment when the mic is missing and mark it; re-plugging the same mic (device +
-channel) reconnects it automatically; a mic lost mid-song **pauses** the song (beamers freeze) with an error dialog
-in the DJ window, the DJ resumes after re-plugging. Missing mics at start: one toast + marked cards. New, unassigned
-mic: toast pointing to Audio Input. PortAudio can only re-read devices while no stream is open — idle polling plus
-re-check at pause / next song.
+Decided with the user (after trying a "keep and mark" version): a player only has a mic while it is plugged in.
+Details: `03-game-engine.md` "Mic plug / unplug".
 
+- [x] `Core.Players.MicPresence` (missing players, device diff, description) with tests.
+- [x] `AudioInputService`: presence set, 3 s device poll while idle, `PortAudioBackend` opens streams under the refresh lock.
+- [x] Unplugged (idle, during a test, missing at start) → mic unassigned + toast; player leaves its beamer (`DisplayService` rule, also for a manual "no microphone"); plugged in → toast, lists update by themselves.
+- [x] Mid-song loss → song stops (rewound), beamers close, warning toast.
+- [x] Mic test per player card (Test / Stop) instead of one global test; unplugging stops that card's test; closing the Audio Input panel stops all tests.
+- [x] Card: note / "gated" shown only while that mic is tested (gate state reset on stop); tooltips for GAIN, GATE, MIX, mic delay, Calibrate.
+- [x] Settings → "Show tooltips" toggle for every tooltip in the app (inherited `ToolTip.ServiceEnabled` on all windows).
+- [x] Game volume: Now Playing slider and Audio Output → Game are one setting (via `OutputsService`, persisted), both follow each other live; Audio Output also follows the preview player's volume live.
+- [x] Disabled standard: `OpacityDisabled` 0.4 + arrow cursor for every disabled control; tooltips also on disabled controls (Displays: player without mic explains why). Beamer idle hint fixed (Esc no longer closes).
+- [x] Interaction state tokens (`BrushState*`, Fluent list colours on the OS accent): library rows, queue rows, sidebar + icon buttons, toggle buttons, active Test button.
+- [x] Verified live
 ---
 
 ## Later / ideas

@@ -14,11 +14,23 @@
             <Border Grid.Column="0" Width="10" Height="10" CornerRadius="{StaticResource RadiusFull}" Margin="0,0,8,0"
                     Background="{Binding ColorKey, Converter={x:Static vm:PlayerConverters.BrushByKey}}" />
             <TextBox Grid.Column="1" Text="{Binding Name}" Classes="inline" />
-            <TextBlock Grid.Column="2" Classes="muted" Text="{Binding NoteText}" VerticalAlignment="Center" MinWidth="110" TextAlignment="Right" />
+            <!-- Detected note, or "gated" while the mic is below the gate: only meaningful while this mic is tested -->
+            <TextBlock Grid.Column="2" Classes="muted" Text="{Binding NoteText}" VerticalAlignment="Center" MinWidth="110" TextAlignment="Right"
+                       IsVisible="{Binding Testing}" ToolTip.Tip="Detected note. 'gated' = below the GATE threshold, treated as silence (no notes, no points)" />
           </Grid>
 
-          <ComboBox ItemsSource="{Binding MicOptions}"
-                    SelectedItem="{Binding SelectedMic}" HorizontalAlignment="Stretch" />
+          <Grid ColumnDefinitions="*,Auto">
+            <ComboBox ItemsSource="{Binding MicOptions}"
+                      SelectedItem="{Binding SelectedMic}" HorizontalAlignment="Stretch" />
+            <Button Grid.Column="1" Classes="tonal" Margin="8,0,0,0" Padding="12,4" Command="{Binding ToggleTestCommand}"
+                    IsEnabled="{Binding HasMic}" Classes.active="{Binding Testing}" ToolTip.Tip="Open this mic: live meter and note">
+              <StackPanel Orientation="Horizontal" Spacing="4">
+                <c:Icon Glyph="{Binding Testing, Converter={x:Static vm:PlayerConverters.TestGlyph}}" FontSize="{StaticResource IconSm}" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
+                <TextBlock Text="{Binding Testing, Converter={x:Static vm:BoolConverters.Text}, ConverterParameter='Stop|Test'}"
+                           FontSize="{StaticResource TextSm}" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
+              </StackPanel>
+            </Button>
+          </Grid>
 
           <!-- Meter (dB) with the gate position drawn as a marker on the same scale -->
           <c:LevelMeter Height="6" Margin="0,4" Level="{Binding LevelDb}" Mark="{Binding GateMark}"
@@ -27,23 +39,24 @@
                         MarkBrush="{DynamicResource BrushOnSurface}" />
 
           <Grid ColumnDefinitions="52,*,52" RowDefinitions="Auto,Auto,Auto">
-            <TextBlock Grid.Row="0" Grid.Column="0" Classes="label" Text="GAIN" VerticalAlignment="Center" />
-            <c:Fader Grid.Row="0" Grid.Column="1" ResetValue="1" Minimum="0" Maximum="10" Value="{Binding InputGain}" />
+            <TextBlock Grid.Row="0" Grid.Column="0" Classes="label" Text="GAIN" VerticalAlignment="Center" ToolTip.Tip="Input gain, 0–10×. Amplifies the mic before everything else. Raise it for quiet USB mics (4–8× is common) until normal singing moves the meter well past the gate marker. Double-click the knob: 1×." />
+            <c:Fader Grid.Row="0" Grid.Column="1" ResetValue="1" Minimum="0" Maximum="10" Value="{Binding InputGain}" ToolTip.Tip="Input gain, 0–10×. Amplifies the mic before everything else. Raise it for quiet USB mics (4–8× is common) until normal singing moves the meter well past the gate marker. Double-click the knob: 1×." />
             <TextBlock Grid.Row="0" Grid.Column="2" Classes="muted" Text="{Binding InputGain, StringFormat='{}{0:F1}×'}" VerticalAlignment="Center" TextAlignment="Right" />
 
-            <TextBlock Grid.Row="1" Grid.Column="0" Classes="label" Text="GATE" VerticalAlignment="Center" />
-            <c:Fader Grid.Row="1" Grid.Column="1" ResetValue="-50" Minimum="-70" Maximum="-20" Value="{Binding GateDb}" />
+            <TextBlock Grid.Row="1" Grid.Column="0" Classes="label" Text="GATE" VerticalAlignment="Center" ToolTip.Tip="Noise gate. Below this level the mic counts as silence — no notes, no points — so background noise and the speakers don't score. Set it with the music playing: singing should pass the marker on the meter, silence stay below it. Double-click the knob: −50 dB." />
+            <c:Fader Grid.Row="1" Grid.Column="1" ResetValue="-50" Minimum="-70" Maximum="-20" Value="{Binding GateDb}" ToolTip.Tip="Noise gate. Below this level the mic counts as silence — no notes, no points — so background noise and the speakers don't score. Set it with the music playing: singing should pass the marker on the meter, silence stay below it. Double-click the knob: −50 dB." />
             <TextBlock Grid.Row="1" Grid.Column="2" Classes="muted" Text="{Binding GateText}" VerticalAlignment="Center" TextAlignment="Right" />
 
-            <TextBlock Grid.Row="2" Grid.Column="0" Classes="label" Text="MIX" VerticalAlignment="Center" />
-            <c:Fader Grid.Row="2" Grid.Column="1" ResetValue="1" Minimum="0" Maximum="2" Value="{Binding MixGain}" />
+            <TextBlock Grid.Row="2" Grid.Column="0" Classes="label" Text="MIX" VerticalAlignment="Center" ToolTip.Tip="How loud this mic is in the speakers (monitor), 0–2×. Only what the room hears — scoring is not affected. Double-click the knob: 1×." />
+            <c:Fader Grid.Row="2" Grid.Column="1" ResetValue="1" Minimum="0" Maximum="2" Value="{Binding MixGain}" ToolTip.Tip="How loud this mic is in the speakers (monitor), 0–2×. Only what the room hears — scoring is not affected. Double-click the knob: 1×." />
             <TextBlock Grid.Row="2" Grid.Column="2" Classes="muted" Text="{Binding MixGain, StringFormat='{}{0:F2}'}" VerticalAlignment="Center" TextAlignment="Right" />
           </Grid>
 
           <Grid ColumnDefinitions="*,Auto">
             <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" VerticalAlignment="Center"
-                       Text="{Binding MicDelayText, StringFormat='Mic delay {0}'}" />
-            <Button Grid.Column="1" Classes="tonal" Command="{Binding CalibrateCommand}" IsEnabled="{Binding !Calibrating}" Padding="12,4">
+                       Text="{Binding MicDelayText, StringFormat='Mic delay {0}'}" ToolTip.Tip="Round-trip delay of this mic. Scoring compares the singer with the music this many ms later. Set it with Calibrate." />
+            <Button Grid.Column="1" Classes="tonal" Command="{Binding CalibrateCommand}" IsEnabled="{Binding !Calibrating}" Padding="12,4"
+                    ToolTip.Tip="Measures this mic's delay: plays 5 beeps on the monitor output and listens for them with the mic. Hold the mic close to the speaker in a quiet moment. The result shifts scoring so it matches when the singer is actually heard.">
               <StackPanel Orientation="Horizontal" Spacing="4">
                 <c:Icon Glyph="timer" FontSize="{StaticResource IconSm}" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
                 <TextBlock Text="Calibrate" FontSize="{StaticResource TextSm}" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
@@ -57,14 +70,8 @@
 
   <StackPanel Spacing="{StaticResource Space2}">
     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="{StaticResource Space1}">
-      <Button Classes="sidebar" Command="{Binding RefreshDevicesCommand}" ToolTip.Tip="Refresh device list (stop the test first)">
+      <Button Classes="sidebar" Command="{Binding RefreshDevicesCommand}" ToolTip.Tip="Refresh device list (stop the mic tests first; plugging in is detected by itself)">
         <c:Icon Glyph="refresh" FontSize="{StaticResource IconMd}" />
-      </Button>
-      <Button Classes="tonal" Command="{Binding ToggleTestCommand}" Classes.active="{Binding Testing}">
-        <StackPanel Orientation="Horizontal" Spacing="4">
-          <c:Icon Glyph="{Binding Testing, Converter={x:Static vm:PlayerConverters.TestGlyph}}" FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
-          <TextBlock Text="{Binding Testing, Converter={x:Static vm:PlayerConverters.TestLabel}}" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
-        </StackPanel>
       </Button>
     </StackPanel>
 

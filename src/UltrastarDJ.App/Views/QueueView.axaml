@@ -57,10 +57,17 @@
       <ItemsControl ItemsSource="{Binding Items}" Margin="4">
         <ItemsControl.ItemTemplate>
           <DataTemplate x:DataType="vm:QueueRowViewModel">
-            <Border Padding="8,6" CornerRadius="{StaticResource RadiusMd}" Classes.active="{Binding IsActive}">
+            <!-- Same states as library rows: hover, and the song loaded in the game shown as selected -->
+            <Border Padding="8,6" CornerRadius="{StaticResource RadiusMd}" Background="Transparent" Classes.active="{Binding IsActive}">
               <Border.Styles>
+                <Style Selector="Border:pointerover">
+                  <Setter Property="Background" Value="{DynamicResource BrushStateHover}" />
+                </Style>
                 <Style Selector="Border.active">
-                  <Setter Property="Background" Value="{DynamicResource BrushSecondaryContainer}" />
+                  <Setter Property="Background" Value="{DynamicResource BrushStateSelected}" />
+                </Style>
+                <Style Selector="Border.active:pointerover">
+                  <Setter Property="Background" Value="{DynamicResource BrushStateSelectedHover}" />
                 </Style>
               </Border.Styles>
               <Grid ColumnDefinitions="24,*,Auto,Auto,Auto,Auto">

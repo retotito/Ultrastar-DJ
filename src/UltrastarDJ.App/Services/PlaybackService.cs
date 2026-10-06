@@ -51,6 +51,7 @@ public sealed class PlaybackService : IDisposable
         _log = log;
         _media.Game.EndReached += () => Dispatcher.UIThread.Post(() => { if (State is PlaybackState.Playing or PlaybackState.Paused) { Stop(); } });
         _media.Game.ErrorOccurred += e => Dispatcher.UIThread.Post(() => OnPlaybackError(e));
+        _audio.GameMicLost += OnGameMicLost;
     }
 
     /// <summary>The game media failed (stream dropped, YouTube refused): stop and tell the DJ why.</summary>
@@ -213,16 +214,7 @@ public sealed class PlaybackService : IDisposable
         int tracks = Song.Notes!.Count;
         Session = new GameSession(Song, active.Select(p => new GamePlayer(p.Id, tracks > 1 ? (p.Id - 1) % tracks : 0, p.MicDelayMs)).ToList(), Difficulty);
 
-        if (active.Count > 0)
-        {
-            _audio.Mics.Start(active.Select(p => new MicSlot(p.Id, p.Mic!, p.InputGain, p.Threshold)).ToList());
-            string? monitorOut = ResolveMonitorOutput();
-            if (monitorOut is not null)
-            {
-                _audio.StartMonitor(monitorOut, _media.Game.ChannelOffset);
-            }
-        }
-
+        StartMics(active);
         _media.Game.Play();
         State = PlaybackState.Playing;
         StartTicker();
@@ -245,6 +237,45 @@ public sealed class PlaybackService : IDisposable
             _media.Game.Play();
             State = PlaybackState.Playing;
         }
+    }
+
+    private void StartMics(IReadOnlyList<PlayerConfig> active)
+    {
+        if (active.Count == 0)
+        {
+            return;
+        }
+
+        _audio.StartGameMics(active.Select(p => new MicSlot(p.Id, p.Mic!, p.InputGain, p.Threshold)).ToList());
+        string? monitorOut = ResolveMonitorOutput();
+        if (monitorOut is not null)
+        {
+            _audio.StartMonitor(monitorOut, _media.Game.ChannelOffset);
+        }
+    }
+
+    /// <summary>
+    /// A singer's mic died mid-song: stop the song (rewound, still loaded) and close the beamers — the setup has
+    /// changed, the DJ sets it up again. The mic is unassigned by <see cref="AudioInputService"/> right after.
+    /// </summary>
+    private void OnGameMicLost(IReadOnlyList<PlayerConfig> players)
+    {
+        if (State is not (PlaybackState.Playing or PlaybackState.Paused))
+        {
+            return;
+        }
+
+        Stop();
+        Dismiss();
+        foreach (DisplayId id in (ReadOnlySpan<DisplayId>)[DisplayId.Beamer1, DisplayId.Beamer2])
+        {
+            _displays.Close(id);
+        }
+
+        string who = players.Count > 0 ? string.Join(", ", players.Select(MicPresence.Describe)) : "A microphone";
+        _notifications.Warn(
+            "Microphone disconnected — song stopped",
+            $"{who}. The beamers were closed; plug the mic in, assign it under Audio Input and start again.");
     }
 
     /// <summary>Ends the song: media paused, mics off, score screen. The song stays loaded.</summary>

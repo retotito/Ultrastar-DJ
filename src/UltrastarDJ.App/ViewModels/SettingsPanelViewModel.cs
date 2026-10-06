@@ -10,6 +10,7 @@ public sealed partial class SettingsPanelViewModel : ViewModelBase
     private bool _loading;
 
     [ObservableProperty] private bool _lightTheme;
+    [ObservableProperty] private bool _showTooltips;
     [ObservableProperty] private Difficulty _difficulty;
     [ObservableProperty] private double _lyricsOffsetMs;
 
@@ -18,6 +19,7 @@ public sealed partial class SettingsPanelViewModel : ViewModelBase
         _settings = settings;
         _loading = true;
         LightTheme = settings.LightTheme;
+        ShowTooltips = settings.ShowTooltips;
         Difficulty = settings.Difficulty;
         LyricsOffsetMs = settings.LyricsOffsetMs;
         _loading = false;
@@ -31,6 +33,14 @@ public sealed partial class SettingsPanelViewModel : ViewModelBase
         Difficulty.Hard => "exact semitone — for show-offs",
         _ => "±1 semitone — the usual",
     };
+
+    partial void OnShowTooltipsChanged(bool value)
+    {
+        if (!_loading)
+        {
+            _settings.SetShowTooltips(value);
+        }
+    }
 
     partial void OnLightThemeChanged(bool value)
     {

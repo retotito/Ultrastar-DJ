@@ -18,13 +18,17 @@ public sealed record MicOption(string Label, MicBinding? Binding)
     public override string ToString() => Label;
 }
 
-/// <summary>Audio Input panel: four player cards with mic binding, gain/gate/mix, live meter, note, latency test.</summary>
+/// <summary>
+/// Audio Input panel: four player cards with mic binding, per-card mic test, gain/gate/mix, live meter, note, latency
+/// test. Tested mics are one set: toggling a card reopens exactly that set (two players on one dongle share a stream).
+/// </summary>
 public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
 {
     private readonly AudioInputService _audio;
     private readonly PlayersService _players;
     private readonly ILogger<PlayersPanelViewModel> _log;
     private readonly DispatcherTimer _meterTimer;
+    private readonly HashSet<int> _tested = [];
 
     [ObservableProperty] private bool _testing;
     [ObservableProperty] private bool _monitoring;
@@ -40,7 +44,7 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
         Players = new ObservableCollection<PlayerCardViewModel>(players.All.Select(p => new PlayerCardViewModel(p, this)));
         _audio.Mics.Analyzed += OnAnalyzed;
         _players.Changed += OnConfigChanged;
-        _audio.Mics.DeviceLost += id => Dispatcher.UIThread.Post(() => Status = $"Microphone disconnected: {id}");
+        _audio.MicsChanged += OnMicsChanged;
         _meterTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(50), DispatcherPriority.Background, (_, _) => PollMeters());
         _meterTimer.Start();
     }
@@ -61,6 +65,17 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
             return;
         }
 
+        ReloadDeviceLists();
+    }
+
+    /// <summary>Plugged / unplugged (background poll or a dying stream): rebuild the lists and the missing marks.</summary>
+    private void OnMicsChanged()
+    {
+        ReloadDeviceLists();
+    }
+
+    private void ReloadDeviceLists()
+    {
         MicOptions.Clear();
         MicOptions.Add(new MicOption("— no microphone —", null));
         foreach (AudioDeviceInfo d in _audio.InputDevices)
@@ -90,27 +105,68 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
         }
     }
 
-    [RelayCommand]
-    private void ToggleTest()
+    /// <summary>The panel closed (✕, click outside, other panel): no mic stays open in the background.</summary>
+    public void StopTests()
     {
-        if (Testing)
+        if (_tested.Count > 0)
+        {
+            _tested.Clear();
+            ApplyTests();
+        }
+    }
+
+    internal void ToggleCardTest(PlayerCardViewModel card)
+    {
+        if (!_tested.Remove(card.Config.Id))
+        {
+            if (card.Config.Mic is null)
+            {
+                return;
+            }
+
+            _tested.Add(card.Config.Id);
+        }
+
+        ApplyTests();
+    }
+
+    /// <summary>(Re)opens the tested players' mics; drops players that lost their mic. Keeps the monitor on if it was.</summary>
+    private void ApplyTests()
+    {
+        _tested.RemoveWhere(id => _players.Get(id).Mic is null);
+        bool monitor = Monitoring;
+        if (_tested.Count == 0)
         {
             _audio.StopAll();
             Testing = false;
             Monitoring = false;
             Status = "";
-            return;
         }
-
-        if (!_players.WithMic.Any())
+        else
         {
-            Status = "Assign a microphone to at least one player first";
-            return;
+            _audio.StartTest(_tested.Select(_players.Get));
+            Testing = _audio.Mics.IsRunning;
+            Status = Testing ? "" : "Could not open the microphone (see log)";
+            if (monitor && Testing && MonitorOutput is not null)
+            {
+                _audio.StartMonitor(MonitorOutput.Id);
+            }
+            else
+            {
+                Monitoring = false;
+            }
         }
 
-        _audio.StartAll();
-        Testing = _audio.Mics.IsRunning;
-        Status = Testing ? "Listening — sing into each mic" : "Could not open the microphones (see log)";
+        foreach (PlayerCardViewModel c in Players)
+        {
+            c.Testing = Testing && _audio.Mics.Pipeline(c.Config.Id) is not null;
+            if (!c.Testing)
+            {
+                c.Level = 0;
+                c.Note = "—";
+                c.IsGated = false;
+            }
+        }
     }
 
     // Bound two-way to the ear toggle: the property change *is* the command.
@@ -150,18 +206,7 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
     {
         if (Testing)
         {
-            bool monitor = Monitoring;
-            _audio.StopAll();
-            _audio.StartAll();
-            Testing = _audio.Mics.IsRunning;
-            if (monitor && Testing && MonitorOutput is not null)
-            {
-                _audio.StartMonitor(MonitorOutput.Id);
-            }
-            else
-            {
-                Monitoring = false;
-            }
+            ApplyTests();
         }
     }
 
@@ -178,7 +223,6 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
         {
             _audio.StopAll();
             Testing = false;
-            Monitoring = false;
         }
 
         card.Calibrating = true;
@@ -200,8 +244,7 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
             card.Calibrating = false;
             if (wasTesting)
             {
-                _audio.StartAll();
-                Testing = _audio.Mics.IsRunning;
+                ApplyTests();
             }
         }
     }
@@ -218,7 +261,15 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
         }, DispatcherPriority.Background);
     }
 
-    private void OnConfigChanged(PlayerConfig p) => Players.FirstOrDefault(c => c.Config.Id == p.Id)?.ApplyExternal(p);
+    /// <summary>Config changed elsewhere (Now Playing mix, mic unplugged → unassigned): mirror it; a lost mic ends its test.</summary>
+    private void OnConfigChanged(PlayerConfig p)
+    {
+        Players.FirstOrDefault(c => c.Config.Id == p.Id)?.ApplyExternal(p);
+        if (p.Mic is null && _tested.Contains(p.Id))
+        {
+            ApplyTests();
+        }
+    }
 
     private void PollMeters()
     {
@@ -238,6 +289,7 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
     public void Dispose()
     {
         _meterTimer.Stop();
+        _audio.MicsChanged -= OnMicsChanged;
         _audio.Mics.Analyzed -= OnAnalyzed;
         _players.Changed -= OnConfigChanged;
         _audio.StopAll();
@@ -259,6 +311,8 @@ public sealed partial class PlayerCardViewModel : ObservableObject
     [ObservableProperty] private bool _isGated;
     [ObservableProperty] private string _note = "—";
     [ObservableProperty] private bool _calibrating;
+    /// <summary>This card's mic is open in the test (meter and note are live).</summary>
+    [ObservableProperty] private bool _testing;
 
     public PlayerCardViewModel(PlayerConfig config, PlayersPanelViewModel owner)
     {
@@ -275,6 +329,7 @@ public sealed partial class PlayerCardViewModel : ObservableObject
     public const double GateMaxDb = -20;
 
     public string Title => $"P{Config.Id}";
+    public bool HasMic => Config.Mic is not null;
     public string ColorKey => $"BrushPlayer{Config.Id}";
     /// <summary>Bound directly so ItemsSource resolves before SelectedItem when the panel view is recreated.</summary>
     public ObservableCollection<MicOption> MicOptions => _owner.MicOptions;
@@ -314,14 +369,21 @@ public sealed partial class PlayerCardViewModel : ObservableObject
         OnPropertyChanged(nameof(MicDelayText));
     }
 
-    /// <summary>Config changed elsewhere (Now Playing mix row): mirror the knobs without re-saving.</summary>
+    /// <summary>Config changed elsewhere (Now Playing mix row, mic unassigned on unplug): mirror it without re-saving.</summary>
     public void ApplyExternal(PlayerConfig config)
     {
+        bool micChanged = !Equals(Config.Mic, config.Mic);
         _loading = true;
         Config = config;
         MixGain = config.MixGain;
         _loading = false;
+        if (micChanged)
+        {
+            SyncMicOption();
+        }
     }
+
+    partial void OnConfigChanged(PlayerConfig value) => OnPropertyChanged(nameof(HasMic));
 
     public void ApplySample(PitchSample s)
     {
@@ -362,6 +424,9 @@ public sealed partial class PlayerCardViewModel : ObservableObject
 
     [RelayCommand]
     private Task CalibrateAsync() => _owner.CalibrateAsync(this);
+
+    [RelayCommand]
+    private void ToggleTest() => _owner.ToggleCardTest(this);
 
     private static string NoteName(double midi)
     {

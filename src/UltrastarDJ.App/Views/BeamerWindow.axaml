@@ -80,7 +80,7 @@
       </StackPanel>
     </Border>
 
-    <TextBlock Classes="beamer" Text="Esc closes this screen" FontSize="{StaticResource TextSm}" Opacity="0.5"
+    <TextBlock Classes="beamer" Text="Double-click or F: fullscreen · Esc: leave fullscreen" FontSize="{StaticResource TextSm}" Opacity="0.5"
                HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="{StaticResource Pad4}" IsVisible="{Binding IsIdle}" />
   </Panel>
 </Window>

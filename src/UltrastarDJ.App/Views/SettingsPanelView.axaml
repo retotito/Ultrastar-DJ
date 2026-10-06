@@ -15,6 +15,13 @@
           </StackPanel>
           <ToggleSwitch Grid.Column="1" IsChecked="{Binding LightTheme}" OnContent="" OffContent="" />
         </Grid>
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel>
+            <TextBlock Text="Show tooltips" />
+            <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="Explanations when hovering buttons and settings" />
+          </StackPanel>
+          <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowTooltips}" OnContent="" OffContent="" />
+        </Grid>
       </StackPanel>
     </Border>
 
