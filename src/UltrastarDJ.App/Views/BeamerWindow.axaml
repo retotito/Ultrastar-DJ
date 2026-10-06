@@ -96,6 +96,20 @@
       </Panel>
     </Border>
 
+    <!-- Songbook: guests scan to request songs. Start view, get ready and score only — never over the game. -->
+    <Border IsVisible="{Binding ShowSongbookQr}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="32,32,32,56"
+            Background="#CC000000" CornerRadius="{StaticResource RadiusXl}" Padding="{StaticResource Pad4}">
+      <StackPanel Spacing="{StaticResource Space2}" HorizontalAlignment="Center">
+        <Border CornerRadius="{StaticResource RadiusMd}" ClipToBounds="True" HorizontalAlignment="Center">
+          <c:QrCode Text="{Binding SongbookUrl}" Width="200" Height="200" />
+        </Border>
+        <TextBlock Classes="beamer" Text="Scan to request a song" FontSize="{StaticResource TextXl}" FontWeight="{StaticResource WeightSemibold}" HorizontalAlignment="Center" />
+        <TextBlock Classes="beamer" Text="{Binding SongbookUrl}" FontSize="{StaticResource TextSm}" Opacity="0.7" HorizontalAlignment="Center" />
+        <TextBlock Classes="beamer" Text="{Binding SongbookPin, StringFormat='PIN {0}'}" IsVisible="{Binding HasSongbookPin}"
+                   FontSize="{StaticResource TextXl}" FontWeight="{StaticResource WeightBold}" HorizontalAlignment="Center" />
+      </StackPanel>
+    </Border>
+
     <TextBlock Classes="beamer" Text="Double-click or F: fullscreen · Esc: leave fullscreen" FontSize="{StaticResource TextSm}" Opacity="0.5"
                HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="{StaticResource Pad4}" IsVisible="{Binding IsIdle}" />
   </Panel>

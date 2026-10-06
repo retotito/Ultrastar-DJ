@@ -25,6 +25,7 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
     private readonly PlayersService _players;
     private readonly IDisplayService _displays;
     private readonly AppSettingsService _settings;
+    private readonly SongbookService _songbook;
     private readonly DispatcherTimer _countdown;
     private readonly DispatcherTimer _scoreAnim;
     private DateTime _scoreAnimStart;
@@ -45,9 +46,11 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private IBrush? _winnerBrush;
 
     public BeamerViewModel(DisplayId id, FrameBus gameFrames, PlaybackService playback, PlayersService players, IDisplayService displays,
-        AppSettingsService settings, SyncTestService syncTest)
+        AppSettingsService settings, SyncTestService syncTest, SongbookService songbook)
     {
         Id = id;
+        _songbook = songbook;
+        songbook.Changed += OnSongbookChanged;
         SyncTest = syncTest;
         syncTest.Changed += OnSyncTestChanged;
         _settings = settings;
@@ -66,6 +69,7 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
         _players.Changed += OnPlayerConfigChanged;
         _countdown = new DispatcherTimer(TimeSpan.FromSeconds(1), DispatcherPriority.Normal, (_, _) => CountdownTick());
         _scoreAnim = new DispatcherTimer(TimeSpan.FromMilliseconds(33), DispatcherPriority.Render, (_, _) => AnimateScores());
+        OnSongbookChanged();
         OnPlaybackStateChanged(_playback.State);
         RefreshAssignedPlayers();
     }
@@ -122,6 +126,7 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
     private void OnPlaybackStateChanged(PlaybackState state)
     {
         State = state;
+        OnSongbookChanged();
         ScoreCounted = false;
         switch (state)
         {
@@ -284,6 +289,27 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
         _players.Changed -= OnPlayerConfigChanged;
         _settings.Changed -= OnSettingsChanged;
         SyncTest.Changed -= OnSyncTestChanged;
+        _songbook.Changed -= OnSongbookChanged;
+    }
+
+    // ── Songbook QR: guests scan it to request songs. Between songs only — never over lyrics or notes. ──
+
+    /// <summary>The songbook's address for phones, or null when it is off.</summary>
+    public string? SongbookUrl { get; private set; }
+    /// <summary>The party PIN guests must type, or null without one.</summary>
+    public string? SongbookPin { get; private set; }
+    public bool HasSongbookPin => SongbookPin is not null;
+    public bool ShowSongbookQr => SongbookUrl is not null && State is PlaybackState.Idle or PlaybackState.Loaded or PlaybackState.Preview or PlaybackState.Score;
+
+    // Re-read on the songbook's changes and on every state change (a Wi-Fi switch changes the address too).
+    private void OnSongbookChanged()
+    {
+        SongbookUrl = _songbook.GuestUrl();
+        SongbookPin = _songbook.PinEnabled ? _songbook.Pin : null;
+        OnPropertyChanged(nameof(SongbookUrl));
+        OnPropertyChanged(nameof(SongbookPin));
+        OnPropertyChanged(nameof(HasSongbookPin));
+        OnPropertyChanged(nameof(ShowSongbookQr));
     }
 
     /// <summary>Audio Output → Game → Test sync: this screen shows the flash.</summary>

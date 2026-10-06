@@ -349,6 +349,15 @@ Details: `03-game-engine.md` "Mic plug / unplug".
 
 ---
 
+## Sprint 12 — Songbook  *(in progress)*
+
+- [x] Phone test over Wi-Fi: works (browse, search, request).
+- [x] Pears (P2P, Hyperswarm) considered instead of Wi-Fi: needs an installed app on every phone (browsers cannot hole-punch) and a Bare sidecar — not for a party. Browser + Wi-Fi stays; a tunnel link is the option for guests on mobile data.
+- [x] QR code on the beamer while the songbook runs: card bottom-right on the start view, get ready and score (never during countdown / song) — "Scan to request a song", the address, the PIN if set. `Controls.QrCode` (QRCoder modules drawn as squares, ECC M); the address is the Wi-Fi one phones can reach (`Core.Songbook.SongbookAddress`, tested: 192.168 on Wi-Fi first, never link-local / Tailscale).
+- [x] Verified live: QR scanned from the phone
+
+---
+
 ## Later / ideas
 
 - Cap mpv read-ahead (~60 s) so YouTube streams like a player instead of pulling the whole song into RAM

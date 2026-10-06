@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using UltrastarDJ.Core.Abstractions;
 using UltrastarDJ.Core.Playback;
 using UltrastarDJ.Core.Queue;
+using UltrastarDJ.Core.Songbook;
 using UltrastarDJ.Core.Songs;
 using UltrastarDJ.Infrastructure.Songbook;
 
@@ -78,6 +79,39 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
         }
 
         return urls;
+    }
+
+    /// <summary>
+    /// The one address for the beamer's QR code: the Wi-Fi one guests' phones can reach (Core.Songbook.SongbookAddress),
+    /// or null when the songbook is off or the Mac has no usable network.
+    /// </summary>
+    public string? GuestUrl()
+    {
+        if (!IsRunning)
+        {
+            return null;
+        }
+
+        List<LocalAddress> addresses = [];
+        foreach (NetworkInterface nic in NetworkInterface.GetAllNetworkInterfaces())
+        {
+            if (nic.OperationalStatus != OperationalStatus.Up || nic.NetworkInterfaceType is NetworkInterfaceType.Loopback or NetworkInterfaceType.Tunnel)
+            {
+                continue;
+            }
+
+            bool wireless = nic.NetworkInterfaceType == NetworkInterfaceType.Wireless80211;
+            bool ethernet = nic.NetworkInterfaceType is NetworkInterfaceType.Ethernet or NetworkInterfaceType.GigabitEthernet;
+            foreach (UnicastIPAddressInformation ip in nic.GetIPProperties().UnicastAddresses)
+            {
+                if (ip.Address.AddressFamily == AddressFamily.InterNetwork)
+                {
+                    addresses.Add(new LocalAddress(ip.Address.ToString(), wireless, ethernet));
+                }
+            }
+        }
+
+        return SongbookAddress.Best(addresses) is { } best ? $"http://{best}:{_doc.Port}" : null;
     }
 
     public async Task StartAsync()
