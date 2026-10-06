@@ -22,7 +22,7 @@ public sealed class SongResolver(UsdbService usdb)
         SongValidationResult v = _validator.Validate(song);
         if (!v.IsValid)
         {
-            throw new SongLoadException(string.Join("\n", v.Errors.Select(e => e.Message)));
+            throw new SongLoadException(string.Join("\n", v.Errors.Select(e => e.Message)), songProblem: true);
         }
 
         Song loaded = v.Song.Notes is null
@@ -30,7 +30,7 @@ public sealed class SongResolver(UsdbService usdb)
             : v.Song;
         if (loaded.Notes is null || loaded.Notes.Count == 0)
         {
-            throw new SongLoadException("Song has no notes.");
+            throw new SongLoadException("Song has no notes.", songProblem: true);
         }
 
         return loaded;
@@ -41,7 +41,7 @@ public sealed class SongResolver(UsdbService usdb)
         string txt;
         try
         {
-            txt = await usdb.GetSongTxtAsync(usdbId, ct).ConfigureAwait(false);
+            txt = await usdb.GetSongTxtAsync(usdbId, song.UsdbMtime, ct).ConfigureAwait(false);
         }
         catch (UsdbException ex)
         {
@@ -55,7 +55,7 @@ public sealed class SongResolver(UsdbService usdb)
         SongHeader h = UltraStarParser.ParseHeader(txt);
         if (h.YouTubeId is null)
         {
-            throw new SongLoadException("This USDB song has no YouTube link — nothing to play.");
+            throw new SongLoadException("This USDB song has no YouTube link — nothing to play.", songProblem: true);
         }
 
         return song with

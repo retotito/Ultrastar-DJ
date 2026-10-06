@@ -120,7 +120,12 @@
                     </MenuItem>
                   </ContextMenu>
                 </Grid.ContextMenu>
-                <TextBlock Grid.Column="0" Text="{Binding Title}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                <!-- ⚠ before the title: the last load failed for a reason of the song's own (LoadFailureService). -->
+                <Grid Grid.Column="0" ColumnDefinitions="Auto,*">
+                  <c:Icon Glyph="warning" FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushError}" VerticalAlignment="Center" Margin="0,0,6,0"
+                          IsVisible="{Binding HasFailure}" ToolTip.Tip="{Binding FailureTip}" Background="Transparent" />
+                  <TextBlock Grid.Column="1" Text="{Binding Title}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                </Grid>
                 <TextBlock Grid.Column="1" Text="{Binding Artist}" Classes="muted" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,8,0"
                            IsVisible="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).Table.ShowArtist}" />
                 <TextBlock Grid.Column="2" Text="{Binding Year}" Classes="muted" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,8,0"

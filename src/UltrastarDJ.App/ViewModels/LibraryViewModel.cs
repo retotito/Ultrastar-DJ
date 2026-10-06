@@ -9,8 +9,13 @@ using UltrastarDJ.Core.Songs;
 namespace UltrastarDJ.App.ViewModels;
 
 /// <summary>A library row: the song plus what the table shows about its source.</summary>
-public sealed record LibraryRow(Song Song, string Source, bool IsAvailable)
+public sealed record LibraryRow(Song Song, string Source, bool IsAvailable, LoadFailure? Failure = null)
 {
+    /// <summary>The last load failed for a reason of the song's own (<see cref="LoadFailureService"/>).</summary>
+    public bool HasFailure => Failure is not null;
+    public string? FailureTip => Failure is { } f
+        ? $"Could not be loaded on {f.AtUtc.ToLocalTime():d MMM, HH:mm}: {f.Reason}\nThe mark goes away once it loads again or the song changes."
+        : null;
     public string Title => Song.Title;
     public string Artist => Song.Artist;
     public int? Year => Song.Year;
@@ -57,6 +62,7 @@ public sealed partial class LibraryViewModel : ViewModelBase
     private bool _rebuildingSources;
 
     private readonly LibraryService _library;
+    private readonly LoadFailureService _failures;
     private readonly PreviewViewModel _preview;
     private readonly QueueViewModel _queue;
     private readonly NowPlayingViewModel _nowPlaying;
@@ -73,8 +79,11 @@ public sealed partial class LibraryViewModel : ViewModelBase
     [ObservableProperty] private SourceOption? _source = AllSources;
     [ObservableProperty] private bool _descending;
 
-    public LibraryViewModel(LibraryService library, PreviewViewModel preview, QueueViewModel queue, NowPlayingViewModel nowPlaying, AppSettingsService settings)
+    public LibraryViewModel(LibraryService library, PreviewViewModel preview, QueueViewModel queue, NowPlayingViewModel nowPlaying, AppSettingsService settings,
+        LoadFailureService failures)
     {
+        _failures = failures;
+        failures.Changed += () => Dispatcher.UIThread.Post(Refresh);
         Table = new LibraryTableLayout(settings);
         _library = library;
         _preview = preview;
@@ -215,7 +224,7 @@ public sealed partial class LibraryViewModel : ViewModelBase
             Descending = Descending,
         };
         Rows = query.Apply(all, _library.SourceLabel)
-            .Select(s => new LibraryRow(s, _library.SourceLabel(s.SourceId), _library.IsAvailable(s.SourceId)))
+            .Select(s => new LibraryRow(s, _library.SourceLabel(s.SourceId), _library.IsAvailable(s.SourceId), _failures.For(s)))
             .ToList();
         ShownCount = Rows.Count;
         OnPropertyChanged(nameof(HasActiveFilters));

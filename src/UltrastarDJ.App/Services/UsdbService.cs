@@ -203,19 +203,39 @@ public sealed class UsdbService : IDisposable
         SetStatus("Disconnected");
     }
 
-    /// <summary>Song text for a USDB song: disk cache first, else fetched (logging in with saved credentials if needed).</summary>
-    public async Task<string> GetSongTxtAsync(int songId, CancellationToken ct = default)
+    /// <summary>
+    /// Song text for a USDB song: disk cache first, else fetched (logging in with saved credentials if needed).
+    /// A cached text older than the song's last change on USDB (<paramref name="usdbMtime"/>, from the catalog) is
+    /// fetched again — otherwise a song fixed on USDB would keep playing its old text. If that refetch fails
+    /// (offline), the cached text is still used.
+    /// </summary>
+    public async Task<string> GetSongTxtAsync(int songId, long? usdbMtime = null, CancellationToken ct = default)
     {
         string path = Path.Combine(_txtCacheDir, songId.ToString(CultureInfo.InvariantCulture) + ".txt");
-        if (File.Exists(path))
+        bool cached = File.Exists(path);
+        bool stale = cached && usdbMtime is > 0 && File.GetLastWriteTimeUtc(path) < DateTimeOffset.FromUnixTimeSeconds(usdbMtime.Value).UtcDateTime;
+        if (cached && !stale)
         {
             return await File.ReadAllTextAsync(path, ct).ConfigureAwait(false);
         }
 
-        await EnsureLoggedInAsync(ct).ConfigureAwait(false);
-        string txt = await _client.GetSongTxtAsync(songId, ct).ConfigureAwait(false);
-        await File.WriteAllTextAsync(path, txt, ct).ConfigureAwait(false);
-        return txt;
+        try
+        {
+            await EnsureLoggedInAsync(ct).ConfigureAwait(false);
+            string txt = await _client.GetSongTxtAsync(songId, ct).ConfigureAwait(false);
+            await File.WriteAllTextAsync(path, txt, ct).ConfigureAwait(false);
+            if (stale)
+            {
+                _log.LogInformation("USDB song {Id} changed on USDB — song text refreshed", songId);
+            }
+
+            return txt;
+        }
+        catch (Exception ex) when (stale && ex is UsdbException or HttpRequestException)
+        {
+            _log.LogWarning("USDB song {Id} changed on USDB but could not be refreshed ({Error}) — using the cached text", songId, ex.Message);
+            return await File.ReadAllTextAsync(path, ct).ConfigureAwait(false);
+        }
     }
 
     private async Task EnsureLoggedInAsync(CancellationToken ct)

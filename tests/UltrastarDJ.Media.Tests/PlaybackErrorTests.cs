@@ -37,4 +37,19 @@ public class PlaybackErrorTests
         // Details stay verbatim so a bug report carries the exact message.
         Assert.StartsWith("ERROR:", PlaybackError.Explain("ERROR: [youtube] x: Sign in to confirm your age").Details);
     }
+
+    [Theory]
+    [InlineData("ERROR: [youtube] abc: Video unavailable. This video has been removed by the uploader", true)]
+    [InlineData("ERROR: [youtube] abc: Private video. Sign in if you've been granted access", true)]
+    [InlineData("ERROR: [youtube] OPXUeeFXc90: Sign in to confirm your age.", true)]
+    [InlineData("ERROR: [youtube] abc: The uploader has not made this video available in your country", true)]
+    [InlineData("ERROR: [youtube] abc: Sign in to confirm you’re not a bot.", false)]
+    [InlineData("ERROR: [youtube] abc: Unable to download webpage: nodename nor servname provided", false)]
+    [InlineData("ERROR: unable to download video data: HTTP Error 403: Forbidden", false)]
+    [InlineData("no audio or video data played", false)]
+    public void SongProblem_OnlyWhenTheVideoItselfFails(string raw, bool songProblem)
+    {
+        // Marked in the library only when it would fail again tomorrow; connection trouble never marks a song.
+        Assert.Equal(songProblem, PlaybackError.Explain(raw).SongProblem);
+    }
 }

@@ -129,7 +129,7 @@ public sealed partial class SongDetailsViewModel : ViewModelBase
                 else
                 {
                     Status = "Loading the song text from USDB…";
-                    text = await _usdb.GetSongTxtAsync(id);
+                    text = await _usdb.GetSongTxtAsync(id, song.UsdbMtime);
                     song = WithHeader(song, UltraStarParser.ParseHeader(text));
                 }
             }
@@ -149,7 +149,13 @@ public sealed partial class SongDetailsViewModel : ViewModelBase
         Summary = tracks is { Count: > 0 } ? SummaryOf(song, tracks, text!) : [];
         Files = Row.IsUsdb ? [] : FilesOf(song, fs);
         // A USDB song's problems are about its text only; it has no local files to miss.
-        Problems = text is null && Row.IsUsdb ? [] : SongCheck.Problems(song, tracks, fs);
+        List<string> problems = text is null && Row.IsUsdb ? [] : [.. SongCheck.Problems(song, tracks, fs)];
+        if (Row.Failure is { } failed)
+        {
+            problems.Insert(0, $"Could not be loaded on {failed.AtUtc.ToLocalTime():d MMM, HH:mm}: {failed.Reason}");
+        }
+
+        Problems = problems;
         Txt = text ?? "";
         YouTubeUrl = song.YouTubeId is { } yt ? $"https://www.youtube.com/watch?v={yt}" : null;
         if (text is not null)

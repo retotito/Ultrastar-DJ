@@ -19,6 +19,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
     private readonly MediaService _media;
     private readonly OutputsService _outputs;
     private readonly ThumbnailService _thumbnails;
+    private readonly LoadFailureService _failures;
     private readonly SongResolver _resolver;
     private readonly QueueViewModel _queue;
     private readonly NowPlayingViewModel _nowPlaying;
@@ -38,8 +39,9 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private double _level;
 
     public PreviewViewModel(MediaService media, OutputsService outputs, SongResolver resolver, QueueViewModel queue, NowPlayingViewModel nowPlaying,
-        NotificationService notifications, ThumbnailService thumbnails, ILogger<PreviewViewModel> log)
+        NotificationService notifications, ThumbnailService thumbnails, LoadFailureService failures, ILogger<PreviewViewModel> log)
     {
+        _failures = failures;
         _thumbnails = thumbnails;
         _media = media;
         _outputs = outputs;
@@ -106,13 +108,14 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
         }
 
         Loading = true;
+        MediaPlan? plan = null;
         try
         {
             Song resolved = await _resolver.ResolveAsync(song);
             Song = resolved;
             Cover = null;
             _ = ShowPictureAsync(resolved);
-            MediaPlan plan = MediaSourceResolver.Resolve(new SongMedia
+            plan = MediaSourceResolver.Resolve(new SongMedia
             {
                 AudioPath = resolved.AudioPath,
                 VideoPath = resolved.VideoPath,
@@ -123,16 +126,27 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
             }, maxHeight: 360);
             await _media.Preview.LoadAsync(plan);
             _media.Preview.Play();
+            _failures.Loaded(song);
         }
         catch (SongLoadException ex)
         {
+            if (ex.SongProblem)
+            {
+                _failures.Failed(song, ex.Reasons[0]);
+            }
+
             _notifications.ShowError("Song cannot be previewed", ex.Reasons, ex.Details);
         }
         catch (MediaException ex)
         {
             _log.LogWarning("Preview failed: {Error}", ex.Message);
-            PlaybackError explained = PlaybackError.Explain(ex.Message);
-            _notifications.ShowError("Song cannot be previewed", explained.Reason, explained.Details);
+            SongLoadException explained = PlaybackService.Explain(ex, plan);
+            if (explained.SongProblem)
+            {
+                _failures.Failed(song, explained.Reasons[0]);
+            }
+
+            _notifications.ShowError("Song cannot be previewed", explained.Reasons, explained.Details);
         }
         finally
         {

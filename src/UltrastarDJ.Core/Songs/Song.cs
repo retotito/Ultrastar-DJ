@@ -79,6 +79,8 @@ public sealed record Song
 
     public int? UsdbId { get; init; }
     public int? UsdbViews { get; init; }
+    /// <summary>When the song last changed on USDB (Unix seconds, from the catalog). Newer than a cached text → refetch.</summary>
+    public long? UsdbMtime { get; init; }
 
     /// <summary>
     /// Popularity 0–4 from USDB views (100/500/1000/2000+), as in the prototype; <c>null</c> for local songs.

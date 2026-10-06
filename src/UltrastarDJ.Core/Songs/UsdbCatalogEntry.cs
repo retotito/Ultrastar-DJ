@@ -35,5 +35,6 @@ public sealed record UsdbCatalogEntry
         Edition = Edition,
         Creator = Creator,
         UsdbViews = Views,
+        UsdbMtime = UsdbMtime,
     };
 }

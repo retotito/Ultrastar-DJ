@@ -112,6 +112,7 @@ public sealed partial class App : Application
         services.AddSingleton<IUsdbCatalog, SqliteUsdbCatalog>();
         services.AddSingleton<IUsdbClient, UsdbClient>();
         services.AddSingleton<LocalFolderScanner>();
+        services.AddSingleton<ILoadFailureStore, SqliteLoadFailureStore>();
 
         // App services
         services.AddSingleton<NotificationService>();
@@ -125,6 +126,7 @@ public sealed partial class App : Application
         services.AddSingleton<LibraryService>();
         services.AddSingleton<UsdbService>();
         services.AddSingleton<SongResolver>();
+        services.AddSingleton<LoadFailureService>();
         services.AddSingleton<SongbookService>();
         services.AddSingleton<OutputsService>();
         services.AddSingleton<PlaybackService>();

@@ -35,6 +35,7 @@ public sealed class PlaybackService : IDisposable
     private readonly AppSettingsService _settings;
     private readonly SongResolver _resolver;
     private readonly OutputsService _outputs;
+    private readonly LoadFailureService _failures;
     private readonly NotificationService _notifications;
     private readonly ThumbnailService _thumbnails;
     private readonly ILogger<PlaybackService> _log;
@@ -44,7 +45,7 @@ public sealed class PlaybackService : IDisposable
     private PlaybackState _state = PlaybackState.Idle;
 
     public PlaybackService(MediaService media, AudioInputService audio, PlayersService players, IDisplayService displays, AppSettingsService settings, SongResolver resolver,
-        OutputsService outputs, NotificationService notifications, ThumbnailService thumbnails, ILogger<PlaybackService> log)
+        OutputsService outputs, LoadFailureService failures, NotificationService notifications, ThumbnailService thumbnails, ILogger<PlaybackService> log)
     {
         _media = media;
         _audio = audio;
@@ -53,6 +54,7 @@ public sealed class PlaybackService : IDisposable
         _settings = settings;
         _resolver = resolver;
         _outputs = outputs;
+        _failures = failures;
         _notifications = notifications;
         _thumbnails = thumbnails;
         _log = log;
@@ -156,6 +158,7 @@ public sealed class PlaybackService : IDisposable
 
         IsBusy = true;
         LastError = null;
+        MediaPlan? plan = null;
         try
         {
             if (State != PlaybackState.Idle)
@@ -165,7 +168,7 @@ public sealed class PlaybackService : IDisposable
 
             Song loaded = await _resolver.ResolveAsync(song, ct);
 
-            MediaPlan plan = MediaSourceResolver.Resolve(new SongMedia
+            plan = MediaSourceResolver.Resolve(new SongMedia
             {
                 AudioPath = loaded.AudioPath,
                 VideoPath = loaded.VideoPath,
@@ -182,17 +185,39 @@ public sealed class PlaybackService : IDisposable
             Plan = plan;
             State = PlaybackState.Loaded;
             _ = LoadPicturesAsync(loaded);
+            _failures.Loaded(song);
+        }
+        catch (SongLoadException ex) when (ex.SongProblem)
+        {
+            _failures.Failed(song, ex.Reasons[0]);
+            throw;
         }
         catch (MediaException ex)
         {
             LastError = ex.Message;
-            PlaybackError explained = PlaybackError.Explain(ex.Message);
-            throw new SongLoadException(explained.Reason, explained.Details);
+            SongLoadException explained = Explain(ex, plan);
+            if (explained.SongProblem)
+            {
+                _failures.Failed(song, explained.Reasons[0]);
+            }
+
+            throw explained;
         }
         finally
         {
             IsBusy = false;
         }
+    }
+
+    /// <summary>
+    /// mpv's error in plain words. A local file that does not play is the song's problem; a YouTube failure only when
+    /// the video itself is gone or blocked (<see cref="PlaybackError.SongProblem"/>).
+    /// </summary>
+    public static SongLoadException Explain(MediaException ex, MediaPlan? plan)
+    {
+        PlaybackError e = PlaybackError.Explain(ex.Message);
+        bool local = plan is not null && plan.Audio.Source is not MediaSource.YouTube;
+        return new SongLoadException(e.Reason, e.Details, e.SongProblem || local);
     }
 
     /// <summary>Thumbnail download must not hold up the load: pictures follow; ignored if another song came meanwhile.</summary>
@@ -483,9 +508,14 @@ public sealed class PlaybackService : IDisposable
 }
 
 /// <summary>A song cannot be loaded. <see cref="Exception.Message"/>: plain reasons, one per line; <see cref="Details"/>: raw cause.</summary>
-public sealed class SongLoadException(string message, string? details = null) : Exception(message)
+/// <param name="message">Plain reasons, one per line.</param>
+/// <param name="details">Raw cause for "Show details".</param>
+/// <param name="songProblem">The song itself is the problem (broken file, no YouTube link, video removed): the
+/// library marks it (<see cref="LoadFailureService"/>). False for connection trouble.</param>
+public sealed class SongLoadException(string message, string? details = null, bool songProblem = false) : Exception(message)
 {
     public string? Details { get; } = details;
+    public bool SongProblem { get; } = songProblem;
 
     public IReadOnlyList<string> Reasons => Message.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 }

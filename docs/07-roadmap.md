@@ -329,6 +329,8 @@ Details: `03-game-engine.md` "Mic plug / unplug".
 - [x] Game Player box shows the countdown (3 – 2 – 1) and PAUSED like the beamers: same text style (`TextBlock.beamer`, now app-wide), scaled to the box; the count starts on the same state change as the beamers'.
 - [x] Game Player box: elapsed / remaining pills and the blue progress line at its bottom, as on the beamer (`SongTimeline`; tokens `BrushStageProgress/Track/Pill`); replaces the small position text.
 - [x] YouTube load retry: a refused stream (HTTP 403 / 5xx, seen 3× in one evening — first load failed, the manual retry worked) is loaded again automatically with a fresh yt-dlp address, up to 2 retries, before the error shows (`Media.StreamRetry`, tested). Game and preview channels, video and audio roles.
+- [x] Songs that cannot be loaded are marked: red ⚠ before the title with reason and date (tooltip), and at the top of Details → Problems. Only the song's own problems (no YouTube link, video removed/private/age-restricted/blocked, broken or missing local files — `SongLoadException.SongProblem`, `PlaybackError.SongProblem`, tested); never connection trouble. Rows stay usable. The mark goes away when the song loads (Preview or Game Player) or changed since (`Core.Songs.LoadFailure` fingerprint: USDB change time / local .txt modification time, tested). Stored in library.db (`load_failures`, tested).
+- [x] Fix: cached USDB song texts were never refreshed — a text older than the song's last change on USDB is fetched again (cached text used if that fails).
 - [ ] Verified live
 
 ---
