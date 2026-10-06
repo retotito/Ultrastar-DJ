@@ -75,6 +75,12 @@
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                   <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
                   <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="{Binding Artist}" TextTrimming="CharacterEllipsis" />
+                  <!-- Requested on the songbook: who to call to the mic -->
+                  <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsRequest}" ToolTip.Tip="Requested on the songbook">
+                    <c:Icon Glyph="mic" FontSize="{StaticResource IconSm}" Foreground="{DynamicResource BrushPrimary}" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding RequestedBy}" FontSize="{StaticResource TextXs}" FontWeight="{StaticResource WeightSemibold}"
+                               Foreground="{DynamicResource BrushPrimary}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                  </StackPanel>
                 </StackPanel>
                 <Button Grid.Column="2" Classes="sidebar" Width="26" Height="26" Command="{Binding MoveUpCommand}" ToolTip.Tip="Move up"><c:Icon Glyph="arrow_upward" FontSize="{StaticResource IconSm}" /></Button>
                 <Button Grid.Column="3" Classes="sidebar" Width="26" Height="26" Command="{Binding MoveDownCommand}" ToolTip.Tip="Move down"><c:Icon Glyph="arrow_downward" FontSize="{StaticResource IconSm}" /></Button>

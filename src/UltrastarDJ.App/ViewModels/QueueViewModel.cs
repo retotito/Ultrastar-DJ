@@ -33,7 +33,12 @@ public sealed partial class QueueViewModel : ViewModelBase
         };
         _songbook = songbook;
         _playlist.Changed += Refresh;
-        _songbook.Changed += () => OnPropertyChanged(nameof(HasRequests));
+        // Requests accepted or sung change who is shown next to the queued songs.
+        _songbook.Changed += () =>
+        {
+            OnPropertyChanged(nameof(HasRequests));
+            Refresh();
+        };
         Refresh();
     }
 
@@ -53,7 +58,7 @@ public sealed partial class QueueViewModel : ViewModelBase
         Items.Clear();
         for (int i = 0; i < _playlist.Items.Count; i++)
         {
-            Items.Add(new QueueRowViewModel(_playlist.Items[i], i + 1, i == _playlist.ActiveIndex, this));
+            Items.Add(new QueueRowViewModel(_playlist.Items[i], i + 1, i == _playlist.ActiveIndex, _songbook.RequesterOf(_playlist.Items[i].Id), this));
         }
 
         OnPropertyChanged(nameof(Count));
@@ -90,8 +95,11 @@ public sealed partial class QueueViewModel : ViewModelBase
     private bool HasItems() => _playlist.Count > 0;
 }
 
-public sealed partial class QueueRowViewModel(Song song, int number, bool isActive, QueueViewModel owner) : ObservableObject
+public sealed partial class QueueRowViewModel(Song song, int number, bool isActive, string? requestedBy, QueueViewModel owner) : ObservableObject
 {
+    /// <summary>The guest who requested it via the songbook — so the DJ can call them up before it starts.</summary>
+    public string? RequestedBy { get; } = requestedBy;
+    public bool IsRequest => RequestedBy is not null;
     public Song Song { get; } = song;
     public int Number { get; } = number;
     public bool IsActive { get; } = isActive;

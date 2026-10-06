@@ -14,7 +14,7 @@ using UltrastarDJ.Infrastructure.Songbook;
 namespace UltrastarDJ.App.Services;
 
 /// <summary>A guest's wish, shown in the queue widget until the DJ queues or dismisses it.</summary>
-public sealed record SongRequest(Song Song, string Guest, DateTime At);
+public sealed record SongRequest(string Id, Song Song, string Guest, DateTime At);
 
 /// <summary>
 /// Guest songbook: hosts <see cref="SongbookServer"/>, feeds it library/queue state and collects requests.
@@ -23,9 +23,9 @@ public sealed record SongRequest(Song Song, string Guest, DateTime At);
 public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
 {
     private const string SettingsName = "songbook";
-    private const int RequestLimit = 50;
 
     private readonly LibraryService _library;
+    private readonly UsdbService _usdb;
     private readonly PlaybackService _playback;
     private readonly Playlist _playlist;
     private readonly NotificationService _notifications;
@@ -35,11 +35,20 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
     private SongbookDocument _doc;
 
     public SongbookService(LibraryService library, PlaybackService playback, Playlist playlist, NotificationService notifications,
-        ISettingsStore settings, ILoggerFactory loggers)
+        ISettingsStore settings, UsdbService usdb, ILoggerFactory loggers)
     {
         _library = library;
+        _usdb = usdb;
+        library.Changed += OnLibraryChanged;
+        library.AvailabilityChanged += OnLibraryChanged;
         _playback = playback;
         _playlist = playlist;
+        // Remember which accepted requests went on stage (their status turns "sung" when the queue moves on).
+        playlist.Changed += () =>
+        {
+            _requests.Observe(QueueIds(), _playlist.ActiveIndex);
+            Changed?.Invoke();
+        };
         _notifications = notifications;
         _settings = settings;
         _log = loggers.CreateLogger<SongbookService>();
@@ -155,65 +164,158 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
     /// <summary>Takes effect on the next start.</summary>
     public void SetPort(int port) => Save(_doc with { Port = Math.Clamp(port, 1024, 65535) });
 
+    // ── Requests (UI thread): the book decides, the REQUESTS list shows the waiting ones ──
+    private readonly GuestRequests _requests = new();
+
     public void Dismiss(SongRequest request)
     {
-        Requests.Remove(request);
-        Notify();
+        _requests.Dismiss(request.Id);
+        RefreshRequests();
     }
 
     public void Accept(SongRequest request)
     {
+        _requests.Accept(request.Id);
         _playlist.Add(request.Song);
-        Dismiss(request);
+        RefreshRequests();
+    }
+
+    /// <summary>The guest who asked for a queued or on-stage song — the queue shows it so the DJ can call them up.</summary>
+    public string? RequesterOf(string songId) => _requests.RequesterOf(songId, QueueIds(), _playlist.ActiveIndex);
+
+    private IReadOnlyList<string> QueueIds() => [.. _playlist.Items.Select(s => s.Id)];
+
+    private void RefreshRequests()
+    {
+        Requests.Clear();
+        foreach (GuestRequest r in _requests.Waiting)
+        {
+            if (_library.Songs.FirstOrDefault(s => s.Id == r.SongId) is { } song)
+            {
+                Requests.Add(new SongRequest(r.Id, song, r.Guest, r.At));
+            }
+        }
+
+        Notify();
     }
 
     // ── ISongbookBackend (Kestrel threads) ─────────────────────────────
 
-    public IReadOnlyList<SongbookSong> Search(string query, int limit)
-    {
-        string q = query.Trim();
-        if (q.Length < 2)
-        {
-            return [];
-        }
+    // ── Catalog for the phones (they search and filter it themselves) ──
+    private int _libraryVersion = 1;
 
-        return _library.Songs
-            .Where(s => _library.IsAvailable(s.SourceId) && (s.Title.Contains(q, StringComparison.OrdinalIgnoreCase) || s.Artist.Contains(q, StringComparison.OrdinalIgnoreCase)))
-            .OrderBy(s => s.Artist, StringComparer.OrdinalIgnoreCase).ThenBy(s => s.Title, StringComparer.OrdinalIgnoreCase)
-            .Take(limit)
-            .Select(ToGuestSong)
-            .ToList();
-    }
+    public int LibraryVersion => Volatile.Read(ref _libraryVersion);
 
-    public SongbookState State()
-    {
-        Song? now = _playback.State is PlaybackState.Countdown or PlaybackState.Playing or PlaybackState.Paused ? _playback.Song : null;
-        int active = _playlist.ActiveIndex;
-        IReadOnlyList<SongbookSong> queue = _playlist.Items.Skip(active + 1).Take(5).Select(ToGuestSong).ToList();
-        return new SongbookState(now is null ? null : ToGuestSong(now), queue, _library.Songs.Count);
-    }
+    // Library changed, or a source came or went: phones fetch the catalog again on their next status check.
+    private void OnLibraryChanged() => Interlocked.Increment(ref _libraryVersion);
 
-    public bool Request(string songId, string guestName)
+    /// <summary>Only what can be played now — no songs from unplugged drives, no USDB while offline.</summary>
+    public SongbookCatalog Catalog() => SongbookCatalog.Build(_library.Songs.Where(s => _library.IsAvailable(s.SourceId)));
+
+    public async Task<string?> YouTubeIdAsync(string songId, CancellationToken ct)
     {
         Song? song = _library.Songs.FirstOrDefault(s => s.Id == songId);
         if (song is null)
         {
+            return null;
+        }
+
+        if (song.HasYouTube)
+        {
+            return song.YouTubeId;
+        }
+
+        if (song.UsdbId is not { } usdbId)
+        {
+            return null;
+        }
+
+        try
+        {
+            string txt = await _usdb.GetSongTxtAsync(usdbId, song.UsdbMtime, ct).ConfigureAwait(false);
+            return UltraStarParser.ParseHeader(txt).YouTubeId;
+        }
+        catch (Exception ex) when (ex is UsdbException or HttpRequestException or IOException)
+        {
+            _log.LogInformation("Songbook preview: no YouTube id for {Song} ({Error})", songId, ex.Message);
+            return null;
+        }
+    }
+
+    // Everything below reads or changes the queue and the request book: done on the UI thread, which owns both.
+    public Task<SongbookState> StateAsync(string? clientId) => Dispatcher.UIThread.InvokeAsync(() => BuildState(clientId)).GetTask();
+
+    private SongbookState BuildState(string? clientId)
+    {
+        Song? now = _playback.State is PlaybackState.Countdown or PlaybackState.Playing or PlaybackState.Paused ? _playback.Song : null;
+        IReadOnlyList<string> ids = QueueIds();
+        int active = _playlist.ActiveIndex;
+        IReadOnlyList<SongbookSong> queue = _playlist.Items.Skip(active + 1).Take(5).Select(ToGuestSong).ToList();
+
+        // Songs nobody should request again right now: on stage, queued, or waiting for the DJ.
+        Dictionary<string, string> taken = [];
+        foreach (GuestRequest r in _requests.Waiting)
+        {
+            taken[r.SongId] = "Requested";
+        }
+
+        for (int i = Math.Max(0, active); i < ids.Count; i++)
+        {
+            taken[ids[i]] = i == active ? "On stage" : i == active + 1 ? "Up next" : $"In the queue #{i - active}";
+        }
+
+        List<SongbookMine> mine = [];
+        if (clientId is not null)
+        {
+            foreach (GuestRequest r in _requests.Of(clientId).Reverse())
+            {
+                GuestRequestStatus status = GuestRequests.StatusOf(r, ids, active, out int position);
+                Song? song = _library.Songs.FirstOrDefault(s => s.Id == r.SongId);
+                mine.Add(new SongbookMine(r.Id, r.SongId, song?.Title ?? "", song?.Artist ?? "", StatusText(status, position), status == GuestRequestStatus.Waiting));
+            }
+        }
+
+        return new SongbookState(now is null ? null : ToGuestSong(now), queue, _library.Songs.Count, LibraryVersion, mine, taken);
+    }
+
+    private static string StatusText(GuestRequestStatus status, int position) => status switch
+    {
+        GuestRequestStatus.Waiting => "Waiting for the DJ",
+        GuestRequestStatus.Queued => position == 1 ? "Up next" : $"In the queue #{position}",
+        GuestRequestStatus.OnStage => "On stage now 🎤",
+        GuestRequestStatus.Sung => "Sung ✓",
+        _ => "Not this time",
+    };
+
+    public Task<SongbookRequestResult> RequestAsync(string songId, string guestName, string clientId) => Dispatcher.UIThread.InvokeAsync(() =>
+    {
+        Song? song = _library.Songs.FirstOrDefault(s => s.Id == songId);
+        if (song is null || !_library.IsAvailable(song.SourceId))
+        {
+            return new SongbookRequestResult(false, true, null);
+        }
+
+        RequestOutcome outcome = _requests.Add(songId, guestName, clientId, DateTime.Now, QueueIds(), _playlist.ActiveIndex);
+        if (outcome.Request is null)
+        {
+            return new SongbookRequestResult(false, false, outcome.Refusal);
+        }
+
+        RefreshRequests();
+        _notifications.Info($"{guestName} wants to sing", $"{song.Artist} – {song.Title}");
+        return new SongbookRequestResult(true, false, null);
+    }).GetTask();
+
+    public Task<bool> CancelAsync(string requestId, string clientId) => Dispatcher.UIThread.InvokeAsync(() =>
+    {
+        if (!_requests.Cancel(requestId, clientId))
+        {
             return false;
         }
 
-        Dispatcher.UIThread.Post(() =>
-        {
-            if (Requests.Count >= RequestLimit)
-            {
-                Requests.RemoveAt(0);
-            }
-
-            Requests.Add(new SongRequest(song, guestName, DateTime.Now));
-            _notifications.Info($"{guestName} wants to sing", $"{song.Artist} – {song.Title}");
-            Changed?.Invoke();
-        });
+        RefreshRequests();
         return true;
-    }
+    }).GetTask();
 
     private SongbookSong ToGuestSong(Song s) => new(s.Id, s.Artist, s.Title, s.Year, s.Language, _library.SourceLabel(s.SourceId));
 

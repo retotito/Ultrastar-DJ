@@ -43,22 +43,70 @@
   .card input:focus { border-color:var(--accent); }
   .card .btn { width:100%; padding:14px; font-size:16px; }
   .err { color:var(--danger); font-size:13px; min-height:18px; }
+  .filters { display:flex; gap:8px; margin-top:8px; }
+  .filters select { flex:1; min-width:0; background:var(--card2); border:1px solid #33334a; color:var(--text); border-radius:10px; padding:9px 10px; font-size:15px; outline:none; -webkit-appearance:none; appearance:none; }
+  .filters select:disabled { opacity:.45; }
+  .count { color:var(--muted); font-size:13px; margin:2px 2px 8px; }
+  .song { cursor:pointer; padding-right:6px; }
+  .dots { background:none; color:var(--muted); border:none; width:36px; height:36px; font-size:22px; line-height:1; cursor:pointer; flex:none; border-radius:10px; }
+  .dots:active { background:var(--card2); }
+  .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:90; align-items:center; justify-content:center; padding:24px; }
+  .modal.visible { display:flex; }
+  .modal .card { align-items:stretch; text-align:left; gap:10px; }
+  .modal .st { font-size:20px; font-weight:700; line-height:1.25; }
+  .modal .sa { color:var(--muted); font-size:15px; margin-top:-6px; }
+  .modal dl { display:grid; grid-template-columns:auto 1fr; gap:4px 12px; margin:4px 0; font-size:14px; }
+  .modal dt { color:var(--muted); }
+  .modal dd { margin:0; }
+  .modal .btn { text-align:center; text-decoration:none; display:block; }
+  .modal .btn.secondary { background:var(--card2); color:var(--text); }
+  .modal .btn[aria-disabled="true"], .modal .btn:disabled { opacity:.5; pointer-events:none; }
+  .modal input { width:100%; background:var(--card2); border:1px solid #33334a; color:var(--text); border-radius:10px; padding:11px 12px; font-size:16px; outline:none; }
+  .modal input:focus { border-color:var(--accent); }
+  .modal label { color:var(--muted); font-size:13px; margin-bottom:-4px; }
+  .mark { font-size:11px; color:var(--accent); white-space:nowrap; flex:none; }
+  .mine { background:var(--card); border-radius:14px; padding:4px 14px 8px; margin-bottom:12px; }
+  .mine summary { color:var(--muted); font-size:11px; letter-spacing:1px; text-transform:uppercase; padding:8px 0 4px; cursor:pointer; }
+  .mine .r { display:flex; align-items:center; gap:10px; padding:8px 0; border-top:1px solid #2a2a3a; }
+  .mine .r:first-of-type { border-top:none; }
+  .mine .r .meta { flex:1; min-width:0; }
+  .mine .st { font-size:13px; color:var(--accent); }
+  .mine .cancel { background:var(--card2); color:var(--text); border:none; border-radius:9px; padding:8px 10px; font-size:13px; }
+  .more { width:100%; background:var(--card); color:var(--text); }
 </style>
 </head>
 <body>
 <header>
   <h1>🎤 Songbook <small id="count"></small></h1>
   <div class="search"><input id="q" type="search" placeholder="Search title or artist" autocomplete="off" autocorrect="off"></div>
+  <!-- One filter at a time: pick what to filter by, then the value (with how many songs it would show). -->
+  <div class="filters">
+    <select id="fk" onchange="kindChanged()">
+      <option value="">Filter…</option>
+      <option value="language">Language</option>
+      <option value="genre">Genre</option>
+      <option value="decade">Decade</option>
+      <option value="popularity">Popularity</option>
+    </select>
+    <select id="fv" onchange="valueChanged()" disabled><option value="">—</option></select>
+  </div>
 </header>
 <main>
+  <!-- This phone's requests and where they stand; cancel while the DJ has not decided. -->
+  <details class="mine" id="mine" open hidden>
+    <summary id="mineTitle">My requests</summary>
+    <div id="mineList"></div>
+  </details>
   <section class="now" id="now" hidden>
     <div class="label">Now playing</div>
     <div class="title" id="nowTitle"></div>
     <div class="artist" id="nowArtist"></div>
     <ol class="queue" id="queue"></ol>
   </section>
+  <div class="count" id="matches"></div>
   <div id="list"></div>
-  <div class="hint" id="hint">Type to search the library.</div>
+  <button class="btn more" id="more" hidden onclick="showMore()"></button>
+  <div class="hint" id="hint">Loading the songbook…</div>
 </main>
 <div class="toast" id="toast"></div>
 
@@ -72,21 +120,32 @@
   </div>
 </div>
 
-<div class="overlay" id="nameOverlay">
+<!-- Tap a song (or its ⋯): its details, YouTube link and Request. -->
+<div class="modal" id="songModal" onclick="if (event.target === this) closeSong()">
   <div class="card">
-    <h2>Your name</h2>
-    <p>So the DJ knows who wants to sing.</p>
-    <input id="nameInput" type="text" maxlength="40" autocomplete="given-name">
-    <button class="btn" onclick="submitName()">Request song</button>
-    <button class="btn" style="background:var(--card2);color:var(--text)" onclick="closeName()">Cancel</button>
+    <div class="st" id="mTitle"></div>
+    <div class="sa" id="mArtist"></div>
+    <dl id="mInfo"></dl>
+    <a class="btn secondary" id="mYouTube" target="_blank" rel="noopener">Watch on YouTube</a>
+    <label for="mName">Your name</label>
+    <input id="mName" type="text" maxlength="40" autocomplete="given-name" placeholder="So the DJ can call you">
+    <button class="btn" id="mRequest" onclick="requestOpen()">Request song</button>
+    <button class="btn secondary" onclick="closeSong()">Close</button>
   </div>
 </div>
 
 <script>
+  // The library comes once (/api/library, cached per version); search and filtering run here on the phone,
+  // so the party's Mac answers no request per keystroke. Requests and previews still go to the Mac.
+  var PAGE = 100;
   var pin = sessionStorage.getItem('sb_pin') || '';
   var guest = localStorage.getItem('sb_name') || '';
-  var pendingSong = null;
-  var timer = null;
+  // A random id for this phone: its own requests ("My requests") — never shown, not tied to the name.
+  var client = localStorage.getItem('sb_client');
+  if (!client) { client = Array.from(crypto.getRandomValues(new Uint8Array(12)), function (b) { return ('0' + b.toString(16)).slice(-2); }).join(''); localStorage.setItem('sb_client', client); }
+  var mine = [], taken = {};
+  var lib = null, libVersion = 0, matches = [], shown = PAGE, timer = null;
+  var STARS = ['Not rated', '★', '★★', '★★★', '★★★★'];
 
   function api(path) { return fetch(path + (path.indexOf('?') < 0 ? '?' : '&') + 'pin=' + encodeURIComponent(pin)); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
@@ -104,13 +163,146 @@
     if (res.status === 401) { document.getElementById('pinError').textContent = 'Wrong PIN'; return; }
     sessionStorage.setItem('sb_pin', pin);
     document.getElementById('pinOverlay').classList.remove('visible');
-    refreshState(); search();
+    refreshState();
   }
 
+  // ── Catalog ── songs: [id, title, artist, year, [languages], [genres], stars, usdb, youtubeId]
+  async function loadLibrary(v) {
+    var res = await api('/api/library?v=' + v);
+    if (!res.ok) { if (res.status === 401) verify(); return; }
+    var d = await res.json();
+    d.songs.forEach(function (s, i) {
+      s.i = i;
+      s.key = (s[2] + ' ' + s[1]).toLowerCase();
+      s.decade = s[3] ? Math.floor(s[3] / 10) * 10 + 's' : 'Unknown year';
+    });
+    lib = d; libVersion = d.v;
+    fillValues(); render();
+  }
+
+  // The values a song has for the chosen filter kind (a song can be in several languages or genres).
+  function valuesOf(s, kind) {
+    if (kind === 'language') return s[4].map(function (i) { return lib.languages[i]; });
+    if (kind === 'genre') return s[5].map(function (i) { return lib.genres[i]; });
+    if (kind === 'decade') return [s.decade];
+    if (kind === 'popularity') return [STARS[s[6]]];
+    return [];
+  }
+  function searchMatches() {
+    var q = document.getElementById('q').value.trim().toLowerCase();
+    return q ? lib.songs.filter(function (s) { return s.key.indexOf(q) >= 0; }) : lib.songs;
+  }
+
+  // Values of the chosen kind with how many search matches each would show; the current value is kept.
+  function fillValues() {
+    var kind = document.getElementById('fk').value, sel = document.getElementById('fv');
+    sel.disabled = !kind || !lib;
+    if (sel.disabled) { sel.innerHTML = '<option value="">—</option>'; return; }
+    var keep = sel.value, counts = {};
+    searchMatches().forEach(function (s) { valuesOf(s, kind).forEach(function (v) { counts[v] = (counts[v] || 0) + 1; }); });
+    var values = Object.keys(counts);
+    if (kind === 'popularity') values.sort(function (a, b) { return STARS.indexOf(b) - STARS.indexOf(a); });
+    else if (kind === 'decade') values.sort().reverse();
+    else values.sort(function (a, b) { return a.localeCompare(b); });
+    if (keep && values.indexOf(keep) < 0) values.unshift(keep);
+    sel.innerHTML = '<option value="">All</option>' + values.map(function (v) {
+      return '<option value="' + esc(v) + '"' + (v === keep ? ' selected' : '') + '>' + esc(v) + ' (' + (counts[v] || 0).toLocaleString() + ')</option>';
+    }).join('');
+  }
+  function kindChanged() { document.getElementById('fv').value = ''; fillValues(); shown = PAGE; render(); }
+  function valueChanged() { shown = PAGE; render(); }
+
+  function render() {
+    if (!lib) return;
+    var kind = document.getElementById('fk').value, value = document.getElementById('fv').value;
+    matches = searchMatches();
+    if (kind && value) matches = matches.filter(function (s) { return valuesOf(s, kind).indexOf(value) >= 0; });
+    document.getElementById('matches').textContent = matches.length.toLocaleString() + (matches.length === 1 ? ' song' : ' songs');
+    var hint = document.getElementById('hint');
+    hint.hidden = matches.length > 0; hint.textContent = 'No songs found.';
+    document.getElementById('list').innerHTML = matches.slice(0, shown).map(row).join('');
+    var more = document.getElementById('more'), rest = matches.length - shown;
+    more.hidden = rest <= 0;
+    more.textContent = 'Show more (' + rest.toLocaleString() + ' more)';
+  }
+  function showMore() {
+    var list = document.getElementById('list');
+    list.insertAdjacentHTML('beforeend', matches.slice(shown, shown + PAGE).map(row).join(''));
+    shown += PAGE;
+    var more = document.getElementById('more'), rest = matches.length - shown;
+    more.hidden = rest <= 0;
+    more.textContent = 'Show more (' + rest.toLocaleString() + ' more)';
+  }
+  function row(s) {
+    var i = s.i;
+    var langs = s[4].map(function (x) { return lib.languages[x]; }).join(', ');
+    var meta = [esc(s[2]), s[3] ? s[3] : '', esc(langs)].filter(Boolean).join(' · ');
+    // Title and artist get the whole width; the details, YouTube and Request are in the song's dialog.
+    return '<div class="song" data-id="' + esc(s[0]) + '" onclick="openSong(' + i + ')"><div class="meta"><div class="t">' + esc(s[1]) + '</div><div class="a">' + meta + '</div></div>'
+      + '<span class="mark">' + esc(taken[s[0]] || '') + '</span><button class="dots" aria-label="More">⋯</button></div>';
+  }
+
+  // ── Song dialog: details, a direct YouTube link (embedded players are often refused: uploaders disable embedding,
+  // and YouTube rejects players on a plain http://192.168… page), Request. ──
+  var openIndex = -1;
+  async function openSong(i) {
+    openIndex = i;
+    var s = lib.songs[i];
+    document.getElementById('mTitle').textContent = s[1];
+    document.getElementById('mArtist').textContent = s[2];
+    var info = [['Year', s[3] || ''], ['Language', s[4].map(function (x) { return lib.languages[x]; }).join(', ')],
+      ['Genre', s[5].map(function (x) { return lib.genres[x]; }).join(', ')], ['Popularity', s[6] ? STARS[s[6]] : ''], ['Source', s[7] ? 'USDB' : '']];
+    document.getElementById('mInfo').innerHTML = info.filter(function (r) { return r[1]; })
+      .map(function (r) { return '<dt>' + r[0] + '</dt><dd>' + esc(r[1]) + '</dd>'; }).join('');
+    document.getElementById('mName').value = guest;
+    updateRequestButton();
+    document.getElementById('songModal').classList.add('visible');
+    var link = document.getElementById('mYouTube');
+    setYouTube(link, s[8]);
+    // USDB songs: the Mac looks the id up in the song text (once, then cached on both sides).
+    if (!s[8] && s[7]) {
+      link.textContent = 'Looking up YouTube…';
+      var res = await api('/api/youtube?id=' + encodeURIComponent(s[0]));
+      if (res.ok) s[8] = (await res.json()).id;
+      if (openIndex === i) setYouTube(link, s[8]);
+    }
+  }
+  function setYouTube(link, id) {
+    link.hidden = false;
+    if (id) { link.href = 'https://www.youtube.com/watch?v=' + encodeURIComponent(id); link.textContent = 'Watch on YouTube'; link.removeAttribute('aria-disabled'); }
+    else { link.removeAttribute('href'); link.textContent = 'No YouTube video'; link.setAttribute('aria-disabled', 'true'); }
+  }
+  function closeSong() { document.getElementById('songModal').classList.remove('visible'); openIndex = -1; }
+
+  // Request, or cancel my waiting request, or nothing (already queued / requested by someone).
+  function updateRequestButton() {
+    if (openIndex < 0) return;
+    var id = lib.songs[openIndex][0], btn = document.getElementById('mRequest');
+    var own = mine.filter(function (m) { return m.songId === id && m.canCancel; })[0];
+    if (own) { btn.disabled = false; btn.textContent = 'Cancel my request'; btn.dataset.cancel = own.id; return; }
+    delete btn.dataset.cancel;
+    btn.disabled = !!taken[id];
+    btn.textContent = taken[id] ? taken[id] : 'Request song';
+  }
+  async function requestOpen() {
+    var btn = document.getElementById('mRequest');
+    if (btn.dataset.cancel) { await cancel(btn.dataset.cancel); closeSong(); return; }
+    var name = document.getElementById('mName').value.trim();
+    if (!name) { document.getElementById('mName').focus(); toast('Please enter your name'); return; }
+    guest = name; localStorage.setItem('sb_name', name);
+    var id = lib.songs[openIndex][0];
+    closeSong();
+    await send(id);
+  }
+
+  // ── Now playing, queue, and a new catalog when the library changed ──
   async function refreshState() {
-    var res = await api('/api/state');
+    var res = await api('/api/state?client=' + client);
     if (!res.ok) { if (res.status === 401) verify(); return; }
     var s = await res.json();
+    if (s.libraryVersion !== libVersion) loadLibrary(s.libraryVersion);
+    mine = s.mine || []; taken = s.taken || {};
+    renderMine(); updateMarks(); updateRequestButton();
     document.getElementById('count').textContent = s.songCount.toLocaleString() + ' songs';
     var now = document.getElementById('now');
     if (s.nowPlaying || s.queue.length) {
@@ -121,46 +313,42 @@
     } else { now.hidden = true; }
   }
 
-  async function search() {
-    var q = document.getElementById('q').value.trim();
-    var list = document.getElementById('list'), hint = document.getElementById('hint');
-    if (q.length < 2) { list.innerHTML = ''; hint.textContent = 'Type to search the library.'; hint.hidden = false; return; }
-    var res = await api('/api/songs?q=' + encodeURIComponent(q));
-    if (!res.ok) { if (res.status === 401) verify(); return; }
-    var songs = await res.json();
-    hint.hidden = songs.length > 0;
-    hint.textContent = 'No songs found.';
-    list.innerHTML = songs.map(function (s) {
-      return '<div class="song"><div class="meta"><div class="t">' + esc(s.title) + '</div><div class="a">' + esc(s.artist) + (s.year ? ' · ' + s.year : '') + '</div></div>'
-        + '<span class="badge' + (s.source === 'USDB' ? ' usdb' : '') + '">' + esc(s.source) + '</span>'
-        + '<button class="btn" onclick="request(' + JSON.stringify(s.id).replace(/"/g, '&quot;') + ')">Request</button></div>';
-    }).join('');
-  }
-
-  function request(id) {
-    pendingSong = id;
-    if (!guest) { document.getElementById('nameInput').value = ''; document.getElementById('nameOverlay').classList.add('visible'); document.getElementById('nameInput').focus(); return; }
-    send();
-  }
-  function submitName() {
-    var n = document.getElementById('nameInput').value.trim();
-    if (!n) return;
-    guest = n; localStorage.setItem('sb_name', n);
-    closeName(); send();
-  }
-  function closeName() { document.getElementById('nameOverlay').classList.remove('visible'); }
-  async function send() {
-    var res = await fetch('/api/request?pin=' + encodeURIComponent(pin), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ songId: pendingSong, guest: guest }) });
-    pendingSong = null;
+  // ── Requests ──
+  async function send(songId) {
+    var res = await fetch('/api/request?pin=' + encodeURIComponent(pin), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ songId: songId, guest: guest, client: client }) });
     if (res.ok) toast('Requested — the DJ has been told 🎶');
     else if (res.status === 401) verify();
+    else if (res.status === 404) toast('This song is no longer available');
+    else if (res.status === 409) toast((await res.json()).message);
     else toast('Could not send the request');
+    refreshState();
+  }
+  async function cancel(id) {
+    var res = await fetch('/api/cancel?pin=' + encodeURIComponent(pin), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id, client: client }) });
+    toast(res.ok ? 'Request cancelled' : 'Too late — the DJ already decided');
+    refreshState();
   }
 
-  document.getElementById('q').addEventListener('input', function () { clearTimeout(timer); timer = setTimeout(search, 200); });
+  function renderMine() {
+    var box = document.getElementById('mine');
+    box.hidden = mine.length === 0;
+    document.getElementById('mineTitle').textContent = 'My requests (' + mine.length + ')';
+    document.getElementById('mineList').innerHTML = mine.map(function (m) {
+      return '<div class="r"><div class="meta"><div class="t">' + esc(m.title) + '</div><div class="st">' + esc(m.status) + '</div></div>'
+        + (m.canCancel ? '<button class="cancel" onclick="cancel(\'' + esc(m.id) + '\')">Cancel</button>' : '') + '</div>';
+    }).join('');
+  }
+  // Markers on the rows already shown ("Requested", "In the queue #3") — updated in place, the list keeps its place.
+  function updateMarks() {
+    document.querySelectorAll('#list .song').forEach(function (el) {
+      el.querySelector('.mark').textContent = taken[el.dataset.id] || '';
+    });
+  }
+
+  document.getElementById('q').addEventListener('input', function () { clearTimeout(timer); timer = setTimeout(function () { shown = PAGE; fillValues(); render(); }, 150); });
   document.getElementById('pinInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') submitPin(); });
-  document.getElementById('nameInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') submitName(); });
-  verify().then(function (ok) { if (ok) { refreshState(); } });
+  document.getElementById('mName').addEventListener('keydown', function (e) { if (e.key === 'Enter') requestOpen(); });
+  verify().then(function (ok) { if (ok) refreshState(); });
   setInterval(refreshState, 5000);
 </script>
 </body>
