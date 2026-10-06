@@ -20,13 +20,19 @@ public sealed class UsdbService : IDisposable
     private readonly LibraryService _library;
     private readonly ISettingsStore _settings;
     private readonly string _txtCacheDir;
+    private readonly NotificationService _notifications;
+    private readonly ConnectivityService _connectivity;
     private readonly ILogger<UsdbService> _log;
     private readonly SemaphoreSlim _loginGate = new(1, 1);
     private UsdbDocument _doc;
     private CancellationTokenSource? _syncCts;
 
-    public UsdbService(IUsdbClient client, IUsdbCatalog catalog, LibraryService library, ISettingsStore settings, AppPaths paths, ILogger<UsdbService> log)
+    public UsdbService(IUsdbClient client, IUsdbCatalog catalog, LibraryService library, ISettingsStore settings, AppPaths paths,
+        NotificationService notifications, ConnectivityService connectivity, ILogger<UsdbService> log)
     {
+        _notifications = notifications;
+        _connectivity = connectivity;
+        connectivity.Changed += OnConnectivityChanged;
         _client = client;
         _catalog = catalog;
         _library = library;
@@ -49,11 +55,43 @@ public sealed class UsdbService : IDisposable
     public int CatalogCount { get; private set; }
     public string Status { get; private set; } = "";
 
-    /// <summary>Startup: reconnect with saved credentials and pull changes. Never throws.</summary>
+    /// <summary>Offline: grey USDB songs out. Back online: un-grey (session still valid) or log in again.</summary>
+    private void OnConnectivityChanged(bool online)
+    {
+        if (!HasCredentials)
+        {
+            return;
+        }
+
+        if (!online)
+        {
+            _library.SetUsdbOnline(false);
+            SetStatus("Offline — no internet connection");
+        }
+        else if (IsConnected)
+        {
+            _library.SetUsdbOnline(true);
+            SetStatus($"Connected as {_doc.Username}");
+        }
+        else
+        {
+            _ = AutoConnectAsync();
+        }
+    }
+
+    /// <summary>Startup and back-online: reconnect with saved credentials and pull changes. Never throws.</summary>
     public async Task AutoConnectAsync()
     {
         if (!HasCredentials)
         {
+            return;
+        }
+
+        if (_connectivity.IsOnline is false)
+        {
+            // The connectivity toast already says so; reconnect happens when it comes back.
+            _library.SetUsdbOnline(false);
+            SetStatus("Offline — no internet connection");
             return;
         }
 
@@ -65,6 +103,11 @@ public sealed class UsdbService : IDisposable
         {
             _log.LogWarning("USDB auto-connect failed: {Error}", ex.Message);
             SetStatus($"Offline — {ex.Message}");
+            // Internet works but USDB does not (no internet is reported by ConnectivityService).
+            if (_connectivity.IsOnline is true)
+            {
+                _notifications.Warn("USDB is offline", "USDB songs are greyed out until it connects. " + ex.Message);
+            }
         }
     }
 

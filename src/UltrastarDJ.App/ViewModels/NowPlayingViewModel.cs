@@ -32,7 +32,6 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _artist = "";
     [ObservableProperty] private string _status = "";
     [ObservableProperty] private string _position = "";
-    [ObservableProperty] private string _error = "";
     [ObservableProperty] private bool _loading;
     [ObservableProperty] private double _gain = 1.0;
     [ObservableProperty] private bool _isVisible;
@@ -133,7 +132,6 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
             PlaybackState.Score => "Score screen — Dismiss to play again",
             _ => "",
         };
-        Error = _playback.LastError ?? "";
         OnPropertyChanged(nameof(State));
         OnPropertyChanged(nameof(HasSong));
         LoadCommand.NotifyCanExecuteChanged();
@@ -177,7 +175,6 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
         }
 
         Loading = true;
-        Error = "";
         IsVisible = true;
         Status = $"Loading {song.Title}…";
         try
@@ -186,9 +183,8 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
         }
         catch (SongLoadException ex)
         {
-            Error = ex.Message;
             _log.LogWarning("Load failed: {Error}", ex.Message);
-            _notifications.ShowDialog("Song cannot be loaded", ex.Message);
+            _notifications.ShowError("Song cannot be loaded", ex.Reasons, ex.Details);
         }
         finally
         {

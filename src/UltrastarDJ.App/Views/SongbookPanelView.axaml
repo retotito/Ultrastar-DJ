@@ -27,8 +27,6 @@
       </StackPanel>
     </Border>
 
-    <TextBlock Foreground="{DynamicResource BrushError}" FontSize="{StaticResource TextXs}" TextWrapping="Wrap" Text="{Binding Error}"
-               IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 
     <Border Classes="card">
       <StackPanel Spacing="{StaticResource Space3}">

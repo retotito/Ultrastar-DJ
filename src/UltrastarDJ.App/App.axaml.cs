@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Avalonia.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
@@ -37,8 +38,9 @@ public sealed partial class App : Application
         ConfigureSerilog(paths);
 
         _services = BuildServices(paths);
+        CatchUnexpectedErrors(_services);
 #if DEBUG
-        Diagnostics.UiInspector.Attach(paths.Logs, _services.GetRequiredService<ILogger<App>>());
+        Diagnostics.UiInspector.Attach(paths.Logs, _services.GetRequiredService<ILogger<App>>(), _services.GetRequiredService<NotificationService>());
 #endif
         desktop.ShutdownMode = ShutdownMode.OnMainWindowClose;
         desktop.ShutdownRequested += OnShutdownRequested;
@@ -50,14 +52,49 @@ public sealed partial class App : Application
         _services.GetRequiredService<OutputsService>();
         _services.GetRequiredService<AppSettingsService>();
         desktop.MainWindow = window;
-        // Reconnects to USDB with saved credentials and pulls catalog changes; failures only set the panel status.
-        _ = _services.GetRequiredService<UsdbService>().AutoConnectAsync();
+        // First connectivity probe, then USDB auto-login (skipped while offline; it reconnects when back online).
+        _ = StartNetworkAsync(_services);
         _ = _services.GetRequiredService<SongbookService>().AutoStartAsync();
 
         _services.GetRequiredService<ILogger<App>>().LogInformation(
             "Ultrastar DJ {Version} started", typeof(App).Assembly.GetName().Version?.ToString(3));
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    /// <summary>
+    /// Last line of defence for bugs: logged with stack trace and shown in the bug dialog. UI-thread and
+    /// unobserved task exceptions are marked handled so a party keeps running; a crash on another thread
+    /// cannot be stopped, but is logged and flushed first.
+    /// </summary>
+    private static void CatchUnexpectedErrors(ServiceProvider services)
+    {
+        ILogger<App> log = services.GetRequiredService<ILogger<App>>();
+        NotificationService notifications = services.GetRequiredService<NotificationService>();
+
+        Dispatcher.UIThread.UnhandledException += (_, e) =>
+        {
+            log.LogError(e.Exception, "Unhandled exception on the UI thread");
+            notifications.ShowBug(e.Exception, "UI");
+            e.Handled = true;
+        };
+        TaskScheduler.UnobservedTaskException += (_, e) =>
+        {
+            log.LogError(e.Exception, "Unobserved task exception");
+            notifications.ShowBug(e.Exception.InnerExceptions.Count == 1 ? e.Exception.InnerException! : e.Exception, "Background task");
+            e.SetObserved();
+        };
+        AppDomain.CurrentDomain.UnhandledException += (_, e) =>
+        {
+            log.LogCritical(e.ExceptionObject as Exception, "Fatal unhandled exception");
+            Log.CloseAndFlush();
+        };
+    }
+
+    private static async Task StartNetworkAsync(ServiceProvider services)
+    {
+        await services.GetRequiredService<ConnectivityService>().StartAsync();
+        await services.GetRequiredService<UsdbService>().AutoConnectAsync();
     }
 
     private static ServiceProvider BuildServices(AppPaths paths)
@@ -77,6 +114,7 @@ public sealed partial class App : Application
 
         // App services
         services.AddSingleton<NotificationService>();
+        services.AddSingleton<ConnectivityService>();
         services.AddSingleton<AppSettingsService>();
         services.AddSingleton<MediaService>();
         services.AddSingleton<IAudioBackend, PortAudioBackend>();

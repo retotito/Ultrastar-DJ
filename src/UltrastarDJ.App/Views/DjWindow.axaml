@@ -133,39 +133,77 @@
                     IsVisible="{Binding NowPlaying.IsVisible}" />
   </Canvas>
 
-  <!-- Toasts (top-right, auto-dismiss) -->
-  <ItemsControl ItemsSource="{Binding Notifications.Toasts}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,12,360,0" Width="320">
+  <!-- Toasts (top-right): things that happened. Auto-dismiss (warnings stay longer), ✕ closes early. -->
+  <ItemsControl Classes="toasts" ItemsSource="{Binding Notifications.Toasts}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,12,360,0" Width="340">
+    <!-- Nothing around a toast may clip, or its shadow is cut to a square (as with the Now Playing card). -->
+    <ItemsControl.Styles>
+      <Style Selector="ItemsControl.toasts, ItemsControl.toasts /template/ Border, ItemsControl.toasts /template/ ItemsPresenter, ItemsControl.toasts StackPanel, ItemsControl.toasts ContentPresenter">
+        <Setter Property="ClipToBounds" Value="False" />
+      </Style>
+    </ItemsControl.Styles>
     <ItemsControl.ItemTemplate>
       <DataTemplate x:DataType="svc:Toast">
-        <Border Classes="card" Margin="0,0,0,8" Padding="12" Classes.warn="{Binding IsWarning}">
+        <Border Classes="card floating" Margin="0,0,0,8" Classes.warn="{Binding IsWarning}" Classes.success="{Binding IsSuccess}">
           <Border.Styles>
             <Style Selector="Border.warn">
               <Setter Property="BorderBrush" Value="{DynamicResource BrushError}" />
             </Style>
+            <Style Selector="Border.warn c|Icon.kind">
+              <Setter Property="Foreground" Value="{DynamicResource BrushError}" />
+            </Style>
+            <Style Selector="Border.success c|Icon.kind">
+              <Setter Property="Foreground" Value="{DynamicResource BrushTertiary}" />
+            </Style>
           </Border.Styles>
-          <Grid ColumnDefinitions="Auto,*">
-            <c:Icon Glyph="{Binding Glyph}" Margin="0,0,10,0" VerticalAlignment="Top" />
+          <Grid ColumnDefinitions="Auto,*,Auto">
+            <c:Icon Classes="kind" Glyph="{Binding Glyph}" Margin="0,0,10,0" VerticalAlignment="Top" />
             <StackPanel Grid.Column="1">
-              <TextBlock Text="{Binding Title}" FontWeight="{StaticResource WeightSemibold}" />
-              <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="{Binding Detail}" TextWrapping="Wrap" IsVisible="{Binding HasDetail}" />
+              <TextBlock Text="{Binding Title}" FontWeight="{StaticResource WeightSemibold}" TextWrapping="Wrap" />
+              <TextBlock Classes="muted" FontSize="{StaticResource TextSm}" Text="{Binding Detail}" TextWrapping="Wrap" IsVisible="{Binding HasDetail}" />
             </StackPanel>
+            <Button Grid.Column="2" Classes="sidebar small" VerticalAlignment="Top" Margin="8,-4,-4,0" ToolTip.Tip="Dismiss"
+                    Command="{Binding $parent[Window].((vm:DjWindowViewModel)DataContext).DismissToastCommand}" CommandParameter="{Binding}">
+              <c:Icon Glyph="close" FontSize="{StaticResource IconSm}" />
+            </Button>
           </Grid>
         </Border>
       </DataTemplate>
     </ItemsControl.ItemTemplate>
   </ItemsControl>
 
-  <!-- Modal dialog -->
+  <!-- Error / bug dialog: an action the DJ started failed, or an unexpected exception. Queued; OK shows the next. -->
   <Border Background="#99000000" IsVisible="{Binding Dialog, Converter={x:Static ObjectConverters.IsNotNull}}">
-    <Border Classes="card" Width="460" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="20">
-      <StackPanel Spacing="{StaticResource Space3}">
-        <StackPanel Orientation="Horizontal" Spacing="8">
-          <c:Icon Glyph="warning" Foreground="{DynamicResource BrushError}" />
-          <TextBlock Classes="title" Text="{Binding Dialog.Title}" />
+    <Border Classes="card floating" Width="520" MaxHeight="640" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="{StaticResource Pad6}">
+      <DockPanel>
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="{StaticResource Space2}" Margin="0,0,0,12">
+          <c:Icon Glyph="{Binding Dialog.IsBug, Converter={x:Static vm:BoolConverters.Glyph}, ConverterParameter='bug_report|error'}"
+                  Foreground="{DynamicResource BrushError}" />
+          <TextBlock Classes="title" Text="{Binding Dialog.Title}" VerticalAlignment="Center" />
         </StackPanel>
-        <TextBlock Text="{Binding Dialog.Message}" TextWrapping="Wrap" />
-        <Button Classes="tonal" Content="OK" HorizontalAlignment="Right" Command="{Binding DismissDialogCommand}" IsDefault="True" />
-      </StackPanel>
+
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="{StaticResource Space2}" Margin="0,16,0,0">
+          <Button Classes="text" Content="Show details" Command="{Binding ToggleDialogDetailsCommand}" IsVisible="{Binding Dialog.HasDetails}" />
+          <Button Classes="text" Content="Copy details" Click="OnCopyDialogDetails" IsVisible="{Binding Dialog.IsBug}" />
+          <Button Classes="text" Content="Open log folder" Click="OnOpenLogFolder" IsVisible="{Binding Dialog.IsBug}" />
+          <Button Classes="tonal" Content="OK" Command="{Binding DismissDialogCommand}" IsDefault="True" />
+        </StackPanel>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+          <StackPanel Spacing="{StaticResource Space2}">
+            <ItemsControl ItemsSource="{Binding Dialog.Reasons}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="x:String">
+                  <TextBlock Text="{Binding}" TextWrapping="Wrap" Margin="0,0,0,6" />
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <Border IsVisible="{Binding DialogDetailsShown}" Background="{DynamicResource BrushSurfaceContainerLowest}"
+                    CornerRadius="{StaticResource RadiusMd}" Padding="{StaticResource Pad2}">
+              <SelectableTextBlock Text="{Binding Dialog.Details}" FontFamily="{StaticResource FontMono}" FontSize="{StaticResource TextXs}" TextWrapping="Wrap" />
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </DockPanel>
     </Border>
   </Border>
   </Panel>

@@ -16,6 +16,7 @@ public sealed partial class SourcesPanelViewModel : ViewModelBase, IDisposable
 {
     private readonly LibraryService _library;
     private readonly UsdbService _usdb;
+    private readonly NotificationService _notifications;
     private readonly ILogger<SourcesPanelViewModel> _log;
 
     [ObservableProperty] private bool _busy;
@@ -29,10 +30,11 @@ public sealed partial class SourcesPanelViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _usdbStatus = "";
     [ObservableProperty] private int _usdbCount;
 
-    public SourcesPanelViewModel(LibraryService library, UsdbService usdb, ILogger<SourcesPanelViewModel> log)
+    public SourcesPanelViewModel(LibraryService library, UsdbService usdb, NotificationService notifications, ILogger<SourcesPanelViewModel> log)
     {
         _library = library;
         _usdb = usdb;
+        _notifications = notifications;
         _log = log;
         _usdbUser = usdb.Username ?? "";
         Refresh();
@@ -155,7 +157,8 @@ public sealed partial class SourcesPanelViewModel : ViewModelBase, IDisposable
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             _log.LogError(ex, "Scan failed");
-            Status = "Scan failed: " + ex.Message;
+            Status = "";
+            _notifications.ShowError("Folder scan failed", ex.Message);
         }
         finally
         {

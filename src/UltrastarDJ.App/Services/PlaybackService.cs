@@ -31,13 +31,15 @@ public sealed class PlaybackService : IDisposable
     private readonly IDisplayService _displays;
     private readonly AppSettingsService _settings;
     private readonly SongResolver _resolver;
+    private readonly NotificationService _notifications;
     private readonly ILogger<PlaybackService> _log;
     private readonly HashSet<DisplayId> _countdownDone = [];
     private CancellationTokenSource? _tickCts;
     private Task? _tickLoop;
     private PlaybackState _state = PlaybackState.Idle;
 
-    public PlaybackService(MediaService media, AudioInputService audio, PlayersService players, IDisplayService displays, AppSettingsService settings, SongResolver resolver, ILogger<PlaybackService> log)
+    public PlaybackService(MediaService media, AudioInputService audio, PlayersService players, IDisplayService displays, AppSettingsService settings, SongResolver resolver,
+        NotificationService notifications, ILogger<PlaybackService> log)
     {
         _media = media;
         _audio = audio;
@@ -45,9 +47,22 @@ public sealed class PlaybackService : IDisposable
         _displays = displays;
         _settings = settings;
         _resolver = resolver;
+        _notifications = notifications;
         _log = log;
         _media.Game.EndReached += () => Dispatcher.UIThread.Post(() => { if (State is PlaybackState.Playing or PlaybackState.Paused) { Stop(); } });
-        _media.Game.ErrorOccurred += e => Dispatcher.UIThread.Post(() => { LastError = e; if (State is PlaybackState.Playing or PlaybackState.Paused or PlaybackState.Countdown) { Stop(); } });
+        _media.Game.ErrorOccurred += e => Dispatcher.UIThread.Post(() => OnPlaybackError(e));
+    }
+
+    /// <summary>The game media failed (stream dropped, YouTube refused): stop and tell the DJ why.</summary>
+    private void OnPlaybackError(string error)
+    {
+        LastError = error;
+        if (State is PlaybackState.Playing or PlaybackState.Paused or PlaybackState.Countdown)
+        {
+            Stop();
+            PlaybackError explained = PlaybackError.Explain(error);
+            _notifications.ShowError("Playback stopped", explained.Reason, explained.Details);
+        }
     }
 
     /// <summary>Raised on the UI thread.</summary>
@@ -147,7 +162,8 @@ public sealed class PlaybackService : IDisposable
         catch (MediaException ex)
         {
             LastError = ex.Message;
-            throw new SongLoadException(ex.Message);
+            PlaybackError explained = PlaybackError.Explain(ex.Message);
+            throw new SongLoadException(explained.Reason, explained.Details);
         }
         finally
         {
@@ -356,4 +372,10 @@ public sealed class PlaybackService : IDisposable
     public void Dispose() => StopTicker();
 }
 
-public sealed class SongLoadException(string message) : Exception(message);
+/// <summary>A song cannot be loaded. <see cref="Exception.Message"/>: plain reasons, one per line; <see cref="Details"/>: raw cause.</summary>
+public sealed class SongLoadException(string message, string? details = null) : Exception(message)
+{
+    public string? Details { get; } = details;
+
+    public IReadOnlyList<string> Reasons => Message.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+}

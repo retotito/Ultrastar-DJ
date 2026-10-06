@@ -1,8 +1,10 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
+using Avalonia.Platform.Storage;
 using Avalonia.VisualTree;
 using UltrastarDJ.App.ViewModels;
 
@@ -38,6 +40,23 @@ public sealed partial class DjWindow : Window
         if (!inPopover && !onSidebarButton)
         {
             vm.ClosePanelCommand.Execute(null);
+        }
+    }
+
+    // Clipboard and file manager are view concerns: the bug dialog's two extra buttons live here.
+    private async void OnCopyDialogDetails(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is DjWindowViewModel { Dialog.Details: { } details } && Clipboard is { } clipboard)
+        {
+            await clipboard.SetTextAsync(details);
+        }
+    }
+
+    private async void OnOpenLogFolder(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is DjWindowViewModel vm)
+        {
+            await Launcher.LaunchDirectoryInfoAsync(new DirectoryInfo(vm.LogsFolder));
         }
     }
 }

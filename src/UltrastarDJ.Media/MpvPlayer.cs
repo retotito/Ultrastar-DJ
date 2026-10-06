@@ -49,6 +49,9 @@ public sealed class MpvPlayer : IMediaPlayer
     private double _timePosSec;
     private double? _durationSec;
     private double _cacheSec;
+    // yt-dlp's own error line for the current load. mpv reports a failed YouTube load only as
+    // "unrecognized file format"; this is what the user needs to see (see PlaybackError).
+    private volatile string? _ytdlError;
     private bool _isNetwork;
     private MediaState _state = MediaState.Idle;
     private double _volume = 1.0;
@@ -211,6 +214,7 @@ public sealed class MpvPlayer : IMediaPlayer
             _started = false;
             _eof = false;
             _cacheSec = 0;
+            _ytdlError = null;
             _isNetwork = source is MediaSource.YouTube;
             _timePosSec = 0;
             _durationSec = null;
@@ -348,7 +352,15 @@ public sealed class MpvPlayer : IMediaPlayer
                     break;
                 case MpvEventId.LogMessage:
                     MpvEventLogMessage* m = (MpvEventLogMessage*)ev->Data;
-                    _log.LogWarning("{Player}: mpv[{Prefix}] {Text}", Name, Utf8(m->Prefix), Utf8(m->Text)?.TrimEnd());
+                    string? prefix = Utf8(m->Prefix);
+                    string? text = Utf8(m->Text)?.TrimEnd();
+                    _log.LogWarning("{Player}: mpv[{Prefix}] {Text}", Name, prefix, text);
+                    if (prefix == "ytdl_hook" && text is not null
+                        && (text.StartsWith("ERROR:", StringComparison.Ordinal) || text.StartsWith("youtube-dl failed", StringComparison.Ordinal))
+                        && _ytdlError is null)
+                    {
+                        _ytdlError = text;
+                    }
                     break;
             }
         }
@@ -450,7 +462,7 @@ public sealed class MpvPlayer : IMediaPlayer
             return;
         }
 
-        string? error = e->Reason == MpvEndFileReason.Error ? ErrorMessage(e->Error) : null;
+        string? error = e->Reason == MpvEndFileReason.Error ? _ytdlError ?? ErrorMessage(e->Error) : null;
         TaskCompletionSource? pendingLoad;
         lock (_stateLock)
         {

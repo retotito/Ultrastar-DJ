@@ -35,7 +35,6 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _timeText = "0:00 / 0:00";
     [ObservableProperty] private double _gain;
     [ObservableProperty] private double _level;
-    [ObservableProperty] private string _error = "";
 
     public PreviewViewModel(MediaService media, OutputsService outputs, SongResolver resolver, QueueViewModel queue, NowPlayingViewModel nowPlaying, NotificationService notifications, ILogger<PreviewViewModel> log)
     {
@@ -96,7 +95,6 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
             return;
         }
 
-        Error = "";
         Loading = true;
         try
         {
@@ -117,13 +115,13 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
         }
         catch (SongLoadException ex)
         {
-            Error = ex.Message;
-            _notifications.ShowDialog("Song cannot be previewed", ex.Message);
+            _notifications.ShowError("Song cannot be previewed", ex.Reasons, ex.Details);
         }
         catch (MediaException ex)
         {
-            Error = ex.Message;
             _log.LogWarning("Preview failed: {Error}", ex.Message);
+            PlaybackError explained = PlaybackError.Explain(ex.Message);
+            _notifications.ShowError("Song cannot be previewed", explained.Reason, explained.Details);
         }
         finally
         {

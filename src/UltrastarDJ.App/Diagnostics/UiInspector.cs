@@ -10,8 +10,10 @@ using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Microsoft.Extensions.Logging;
+using UltrastarDJ.App.Services;
 
 namespace UltrastarDJ.App.Diagnostics;
 
@@ -30,14 +32,16 @@ internal static class UiInspector
     private static readonly List<WeakReference<Window>> Inspected = [];
     private static string _dumpDir = "";
     private static ILogger? _log;
+    private static NotificationService? _notifications;
     private static UiInspectorWindow? _window;
     private static Control? _target;
     private static bool _pinned;
 
-    public static void Attach(string dumpDir, ILogger log)
+    public static void Attach(string dumpDir, ILogger log, NotificationService notifications)
     {
         _dumpDir = dumpDir;
         _log = log;
+        _notifications = notifications;
         InputElement.KeyDownEvent.AddClassHandler<Window>(OnKeyDown, RoutingStrategies.Tunnel, handledEventsToo: true);
         InputElement.PointerMovedEvent.AddClassHandler<Window>(OnPointerMoved, RoutingStrategies.Tunnel, handledEventsToo: true);
         InputElement.PointerPressedEvent.AddClassHandler<Window>(OnPointerPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
@@ -45,6 +49,24 @@ internal static class UiInspector
 
     private static void OnKeyDown(Window window, KeyEventArgs e)
     {
+        // Shift+F8: one toast of each kind, to check their look.
+        if (e.Key == Key.F8 && e.KeyModifiers.HasFlag(KeyModifiers.Shift))
+        {
+            e.Handled = true;
+            _notifications?.Info("Test info", "Shift+F8 in a Debug build");
+            _notifications?.Success("Test success", "Back online, mic reconnected, …");
+            _notifications?.Warn("Test warning", "You're offline, mic disconnected, …");
+            return;
+        }
+
+        // Shift+F9: raise a test exception through the dispatcher, to see the bug dialog.
+        if (e.Key == Key.F9 && e.KeyModifiers.HasFlag(KeyModifiers.Shift))
+        {
+            e.Handled = true;
+            Dispatcher.UIThread.Post(() => throw new InvalidOperationException("Test exception (Shift+F9 in a Debug build)"));
+            return;
+        }
+
         if (e.Key != Key.F12 || window is UiInspectorWindow)
         {
             return;

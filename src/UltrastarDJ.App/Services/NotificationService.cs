@@ -4,26 +4,52 @@ using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace UltrastarDJ.App.Services;
 
+public enum ToastKind
+{
+    Info,
+    Success,
+    Warning,
+}
+
 /// <summary>A transient notification shown in the DJ window's corner.</summary>
-public sealed partial class Toast(string title, string? detail, string glyph, bool isWarning) : ObservableObject
+public sealed partial class Toast(string title, string? detail, ToastKind kind) : ObservableObject
 {
     public string Title { get; } = title;
     public string? Detail { get; } = detail;
-    public string Glyph { get; } = glyph;
-    public bool IsWarning { get; } = isWarning;
+    public ToastKind Kind { get; } = kind;
+    public bool IsWarning => Kind == ToastKind.Warning;
+    public bool IsSuccess => Kind == ToastKind.Success;
+    public string Glyph => Kind switch
+    {
+        ToastKind.Success => "check_circle",
+        ToastKind.Warning => "warning",
+        _ => "info",
+    };
+
     public bool HasDetail => !string.IsNullOrEmpty(Detail);
 }
 
-/// <summary>Blocking message shown as an overlay in the DJ window (validation errors, load failures).</summary>
-public sealed record DialogMessage(string Title, string Message);
+/// <summary>
+/// Blocking message in the DJ window. <see cref="IsBug"/>: an unexpected exception — the dialog offers copying the
+/// details and opening the log folder.
+/// </summary>
+public sealed record DialogMessage(string Title, IReadOnlyList<string> Reasons, string? Details = null, bool IsBug = false)
+{
+    public bool HasDetails => !string.IsNullOrEmpty(Details);
+}
 
 /// <summary>
-/// UI notifications without any window reference: toasts auto-dismiss, the dialog waits for OK.
-/// ViewModels call it; <c>DjWindowViewModel</c> renders it.
+/// The one place for user-facing messages (docs/04-ui.md "Errors and notifications"):
+/// toasts for things that happened (auto-dismiss), an error dialog for actions the DJ started that failed,
+/// a bug dialog for unexpected exceptions. ViewModels and services call it from any thread;
+/// <c>DjWindowViewModel</c> renders it. Dialogs queue: a second one waits for OK on the first.
 /// </summary>
 public sealed class NotificationService
 {
     private static readonly TimeSpan ToastLifetime = TimeSpan.FromSeconds(5);
+    private static readonly TimeSpan WarningLifetime = TimeSpan.FromSeconds(8);
+
+    private readonly Queue<DialogMessage> _pending = [];
 
     public ObservableCollection<Toast> Toasts { get; } = [];
 
@@ -39,21 +65,59 @@ public sealed class NotificationService
 
     public event Action<DialogMessage?>? DialogChanged;
 
-    public void Info(string title, string? detail = null) => Show(new Toast(title, detail, "info", false));
-    public void Warn(string title, string? detail = null) => Show(new Toast(title, detail, "warning", true));
+    public void Info(string title, string? detail = null) => Show(new Toast(title, detail, ToastKind.Info));
+    public void Success(string title, string? detail = null) => Show(new Toast(title, detail, ToastKind.Success));
+    public void Warn(string title, string? detail = null) => Show(new Toast(title, detail, ToastKind.Warning));
 
-    public void ShowDialog(string title, string message) => Dispatcher.UIThread.Post(() => Dialog = new DialogMessage(title, message));
+    /// <summary>An action the DJ started failed. <paramref name="reasons"/>: one plain sentence each.</summary>
+    public void ShowError(string title, IEnumerable<string> reasons, string? details = null)
+        => Enqueue(new DialogMessage(title, reasons.Where(r => !string.IsNullOrWhiteSpace(r)).ToList(), details));
 
-    public void DismissDialog() => Dialog = null;
+    public void ShowError(string title, string reason, string? details = null) => ShowError(title, [reason], details);
+
+    /// <summary>An exception nobody expected. The same message is not shown twice in a row.</summary>
+    public void ShowBug(Exception ex, string context)
+    {
+        DialogMessage msg = new(
+            "Something went wrong",
+            [$"{context}: {ex.Message}", "The app keeps running. If this happens again, copy the details and report it."],
+            ex.ToString(),
+            IsBug: true);
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (Dialog?.Details == msg.Details || _pending.Any(p => p.Details == msg.Details))
+            {
+                return;
+            }
+
+            EnqueueOnUiThread(msg);
+        });
+    }
+
+    public void DismissDialog() => Dialog = _pending.Count > 0 ? _pending.Dequeue() : null;
 
     public void Dismiss(Toast toast) => Toasts.Remove(toast);
+
+    private void Enqueue(DialogMessage msg) => Dispatcher.UIThread.Post(() => EnqueueOnUiThread(msg));
+
+    private void EnqueueOnUiThread(DialogMessage msg)
+    {
+        if (Dialog is null)
+        {
+            Dialog = msg;
+        }
+        else
+        {
+            _pending.Enqueue(msg);
+        }
+    }
 
     private void Show(Toast toast)
     {
         Dispatcher.UIThread.Post(() =>
         {
             Toasts.Add(toast);
-            DispatcherTimer.RunOnce(() => Toasts.Remove(toast), ToastLifetime);
+            DispatcherTimer.RunOnce(() => Toasts.Remove(toast), toast.IsWarning ? WarningLifetime : ToastLifetime);
         });
     }
 }

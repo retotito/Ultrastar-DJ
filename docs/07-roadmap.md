@@ -218,6 +218,29 @@ front of its owner), borderless and fullscreen on a screen picked in code.
 
 ---
 
+## Sprint 6l — Error handling and connectivity  *(done)*
+
+Errors appeared in different places (red text in preview / Now Playing, panel status lines, only the log); bugs had
+no handler at all. The prototype had one error dialog and mic toasts.
+
+- [x] Three levels in `NotificationService`: toasts (info / success / warning, ✕, 5 s / 8 s), error dialog (reasons + "Show details"), bug dialog (Copy details, Open log folder). Dialogs queue.
+- [x] Global handlers (`Dispatcher.UIThread.UnhandledException`, `TaskScheduler.UnobservedTaskException`, `AppDomain`): log with stack trace, bug dialog, keep running. Debug: Shift+F9 test exception.
+- [x] YouTube failures in plain language: `MpvPlayer` keeps yt-dlp's error line, `PlaybackError.Explain` maps it (age restriction, private, removed, country, no connection, blocked, yt-dlp missing), with tests.
+- [x] Inline errors replaced: preview, Now Playing, playback stopped mid-song (now a dialog), folder scan, songbook start → error dialog; USDB offline at start → warning toast.
+- [x] `ConnectivityService`: offline / back-online toasts while running (probe at start, on network change, every 15 s); USDB greys out offline and reconnects when back. USDB toast only when the internet works but USDB does not.
+- [x] Toast shadow was cut square by its list's wrappers (same cause as the Now Playing card): clipping off. Debug: Shift+F8 test toasts.
+- [x] Verified live
+
+## Sprint 6m — Mic plug / unplug  *(planned)*
+
+Decided: keep the player's mic assignment when the mic is missing and mark it; re-plugging the same mic (device +
+channel) reconnects it automatically; a mic lost mid-song **pauses** the song (beamers freeze) with an error dialog
+in the DJ window, the DJ resumes after re-plugging. Missing mics at start: one toast + marked cards. New, unassigned
+mic: toast pointing to Audio Input. PortAudio can only re-read devices while no stream is open — idle polling plus
+re-check at pause / next song.
+
+---
+
 ## Later / ideas
 
 - Cap mpv read-ahead (~60 s) so YouTube streams like a player instead of pulling the whole song into RAM

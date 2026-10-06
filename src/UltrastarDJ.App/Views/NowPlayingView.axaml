@@ -88,8 +88,6 @@
         </ItemsControl.ItemTemplate>
       </ItemsControl>
 
-      <TextBlock Foreground="{DynamicResource BrushError}" FontSize="{StaticResource TextXs}" TextWrapping="Wrap" Text="{Binding Error}"
-                 IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
     </StackPanel>
   </Border>
 </UserControl>

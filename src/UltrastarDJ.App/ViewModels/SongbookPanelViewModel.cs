@@ -9,6 +9,7 @@ namespace UltrastarDJ.App.ViewModels;
 public sealed partial class SongbookPanelViewModel : ViewModelBase, IDisposable
 {
     private readonly SongbookService _songbook;
+    private readonly NotificationService _notifications;
     private bool _loading;
 
     [ObservableProperty] private bool _isRunning;
@@ -18,11 +19,11 @@ public sealed partial class SongbookPanelViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _pin = "";
     [ObservableProperty] private string _port = "";
     [ObservableProperty] private string _urls = "";
-    [ObservableProperty] private string _error = "";
 
-    public SongbookPanelViewModel(SongbookService songbook)
+    public SongbookPanelViewModel(SongbookService songbook, NotificationService notifications)
     {
         _songbook = songbook;
+        _notifications = notifications;
         _songbook.Changed += OnChanged;
         Refresh();
     }
@@ -38,7 +39,6 @@ public sealed partial class SongbookPanelViewModel : ViewModelBase, IDisposable
         Pin = _songbook.Pin;
         Port = _songbook.Port.ToString(System.Globalization.CultureInfo.InvariantCulture);
         Urls = IsRunning ? string.Join("\n", _songbook.Urls()) : "";
-        Error = _songbook.LastError ?? "";
         _loading = false;
     }
 
@@ -55,6 +55,10 @@ public sealed partial class SongbookPanelViewModel : ViewModelBase, IDisposable
             else
             {
                 await _songbook.StartAsync();
+                if (_songbook.LastError is { } error)
+                {
+                    _notifications.ShowError("Songbook could not start", error);
+                }
             }
         }
         finally

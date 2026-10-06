@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
 using UltrastarDJ.App.Services;
+using UltrastarDJ.Infrastructure;
 using UltrastarDJ.Core.Playback;
 
 namespace UltrastarDJ.App.ViewModels;
@@ -62,9 +63,14 @@ public sealed partial class DjWindowViewModel : ViewModelBase
     [ObservableProperty]
     private DialogMessage? _dialog;
 
+    /// <summary>"Show details" in the dialog: the raw message / stack trace.</summary>
+    [ObservableProperty]
+    private bool _dialogDetailsShown;
+
     public DjWindowViewModel(IServiceProvider services, LibraryViewModel library, NowPlayingViewModel nowPlaying, PreviewViewModel preview, QueueViewModel queue,
-        NotificationService notifications, PlaybackService playback)
+        NotificationService notifications, PlaybackService playback, AppPaths paths)
     {
+        LogsFolder = paths.Logs;
         _services = services;
         _playback = playback;
         Library = library;
@@ -72,7 +78,11 @@ public sealed partial class DjWindowViewModel : ViewModelBase
         Preview = preview;
         Queue = queue;
         Notifications = notifications;
-        notifications.DialogChanged += d => Dialog = d;
+        notifications.DialogChanged += d =>
+        {
+            Dialog = d;
+            DialogDetailsShown = false;
+        };
         playback.StateChanged += _ => UpdateLock();
         UpdateLock();
     }
@@ -82,6 +92,9 @@ public sealed partial class DjWindowViewModel : ViewModelBase
     public PreviewViewModel Preview { get; }
     public QueueViewModel Queue { get; }
     public NotificationService Notifications { get; }
+
+    /// <summary>Opened by the bug dialog's "Open log folder".</summary>
+    public string LogsFolder { get; }
 
     private void UpdateLock()
     {
@@ -94,6 +107,12 @@ public sealed partial class DjWindowViewModel : ViewModelBase
 
     [RelayCommand]
     private void DismissDialog() => Notifications.DismissDialog();
+
+    [RelayCommand]
+    private void ToggleDialogDetails() => DialogDetailsShown = !DialogDetailsShown;
+
+    [RelayCommand]
+    private void DismissToast(Toast toast) => Notifications.Dismiss(toast);
 
     [RelayCommand]
     private void ToggleNowPlaying() => NowPlaying.ToggleVisible();
