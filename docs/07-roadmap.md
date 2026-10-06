@@ -326,6 +326,10 @@ Details: `03-game-engine.md` "Mic plug / unplug".
 - [x] Log size: at most 10 MB per file (then a new file), 7 files kept — ≤ 70 MB worst case. UI inspector dumps (debug builds) older than 7 days are deleted at startup.
 - [x] Beamer mic meter: five bars in the player's colour after "Name  score", as tall as its capitals — the singer sees their mic works. Driven by loudness above the player's noise gate (`Core.Players.MicActivity`, tested; 0 at the gate, full at +30 dB), each bar wobbling at its own pace, fast rise and smooth fall; dots when silent. No FFT: two volatile reads and five rectangles per player per frame.
 - [x] Verified live: Logs & data buttons, mic meter.
+- [x] Game Player box shows the countdown (3 – 2 – 1) and PAUSED like the beamers: same text style (`TextBlock.beamer`, now app-wide), scaled to the box; the count starts on the same state change as the beamers'.
+- [x] Game Player box: elapsed / remaining pills and the blue progress line at its bottom, as on the beamer (`SongTimeline`; tokens `BrushStageProgress/Track/Pill`); replaces the small position text.
+- [x] YouTube load retry: a refused stream (HTTP 403 / 5xx, seen 3× in one evening — first load failed, the manual retry worked) is loaded again automatically with a fresh yt-dlp address, up to 2 retries, before the error shows (`Media.StreamRetry`, tested). Game and preview channels, video and audio roles.
+- [ ] Verified live
 
 ---
 

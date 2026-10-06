@@ -17,17 +17,6 @@
     <ItemsPanelTemplate x:Key="ChipRow"><StackPanel Orientation="Horizontal" Spacing="16" /></ItemsPanelTemplate>
   </Window.Resources>
 
-  <Window.Styles>
-    <Style Selector="TextBlock.beamer">
-      <Setter Property="Foreground" Value="{DynamicResource BrushBeamerText}" />
-      <Setter Property="FontFamily" Value="{StaticResource FontSans}" />
-      <!-- Text sits on pictures and video: a soft dark shadow keeps it readable on bright frames (white screens). -->
-      <Setter Property="Effect">
-        <DropShadowEffect OffsetX="0" OffsetY="2" BlurRadius="16" Color="Black" Opacity="0.85" />
-      </Setter>
-    </Style>
-  </Window.Styles>
-
   <Panel>
     <!-- Background (Core.Playback.StageView, same rule as the Game Player box): get ready / score = song picture blurred;
          countdown = picture; song = video (picture under it until the first frame) or, without video, the backdrop.

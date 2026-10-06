@@ -106,6 +106,10 @@
   <Color x:Key="ColorUsdb">#2E9E5B</Color>
   <Color x:Key="ColorBeamerBackground">#000000</Color>
   <Color x:Key="ColorBeamerText">#FFFFFF</Color>
+  <!-- Stage time strip (beamer bottom, Game Player box): lead-in blue bar on a faint track, translucent time pills. -->
+  <Color x:Key="ColorStageProgress">#4F8EF7</Color>
+  <Color x:Key="ColorStageTrack">#33FFFFFF</Color>
+  <Color x:Key="ColorStagePill">#26FFFFFF</Color>
 
   <!-- ── Brushes (bind to these in views; they follow the theme) ───────── -->
   <SolidColorBrush x:Key="BrushPrimary" Color="{DynamicResource ColorPrimary}" />
@@ -142,6 +146,9 @@
   <SolidColorBrush x:Key="BrushUsdb" Color="{StaticResource ColorUsdb}" />
   <SolidColorBrush x:Key="BrushBeamerBackground" Color="{StaticResource ColorBeamerBackground}" />
   <SolidColorBrush x:Key="BrushBeamerText" Color="{StaticResource ColorBeamerText}" />
+  <SolidColorBrush x:Key="BrushStageProgress" Color="{StaticResource ColorStageProgress}" />
+  <SolidColorBrush x:Key="BrushStageTrack" Color="{StaticResource ColorStageTrack}" />
+  <SolidColorBrush x:Key="BrushStagePill" Color="{StaticResource ColorStagePill}" />
 
   <!-- ── Spacing scale (px) ───────────────────────────────────────────── -->
   <x:Double x:Key="Space1">4</x:Double>

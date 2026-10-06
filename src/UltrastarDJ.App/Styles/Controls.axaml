@@ -257,4 +257,13 @@
     <Setter Property="Height" Value="{StaticResource IconLg}" />
     <Setter Property="Margin" Value="0,0,8,0" />
   </Style>
+  <!-- Text on the stage (beamers and the Game Player's box, which mirrors them): sits on pictures and video, so a
+       soft dark shadow keeps it readable on bright frames (white screens). -->
+  <Style Selector="TextBlock.beamer">
+    <Setter Property="Foreground" Value="{DynamicResource BrushBeamerText}" />
+    <Setter Property="FontFamily" Value="{StaticResource FontSans}" />
+    <Setter Property="Effect">
+      <DropShadowEffect OffsetX="0" OffsetY="2" BlurRadius="16" Color="Black" Opacity="0.85" />
+    </Setter>
+  </Style>
 </Styles>

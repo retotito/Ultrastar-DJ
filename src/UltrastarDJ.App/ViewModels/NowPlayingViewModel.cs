@@ -34,7 +34,11 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _title = "No song loaded";
     [ObservableProperty] private string _artist = "";
     [ObservableProperty] private string _status = "";
-    [ObservableProperty] private string _position = "";
+    // Time strip at the bottom of the box, as at the bottom of the beamer (Core.Timing.SongTimeline).
+    [ObservableProperty] private string _elapsed = "";
+    [ObservableProperty] private string _remaining = "";
+    [ObservableProperty] private double _progress;
+    [ObservableProperty] private bool _hasTimes;
     [ObservableProperty] private bool _loading;
     [ObservableProperty] private double _gain = 1.0;
     [ObservableProperty] private bool _isVisible;
@@ -69,7 +73,8 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
             HasSavedPosition = true;
         }
 
-        _playback.StateChanged += _ => Refresh();
+        _playback.StateChanged += OnStateChanged;
+        _countdown = new DispatcherTimer(TimeSpan.FromSeconds(1), DispatcherPriority.Normal, (_, _) => CountdownTick());
         _playback.PicturesChanged += RefreshBox;
         _displays.OpenStateChanged += (_, _) => Refresh();
         _players.Changed += OnPlayerChanged;
@@ -80,6 +85,40 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
     }
 
     public PlaybackState State => _playback.State;
+
+    // ── Countdown and pause in the box, as on the beamers ──
+    private readonly DispatcherTimer _countdown;
+    /// <summary>3, 2, 1 — started on the same state change as the beamers' countdown, so both count together.</summary>
+    [ObservableProperty] private int _countdownValue;
+    public bool IsCountdown => _playback.State == PlaybackState.Countdown;
+    public bool IsPaused => _playback.State == PlaybackState.Paused;
+
+    private void OnStateChanged(PlaybackState state)
+    {
+        _countdown.Stop();
+        if (state == PlaybackState.Countdown)
+        {
+            CountdownValue = 3;
+            _countdown.Start();
+        }
+
+        OnPropertyChanged(nameof(IsCountdown));
+        OnPropertyChanged(nameof(IsPaused));
+        Refresh();
+    }
+
+    // The beamers end the countdown (PlaybackService.CountdownDone); the box only shows it and stops at 1.
+    private void CountdownTick()
+    {
+        if (CountdownValue > 1)
+        {
+            CountdownValue--;
+        }
+        else
+        {
+            _countdown.Stop();
+        }
+    }
     public bool HasSong => _playback.Song is not null;
     /// <summary>The game channel has video (cases 2, 3, 4, 6).</summary>
     [ObservableProperty] private bool _hasVideo;
@@ -194,15 +233,24 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
             row.Level = pipe?.LevelRms ?? 0;
         }
 
-        if (_playback.Clock is { } clock && _playback.State is PlaybackState.Playing or PlaybackState.Paused)
+        if (_playback.Clock is { } clock && _playback.Timeline is { } timeline && _playback.State is PlaybackState.Playing or PlaybackState.Paused)
         {
-            double pos = clock.PositionSec;
-            Position = $"{(int)pos / 60}:{(int)pos % 60:00}";
+            double t = clock.PositionSec;
+            Elapsed = ClockText(timeline.Elapsed(t));
+            Remaining = ClockText(timeline.Remaining(t));
+            Progress = timeline.Fraction(t);
+            HasTimes = true;
         }
         else
         {
-            Position = "";
+            HasTimes = false;
         }
+    }
+
+    private static string ClockText(double seconds)
+    {
+        int s = (int)Math.Floor(seconds);
+        return $"{s / 60}:{s % 60:00}";
     }
 
     /// <summary>Called by the library (double-click / Load button).</summary>

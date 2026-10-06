@@ -53,6 +53,9 @@ public sealed class MpvPlayer : IMediaPlayer
     // "unrecognized file format"; this is what the user needs to see (see PlaybackError).
     private volatile string? _ytdlError;
     private bool _isNetwork;
+    // Stream refusal (StreamRetry): seen in this attempt's log, and whether this attempt may still be retried.
+    private volatile bool _streamRejected;
+    private bool _retryAllowed;
     private MediaState _state = MediaState.Idle;
     private double _volume = 1.0;
     private bool _muted;
@@ -205,6 +208,27 @@ public sealed class MpvPlayer : IMediaPlayer
 
     public async Task LoadAsync(MediaSource source, MediaLoadOptions options, CancellationToken ct = default)
     {
+        for (int attempt = 0; ; attempt++)
+        {
+            try
+            {
+                await LoadOnceAsync(source, options, retryAllowed: source is MediaSource.YouTube && attempt < StreamRetry.MaxRetries, ct)
+                    .ConfigureAwait(false);
+                return;
+            }
+            catch (StreamRejectedException)
+            {
+                _log.LogWarning("{Player}: YouTube refused the stream — retry {Attempt}/{Max} with a fresh address", Name, attempt + 1, StreamRetry.MaxRetries);
+                await Task.Delay(StreamRetry.Delay, ct).ConfigureAwait(false);
+            }
+        }
+    }
+
+    /// <summary>A refused YouTube stream during a load that may be retried; never leaves <see cref="LoadAsync"/>.</summary>
+    private sealed class StreamRejectedException() : Exception("stream refused");
+
+    private async Task LoadOnceAsync(MediaSource source, MediaLoadOptions options, bool retryAllowed, CancellationToken ct)
+    {
         TaskCompletionSource tcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
         lock (_stateLock)
         {
@@ -215,6 +239,8 @@ public sealed class MpvPlayer : IMediaPlayer
             _eof = false;
             _cacheSec = 0;
             _ytdlError = null;
+            _streamRejected = false;
+            _retryAllowed = retryAllowed;
             _isNetwork = source is MediaSource.YouTube;
             _timePosSec = 0;
             _durationSec = null;
@@ -355,6 +381,11 @@ public sealed class MpvPlayer : IMediaPlayer
                     string? prefix = Utf8(m->Prefix);
                     string? text = Utf8(m->Text)?.TrimEnd();
                     _log.LogWarning("{Player}: mpv[{Prefix}] {Text}", Name, prefix, text);
+                    if (StreamRetry.IsRejectedStream(prefix, text))
+                    {
+                        _streamRejected = true;
+                    }
+
                     if (prefix == "ytdl_hook" && text is not null
                         && (text.StartsWith("ERROR:", StringComparison.Ordinal) || text.StartsWith("youtube-dl failed", StringComparison.Ordinal))
                         && _ytdlError is null)
@@ -467,6 +498,14 @@ public sealed class MpvPlayer : IMediaPlayer
         lock (_stateLock)
         {
             pendingLoad = _loadTcs;
+            // Refused stream while still loading: LoadAsync tries again — stay "Loading", report nothing yet.
+            if (error is not null && _streamRejected && _retryAllowed && pendingLoad is { Task.IsCompleted: false })
+            {
+                _fileLoaded = false;
+                pendingLoad.TrySetException(new StreamRejectedException());
+                return;
+            }
+
             _fileLoaded = false;
             if (e->Reason == MpvEndFileReason.Eof)
             {

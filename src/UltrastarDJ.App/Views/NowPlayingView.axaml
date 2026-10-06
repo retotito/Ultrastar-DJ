@@ -37,6 +37,24 @@
           <Image Source="{Binding BoxImage}" Stretch="UniformToFill" IsVisible="{Binding ShowBoxImage}" />
           <c:VideoSurface Source="{Binding GameFrames}" IsVisible="{Binding ShowVideo}" />
           <c:Icon Glyph="music_note" FontSize="{StaticResource IconXl}" IsVisible="{Binding !HasSong}" />
+          <!-- Countdown and pause as on the beamers (same text style), scaled to the box. -->
+          <TextBlock Classes="beamer" Text="{Binding CountdownValue}" FontSize="110" FontWeight="{StaticResource WeightBold}"
+                     HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsCountdown}" />
+          <Border Background="#88000000" IsVisible="{Binding IsPaused}">
+            <TextBlock Classes="beamer" Text="PAUSED" FontSize="40" FontWeight="{StaticResource WeightBold}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+          </Border>
+          <!-- Elapsed / remaining and the progress line, as at the bottom of the beamer. -->
+          <Grid RowDefinitions="Auto,Auto" VerticalAlignment="Bottom" IsVisible="{Binding HasTimes}">
+            <Grid ColumnDefinitions="Auto,*,Auto" Margin="8,0,8,6">
+              <Border Background="{DynamicResource BrushStagePill}" CornerRadius="{StaticResource RadiusFull}" Padding="8,1">
+                <TextBlock Classes="beamer" Text="{Binding Elapsed}" FontSize="{StaticResource TextXs}" FontWeight="{StaticResource WeightSemibold}" />
+              </Border>
+              <Border Grid.Column="2" Background="{DynamicResource BrushStagePill}" CornerRadius="{StaticResource RadiusFull}" Padding="8,1">
+                <TextBlock Classes="beamer" Text="{Binding Remaining}" FontSize="{StaticResource TextXs}" FontWeight="{StaticResource WeightSemibold}" />
+              </Border>
+            </Grid>
+            <c:LevelMeter Grid.Row="1" Height="4" Level="{Binding Progress}" Fill="{DynamicResource BrushStageProgress}" Track="{DynamicResource BrushStageTrack}" />
+          </Grid>
           <ProgressBar IsIndeterminate="True" IsVisible="{Binding Loading}" VerticalAlignment="Bottom" Height="3" />
         </Panel>
       </Border>
@@ -47,7 +65,6 @@
         <!-- Status line hidden on purpose (the DJ doesn't need it); NowPlayingViewModel.Status still computes it. -->
         <TextBlock Classes="muted" FontSize="{StaticResource TextSm}" Text="{Binding Status}" VerticalAlignment="Center" TextWrapping="Wrap"
                    IsVisible="False" />
-        <TextBlock Grid.Column="1" Classes="muted" FontFamily="{StaticResource FontMono}" Text="{Binding Position}" VerticalAlignment="Center" />
       </Grid>
 
       <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}" HorizontalAlignment="Center">

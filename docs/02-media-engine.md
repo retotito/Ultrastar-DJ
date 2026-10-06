@@ -234,6 +234,7 @@ Do **not** start there — measure first.
 | Failure | Behaviour |
 |---|---|
 | yt-dlp missing / outdated | `SidecarLocator` verifies presence at start; `MediaService` runs `yt-dlp --version` once in the background (logs the version, absorbs macOS's first-run scan); offer "update yt-dlp" action — downloads the latest folder-build zip, since `yt-dlp -U` does not update folder builds |
+| YouTube refuses the resolved stream (HTTP 403 / 5xx on googlevideo.com, intermittent) | `MpvPlayer.LoadAsync` loads again with a fresh yt-dlp run, up to 2 retries 0.5 s apart, staying "Loading"; only then the error is reported. Rule: `StreamRetry.IsRejectedStream` (tested). Logged as "retry n/2" |
 | YouTube video unavailable / geo-blocked | `ErrorOccurred` → `PlaybackService` stops, DJ sees dialog with mpv's message |
 | Output device disappears during song | mpv falls back to default automatically; we show a toast and reset the stored device |
 | Local file unsupported | libmpv/FFmpeg decode nearly everything; if it fails the validator error dialog shows the mpv error |
