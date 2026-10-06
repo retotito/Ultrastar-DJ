@@ -33,7 +33,13 @@
         <ComboBox Grid.Column="1" ItemsSource="{Binding Ratings}" c:FitWidestItem.IsEnabled="True" SelectedItem="{Binding Rating}" MinWidth="110" Margin="0,0,8,0" ToolTip.Tip="Popularity on USDB (★ 100–499, ★★ 500–999, ★★★ 1000–1999, ★★★★ 2000+ views) — hides local songs" />
         <ComboBox Grid.Column="2" ItemsSource="{Binding Languages}" c:FitWidestItem.IsEnabled="True" SelectedItem="{Binding Language}" MinWidth="120" Margin="0,0,8,0" ToolTip.Tip="Language" />
         <ComboBox Grid.Column="3" ItemsSource="{Binding Genres}" c:FitWidestItem.IsEnabled="True" SelectedItem="{Binding Genre}" MinWidth="120" Margin="0,0,8,0" ToolTip.Tip="Genre" />
-        <ComboBox Grid.Column="4" ItemsSource="{Binding Sources}" c:FitWidestItem.IsEnabled="True" SelectedItem="{Binding Source}" MinWidth="140" ToolTip.Tip="Song source" />
+        <ComboBox Grid.Column="4" ItemsSource="{Binding Sources}" c:FitWidestItem.IsEnabled="True" SelectedItem="{Binding Source}" MinWidth="140" ToolTip.Tip="Song source">
+          <ComboBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:SourceOption">
+              <TextBlock Text="{Binding}" Opacity="{Binding Opacity}" />
+            </DataTemplate>
+          </ComboBox.ItemTemplate>
+        </ComboBox>
         <Button Grid.Column="5" Classes="text" Margin="8,0,0,0" Command="{Binding ClearFiltersCommand}"
                 IsVisible="{Binding HasActiveFilters}" ToolTip.Tip="Reset rating, language, genre and source">
           <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
@@ -104,14 +110,20 @@
                 </Grid.ColumnDefinitions>
                 <Grid.ContextMenu>
                   <ContextMenu>
-                    <MenuItem Header="Preview" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).PreviewCommand}" CommandParameter="{Binding}">
+                    <MenuItem Header="Preview" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).PreviewCommand}" CommandParameter="{Binding}" ToolTip.Tip="{Binding UnavailableTip}" ToolTip.ShowOnDisabled="True">
                       <MenuItem.Icon><c:Icon Glyph="play_arrow" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
                     </MenuItem>
-                    <MenuItem Header="Add to queue" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).AddToQueueCommand}" CommandParameter="{Binding}">
+                    <MenuItem Header="Add to queue" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).AddToQueueCommand}" CommandParameter="{Binding}" ToolTip.Tip="{Binding UnavailableTip}" ToolTip.ShowOnDisabled="True">
                       <MenuItem.Icon><c:Icon Glyph="queue_music" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="Load into game" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).LoadIntoGameCommand}" CommandParameter="{Binding}"
-                              ToolTip.Tip="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).LoadSongTip}">
+                              ToolTip.ShowOnDisabled="True">
+                    <ToolTip.Tip>
+                      <MultiBinding Converter="{x:Static vm:PlayerConverters.FirstText}">
+                        <Binding Path="UnavailableTip" />
+                        <Binding Path="$parent[UserControl].((vm:LibraryViewModel)DataContext).LoadSongTip" />
+                      </MultiBinding>
+                    </ToolTip.Tip>
                       <MenuItem.Icon><c:Icon Glyph="play_circle" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
                     </MenuItem>
                     <Separator />
@@ -165,14 +177,20 @@
                 <Button Grid.Column="11" Classes="sidebar" Width="28" Height="28" ToolTip.Tip="Actions">
                   <Button.Flyout>
                     <MenuFlyout>
-                      <MenuItem Header="Preview" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).PreviewCommand}" CommandParameter="{Binding}">
+                      <MenuItem Header="Preview" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).PreviewCommand}" CommandParameter="{Binding}" ToolTip.Tip="{Binding UnavailableTip}" ToolTip.ShowOnDisabled="True">
                         <MenuItem.Icon><c:Icon Glyph="play_arrow" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
                       </MenuItem>
-                      <MenuItem Header="Add to queue" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).AddToQueueCommand}" CommandParameter="{Binding}">
+                      <MenuItem Header="Add to queue" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).AddToQueueCommand}" CommandParameter="{Binding}" ToolTip.Tip="{Binding UnavailableTip}" ToolTip.ShowOnDisabled="True">
                         <MenuItem.Icon><c:Icon Glyph="queue_music" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
                       </MenuItem>
                       <MenuItem Header="Load into game" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).LoadIntoGameCommand}" CommandParameter="{Binding}"
-                              ToolTip.Tip="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).LoadSongTip}">
+                              ToolTip.ShowOnDisabled="True">
+                    <ToolTip.Tip>
+                      <MultiBinding Converter="{x:Static vm:PlayerConverters.FirstText}">
+                        <Binding Path="UnavailableTip" />
+                        <Binding Path="$parent[UserControl].((vm:LibraryViewModel)DataContext).LoadSongTip" />
+                      </MultiBinding>
+                    </ToolTip.Tip>
                         <MenuItem.Icon><c:Icon Glyph="play_circle" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
                       </MenuItem>
                       <Separator />

@@ -36,6 +36,7 @@ public sealed class PlaybackService : IDisposable
     private readonly SongResolver _resolver;
     private readonly OutputsService _outputs;
     private readonly LoadFailureService _failures;
+    private readonly LibraryService _library;
     private readonly NotificationService _notifications;
     private readonly ThumbnailService _thumbnails;
     private readonly ILogger<PlaybackService> _log;
@@ -45,7 +46,7 @@ public sealed class PlaybackService : IDisposable
     private PlaybackState _state = PlaybackState.Idle;
 
     public PlaybackService(MediaService media, AudioInputService audio, PlayersService players, IDisplayService displays, AppSettingsService settings, SongResolver resolver,
-        OutputsService outputs, LoadFailureService failures, NotificationService notifications, ThumbnailService thumbnails, ILogger<PlaybackService> log)
+        OutputsService outputs, LoadFailureService failures, LibraryService library, NotificationService notifications, ThumbnailService thumbnails, ILogger<PlaybackService> log)
     {
         _media = media;
         _audio = audio;
@@ -55,6 +56,7 @@ public sealed class PlaybackService : IDisposable
         _resolver = resolver;
         _outputs = outputs;
         _failures = failures;
+        _library = library;
         _notifications = notifications;
         _thumbnails = thumbnails;
         _log = log;
@@ -71,6 +73,13 @@ public sealed class PlaybackService : IDisposable
         if (State is PlaybackState.Playing or PlaybackState.Paused or PlaybackState.Countdown)
         {
             Stop();
+            // A pulled USB drive shows up as an mpv read error; tell the DJ what actually happened.
+            if (Song is { UsdbId: null } song && !_library.IsReachableNow(song.SourceId))
+            {
+                _notifications.ShowError("Playback stopped", $"The drive with this song was removed ({_library.SourceLabel(song.SourceId)}).", error);
+                return;
+            }
+
             PlaybackError explained = PlaybackError.Explain(error);
             _notifications.ShowError("Playback stopped", explained.Reason, explained.Details);
         }

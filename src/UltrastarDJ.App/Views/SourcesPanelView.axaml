@@ -19,16 +19,24 @@
       <ItemsControl.ItemTemplate>
         <DataTemplate x:DataType="vm:SourceRowViewModel">
           <Border Classes="card" Margin="0,0,0,8">
-            <Grid ColumnDefinitions="*,Auto,Auto" RowDefinitions="Auto,Auto">
-              <TextBlock Grid.Row="0" Grid.Column="0" Classes="title" Text="{Binding Label}" />
-              <Button Grid.Row="0" Grid.Column="1" Classes="sidebar" Command="{Binding RescanCommand}" ToolTip.Tip="Rescan">
+            <Grid ColumnDefinitions="Auto,*,Auto,Auto" RowDefinitions="Auto,Auto">
+              <ToggleSwitch Grid.Row="0" Grid.RowSpan="2" Grid.Column="0" IsChecked="{Binding Enabled}" OnContent="" OffContent="" VerticalAlignment="Center"
+                            Margin="0,0,8,0" ToolTip.Tip="Off: this folder's songs are left out of the library and the source filter" />
+              <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="{StaticResource Space2}" Opacity="{Binding Opacity}">
+                <TextBlock Classes="title" Text="{Binding Label}" VerticalAlignment="Center" />
+                <c:Icon Glyph="usb_off" FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushError}" VerticalAlignment="Center"
+                        IsVisible="{Binding IsMissing}" ToolTip.Tip="Folder not found — drive unplugged? Its songs are greyed out until it is back." />
+              </StackPanel>
+              <Button Grid.Row="0" Grid.Column="2" Classes="sidebar" Command="{Binding RescanCommand}" ToolTip.Tip="Rescan" IsEnabled="{Binding !IsMissing}">
                 <c:Icon Glyph="refresh" FontSize="{StaticResource IconMd}" />
               </Button>
-              <Button Grid.Row="0" Grid.Column="2" Classes="sidebar" Command="{Binding RemoveCommand}" ToolTip.Tip="Remove source">
+              <Button Grid.Row="0" Grid.Column="3" Classes="sidebar" Command="{Binding RemoveCommand}" ToolTip.Tip="Remove source">
                 <c:Icon Glyph="delete" FontSize="{StaticResource IconMd}" />
               </Button>
-              <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Classes="muted" FontSize="{StaticResource TextXs}"
-                         Text="{Binding Path}" TextTrimming="CharacterEllipsis" />
+              <Grid Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3" ColumnDefinitions="*,Auto" Opacity="{Binding Opacity}">
+                <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="{Binding Path}" TextTrimming="CharacterEllipsis" />
+                <TextBlock Grid.Column="1" Classes="muted" FontSize="{StaticResource TextXs}" Text="{Binding CountText}" Margin="8,0,0,0" />
+              </Grid>
             </Grid>
           </Border>
         </DataTemplate>
@@ -44,10 +52,12 @@
     <!-- USDB -->
     <Border Classes="card" Margin="0,8,0,0">
       <StackPanel Spacing="{StaticResource Space2}">
-        <Grid ColumnDefinitions="Auto,*,Auto">
-          <c:Icon Glyph="cloud" Margin="0,0,8,0" Foreground="{DynamicResource BrushUsdb}" />
-          <TextBlock Grid.Column="1" Classes="title" Text="USDB" VerticalAlignment="Center" />
-          <TextBlock Grid.Column="2" Classes="muted" FontSize="{StaticResource TextXs}" VerticalAlignment="Center"
+        <Grid ColumnDefinitions="Auto,Auto,*,Auto">
+          <ToggleSwitch IsChecked="{Binding UsdbEnabled}" OnContent="" OffContent="" VerticalAlignment="Center" Margin="0,0,8,0"
+                        ToolTip.Tip="Off: USDB songs are left out of the library, the source filter and the songbook — you stay logged in" />
+          <c:Icon Grid.Column="1" Glyph="cloud" Margin="0,0,8,0" Foreground="{DynamicResource BrushUsdb}" />
+          <TextBlock Grid.Column="2" Classes="title" Text="USDB" VerticalAlignment="Center" />
+          <TextBlock Grid.Column="3" Classes="muted" FontSize="{StaticResource TextXs}" VerticalAlignment="Center"
                      Text="{Binding UsdbCount, StringFormat='{}{0:N0} songs'}" IsVisible="{Binding UsdbCount}" />
         </Grid>
         <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap"

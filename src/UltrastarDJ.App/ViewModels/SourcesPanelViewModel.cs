@@ -29,6 +29,8 @@ public sealed partial class SourcesPanelViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private bool _usdbBusy;
     [ObservableProperty] private string _usdbStatus = "";
     [ObservableProperty] private int _usdbCount;
+    /// <summary>The USDB switch (same idea as a folder's): off hides its songs, the login stays.</summary>
+    [ObservableProperty] private bool _usdbEnabled;
 
     public SourcesPanelViewModel(LibraryService library, UsdbService usdb, NotificationService notifications, ILogger<SourcesPanelViewModel> log)
     {
@@ -37,9 +39,12 @@ public sealed partial class SourcesPanelViewModel : ViewModelBase, IDisposable
         _notifications = notifications;
         _log = log;
         _usdbUser = usdb.Username ?? "";
+        _usdbEnabled = library.UsdbEnabled;
         Refresh();
         RefreshUsdb();
         _library.Changed += OnLibraryChanged;
+        // A drive plugged in or pulled: the row's "Not connected" follows within the 5 s poll.
+        _library.AvailabilityChanged += OnLibraryChanged;
         _usdb.Changed += OnUsdbChanged;
     }
 
@@ -56,7 +61,7 @@ public sealed partial class SourcesPanelViewModel : ViewModelBase, IDisposable
         Sources.Clear();
         foreach (SongSource s in _library.Sources)
         {
-            Sources.Add(new SourceRowViewModel(s, _library.CountFor(s.Id), this));
+            Sources.Add(new SourceRowViewModel(s, _library.CountFor(s.Id), _library.IsAvailable(s.Id), this));
         }
     }
 
@@ -118,6 +123,7 @@ public sealed partial class SourcesPanelViewModel : ViewModelBase, IDisposable
     public void Dispose()
     {
         _library.Changed -= OnLibraryChanged;
+        _library.AvailabilityChanged -= OnLibraryChanged;
         _usdb.Changed -= OnUsdbChanged;
     }
 
@@ -143,6 +149,10 @@ public sealed partial class SourcesPanelViewModel : ViewModelBase, IDisposable
 
     public void Remove(string sourceId) => _library.RemoveSource(sourceId);
 
+    public void SetEnabled(string sourceId, bool enabled) => _library.SetEnabled(sourceId, enabled);
+
+    partial void OnUsdbEnabledChanged(bool value) => _library.SetUsdbEnabled(value);
+
     private Progress<LocalFolderScanner.Progress> Progress()
         => new(p => Status = $"Scanning… {p.Parsed} songs ({p.Found} files)");
 
@@ -167,11 +177,19 @@ public sealed partial class SourcesPanelViewModel : ViewModelBase, IDisposable
     }
 }
 
-public sealed partial class SourceRowViewModel(SongSource source, int count, SourcesPanelViewModel owner) : ObservableObject
+public sealed partial class SourceRowViewModel(SongSource source, int count, bool available, SourcesPanelViewModel owner) : ObservableObject
 {
+    /// <summary>Switched off: its songs leave the library and the source filter (prototype's toggle).</summary>
+    [ObservableProperty] private bool _enabled = source.Enabled;
+
     public string Label => source.Label;
     public string Path => source.Path ?? "";
-    public string CountText => $"{count} songs";
+    /// <summary>Folder unreachable (USB drive pulled). Only for enabled sources — a switched-off one is not checked.</summary>
+    public bool IsMissing => source.Enabled && !available;
+    public string CountText => IsMissing ? "Not connected" : $"{count} songs";
+    public double Opacity => IsMissing || !source.Enabled ? 0.5 : 1.0;
+
+    partial void OnEnabledChanged(bool value) => owner.SetEnabled(source.Id, value);
 
     [RelayCommand] private Task RescanAsync() => owner.RescanAsync(source.Id);
     [RelayCommand] private void Remove() => owner.Remove(source.Id);

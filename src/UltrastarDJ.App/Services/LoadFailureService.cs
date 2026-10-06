@@ -12,12 +12,14 @@ namespace UltrastarDJ.App.Services;
 public sealed class LoadFailureService
 {
     private readonly ILoadFailureStore _store;
+    private readonly LibraryService _library;
     private readonly ILogger<LoadFailureService> _log;
     private readonly Dictionary<string, LoadFailure> _failures;
 
-    public LoadFailureService(ILoadFailureStore store, ILogger<LoadFailureService> log)
+    public LoadFailureService(ILoadFailureStore store, LibraryService library, ILogger<LoadFailureService> log)
     {
         _store = store;
+        _library = library;
         _log = log;
         _failures = store.All().ToDictionary(f => f.SongId);
     }
@@ -48,6 +50,12 @@ public sealed class LoadFailureService
     /// <param name="reason">What the DJ was told.</param>
     public void Failed(Song song, string reason)
     {
+        // A drive pulled mid-load fails like a broken song; the song is fine — no mark.
+        if (song.UsdbId is null && !_library.IsReachableNow(song.SourceId))
+        {
+            return;
+        }
+
         LoadFailure f = new(song.Id, reason, DateTime.UtcNow, LoadFailure.FingerprintOf(song, LastWriteUtc));
         _failures[song.Id] = f;
         _store.Save(f);

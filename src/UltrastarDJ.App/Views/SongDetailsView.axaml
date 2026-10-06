@@ -68,13 +68,13 @@
           </Button>
         </StackPanel>
         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="{StaticResource Space2}">
-          <Button Classes="text" Command="{Binding PreviewCommand}">
+          <Button Classes="text" Command="{Binding PreviewCommand}" ToolTip.Tip="{Binding UnavailableTip}" ToolTip.ShowOnDisabled="True">
             <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
               <c:Icon Glyph="play_arrow" FontSize="{StaticResource IconLg}" VerticalAlignment="Center" />
               <TextBlock Text="Preview" VerticalAlignment="Center" />
             </StackPanel>
           </Button>
-          <Button Classes="text" Command="{Binding AddToQueueCommand}">
+          <Button Classes="text" Command="{Binding AddToQueueCommand}" ToolTip.Tip="{Binding UnavailableTip}" ToolTip.ShowOnDisabled="True">
             <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
               <c:Icon Glyph="queue_music" FontSize="{StaticResource IconLg}" VerticalAlignment="Center" />
               <TextBlock Text="Add to queue" VerticalAlignment="Center" />

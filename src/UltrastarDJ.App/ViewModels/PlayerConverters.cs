@@ -22,6 +22,8 @@ public static class PlayerConverters
     public static readonly IValueConverter MicTooltip = new FuncValueConverter<bool, string>(has => has
         ? "Sing on this screen"
         : "No microphone — assign one to this player under Audio Input first");
+    /// <summary>The first non-empty text of the bound values (a greyed row's reason before the general tooltip).</summary>
+    public static readonly IMultiValueConverter FirstText = new FuncMultiValueConverter<string?, string?>(texts => texts.FirstOrDefault(t => !string.IsNullOrEmpty(t)));
     public static readonly IValueConverter AvailabilityTooltip = new FuncValueConverter<bool, string?>(ok => ok ? null : "Source folder not reachable (drive unplugged?)");
     public static readonly IValueConverter PlayPauseGlyph = new FuncValueConverter<bool, string>(playing => playing ? "pause" : "play_arrow");
 }

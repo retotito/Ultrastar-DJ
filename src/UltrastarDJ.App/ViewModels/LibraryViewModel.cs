@@ -31,6 +31,9 @@ public sealed record LibraryRow(Song Song, string Source, bool IsAvailable, Load
     /// <summary>USDB songs always play from YouTube; the id is only known once the txt is fetched.</summary>
     public bool HasYouTube => Song.HasYouTube || IsUsdb;
     public double Opacity => IsAvailable ? 1.0 : 0.4;
+    /// <summary>Why a greyed row's Preview / queue / load are disabled.</summary>
+    public string? UnavailableTip => IsAvailable ? null
+        : IsUsdb ? "Offline — USDB songs need the internet" : SourceAvailability.NotConnected(Source);
     /// <summary>USDB popularity; "—" for local songs, empty for USDB songs under 100 views.</summary>
     public string Stars => Song.Stars is { } n ? new string('★', n) : "—";
 }
@@ -42,11 +45,13 @@ public sealed record RatingOption(int? Stars, string Label)
 }
 
 /// <summary>An entry of the source filter. <see cref="Key"/> is a source id, or <see cref="AllKey"/>/<see cref="LocalKey"/>.</summary>
-public sealed record SourceOption(string Key, string Label)
+// IsAvailable false: an unplugged folder — greyed, still selectable (to see what is on the drive).
+public sealed record SourceOption(string Key, string Label, bool IsAvailable = true)
 {
+    public double Opacity => IsAvailable ? 1.0 : 0.45;
     public const string AllKey = "*";
     public const string LocalKey = "*local";
-    public override string ToString() => Label;
+    public override string ToString() => IsAvailable ? Label : $"{Label} (not connected)";
 }
 
 /// <summary>Centre panel: the song library with search, filters and sort. Row actions hand songs to preview, queue or game.</summary>
@@ -161,8 +166,11 @@ public sealed partial class LibraryViewModel : ViewModelBase
     }
 
     /// <summary>Double-click / Enter.</summary>
-    [RelayCommand]
-    private Task PreviewAsync(LibraryRow? row) => row is null ? Task.CompletedTask : _preview.LoadCommand.ExecuteAsync(row.Song);
+    [RelayCommand(CanExecute = nameof(IsPlayable))]
+    private Task PreviewAsync(LibraryRow? row) => row is not { IsAvailable: true } ? Task.CompletedTask : _preview.LoadCommand.ExecuteAsync(row.Song);
+
+    // Greyed rows (drive unplugged, USDB offline) can't be previewed, queued or loaded; Details stays.
+    private static bool IsPlayable(LibraryRow? row) => row is { IsAvailable: true };
 
     /// <summary>The DJ window shows the Details popup (it owns the overlay).</summary>
     public event Action<LibraryRow>? DetailsRequested;
@@ -176,7 +184,7 @@ public sealed partial class LibraryViewModel : ViewModelBase
         }
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(IsPlayable))]
     private void AddToQueue(LibraryRow? row)
     {
         if (row is not null)
@@ -188,7 +196,7 @@ public sealed partial class LibraryViewModel : ViewModelBase
     [RelayCommand(CanExecute = nameof(CanLoadIntoGame))]
     private Task LoadIntoGameAsync(LibraryRow? row) => row is null ? Task.CompletedTask : _nowPlaying.LoadCommand.ExecuteAsync(row.Song);
 
-    private bool CanLoadIntoGame(LibraryRow? row) => _nowPlaying.CanLoadSong;
+    private bool CanLoadIntoGame(LibraryRow? row) => _nowPlaying.CanLoadSong && IsPlayable(row);
 
     public string LoadSongTip => _nowPlaying.LoadSongTip;
 
@@ -243,12 +251,14 @@ public sealed partial class LibraryViewModel : ViewModelBase
         Sync(Languages, AnyLanguage, ValueList.Distinct(all.Select(s => s.Language), ValueList.LanguageSeparators));
         Sync(Genres, AnyGenre, ValueList.Distinct(all.Select(s => s.Genre), ValueList.GenreSeparators));
         List<SourceOption> sources = [AllSources];
-        if (_library.Sources.Count > 1 || (_library.Sources.Count > 0 && _library.UsdbCount > 0))
+        int folders = _library.Sources.Count(s => s.Enabled);
+        if (folders > 1 || (folders > 0 && _library.UsdbCount > 0))
         {
             sources.Add(new SourceOption(SourceOption.LocalKey, "All local folders"));
         }
 
-        sources.AddRange(_library.Sources.Select(s => new SourceOption(s.Id, s.Label)));
+        // Switched-off folders are not in the library, so not in the filter either.
+        sources.AddRange(_library.Sources.Where(s => s.Enabled).Select(s => new SourceOption(s.Id, s.Label, _library.IsAvailable(s.Id))));
         if (_library.UsdbCount > 0)
         {
             sources.Add(new SourceOption(UsdbCatalogEntry.SourceId, "USDB"));
@@ -264,7 +274,8 @@ public sealed partial class LibraryViewModel : ViewModelBase
                 Sources.Add(o);
             }
 
-            Source = keep is not null && sources.Contains(keep) ? keep : AllSources;
+            // By key: a drive coming or going changes the option (greyed), not the DJ's choice.
+            Source = sources.FirstOrDefault(o => o.Key == keep?.Key) ?? AllSources;
             _rebuildingSources = false;
         }
 

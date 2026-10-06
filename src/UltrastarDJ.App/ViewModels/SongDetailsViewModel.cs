@@ -89,21 +89,25 @@ public sealed partial class SongDetailsViewModel : ViewModelBase
     [RelayCommand]
     private void Close() => _close();
 
-    [RelayCommand]
+    // Greyed song (drive unplugged, USDB offline): Details only, like in the library's menus.
+    private bool IsPlayable() => Row.IsAvailable;
+
+    [RelayCommand(CanExecute = nameof(IsPlayable))]
     private async Task PreviewAsync()
     {
         _close();
         await _library.PreviewCommand.ExecuteAsync(Row);
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(IsPlayable))]
     private void AddToQueue()
     {
         _close();
         _library.AddToQueueCommand.Execute(Row);
     }
 
-    public string LoadTip => _library.LoadSongTip;
+    public string LoadTip => Row.UnavailableTip ?? _library.LoadSongTip;
+    public string? UnavailableTip => Row.UnavailableTip;
 
     [RelayCommand(CanExecute = nameof(CanLoadIntoGame))]
     private async Task LoadIntoGameAsync()

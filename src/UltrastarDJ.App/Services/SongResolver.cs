@@ -8,12 +8,18 @@ namespace UltrastarDJ.App.Services;
 /// Turns a library row into a playable <see cref="Song"/>: USDB rows get their txt (network/cache) and
 /// YouTube id, every song is validated, local songs get their notes parsed. Throws <see cref="SongLoadException"/>.
 /// </summary>
-public sealed class SongResolver(UsdbService usdb)
+public sealed class SongResolver(UsdbService usdb, LibraryService library)
 {
     private readonly SongValidator _validator = new(new FileSystemExistence());
 
     public async Task<Song> ResolveAsync(Song song, CancellationToken ct = default)
     {
+        // Unplugged drive: say so, instead of "audio file not found" (and never mark the song as broken).
+        if (song.UsdbId is null && !library.IsReachableNow(song.SourceId))
+        {
+            throw new SongLoadException(SourceAvailability.NotConnected(library.SourceLabel(song.SourceId)));
+        }
+
         if (song.UsdbId is { } usdbId)
         {
             song = await ResolveUsdbAsync(song, usdbId, ct).ConfigureAwait(false);
