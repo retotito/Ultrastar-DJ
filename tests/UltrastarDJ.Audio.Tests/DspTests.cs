@@ -128,6 +128,20 @@ public class SampleRingTests
         Assert.Equal(4, n);
         Assert.Equal([7, 8, 9, 10], dst);
     }
+
+    [Fact]
+    public void ReadFrom_NegativeStart_ReadsFromTheBeginningInsteadOfThrowing()
+    {
+        // Regression: the monitor asked for index -512 right after the mics opened → crash in the audio callback.
+        SampleRing ring = new(8);
+        ring.Write([1, 2, 3]);
+        float[] dst = new float[4];
+
+        int n = ring.ReadFrom(-512, dst);
+
+        Assert.Equal(3, n);
+        Assert.Equal([1, 2, 3], dst[..3]);
+    }
 }
 
 public class MicPipelineTests

@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using UltrastarDJ.App.Game;
 using UltrastarDJ.App.Services;
 using UltrastarDJ.Core.Game;
 
@@ -11,6 +12,7 @@ public sealed partial class SettingsPanelViewModel : ViewModelBase
 
     [ObservableProperty] private bool _lightTheme;
     [ObservableProperty] private bool _showTooltips;
+    [ObservableProperty] private NoteBarStyle _noteBarStyle;
     [ObservableProperty] private Difficulty _difficulty;
     [ObservableProperty] private double _lyricsOffsetMs;
 
@@ -20,6 +22,7 @@ public sealed partial class SettingsPanelViewModel : ViewModelBase
         _loading = true;
         LightTheme = settings.LightTheme;
         ShowTooltips = settings.ShowTooltips;
+        NoteBarStyle = settings.NoteBarStyle;
         Difficulty = settings.Difficulty;
         LyricsOffsetMs = settings.LyricsOffsetMs;
         _loading = false;
@@ -33,6 +36,16 @@ public sealed partial class SettingsPanelViewModel : ViewModelBase
         Difficulty.Hard => "exact semitone — for show-offs",
         _ => "±1 semitone — the usual",
     };
+
+    public IReadOnlyList<NoteBarStyle> NoteBarStyles { get; } = [NoteBarStyle.White, NoteBarStyle.Black];
+
+    partial void OnNoteBarStyleChanged(NoteBarStyle value)
+    {
+        if (!_loading)
+        {
+            _settings.SetNoteBarStyle(value);
+        }
+    }
 
     partial void OnShowTooltipsChanged(bool value)
     {

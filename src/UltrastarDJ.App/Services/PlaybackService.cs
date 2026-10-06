@@ -1,3 +1,4 @@
+using System.Runtime;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Microsoft.Extensions.Logging;
@@ -8,6 +9,7 @@ using UltrastarDJ.Core.Game;
 using UltrastarDJ.Core.Playback;
 using UltrastarDJ.Core.Players;
 using UltrastarDJ.Core.Songs;
+using UltrastarDJ.Core.Timing;
 using UltrastarDJ.Infrastructure.Library;
 using UltrastarDJ.Media;
 
@@ -105,6 +107,9 @@ public sealed class PlaybackService : IDisposable
     public event Action? PicturesChanged;
     public MediaPlan? Plan { get; private set; }
     public GameSession? Session { get; private set; }
+
+    /// <summary>Playing span of the current song (start/end in game time) — beamer times and progress, auto-stop.</summary>
+    public SongTimeline? Timeline { get; private set; }
     public IGameClock? Clock => _media.Game.Clock;
     public Difficulty Difficulty => _settings.Difficulty;
     /// <summary>Global lyrics offset; the beamers and the scorer read game time as clock + this.</summary>
@@ -266,8 +271,12 @@ public sealed class PlaybackService : IDisposable
         IReadOnlyList<PlayerConfig> active = ActivePlayers();
         int tracks = Song.Notes!.Count;
         Session = new GameSession(Song, active.Select(p => new GamePlayer(p.Id, tracks > 1 ? (p.Id - 1) % tracks : 0, p.MicDelayMs)).ToList(), Difficulty);
+        // Media length in game time: when the video is the audio, its #VIDEOGAP intro is not part of the song.
+        double? mediaLengthSec = _media.Game.Duration is { } d ? d.TotalSeconds - (Plan?.AudioOriginSec ?? 0) : null;
+        Timeline = SongTimeline.For(Song, Session.LastBeat, TailAfterLastNoteSec, mediaLengthSec);
 
         StartMics(active);
+        BeginLowLatencyGc();
         _media.Game.Play();
         State = PlaybackState.Playing;
         StartTicker();
@@ -305,6 +314,34 @@ public sealed class PlaybackService : IDisposable
         {
             _audio.StartMonitor(monitorOut, _media.Game.ChannelOffset);
         }
+    }
+
+    // ── GC during a song ────────────────────────────────────────────────
+    // Our PortAudio callbacks (mic monitor) are managed code on CoreAudio's IO thread, shared with mpv's output to the
+    // same device: a GC pause stalls both → crackling. SustainedLowLatency avoids blocking full collections while the
+    // song runs; the counts logged at the end show how quiet the song really was.
+    private GCLatencyMode? _gcModeBefore;
+    private (int Gen0, int Gen1, int Gen2, long Bytes) _gcAtStart;
+
+    private void BeginLowLatencyGc()
+    {
+        _gcModeBefore ??= GCSettings.LatencyMode;
+        GCSettings.LatencyMode = GCLatencyMode.SustainedLowLatency;
+        _gcAtStart = (GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2), GC.GetTotalAllocatedBytes());
+    }
+
+    private void EndLowLatencyGc()
+    {
+        if (_gcModeBefore is not { } before)
+        {
+            return;
+        }
+
+        GCSettings.LatencyMode = before;
+        _gcModeBefore = null;
+        _log.LogInformation("GC during the song: gen0 {Gen0}, gen1 {Gen1}, gen2 {Gen2}, {Mb:F1} MB allocated",
+            GC.CollectionCount(0) - _gcAtStart.Gen0, GC.CollectionCount(1) - _gcAtStart.Gen1, GC.CollectionCount(2) - _gcAtStart.Gen2,
+            (GC.GetTotalAllocatedBytes() - _gcAtStart.Bytes) / 1048576.0);
     }
 
     /// <summary>
@@ -357,6 +394,7 @@ public sealed class PlaybackService : IDisposable
         StopTicker();
         _audio.StopAll();
         _media.Game.Pause();
+        EndLowLatencyGc();
         State = PlaybackState.Score;
     }
 
@@ -364,6 +402,7 @@ public sealed class PlaybackService : IDisposable
     {
         StopTicker();
         _audio.StopAll();
+        EndLowLatencyGc();
         await _media.Game.UnloadAsync();
         Song = null;
         SetPictures(null, null);
@@ -393,7 +432,8 @@ public sealed class PlaybackService : IDisposable
     private async Task TickLoopAsync(CancellationToken ct)
     {
         using PeriodicTimer timer = new(TickPeriod);
-        double stopAfterSec = Session is { } s0 ? Core.Timing.BeatMath.SecondsAt(s0.LastBeat, s0.Song.Bpm, s0.Song.GapMs) + TailAfterLastNoteSec : double.MaxValue;
+        // Same end as the beamers' remaining time (last note + tail, #END, media length).
+        double stopAfterSec = Timeline?.EndSec ?? double.MaxValue;
         try
         {
             while (await timer.WaitForNextTickAsync(ct).ConfigureAwait(false))

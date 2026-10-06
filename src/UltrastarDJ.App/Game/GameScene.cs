@@ -1,3 +1,4 @@
+using UltrastarDJ.Core.Timing;
 using Avalonia.Media;
 using UltrastarDJ.Core.Game;
 using UltrastarDJ.Core.Songs;
@@ -16,11 +17,13 @@ public sealed class GameScene
     /// <summary>Guards <see cref="Lanes"/> and <see cref="PerfectFlashAt"/> between the tick thread and the renderer.</summary>
     public Lock Sync { get; } = new();
 
-    public GameScene(GameSession session, IReadOnlyList<ScenePlayer> players, Func<double> positionSec)
+    public GameScene(GameSession session, IReadOnlyList<ScenePlayer> players, Func<double> positionSec, SongTimeline? timeline, Func<double> clockSec)
     {
         Session = session;
         Players = players;
         PositionSec = positionSec;
+        Timeline = timeline;
+        ClockSec = clockSec;
         foreach (ScenePlayer p in players)
         {
             Lanes[p.Id] = new LaneState(session.TrackOf(p.Id));
@@ -30,6 +33,9 @@ public sealed class GameScene
     public GameSession Session { get; }
     public IReadOnlyList<ScenePlayer> Players { get; }
     public Func<double> PositionSec { get; }
+    public SongTimeline? Timeline { get; }
+    /// <summary>Media clock without the lyrics offset — elapsed / remaining are real playing time.</summary>
+    public Func<double> ClockSec { get; }
     public Dictionary<int, LaneState> Lanes { get; } = [];
 
     /// <summary>Game-time when a "PERFECT" flash started, per player (drawn for ~1.2 s).</summary>
@@ -77,4 +83,10 @@ public sealed class LaneState(NoteTrack track)
     public NoteTrack Track { get; } = track;
     public Dictionary<int, BeatResult> Results { get; } = [];
     public LyricLine? LastActiveLine { get; set; }
+
+    /// <summary>Game time a note (by start beat) first reached ≥ 50 % correct — starts its pulse. Render thread, under <c>Sync</c>.</summary>
+    public Dictionary<int, double> CorrectSince { get; } = [];
+
+    /// <summary>Game time a rap note (by start beat) was first hit — starts its glow. Render thread, under <c>Sync</c>.</summary>
+    public Dictionary<int, double> RapHitAt { get; } = [];
 }

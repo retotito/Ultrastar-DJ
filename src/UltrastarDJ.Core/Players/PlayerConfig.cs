@@ -8,7 +8,15 @@ public enum MicChannelSide
     Mono,
 }
 
-public sealed record MicBinding(string DeviceId, MicChannelSide Channel);
+public sealed record MicBinding(string DeviceId, MicChannelSide Channel)
+{
+    /// <summary>
+    /// Two players cannot share an input: same device and same side, or either one on Mono (which uses both sides).
+    /// Left and Right of one dongle are two separate singers.
+    /// </summary>
+    public bool ConflictsWith(MicBinding other)
+        => DeviceId == other.DeviceId && (Channel == other.Channel || Channel == MicChannelSide.Mono || other.Channel == MicChannelSide.Mono);
+}
 
 /// <summary>One of the four fixed player slots. Persisted as a settings document.</summary>
 public sealed record PlayerConfig

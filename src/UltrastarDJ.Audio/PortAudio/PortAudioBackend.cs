@@ -12,6 +12,14 @@ namespace UltrastarDJ.Audio.PortAudio;
 public sealed class PortAudioBackend : IAudioBackend
 {
     private static readonly Lock InitLock = new();
+
+    /// <summary>
+    /// Block size for output streams. On macOS PortAudio sets the device's IO buffer from the stream's latency, and that
+    /// buffer is per process: asking for the lowest latency shrank the MacBook speakers' buffer to its minimum, so mpv's
+    /// song output in this process (same device) crackled while the mic monitor was open. 512 frames is CoreAudio's own
+    /// default (~11 ms at 48 kHz) — the monitor stays responsive and mpv keeps the buffer it expects.
+    /// </summary>
+    public const uint OutputBlockFrames = 512;
     private readonly ILogger<PortAudioBackend> _log;
     private readonly HashSet<PaStream> _streams = [];
     private List<AudioDeviceInfo> _devices = [];
@@ -110,7 +118,7 @@ public sealed class PortAudioBackend : IAudioBackend
         };
 
         PaStream stream = new(this, deviceId, rate, channels, channelOffset: 0);
-        stream.Open(p, null, callback, null);
+        stream.Open(p, null, callback, null, PortAudioSharp.PortAudio.FramesPerBufferUnspecified);
         _log.LogInformation("Input opened: {Device} ({Channels} ch @ {Rate} Hz)", deviceId, channels, rate);
         return stream;
     }
@@ -130,7 +138,7 @@ public sealed class PortAudioBackend : IAudioBackend
         };
 
         PaStream stream = new(this, deviceId, rate, channels, channelOffset);
-        stream.Open(null, p, null, callback);
+        stream.Open(null, p, null, callback, OutputBlockFrames);
         _log.LogInformation("Output opened: {Device} (ch {From}-{To} of {Channels} @ {Rate} Hz)", deviceId, channelOffset + 1, channelOffset + 2, channels, rate);
         return stream;
     }
@@ -192,14 +200,14 @@ public sealed class PortAudioBackend : IAudioBackend
         public int ChannelOffset => channelOffset;
         public bool IsActive => _stream?.IsActive ?? false;
 
-        public void Open(StreamParameters? inParams, StreamParameters? outParams, AudioInputCallback? input, AudioOutputCallback? output)
+        public void Open(StreamParameters? inParams, StreamParameters? outParams, AudioInputCallback? input, AudioOutputCallback? output, uint framesPerBuffer)
         {
             _input = input;
             _output = output;
             _paCallback = OnCallback;
             try
             {
-                _stream = new PaNativeStream(inParams, outParams, rate, PortAudioSharp.PortAudio.FramesPerBufferUnspecified, StreamFlags.ClipOff, _paCallback, null);
+                _stream = new PaNativeStream(inParams, outParams, rate, framesPerBuffer, StreamFlags.ClipOff, _paCallback, null);
                 _stream.Start();
             }
             catch (PortAudioException ex)
@@ -212,19 +220,37 @@ public sealed class PortAudioBackend : IAudioBackend
             owner.Register(this);
         }
 
+        // Set once if our callback threw; from then on the stream plays silence. Logged on Dispose (no logging here).
+        private volatile Exception? _failure;
+
         private StreamCallbackResult OnCallback(nint input, nint output, uint frameCount, ref StreamCallbackTimeInfo timeInfo, StreamCallbackFlags flags, nint userData)
         {
             int frames = (int)frameCount;
-            if (_input is not null && input != 0)
+            Span<float> outSpan = output != 0 ? new((void*)output, frames * channels) : default;
+            outSpan.Clear();
+            if (_failure is not null)
             {
-                _input(new ReadOnlySpan<float>((void*)input, frames * channels), frames, channels);
+                return StreamCallbackResult.Continue;
             }
 
-            if (_output is not null && output != 0)
+            // An exception escaping into CoreAudio / WASAPI's thread kills the process. A bug in our DSP must cost
+            // at most this stream's sound, never the party.
+            try
             {
-                Span<float> span = new((void*)output, frames * channels);
-                span.Clear();
-                _output(span, frames, channels);
+                if (_input is not null && input != 0)
+                {
+                    _input(new ReadOnlySpan<float>((void*)input, frames * channels), frames, channels);
+                }
+
+                if (_output is not null && output != 0)
+                {
+                    _output(outSpan, frames, channels);
+                }
+            }
+            catch (Exception ex)
+            {
+                _failure = ex;
+                outSpan.Clear();
             }
 
             return StreamCallbackResult.Continue;
@@ -252,6 +278,10 @@ public sealed class PortAudioBackend : IAudioBackend
             _stream.Dispose();
             _stream = null;
             owner.Unregister(this);
+            if (_failure is { } failure)
+            {
+                owner._log.LogError(failure, "Audio callback failed on {Device}; the stream played silence from then on", deviceId);
+            }
         }
     }
 }

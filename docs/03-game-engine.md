@@ -110,6 +110,45 @@ mic ≈ 119 ms (these include output latency; we accept round-trip as the practi
 
 ---
 
+## Smooth note fill and clock
+
+- **Clock** (`Media.MediaGameClock`, tested): after USDX `TLyricsState.Synchronize` — an own high-resolution timer
+  drives song time; mpv's `time-pos` only corrects it (averaged difference; timer behind > 10 ms → jump forward,
+  ahead > 10 ms → hold until the audio catches up; > 250 ms off = seek → follow at once; paused = audio position).
+  Never runs backwards.
+- **Sung beat** (`GameSession.SungBeatAt`, tested): song beat − the player's mic delay (USDX `MidBeatD`, per player).
+  The scorer evaluates it; the beamer's fill grows up to it.
+- **Fill edge**: the beat being sung right now ends at the continuous sung beat instead of its whole-beat end
+  (USDX `SingDrawPlayerLine`: right − (1 − frac(MidBeatD))). Tune Perfect does the same with its delayed beat.
+- **Redraw**: `GameOverlayControl` redraws once per display refresh (`TopLevel.RequestAnimationFrame`).
+- Not adopted: USDX's mid-beat sampling (−0.5 beat). USDX samples each beat once; we sample it at 60 Hz and keep
+  the best result, so shifting would only add delay.
+- Open: the pitch analysis adds its own delay (YIN window 2048 samples ≈ 43 ms → ≈ 21 ms, analysis every 33 ms →
+  ≈ 16 ms, median of 5 detections → ≈ 66 ms at pitch changes; ≈ 100 ms in total) that mic calibration does not
+  measure (it detects the beep onset in the raw signal).
+
+## Note bars (beamer)
+
+Prototype NoteLane.svelte, drawn in `GameOverlayControl`: ≤ 2 players on a beamer → 16 rows, bars ≥ 40 px, radius 8;
+3–4 players → 12 rows, ≥ 28 px, radius 4 (bar = max(80 % row, minimum)). Settings → **Note bar style**: White
+(white 18 % fill, white 35 % border) or Black (black 45 %, white 55 %); border mixed 55 % with the player colour,
+2 px, soft glow. Golden: gold tint + border, glow, shimmer (1.4 s). Rap: dashed orange; hit → solid with an orange
+glow settling over 0.5 s, badge R (★ golden rap). Freestyle: dotted, lights up in the player colour once reached,
+badge F. ≥ 50 % correct → border pulse (white; gold for golden) peaking at 40 % of 0.5 s, then a lasting glow.
+Correct fill = player colour 85 % inside the bar (golden: gold); wrong = player colour 50 % on the sung row.
+PERFECT fades in / holds / out over 1.6 s.
+
+## Elapsed / remaining (beamer)
+
+`Core.Timing.SongTimeline` (tested) is the playing span in game time (0 = audio start; `#VIDEOGAP` already taken
+out when the video is the audio): **start** = `#START`; **end** = earliest of `#END`, last note + 4 s tail (where the
+app stops by itself) and the media length minus `#VIDEOGAP` (video-is-audio cases). `#GAP` moves the last note.
+Elapsed = clock − start, remaining = end − clock, progress = elapsed / (end − start), all clamped. Built once in
+`PlaybackService.StartSong` (media length known); the auto-stop uses the same end. The beamer shows it in the bottom strip:
+the progress bar flush with the bottom edge (first player's colour, lead-in blue without players), elapsed /
+remaining pills just above it at the sides, and the lyrics anchored to the bar (the next phrase ends just above it).
+The strip is as high as its content; font sizes follow the screen height. Uses the media clock **without** the lyrics offset.
+
 ## Mic plug / unplug
 
 Rule: **a player only has a mic while it is plugged in.** Device ids are device names; `AudioInputService` tracks

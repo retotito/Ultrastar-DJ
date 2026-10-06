@@ -125,6 +125,8 @@ Still open from earlier sprints: Windows build test, MOTU channel-pair verificat
 - Dapper `MatchNamesWithUnderscores` must be set before the first `Query<T>` (static ctor of the repository).
 - mpv shutdown order: render context free → `quit` → join event thread → `terminate_destroy`.
 - Never swap files in `natives/` under a running app: `MediaService` resolves the yt-dlp path once at start, so the app keeps the stale path ("youtube-dl failed: not found"). Quit, fetch, restart.
+- An exception escaping a PortAudio callback aborts the whole process (it runs on CoreAudio's IO thread). `PaStream.OnCallback` therefore catches, plays silence from then on and logs on `Dispose`. Crash seen: the mic monitor read index −512 when it started 2 ms after the mics (song replay) — it now waits for its 512-sample lead.
+- PortAudio on macOS sets the device's IO buffer size from an output stream's suggested latency, and that size is per process: a low-latency PortAudio output on the same device as mpv makes mpv crackle. Output streams use a fixed 512-frame block.
 - Analyzers (warnings-as-errors) reject `*Queue`/`*Stream` type names, `params` as a parameter name, and XML docs on positional record parameters.
 
 ---
@@ -265,7 +267,18 @@ Details: `03-game-engine.md` "Mic plug / unplug".
 
 ## Sprint 8 — Beamers  *(in progress)*
 
-- [ ] (to be defined with the user)
+- [x] A beamer without assigned players still shows the lyrics bar (lead-in, syllable sweep in the lead-in blue) and the progress line during a song — karaoke without scoring. Lyrics follow track 1.
+- [x] Elapsed / remaining time and progress bar under the lyrics (prototype's SongProgress) from `Core.Timing.SongTimeline` — #START, #END, #GAP, #VIDEOGAP and media length, tested; replaces the thin top progress line; auto-stop uses the same end.
+- [x] Smooth fill: USDX-style synced clock (never backwards, tested), per-player sung beat (`GameSession.SungBeatAt`, tested), fill edge glides to the sung beat, redraw per display refresh.
+- [x] Note bars in the prototype's look: sizes per player count, Note bar style setting (White / Black), golden shimmer, rap dashed + hit glow + badge, freestyle dotted + light-up, correct pulse, PERFECT fade.
+- [x] Fix: crash on song replay — mic monitor read a negative ring index in the audio callback (regression tests); audio callbacks can no longer take the app down.
+- [x] Audio Input: an input another player uses (same side, or Mono on either — `MicBinding.ConflictsWith`, tested) is disabled in the other cards' drop-downs ("used by …"); labels use the device id so identical names stay apart ("(2)").
+- [x] Two identical Let's Sing mics: only one appeared on the USB bus — a hardware fault of that mic (a replacement shows up as a separate device, "(2)"). Not an app issue.
+- [x] Crackling during the game (all sources): beamer drawing made nearly allocation-free (cached texts, brushes, pens, segment lists); SustainedLowLatency GC during a song; GC counts logged per song. Monitor stream shares CoreAudio's IO thread with mpv, so a GC pause stalled both.
+- [x] Real cause of the crackling: PortAudio (macOS) sets the device IO buffer from an output stream's latency, per process — the low-latency monitor stream shrank the MacBook speakers' buffer to its minimum, and mpv's song output in our process crackled (preview on the headphones did not). Output streams now open with a fixed 512-frame block (`PortAudioBackend.OutputBlockFrames`).
+- [x] Crackling verified gone. (Recalibrate mic delays once: the calibration beep now uses 512-frame blocks.)
+- [ ] Pitch analysis delay (~100 ms, not covered by calibration): decide whether to compensate
+- [ ] Verified live
 
 ---
 

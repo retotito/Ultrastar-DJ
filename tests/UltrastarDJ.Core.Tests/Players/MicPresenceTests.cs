@@ -58,3 +58,21 @@ public class MicPresenceTests
         Assert.Equal("Player 2 (SingStar, right)", MicPresence.Describe(Players[1]));
     }
 }
+
+public class MicBindingTests
+{
+    private static MicBinding B(string dev, MicChannelSide side) => new(dev, side);
+
+    [Theory]
+    [InlineData(MicChannelSide.Left, MicChannelSide.Left, true)]
+    [InlineData(MicChannelSide.Left, MicChannelSide.Right, false)]  // L and R of one dongle: two singers
+    [InlineData(MicChannelSide.Mono, MicChannelSide.Left, true)]    // mono uses both sides
+    [InlineData(MicChannelSide.Right, MicChannelSide.Mono, true)]
+    [InlineData(MicChannelSide.Mono, MicChannelSide.Mono, true)]
+    public void ConflictsWith_SameDevice(MicChannelSide a, MicChannelSide b, bool expected)
+        => Assert.Equal(expected, B("SingStar", a).ConflictsWith(B("SingStar", b)));
+
+    [Fact]
+    public void ConflictsWith_OtherDevice_Never()
+        => Assert.False(B("SingStar", MicChannelSide.Mono).ConflictsWith(B("SingStar (2)", MicChannelSide.Mono)));
+}

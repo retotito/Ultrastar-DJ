@@ -62,6 +62,8 @@ public sealed class SampleRing
     public int ReadFrom(long from, Span<float> destination)
     {
         long w = Volatile.Read(ref _written);
+        // Nothing exists before index 0 (a consumer starting before the ring filled up may ask for it).
+        from = Math.Max(0, from);
         long available = w - from;
         if (available <= 0)
         {

@@ -126,7 +126,15 @@ public sealed class MonitorMixer : IDisposable
         {
             if (_pos < 0)
             {
-                _pos = Pipeline.Monitor.TotalWritten - LeadSamples;
+                // Wait for the lead to exist: started right after the mics (song replay) the ring is still nearly
+                // empty, and a negative read position crashed the audio callback.
+                long written = Pipeline.Monitor.TotalWritten;
+                if (written < LeadSamples)
+                {
+                    return 0;
+                }
+
+                _pos = written - LeadSamples;
             }
 
             long i0 = (long)Math.Floor(_pos);

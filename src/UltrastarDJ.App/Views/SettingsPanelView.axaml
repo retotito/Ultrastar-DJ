@@ -30,6 +30,9 @@
         <TextBlock Text="Difficulty" />
         <ComboBox ItemsSource="{Binding Difficulties}" SelectedItem="{Binding Difficulty}" HorizontalAlignment="Stretch" />
         <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="{Binding DifficultyHint}" />
+        <TextBlock Text="Note bar style" Margin="0,8,0,0" />
+        <ComboBox ItemsSource="{Binding NoteBarStyles}" SelectedItem="{Binding NoteBarStyle}" HorizontalAlignment="Stretch" />
+        <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="Background of the note bars on the beamer — White for dark videos, Black for bright ones" TextWrapping="Wrap" />
       </StackPanel>
     </Border>
 

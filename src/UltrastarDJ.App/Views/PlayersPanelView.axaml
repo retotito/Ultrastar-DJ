@@ -21,7 +21,14 @@
 
           <Grid ColumnDefinitions="*,Auto">
             <ComboBox ItemsSource="{Binding MicOptions}"
-                      SelectedItem="{Binding SelectedMic}" HorizontalAlignment="Stretch" />
+                      SelectedItem="{Binding SelectedMic}" HorizontalAlignment="Stretch">
+              <!-- Inputs another player already sings on can't be picked (the entry says who). -->
+              <ComboBox.Styles>
+                <Style Selector="ComboBoxItem" x:DataType="vm:MicOption">
+                  <Setter Property="IsEnabled" Value="{Binding IsAvailable}" />
+                </Style>
+              </ComboBox.Styles>
+            </ComboBox>
             <Button Grid.Column="1" Classes="tonal" Margin="8,0,0,0" Padding="12,4" Command="{Binding ToggleTestCommand}"
                     IsEnabled="{Binding HasMic}" Classes.active="{Binding Testing}" ToolTip.Tip="Open this mic: live meter and note">
               <StackPanel Orientation="Horizontal" Spacing="4">

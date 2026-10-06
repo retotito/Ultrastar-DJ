@@ -26,6 +26,16 @@ public class GameSessionTests
     }
 
     [Fact]
+    public void SungBeatAt_SubtractsThatPlayersMicDelay()
+    {
+        // 250 ms mic delay = 2 beats at 125 ms/beat. The fill and the scorer both use this beat.
+        GameSession s = new(Song(), [new GamePlayer(1, 0, 0), new GamePlayer(2, 1, 250)], Difficulty.Medium);
+
+        Assert.Equal(8, s.SungBeatAt(2.0, 1), 6);
+        Assert.Equal(6, s.SungBeatAt(2.0, 2), 6);
+    }
+
+    [Fact]
     public void Tick_ScoresEachPlayerOnItsOwnTrack()
     {
         GameSession s = new(Song(), [new GamePlayer(1, 0, 0), new GamePlayer(2, 1, 0)], Difficulty.Hard);

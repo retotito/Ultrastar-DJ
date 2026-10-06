@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Styling;
+using UltrastarDJ.App.Game;
 using UltrastarDJ.Core.Abstractions;
 using UltrastarDJ.Core.Game;
 
@@ -23,6 +24,7 @@ public sealed class AppSettingsService
 
     public bool LightTheme => _doc.LightTheme;
     public bool ShowTooltips => !_doc.HideTooltips;
+    public NoteBarStyle NoteBarStyle => _doc.NoteBarStyle;
     public Difficulty Difficulty => _doc.Difficulty;
     /// <summary>Positive = lyrics/notes appear later relative to the audio.</summary>
     public double LyricsOffsetMs => _doc.LyricsOffsetMs;
@@ -32,6 +34,7 @@ public sealed class AppSettingsService
 
     public void SetLightTheme(bool light) => Update(_doc with { LightTheme = light });
     public void SetShowTooltips(bool show) => Update(_doc with { HideTooltips = !show });
+    public void SetNoteBarStyle(NoteBarStyle style) => Update(_doc with { NoteBarStyle = style });
     public void SetDifficulty(Difficulty d) => Update(_doc with { Difficulty = d });
     public void SetLyricsOffsetMs(double ms) => Update(_doc with { LyricsOffsetMs = Math.Clamp(Math.Round(ms), -500, 500) });
     public void SetNowPlayingHidden(bool hidden) => Update(_doc with { NowPlayingHidden = hidden });
@@ -60,6 +63,7 @@ public sealed class AppSettingsService
         public bool NowPlayingHidden { get; init; }
         /// <summary>Stored inverted so settings files written before this option keep tooltips on.</summary>
         public bool HideTooltips { get; init; }
+        public NoteBarStyle NoteBarStyle { get; init; }
         public double? NowPlayingX { get; init; }
         public double? NowPlayingY { get; init; }
 

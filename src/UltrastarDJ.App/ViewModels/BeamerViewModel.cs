@@ -24,6 +24,7 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
     private readonly PlaybackService _playback;
     private readonly PlayersService _players;
     private readonly IDisplayService _displays;
+    private readonly AppSettingsService _settings;
     private readonly DispatcherTimer _countdown;
     private readonly DispatcherTimer _scoreAnim;
     private DateTime _scoreAnimStart;
@@ -33,12 +34,18 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _title = "";
     [ObservableProperty] private string _artist = "";
     [ObservableProperty] private int _countdownValue;
+    /// <summary>Settings → Note bar style, applied live.</summary>
+    [ObservableProperty] private NoteBarStyle _noteBarStyle;
     [ObservableProperty] private GameScene? _scene;
     [ObservableProperty] private int _winnerId = -1;
 
-    public BeamerViewModel(DisplayId id, FrameBus gameFrames, PlaybackService playback, PlayersService players, IDisplayService displays)
+    public BeamerViewModel(DisplayId id, FrameBus gameFrames, PlaybackService playback, PlayersService players, IDisplayService displays,
+        AppSettingsService settings)
     {
         Id = id;
+        _settings = settings;
+        _noteBarStyle = settings.NoteBarStyle;
+        settings.Changed += OnSettingsChanged;
         GameFrames = gameFrames;
         _playback = playback;
         _players = players;
@@ -55,6 +62,8 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
         OnPlaybackStateChanged(_playback.State);
         RefreshAssignedPlayers();
     }
+
+    private void OnSettingsChanged() => Dispatcher.UIThread.Post(() => NoteBarStyle = _settings.NoteBarStyle);
 
     public DisplayId Id { get; }
     public string Label => $"Beamer {(int)Id}";
@@ -137,7 +146,8 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
                 if (Scene is null && _playback.Session is { } session && _playback.Clock is not null)
                 {
                     RefreshAssignedPlayers();
-                    Scene = new GameScene(session, [.. AssignedPlayers], () => _playback.GamePositionSec);
+                    Scene = new GameScene(session, [.. AssignedPlayers], () => _playback.GamePositionSec,
+                        _playback.Timeline, () => _playback.Clock?.PositionSec ?? 0);
                 }
 
                 break;
@@ -255,6 +265,7 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
         _playback.PitchTicked -= OnPitchTicked;
         _displays.PlayersChanged -= OnAssignmentChanged;
         _players.Changed -= OnPlayerConfigChanged;
+        _settings.Changed -= OnSettingsChanged;
     }
 }
 

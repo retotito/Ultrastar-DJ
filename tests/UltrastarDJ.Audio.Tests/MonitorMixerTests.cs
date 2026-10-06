@@ -63,6 +63,27 @@ public class MonitorMixerTests
     }
 
     [Fact]
+    public void Mixer_StartedBeforeEnoughMicData_OutputsSilenceThenTheMic()
+    {
+        // Regression (song replay): the monitor opened 2 ms after the mics, before its 512-sample lead existed.
+        FakeBackend backend = new();
+        MicPipeline mic = new(1, MicChannelSide.Left, 48000) { Threshold = 0 };
+        Feed(mic, 440, 0.5, 100);
+
+        using MonitorMixer mixer = new(backend, NullLogger<MonitorMixer>.Instance);
+        mixer.Start("out", 0, [mic]);
+
+        float[] outBuf = new float[256 * 2];
+        backend.Output!(outBuf, 256, 2);
+        Assert.All(outBuf, v => Assert.Equal(0, v));
+
+        Feed(mic, 440, 0.5, 4800);
+        float[] later = new float[256 * 2];
+        backend.Output!(later, 256, 2);
+        Assert.Contains(later, v => v != 0);
+    }
+
+    [Fact]
     public void Mixer_Muted_OutputsSilence()
     {
         FakeBackend backend = new();

@@ -45,16 +45,22 @@ public sealed class GameSession
     /// </summary>
     public IReadOnlyList<PitchTick> Tick(double positionSec, Func<int, double> midiOf)
     {
-        double beat = BeatAt(positionSec);
         List<PitchTick> ticks = new(_players.Count);
         foreach ((PlayerScorer scorer, GamePlayer player) in _players.Values)
         {
-            double evalBeat = beat - BeatMath.MsToBeats(Song.Bpm, player.MicDelayMs);
-            ticks.Add(scorer.Evaluate(midiOf(player.PlayerId), evalBeat));
+            ticks.Add(scorer.Evaluate(midiOf(player.PlayerId), SungBeatAt(positionSec, player.PlayerId)));
         }
 
         return ticks;
     }
+
+    /// <summary>
+    /// The beat a player's mic is singing at <paramref name="positionSec"/>: the song beat minus that player's mic
+    /// delay (USDX's <c>MidBeatD</c>, per player). The scorer evaluates it and the beamer's sung fill grows up to it,
+    /// so the fill edge always matches the score.
+    /// </summary>
+    public double SungBeatAt(double positionSec, int playerId)
+        => BeatAt(positionSec) - BeatMath.MsToBeats(Song.Bpm, _players[playerId].Player.MicDelayMs);
 
     /// <summary>Final standings, highest first.</summary>
     public IReadOnlyList<(int PlayerId, int Score, int MaxScore)> Standings()

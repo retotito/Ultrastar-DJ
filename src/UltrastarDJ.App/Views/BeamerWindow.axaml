@@ -63,7 +63,7 @@
                HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsCountdown}" />
 
     <!-- Game -->
-    <c:GameOverlayControl Scene="{Binding Scene}" IsRunning="{Binding IsGame}" IsVisible="{Binding IsGame}" />
+    <c:GameOverlayControl Scene="{Binding Scene}" IsRunning="{Binding IsGame}" IsVisible="{Binding IsGame}" NoteBarStyle="{Binding NoteBarStyle}" />
     <Border IsVisible="{Binding IsPaused}" Background="#88000000">
       <TextBlock Classes="beamer" Text="PAUSED" FontSize="96" FontWeight="{StaticResource WeightBold}" HorizontalAlignment="Center" VerticalAlignment="Center" />
     </Border>

@@ -12,10 +12,11 @@ using UltrastarDJ.Core.Players;
 
 namespace UltrastarDJ.App.ViewModels;
 
-/// <summary>One selectable mic input: a device channel.</summary>
-public sealed record MicOption(string Label, MicBinding? Binding)
+/// <summary>One selectable mic input: a device channel. <see cref="UsedBy"/>: another player already sings on it.</summary>
+public sealed record MicOption(string Label, MicBinding? Binding, string? UsedBy = null)
 {
-    public override string ToString() => Label;
+    public bool IsAvailable => UsedBy is null;
+    public override string ToString() => UsedBy is null ? Label : $"{Label} — used by {UsedBy}";
 }
 
 /// <summary>
@@ -42,6 +43,7 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
         _log = log;
         RefreshDevices();
         Players = new ObservableCollection<PlayerCardViewModel>(players.All.Select(p => new PlayerCardViewModel(p, this)));
+        RefreshCardOptions();
         _audio.Mics.Analyzed += OnAnalyzed;
         _players.Changed += OnConfigChanged;
         _audio.MicsChanged += OnMicsChanged;
@@ -50,7 +52,8 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
     }
 
     public ObservableCollection<PlayerCardViewModel> Players { get; }
-    public ObservableCollection<MicOption> MicOptions { get; } = [];
+    // Every input once; each card shows its own copy with the inputs other players use marked (RefreshCardOptions).
+    private readonly List<MicOption> _baseOptions = [];
     public ObservableCollection<AudioDeviceInfo> Outputs { get; } = [];
 
     internal PlayersService PlayersService => _players;
@@ -59,7 +62,7 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     private void RefreshDevices()
     {
-        if (!_audio.RefreshDevices() && MicOptions.Count > 0)
+        if (!_audio.RefreshDevices() && _baseOptions.Count > 0)
         {
             Status = "Stop the mic test before refreshing devices";
             return;
@@ -76,19 +79,20 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
 
     private void ReloadDeviceLists()
     {
-        MicOptions.Clear();
-        MicOptions.Add(new MicOption("— no microphone —", null));
+        // Labels use the device id: two devices with the same name get "(2)" there, so both stay tellable apart.
+        _baseOptions.Clear();
+        _baseOptions.Add(new MicOption("— no microphone —", null));
         foreach (AudioDeviceInfo d in _audio.InputDevices)
         {
             if (d.MaxInputChannels >= 2)
             {
-                MicOptions.Add(new MicOption($"{d.Name} — Left", new MicBinding(d.Id, MicChannelSide.Left)));
-                MicOptions.Add(new MicOption($"{d.Name} — Right", new MicBinding(d.Id, MicChannelSide.Right)));
-                MicOptions.Add(new MicOption($"{d.Name} — Mono (L+R)", new MicBinding(d.Id, MicChannelSide.Mono)));
+                _baseOptions.Add(new MicOption($"{d.Id} — Left", new MicBinding(d.Id, MicChannelSide.Left)));
+                _baseOptions.Add(new MicOption($"{d.Id} — Right", new MicBinding(d.Id, MicChannelSide.Right)));
+                _baseOptions.Add(new MicOption($"{d.Id} — Mono (L+R)", new MicBinding(d.Id, MicChannelSide.Mono)));
             }
             else
             {
-                MicOptions.Add(new MicOption(d.Name, new MicBinding(d.Id, MicChannelSide.Mono)));
+                _baseOptions.Add(new MicOption(d.Id, new MicBinding(d.Id, MicChannelSide.Mono)));
             }
         }
 
@@ -99,9 +103,18 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
         }
 
         MonitorOutput ??= Outputs.FirstOrDefault(o => o.IsDefaultOutput) ?? Outputs.FirstOrDefault();
+        RefreshCardOptions();
+    }
+
+    /// <summary>Rebuilds every card's list: inputs another player uses (same side, or Mono on either) are disabled.</summary>
+    internal void RefreshCardOptions()
+    {
         foreach (PlayerCardViewModel c in Players ?? [])
         {
-            c.SyncMicOption();
+            List<PlayerConfig> others = _players.All.Where(p => p.Id != c.Config.Id && p.Mic is not null).ToList();
+            c.RebuildOptions(_baseOptions.Select(o => o.Binding is { } b && others.FirstOrDefault(p => p.Mic!.ConflictsWith(b)) is { } user
+                ? o with { UsedBy = user.Name }
+                : o));
         }
     }
 
@@ -264,7 +277,11 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
     /// <summary>Config changed elsewhere (Now Playing mix, mic unplugged → unassigned): mirror it; a lost mic ends its test.</summary>
     private void OnConfigChanged(PlayerConfig p)
     {
-        Players.FirstOrDefault(c => c.Config.Id == p.Id)?.ApplyExternal(p);
+        PlayerCardViewModel? card = Players.FirstOrDefault(c => c.Config.Id == p.Id);
+        card?.ApplyExternal(p);
+        // A mic (un)assigned anywhere frees or takes an input for the other cards. Deferred: never rebuild a
+        // drop-down while it is still handling its own selection.
+        Dispatcher.UIThread.Post(RefreshCardOptions);
         if (p.Mic is null && _tested.Contains(p.Id))
         {
             ApplyTests();
@@ -331,8 +348,24 @@ public sealed partial class PlayerCardViewModel : ObservableObject
     public string Title => $"P{Config.Id}";
     public bool HasMic => Config.Mic is not null;
     public string ColorKey => $"BrushPlayer{Config.Id}";
-    /// <summary>Bound directly so ItemsSource resolves before SelectedItem when the panel view is recreated.</summary>
-    public ObservableCollection<MicOption> MicOptions => _owner.MicOptions;
+    /// <summary>
+    /// This card's own list (other players' inputs disabled). Bound directly so ItemsSource resolves before
+    /// SelectedItem when the panel view is recreated.
+    /// </summary>
+    public ObservableCollection<MicOption> MicOptions { get; } = [];
+
+    public void RebuildOptions(IEnumerable<MicOption> options)
+    {
+        _loading = true;
+        MicOptions.Clear();
+        foreach (MicOption o in options)
+        {
+            MicOptions.Add(o);
+        }
+
+        _loading = false;
+        SyncMicOption();
+    }
     public string MicDelayText => $"{Config.MicDelayMs:F0} ms";
     public string GateText => $"{GateDb:F0} dB";
     /// <summary>Level in dB mapped to 0..1 over the meter's 70 dB range — linear RMS is useless for quiet mics.</summary>
@@ -351,15 +384,15 @@ public sealed partial class PlayerCardViewModel : ObservableObject
     public void SyncMicOption()
     {
         _loading = true;
-        MicOption? match = _owner.MicOptions.FirstOrDefault(o => Equals(o.Binding, Config.Mic));
+        MicOption? match = MicOptions.FirstOrDefault(o => Equals(o.Binding, Config.Mic));
         if (match is null && Config.Mic is { } mic)
         {
             // Keep the binding visible (and persisted) while the device is unplugged.
             match = new MicOption($"{mic.DeviceId} — {mic.Channel} (not connected)", mic);
-            _owner.MicOptions.Add(match);
+            MicOptions.Add(match);
         }
 
-        SelectedMic = match ?? _owner.MicOptions.FirstOrDefault();
+        SelectedMic = match ?? MicOptions.FirstOrDefault();
         _loading = false;
     }
 
