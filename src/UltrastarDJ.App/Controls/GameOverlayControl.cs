@@ -552,9 +552,7 @@ public sealed class GameOverlayControl : Control
         }
 
         Point at = new(rect.X + (rect.Width - text.Width) / 2, rect.Y + (rect.Height - text.Height) / 2);
-        text.SetForegroundBrush(SyllableShadow);
-        ctx.DrawText(text, at + new Point(0, 1));
-        text.SetForegroundBrush(Brushes.White);
+        ctx.DrawText(box.Shadow!, at + new Point(0, 1));
         ctx.DrawText(text, at);
     }
 
@@ -643,10 +641,12 @@ public sealed class GameOverlayControl : Control
         foreach (Note n in line.Notes)
         {
             (double x, double w) = NoteLaneGeometry.NoteSpan(n, line);
-            FormattedText? label = n.LengthBeats >= 2 && n.Syllable.Trim().Length > 0
-                ? new FormattedText(n.Syllable.Trim(), System.Globalization.CultureInfo.InvariantCulture, FlowDirection.LeftToRight, Regular, 16, Brushes.Black)
-                : null;
-            boxes.Add(new NoteBox(n, x, w, NoteLaneGeometry.PitchToRow(n.UsPitch, avg, rows), label));
+            // One text per colour, built once: changing a FormattedText's brush makes Avalonia lay it out again, and
+            // per frame that piled up font faces until macOS killed the app (see ScoreEffects).
+            bool labelled = n.LengthBeats >= 2 && n.Syllable.Trim().Length > 0;
+            FormattedText? label = labelled ? SyllableText(n.Syllable.Trim(), Brushes.White) : null;
+            FormattedText? shadow = labelled ? SyllableText(n.Syllable.Trim(), SyllableShadow) : null;
+            boxes.Add(new NoteBox(n, x, w, NoteLaneGeometry.PitchToRow(n.UsPitch, avg, rows), label, shadow));
         }
 
         PhraseCache cache = new(line, rows, avg, phraseStart, phraseBeats, boxes);
@@ -659,7 +659,7 @@ public sealed class GameOverlayControl : Control
     // sweep: colour of the sung part of a syllable — the first player's, or the lead-in blue without players.
     // Texts of the current lyric line, built once per line and size — not per frame (each frame's garbage costs GC
     // pauses, and a GC pause stalls the audio callbacks on the same CoreAudio thread → crackling).
-    private sealed record LyricsCache(LyricLine Line, double Size, FormattedText[] Parts, double Total, FormattedText? Next);
+    private sealed record LyricsCache(LyricLine Line, double Size, IBrush Sweep, FormattedText[] Parts, FormattedText[] Swept, double Total, FormattedText? Next);
     private LyricsCache? _lyrics;
 
     private void DrawLyrics(DrawingContext ctx, Rect area, NoteTrack track, Song song, IBrush sweep, double beat, double pos,
@@ -671,9 +671,9 @@ public sealed class GameOverlayControl : Control
             return;
         }
 
-        LyricsCache c = _lyrics is { } cached && ReferenceEquals(cached.Line, line) && cached.Size == mainSize
+        LyricsCache c = _lyrics is { } cached && ReferenceEquals(cached.Line, line) && cached.Size == mainSize && ReferenceEquals(cached.Sweep, sweep)
             ? cached
-            : (_lyrics = BuildLyrics(track, line, mainSize, nextSize));
+            : (_lyrics = BuildLyrics(track, line, mainSize, nextSize, sweep));
 
         // Anchored to the bottom: the next phrase ends just above the progress bar, the current line above it.
         double y = area.Bottom - AboveBar - nextSize * 1.3 - mainSize * 1.35;
@@ -690,9 +690,7 @@ public sealed class GameOverlayControl : Control
             {
                 using (ctx.PushClip(new Rect(x, y, ft.WidthIncludingTrailingWhitespace * progress, ft.Height)))
                 {
-                    ft.SetForegroundBrush(sweep);
-                    ctx.DrawText(ft, new Point(x, y));
-                    ft.SetForegroundBrush(LyricsText);
+                    ctx.DrawText(c.Swept[i], new Point(x, y));
                 }
             }
 
@@ -714,13 +712,16 @@ public sealed class GameOverlayControl : Control
         }
     }
 
-    private static LyricsCache BuildLyrics(NoteTrack track, LyricLine line, double mainSize, double nextSize)
+    private static LyricsCache BuildLyrics(NoteTrack track, LyricLine line, double mainSize, double nextSize, IBrush sweep)
     {
+        // White and swept copy of every syllable, built once per line (never re-coloured while drawing).
         FormattedText[] parts = new FormattedText[line.Notes.Count];
+        FormattedText[] swept = new FormattedText[line.Notes.Count];
         double total = 0;
         for (int i = 0; i < parts.Length; i++)
         {
             parts[i] = new FormattedText(line.Notes[i].Syllable, System.Globalization.CultureInfo.InvariantCulture, FlowDirection.LeftToRight, Bold, mainSize, LyricsText);
+            swept[i] = new FormattedText(line.Notes[i].Syllable, System.Globalization.CultureInfo.InvariantCulture, FlowDirection.LeftToRight, Bold, mainSize, sweep);
             total += parts[i].WidthIncludingTrailingWhitespace;
         }
 
@@ -737,9 +738,12 @@ public sealed class GameOverlayControl : Control
         FormattedText? next = nextLine is null
             ? null
             : new FormattedText(string.Concat(nextLine.Notes.Select(n => n.Syllable)), System.Globalization.CultureInfo.InvariantCulture, FlowDirection.LeftToRight, Regular, nextSize, LyricsNext);
-        return new LyricsCache(line, mainSize, parts, total, next);
+        return new LyricsCache(line, mainSize, sweep, parts, swept, total, next);
     }
 
-    private sealed record NoteBox(Note Note, double X, double Width, int Row, FormattedText? Label);
+    private static FormattedText SyllableText(string text, IBrush brush)
+        => new(text, System.Globalization.CultureInfo.InvariantCulture, FlowDirection.LeftToRight, Regular, 16, brush);
+
+    private sealed record NoteBox(Note Note, double X, double Width, int Row, FormattedText? Label, FormattedText? Shadow);
     private sealed record PhraseCache(LyricLine Line, int Rows, double AvgPitch, double PhraseStart, double PhraseBeats, IReadOnlyList<NoteBox> Boxes);
 }

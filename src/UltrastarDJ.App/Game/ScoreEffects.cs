@@ -45,7 +45,12 @@ public sealed class ScoreEffects
     private static readonly (double Dx, double Dy, double Scale, double Phase)[] NoteStars =
         [(-4, -2, 1.0, 0.0), (-15, 3, 0.7, 0.35), (2, 7, 0.55, 0.7)];
 
-    private readonly Dictionary<(string, double), FormattedText> _texts = [];
+    // One text per (word, size, colour), built once. Never SetForegroundBrush while drawing: it makes Avalonia lay the
+    // text out again, and with a weight the font lacks it built a new synthetic font face each time that HarfBuzz
+    // keeps alive — 55 per second, until macOS killed the app at 23 GB.
+    private readonly Dictionary<(string, double, IBrush), FormattedText> _texts = [];
+    // Inter has Bold (Black does not exist and was synthesised from the system font).
+    private static readonly Typeface RatingFace = new(FontFamily.Parse("fonts:Inter#Inter"), FontStyle.Normal, FontWeight.Bold);
 
     /// <summary>
     /// USDX perfect note: three off-white stars twinkle at the note's top-right corner (left of an R badge) from the
@@ -108,20 +113,19 @@ public sealed class ScoreEffects
         (double scale, double up, double alpha) = phase;
 
         double size = Math.Max(20, lane.Height * 0.11);
-        FormattedText ft = Text(text, size);
+        FormattedText ft = Text(text, size, Brushes.White);
         Point center = new(lane.Center.X, lane.Center.Y + rise / 2 - rise * up);
         Point at = new(center.X - ft.Width / 2, center.Y - ft.Height / 2);
         IBrush glow = r.Rating == PhraseRating.MaxRating ? PerfectGlow : r.Rating == 7 ? playerGlow : WhiteGlow;
+        FormattedText glowText = Text(text, size, glow);
         using (ctx.PushOpacity(Math.Clamp(alpha, 0, 1)))
         using (ctx.PushTransform(Matrix.CreateTranslation(-center.X, -center.Y) * Matrix.CreateScale(scale, scale) * Matrix.CreateTranslation(center.X, center.Y)))
         {
-            ft.SetForegroundBrush(glow);
             foreach ((double dx, double dy) in GlowOffsets)
             {
-                ctx.DrawText(ft, at + new Point(dx, dy));
+                ctx.DrawText(glowText, at + new Point(dx, dy));
             }
 
-            ft.SetForegroundBrush(Brushes.White);
             ctx.DrawText(ft, at);
         }
     }
@@ -148,13 +152,12 @@ public sealed class ScoreEffects
         }
     }
 
-    private FormattedText Text(string text, double size)
+    private FormattedText Text(string text, double size, IBrush brush)
     {
-        if (!_texts.TryGetValue((text, size), out FormattedText? ft))
+        if (!_texts.TryGetValue((text, size, brush), out FormattedText? ft))
         {
-            ft = new FormattedText(text, System.Globalization.CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
-                new Typeface(FontFamily.Default, FontStyle.Normal, FontWeight.Black), size, Brushes.White);
-            _texts[(text, size)] = ft;
+            ft = new FormattedText(text, System.Globalization.CultureInfo.InvariantCulture, FlowDirection.LeftToRight, RatingFace, size, brush);
+            _texts[(text, size, brush)] = ft;
         }
 
         return ft;

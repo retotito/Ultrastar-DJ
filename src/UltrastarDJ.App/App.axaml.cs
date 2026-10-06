@@ -39,6 +39,7 @@ public sealed partial class App : Application
 
         _services = BuildServices(paths);
         CatchUnexpectedErrors(_services);
+        Diagnostics.MemoryLog.Start(_services.GetRequiredService<ILogger<App>>());
 #if DEBUG
         Diagnostics.UiInspector.Attach(paths.Logs, _services.GetRequiredService<ILogger<App>>(), _services.GetRequiredService<NotificationService>());
 #endif
