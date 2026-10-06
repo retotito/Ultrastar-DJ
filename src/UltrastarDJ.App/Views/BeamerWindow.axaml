@@ -87,6 +87,15 @@
       </StackPanel>
     </Border>
 
+    <!-- Test sync (Audio Output → Game): flash on every click as the audience hears it. -->
+    <Border Background="{DynamicResource BrushBeamerBackground}" IsVisible="{Binding SyncTestRunning}">
+      <Panel>
+        <c:SyncFlash Source="{Binding SyncTest}" IsRunning="{Binding SyncTestRunning}" FlashBrush="{DynamicResource BrushBeamerText}" />
+        <TextBlock Classes="beamer" Text="Test sync — move LATENCY until flash and click happen together" FontSize="{StaticResource Text2Xl}"
+                   HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,64" TextWrapping="Wrap" TextAlignment="Center" />
+      </Panel>
+    </Border>
+
     <TextBlock Classes="beamer" Text="Double-click or F: fullscreen · Esc: leave fullscreen" FontSize="{StaticResource TextSm}" Opacity="0.5"
                HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="{StaticResource Pad4}" IsVisible="{Binding IsIdle}" />
   </Panel>

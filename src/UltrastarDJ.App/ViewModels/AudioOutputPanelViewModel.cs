@@ -16,11 +16,14 @@ public sealed partial class AudioOutputPanelViewModel : ViewModelBase, IDisposab
 
     [ObservableProperty] private string _status = "";
 
-    public AudioOutputPanelViewModel(OutputsService outputs, MediaService media)
+    public AudioOutputPanelViewModel(OutputsService outputs, MediaService media, SyncTestService sync)
     {
         _outputs = outputs;
         _media = media;
-        Game = new OutputChannelViewModel("Game", "Beamer / main speakers", "music_note", media.Game, Options, o => outputs.SetGameOutput(o), g => outputs.SetGameGain(g));
+        Game = new OutputChannelViewModel("Game", "Beamer / main speakers", "music_note", media.Game, Options, o => outputs.SetGameOutput(o), g => outputs.SetGameGain(g))
+        {
+            Latency = new GameSyncViewModel(outputs, sync),
+        };
         Preview = new OutputChannelViewModel("Preview", "DJ headphones / monitor", "headphones", media.Preview, Options, o => outputs.SetPreviewOutput(o), g => outputs.SetPreviewGain(g));
         _meter = new DispatcherTimer(TimeSpan.FromMilliseconds(50), DispatcherPriority.Background, (_, _) => { Game.Poll(); Preview.Poll(); });
         _meter.Start();
@@ -33,7 +36,11 @@ public sealed partial class AudioOutputPanelViewModel : ViewModelBase, IDisposab
     {
         Game.SyncGain(_outputs.Game.Gain);
         Preview.SyncGain(_outputs.Preview.Gain);
+        Game.Latency?.SyncLatency();
     }
+
+    /// <summary>The panel closed: the clicks end with it (like the mic tests of Audio Input).</summary>
+    public void StopSyncTest() => Game.Latency?.Stop();
 
     public OutputChannelViewModel Game { get; }
     public OutputChannelViewModel Preview { get; }
@@ -59,7 +66,74 @@ public sealed partial class AudioOutputPanelViewModel : ViewModelBase, IDisposab
     {
         _meter.Stop();
         _outputs.Changed -= OnOutputsChanged;
+        Game.Latency?.Dispose();
     }
+}
+
+/// <summary>Game card only: the game output's latency and the Test sync that finds it.</summary>
+public sealed partial class GameSyncViewModel : ObservableObject, IDisposable
+{
+    private readonly OutputsService _outputs;
+    private readonly SyncTestService _sync;
+    private bool _loading;
+
+    [ObservableProperty] private double _latencyMs;
+
+    public GameSyncViewModel(OutputsService outputs, SyncTestService sync)
+    {
+        _outputs = outputs;
+        _sync = sync;
+        _latencyMs = outputs.GameLatencyMs;
+        _sync.Changed += OnSyncChanged;
+    }
+
+    public double MinLatencyMs => OutputsService.MinLatencyMs;
+    public double MaxLatencyMs => OutputsService.MaxLatencyMs;
+    public bool IsRunning => _sync.IsRunning;
+    public bool CanToggle => _sync.IsRunning || _sync.CanRun;
+    public string ToggleTip => _sync.Blocker ?? (_sync.IsRunning
+        ? "Stop the clicks"
+        : "Plays a click every second on the game speakers and flashes the beamers when each click should be heard. Move LATENCY until flash and click happen together.");
+
+    [RelayCommand]
+    private void Toggle()
+    {
+        if (_sync.IsRunning)
+        {
+            _sync.Stop();
+        }
+        else
+        {
+            _sync.Start();
+        }
+    }
+
+    public void Stop() => _sync.Stop();
+
+    /// <summary>Game device changed (each has its own latency) or the value was migrated: mirror it.</summary>
+    public void SyncLatency()
+    {
+        _loading = true;
+        LatencyMs = _outputs.GameLatencyMs;
+        _loading = false;
+    }
+
+    partial void OnLatencyMsChanged(double value)
+    {
+        if (!_loading)
+        {
+            _outputs.SetGameLatencyMs(value);
+        }
+    }
+
+    private void OnSyncChanged()
+    {
+        OnPropertyChanged(nameof(IsRunning));
+        OnPropertyChanged(nameof(CanToggle));
+        OnPropertyChanged(nameof(ToggleTip));
+    }
+
+    public void Dispose() => _sync.Changed -= OnSyncChanged;
 }
 
 public sealed partial class OutputChannelViewModel : ObservableObject
@@ -87,6 +161,8 @@ public sealed partial class OutputChannelViewModel : ObservableObject
 
     public string Title { get; }
     public string Subtitle { get; }
+    /// <summary>Latency + Test sync; game card only.</summary>
+    public GameSyncViewModel? Latency { get; init; }
     public string Glyph { get; }
     /// <summary>Shared with the panel; bound directly so ItemsSource resolves before SelectedItem when the view is recreated.</summary>
     public ObservableCollection<OutputOption> Options { get; }

@@ -90,23 +90,32 @@ PortAudio input (device, channel L/R/mono)
 and sums each active player's gated mic × `mixGain` (0–2, muted → 0, fader position kept). Starts when the
 song starts, stops on `Score`/`Stop`. Optionally available in mic-test mode.
 
-### Mic delay
+### Latency and sync
 
-`micDelayMs` per player (default 40, UI cap 250, storage cap 500) is the input latency. It is **not** applied as
-an audio delay; it shifts the **beat used for comparison**:
+`Core.Timing.LatencyModel` (tested). Two measured quantities, after USDX / Tune Perfect:
 
-```csharp
-double delayedBeat = currentBeat - MsToBeats(song.Bpm, player.MicDelayMs);
-Note? target = FindNoteAtBeat(track, delayedBeat);
-```
+- **Output latency** per game output (device + stereo pair, `OutputsService`, 0–800 ms): the app plays a sound →
+  the audience hears it (cable ~15 ms, TV/HDMI 50–150 ms, Bluetooth 150–300 ms). The beamers and the scorer use
+  `display = clock − latency`, so lyrics and notes appear when the audience hears the song. Set in Audio Output →
+  Game → **LATENCY** with **Test sync**: a click every second on the game output (`Audio.Monitor.SyncClicks`,
+  sample-exact) and a disc on every open beamer at first click + k s + latency (`SyncTestService`,
+  `Controls.SyncFlash`, per display frame). Flash and click together ⇔ the value is right; the flash goes through
+  the same render path and projector as the lyrics. Needs an open beamer and no running song. Replaces the old
+  Settings → Lyrics offset (migrated once: latency = −offset).
+- **Calibrated total** per player (Audio Input → **Calibrate**, `LatencyTest`): an A4 tone on the game output →
+  speaker → air → mic → USB → the game's own pitch analysis (`MicPipeline`, every 33 ms) → A4 recognised. 5 trials,
+  median. Stored with the output it was measured on. The player's **mic delay** = total − that output's latency
+  (never below 0); uncalibrated players use 140 ms (USDX's default).
 
-Visual consequence: the sung fill lags the playhead by `micDelayMs` — this is correct and expected.
+Scoring compares at `display − mic delay` (`GameSession.SungBeatAt`, USDX `MidBeatD`): it is not applied as an audio
+delay, it shifts the beat a heard pitch is matched against. The sung fill therefore lags the lyrics by the mic delay
+— correct and expected. Because the mic delay subtracts the latency of the calibration output, scoring does not
+change if the latency is set before or after calibrating (test `Scoring_IsIndependentOfWhenTheLatencyWasSet`);
+the order "Test sync, then Calibrate" only makes the shown mic delay meaningful.
 
-### Latency calibration (`LatencyTest`)
-
-Play a short beep on the game output, record from the player's mic, detect onset → round-trip ms. 5 trials,
-median, show result, "apply to player". Reference measurements from the prototype: USB mic ≈ 99 ms, second
-mic ≈ 119 ms (these include output latency; we accept round-trip as the practical value).
+The pitch analysis alone takes ≈ 60 ms from a tone onset to a stable note (YIN window 2048 at 48 kHz, analysis
+every 33 ms, median of 5; measured by `PitchPathDelayTests`). The old calibration detected the beep in the raw
+signal and missed it; the tone-through-analysis calibration includes it.
 
 ---
 
@@ -123,9 +132,7 @@ mic ≈ 119 ms (these include output latency; we accept round-trip as the practi
 - **Redraw**: `GameOverlayControl` redraws once per display refresh (`TopLevel.RequestAnimationFrame`).
 - Not adopted: USDX's mid-beat sampling (−0.5 beat). USDX samples each beat once; we sample it at 60 Hz and keep
   the best result, so shifting would only add delay.
-- Open: the pitch analysis adds its own delay (YIN window 2048 samples ≈ 43 ms → ≈ 21 ms, analysis every 33 ms →
-  ≈ 16 ms, median of 5 detections → ≈ 66 ms at pitch changes; ≈ 100 ms in total) that mic calibration does not
-  measure (it detects the beep onset in the raw signal).
+- Latency: everything above reads `display = clock − output latency`; see "Latency and sync".
 
 ## Note bars (beamer)
 
@@ -147,7 +154,7 @@ Elapsed = clock − start, remaining = end − clock, progress = elapsed / (end 
 `PlaybackService.StartSong` (media length known); the auto-stop uses the same end. The beamer shows it in the bottom strip:
 the progress bar flush with the bottom edge (first player's colour, lead-in blue without players), elapsed /
 remaining pills just above it at the sides, and the lyrics anchored to the bar (the next phrase ends just above it).
-The strip is as high as its content; font sizes follow the screen height. Uses the media clock **without** the lyrics offset.
+The strip is as high as its content; font sizes follow the screen height. Uses the display time (clock − output latency), like the lyrics.
 
 ## Mic plug / unplug
 

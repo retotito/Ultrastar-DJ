@@ -63,6 +63,11 @@ public sealed partial class DjWindowViewModel : ViewModelBase
         {
             players.StopTests();
         }
+
+        if (oldValue is AudioOutputPanelViewModel outputs && !ReferenceEquals(oldValue, newValue))
+        {
+            outputs.StopSyncTest();
+        }
     }
 
     /// <summary>Audio/display configuration is locked while a song is active (prototype rule).</summary>

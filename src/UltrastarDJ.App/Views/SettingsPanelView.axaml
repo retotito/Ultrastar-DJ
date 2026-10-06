@@ -36,18 +36,6 @@
       </StackPanel>
     </Border>
 
-    <Border Classes="card">
-      <StackPanel Spacing="{StaticResource Space2}">
-        <Grid ColumnDefinitions="*,Auto">
-          <TextBlock Text="Lyrics offset" />
-          <TextBlock Grid.Column="1" Classes="muted" Text="{Binding LyricsOffsetMs, StringFormat='{}{0:+0;-0;0} ms'}" />
-        </Grid>
-        <c:Fader ResetValue="0" Minimum="-500" Maximum="500" TickFrequency="10" IsSnapToTickEnabled="True" Value="{Binding LyricsOffsetMs}" />
-        <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap"
-                   Text="Shifts notes and lyrics against the audio for every song. Use it only if all songs feel early or late; per-song timing belongs in the .txt (#GAP)." />
-      </StackPanel>
-    </Border>
-
     <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="{Binding Version, StringFormat='Ultrastar DJ v{0}'}" HorizontalAlignment="Center" />
   </StackPanel>
 </UserControl>

@@ -34,6 +34,7 @@ public sealed class PlaybackService : IDisposable
     private readonly IDisplayService _displays;
     private readonly AppSettingsService _settings;
     private readonly SongResolver _resolver;
+    private readonly OutputsService _outputs;
     private readonly NotificationService _notifications;
     private readonly ThumbnailService _thumbnails;
     private readonly ILogger<PlaybackService> _log;
@@ -43,7 +44,7 @@ public sealed class PlaybackService : IDisposable
     private PlaybackState _state = PlaybackState.Idle;
 
     public PlaybackService(MediaService media, AudioInputService audio, PlayersService players, IDisplayService displays, AppSettingsService settings, SongResolver resolver,
-        NotificationService notifications, ThumbnailService thumbnails, ILogger<PlaybackService> log)
+        OutputsService outputs, NotificationService notifications, ThumbnailService thumbnails, ILogger<PlaybackService> log)
     {
         _media = media;
         _audio = audio;
@@ -51,6 +52,7 @@ public sealed class PlaybackService : IDisposable
         _displays = displays;
         _settings = settings;
         _resolver = resolver;
+        _outputs = outputs;
         _notifications = notifications;
         _thumbnails = thumbnails;
         _log = log;
@@ -112,10 +114,11 @@ public sealed class PlaybackService : IDisposable
     public SongTimeline? Timeline { get; private set; }
     public IGameClock? Clock => _media.Game.Clock;
     public Difficulty Difficulty => _settings.Difficulty;
-    /// <summary>Global lyrics offset; the beamers and the scorer read game time as clock + this.</summary>
-    public double LyricsOffsetSec => _settings.LyricsOffsetMs / 1000.0;
-    /// <summary>Game time including the lyrics offset — what beamers and the scorer use.</summary>
-    public double GamePositionSec => (Clock?.PositionSec ?? 0) + LyricsOffsetSec;
+    /// <summary>
+    /// What the audience hears now: the clock minus the game output's latency (Bluetooth speakers play 200+ ms
+    /// later than mpv decodes). Beamers draw this and the scorer judges against it (Core.Timing.LatencyModel).
+    /// </summary>
+    public double GamePositionSec => LatencyModel.DisplaySec(Clock?.PositionSec ?? 0, _outputs.GameLatencyMs);
     public string? LastError { get; private set; }
     public bool IsBusy { get; private set; }
 
@@ -270,7 +273,7 @@ public sealed class PlaybackService : IDisposable
 
         IReadOnlyList<PlayerConfig> active = ActivePlayers();
         int tracks = Song.Notes!.Count;
-        Session = new GameSession(Song, active.Select(p => new GamePlayer(p.Id, tracks > 1 ? (p.Id - 1) % tracks : 0, p.MicDelayMs)).ToList(), Difficulty);
+        Session = new GameSession(Song, active.Select(p => new GamePlayer(p.Id, tracks > 1 ? (p.Id - 1) % tracks : 0, MicDelayMs(p))).ToList(), Difficulty);
         // Media length in game time: when the video is the audio, its #VIDEOGAP intro is not part of the song.
         double? mediaLengthSec = _media.Game.Duration is { } d ? d.TotalSeconds - (Plan?.AudioOriginSec ?? 0) : null;
         Timeline = SongTimeline.For(Song, Session.LastBeat, TailAfterLastNoteSec, mediaLengthSec);
@@ -309,7 +312,7 @@ public sealed class PlaybackService : IDisposable
         }
 
         _audio.StartGameMics(active.Select(p => new MicSlot(p.Id, p.Mic!, p.InputGain, p.Threshold)).ToList());
-        string? monitorOut = ResolveMonitorOutput();
+        string? monitorOut = _outputs.GamePortAudioDeviceId();
         if (monitorOut is not null)
         {
             _audio.StartMonitor(monitorOut, _media.Game.ChannelOffset);
@@ -445,7 +448,7 @@ public sealed class PlaybackService : IDisposable
                     continue;
                 }
 
-                double pos = clock.PositionSec + LyricsOffsetSec;
+                double pos = LatencyModel.DisplaySec(clock.PositionSec, _outputs.GameLatencyMs);
                 Ticked?.Invoke(new GameTickInfo(pos, session.BeatAt(pos)));
 
                 if (State == PlaybackState.Playing)
@@ -466,27 +469,8 @@ public sealed class PlaybackService : IDisposable
         }
     }
 
-    /// <summary>Maps the game channel's mpv output device onto the PortAudio device of the same name.</summary>
-    private string? ResolveMonitorOutput()
-    {
-        string mpvId = _media.Game.DeviceId;
-        IReadOnlyList<AudioDeviceInfo> outs = _audio.OutputDevices;
-        if (mpvId == AudioOutputDevice.Auto.Id)
-        {
-            return outs.FirstOrDefault(d => d.IsDefaultOutput)?.Id ?? (outs.Count > 0 ? outs[0].Id : null);
-        }
-
-        // mpv ids look like "coreaudio/<uid>"; its device list carries the human name we can match on.
-        try
-        {
-            string? name = _media.Game.ListAudioDevicesAsync().GetAwaiter().GetResult().FirstOrDefault(d => d.Id == mpvId)?.Name;
-            return outs.FirstOrDefault(d => d.Name == name)?.Id ?? outs.FirstOrDefault(d => d.IsDefaultOutput)?.Id;
-        }
-        catch (MediaException)
-        {
-            return null;
-        }
-    }
+    /// <summary>The player's scoring delay: calibrated total minus the output latency it was calibrated through.</summary>
+    public double MicDelayMs(PlayerConfig p) => LatencyModel.InputDelayMs(p.CalibratedTotalMs, _outputs.LatencyFor(p.CalibrationOutputKey));
 
     public void Dispose() => StopTicker();
 }

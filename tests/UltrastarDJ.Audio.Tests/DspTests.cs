@@ -223,3 +223,52 @@ public class MicPipelineTests
         Assert.Equal(57, p.Analyze().MidiNote);
     }
 }
+
+public class PitchPathDelayTests
+{
+    /// <summary>
+    /// How long the pitch analysis needs to report a new note — the part of the latency the old onset-based
+    /// calibration missed. Silence, then A4 from a known sample; analysis at the game's 30 Hz; time until the
+    /// smoothed note says A4. Calibration now detects the tone through this same path.
+    /// </summary>
+    [Fact]
+    public void ToneOnset_IsReportedAfterTheAnalysisDelay()
+    {
+        const double rate = 48000;
+        const int block = 480;               // 10 ms audio callbacks
+        const int analyzeEvery = 1584;       // 33 ms at 48 kHz, like MicEngine
+        MicPipeline p = new(1, UltrastarDJ.Core.Players.MicChannelSide.Mono, rate) { Threshold = 0 };
+        float[] buf = new float[block * 2];
+        float[] scratch = new float[block];
+        long toneStart = (long)rate;         // 1 s of silence first
+        long sample = 0, nextAnalyze = analyzeEvery;
+        double? reportedAt = null;
+        while (sample < 3 * rate && reportedAt is null)
+        {
+            for (int i = 0; i < block; i++)
+            {
+                long n = sample + i;
+                float v = n < toneStart ? 0 : (float)(0.5 * Math.Sin(2 * Math.PI * 440 * n / rate));
+                buf[2 * i] = buf[2 * i + 1] = v;
+            }
+
+            p.Process(buf, block, 2, scratch);
+            sample += block;
+            while (sample >= nextAnalyze)
+            {
+                p.Analyze();
+                if (Math.Abs(p.LastMidiNote - 69) < 0.5)
+                {
+                    reportedAt = sample;
+                }
+
+                nextAnalyze += analyzeEvery;
+            }
+        }
+
+        Assert.NotNull(reportedAt);
+        double delayMs = (reportedAt!.Value - toneStart) / rate * 1000;
+        // Window (≈ 43 ms) + up to one analysis period (33 ms) + the median of 5 needing 3 voiced results.
+        Assert.InRange(delayMs, 40, 160); // measured: 60 ms at 48 kHz
+    }
+}

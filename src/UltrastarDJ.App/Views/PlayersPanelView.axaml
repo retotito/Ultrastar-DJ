@@ -61,9 +61,9 @@
 
           <Grid ColumnDefinitions="*,Auto">
             <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" VerticalAlignment="Center"
-                       Text="{Binding MicDelayText, StringFormat='Mic delay {0}'}" ToolTip.Tip="Round-trip delay of this mic. Scoring compares the singer with the music this many ms later. Set it with Calibrate." />
+                       Text="{Binding MicDelayText, StringFormat='Mic delay {0}'}" ToolTip.Tip="How much later this mic's notes reach the scorer than the singer sings them (mic, USB and pitch analysis). Scoring matches each heard pitch with the note this many ms earlier. Set it with Calibrate; until then 140 ms is assumed." />
             <Button Grid.Column="1" Classes="tonal" Command="{Binding CalibrateCommand}" IsEnabled="{Binding !Calibrating}" Padding="12,4"
-                    ToolTip.Tip="Measures this mic's delay: plays 5 beeps on the monitor output and listens for them with the mic. Hold the mic close to the speaker in a quiet moment. The result shifts scoring so it matches when the singer is actually heard.">
+                    ToolTip.Tip="Measures this mic's delay: plays 5 tones on the game speakers and listens for them through the same pitch analysis as the game. Hold the mic in front of the speakers in a quiet moment. Set the speakers' latency (Audio Output → Test sync) first; it is subtracted from the result.">
               <StackPanel Orientation="Horizontal" Spacing="4">
                 <c:Icon Glyph="timer" FontSize="{StaticResource IconSm}" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
                 <TextBlock Text="Calibrate" FontSize="{StaticResource TextSm}" Foreground="{DynamicResource BrushOnSecondaryContainer}" />

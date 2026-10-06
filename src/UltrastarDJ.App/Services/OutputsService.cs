@@ -27,8 +27,10 @@ public sealed class OutputsService
     private readonly IAudioBackend _backend;
     private readonly ILogger<OutputsService> _log;
     private OutputsDocument _doc;
+    // Read by the game ticker and the beamers' render loop every frame: no key string building there.
+    private double _gameLatencyMs;
 
-    public OutputsService(ISettingsStore settings, MediaService media, IAudioBackend backend, ILogger<OutputsService> log)
+    public OutputsService(ISettingsStore settings, MediaService media, IAudioBackend backend, AppSettingsService app, ILogger<OutputsService> log)
     {
         _settings = settings;
         _media = media;
@@ -37,6 +39,61 @@ public sealed class OutputsService
         _doc = settings.Load(SettingsName, OutputsDocument.Default());
         Apply(_media.Game, _doc.Game);
         Apply(_media.Preview, _doc.Preview);
+        _gameLatencyMs = LatencyFor(GameOutputKey);
+
+        // The old global "Lyrics offset" (position + offset) becomes the current game device's latency once.
+        if (_doc.LatencyMs.Count == 0 && app.LyricsOffsetMs != 0)
+        {
+            SetGameLatencyMs(-app.LyricsOffsetMs);
+            app.ClearLyricsOffset();
+        }
+    }
+
+    /// <summary>Latencies are kept per output (device + stereo pair): Bluetooth keeps its 250 ms, the cable its 15 ms.</summary>
+    public static string KeyOf(ChannelOutput c) => $"{c.MpvDeviceId}|{c.ChannelOffset}";
+
+    public string GameOutputKey => KeyOf(_doc.Game);
+
+    /// <summary>Output latency of an output in ms (app plays → audience hears); 0 when never set.</summary>
+    public double LatencyFor(string? key) => key is not null && _doc.LatencyMs.TryGetValue(key, out double ms) ? ms : 0;
+
+    public double GameLatencyMs => _gameLatencyMs;
+
+    public void SetGameLatencyMs(double ms)
+    {
+        Dictionary<string, double> latency = new(_doc.LatencyMs) { [GameOutputKey] = Math.Clamp(Math.Round(ms), MinLatencyMs, MaxLatencyMs) };
+        _doc = _doc with { LatencyMs = latency };
+        _gameLatencyMs = LatencyFor(GameOutputKey);
+        _settings.Save(SettingsName, _doc);
+        Changed?.Invoke();
+    }
+
+    public const double MinLatencyMs = 0;
+    public const double MaxLatencyMs = 800;
+
+    /// <summary>
+    /// The PortAudio device behind the game output (mpv names it "coreaudio/&lt;uid&gt;"; its device list carries the
+    /// human name PortAudio uses). The mic monitor, the sync clicks and the calibration tone play here, so they go
+    /// through the same latency as the song.
+    /// </summary>
+    public string? GamePortAudioDeviceId()
+    {
+        string mpvId = _media.Game.DeviceId;
+        List<AudioDeviceInfo> outs = [.. _backend.Devices.Where(d => d.IsOutput && !IsHidden(d.Name))];
+        if (mpvId == AudioOutputDevice.Auto.Id)
+        {
+            return outs.FirstOrDefault(d => d.IsDefaultOutput)?.Id ?? (outs.Count > 0 ? outs[0].Id : null);
+        }
+
+        try
+        {
+            string? name = _media.Game.ListAudioDevicesAsync().GetAwaiter().GetResult().FirstOrDefault(d => d.Id == mpvId)?.Name;
+            return outs.FirstOrDefault(d => d.Name == name)?.Id ?? outs.FirstOrDefault(d => d.IsDefaultOutput)?.Id;
+        }
+        catch (MediaException)
+        {
+            return null;
+        }
     }
 
     public event Action? Changed;
@@ -120,6 +177,7 @@ public sealed class OutputsService
     private void Store(MediaChannelKind kind, ChannelOutput cfg)
     {
         _doc = kind == MediaChannelKind.Game ? _doc with { Game = cfg } : _doc with { Preview = cfg };
+        _gameLatencyMs = LatencyFor(GameOutputKey);
         _settings.Save(SettingsName, _doc);
         Changed?.Invoke();
     }
@@ -139,6 +197,9 @@ public sealed class OutputsService
 
     public sealed record OutputsDocument(ChannelOutput Game, ChannelOutput Preview)
     {
+        /// <summary>Output latency in ms per <see cref="KeyOf"/>.</summary>
+        public IReadOnlyDictionary<string, double> LatencyMs { get; init; } = new Dictionary<string, double>();
+
         public static OutputsDocument Default() => new(ChannelOutput.Default(), ChannelOutput.Default());
     }
 }

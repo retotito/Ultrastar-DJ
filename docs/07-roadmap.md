@@ -277,8 +277,20 @@ Details: `03-game-engine.md` "Mic plug / unplug".
 - [x] Crackling during the game (all sources): beamer drawing made nearly allocation-free (cached texts, brushes, pens, segment lists); SustainedLowLatency GC during a song; GC counts logged per song. Monitor stream shares CoreAudio's IO thread with mpv, so a GC pause stalled both.
 - [x] Real cause of the crackling: PortAudio (macOS) sets the device IO buffer from an output stream's latency, per process — the low-latency monitor stream shrank the MacBook speakers' buffer to its minimum, and mpv's song output in our process crackled (preview on the headphones did not). Output streams now open with a fixed 512-frame block (`PortAudioBackend.OutputBlockFrames`).
 - [x] Crackling verified gone. (Recalibrate mic delays once: the calibration beep now uses 512-frame blocks.)
-- [ ] Pitch analysis delay (~100 ms, not covered by calibration): decide whether to compensate
+- [x] Pitch analysis delay: measured ≈ 60 ms (`PitchPathDelayTests`); now part of the calibration (Sprint 9).
 - [ ] Verified live
+
+---
+
+## Sprint 9 — Latency and sync  *(done)*
+
+- [x] `Core.Timing.LatencyModel` (tested): display = clock − output latency; mic delay = calibrated total − latency of the calibration output (default 140 ms); flash timing for Test sync.
+- [x] Pitch analysis delay measured: ≈ 60 ms from tone onset to a stable note (`PitchPathDelayTests`).
+- [x] Calibrate: A4 tone on the **game** output, detected through the game's pitch analysis with the player's gain; stores total + output; card shows the resulting mic delay ("default" until calibrated).
+- [x] Output latency per game output (device + pair) in Audio Output → Game → LATENCY (0–800 ms); beamers and scoring use it.
+- [x] Test sync: click every second on the game output (`SyncClicks`, tested), disc flash on the open beamers when each click should be heard; needs an open beamer, stops with the panel, a song, or the last beamer.
+- [x] Settings → Lyrics offset removed; an existing value moves into the game output's latency once.
+- [x] Verified live: Calibrate gives a steady ~110 ms per mic (tone → recognised note; old beep method 36 ms); Test sync on the MacBook speakers lands on 0 ms, as expected for wired speakers.
 
 ---
 

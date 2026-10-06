@@ -36,7 +36,8 @@ public sealed class AppSettingsService
     public void SetShowTooltips(bool show) => Update(_doc with { HideTooltips = !show });
     public void SetNoteBarStyle(NoteBarStyle style) => Update(_doc with { NoteBarStyle = style });
     public void SetDifficulty(Difficulty d) => Update(_doc with { Difficulty = d });
-    public void SetLyricsOffsetMs(double ms) => Update(_doc with { LyricsOffsetMs = Math.Clamp(Math.Round(ms), -500, 500) });
+    /// <summary>Migrated into the game output's latency (OutputsService); kept only to read old settings files.</summary>
+    public void ClearLyricsOffset() => Update(_doc with { LyricsOffsetMs = 0 });
     public void SetNowPlayingHidden(bool hidden) => Update(_doc with { NowPlayingHidden = hidden });
     public void SetNowPlayingPosition(double x, double y) => Update(_doc with { NowPlayingX = Math.Round(x), NowPlayingY = Math.Round(y) });
 

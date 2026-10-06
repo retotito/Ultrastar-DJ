@@ -40,9 +40,11 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private int _winnerId = -1;
 
     public BeamerViewModel(DisplayId id, FrameBus gameFrames, PlaybackService playback, PlayersService players, IDisplayService displays,
-        AppSettingsService settings)
+        AppSettingsService settings, SyncTestService syncTest)
     {
         Id = id;
+        SyncTest = syncTest;
+        syncTest.Changed += OnSyncTestChanged;
         _settings = settings;
         _noteBarStyle = settings.NoteBarStyle;
         settings.Changed += OnSettingsChanged;
@@ -266,7 +268,14 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
         _displays.PlayersChanged -= OnAssignmentChanged;
         _players.Changed -= OnPlayerConfigChanged;
         _settings.Changed -= OnSettingsChanged;
+        SyncTest.Changed -= OnSyncTestChanged;
     }
+
+    /// <summary>Audio Output → Game → Test sync: this screen shows the flash.</summary>
+    public SyncTestService SyncTest { get; }
+    public bool SyncTestRunning => SyncTest.IsRunning;
+
+    private void OnSyncTestChanged() => OnPropertyChanged(nameof(SyncTestRunning));
 }
 
 public sealed partial class ScoreRowViewModel(int playerId, string name, IBrush brush, int final, int max, bool isWinner) : ObservableObject

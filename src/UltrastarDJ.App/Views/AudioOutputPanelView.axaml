@@ -35,6 +35,26 @@
             <TextBlock Grid.Column="1" Classes="muted" Text="{Binding Gain, StringFormat='{}{0:P0}'}" VerticalAlignment="Center" TextAlignment="Right" />
           </Grid>
           <c:LevelMeter Height="6" Level="{Binding Level}" Fill="{DynamicResource BrushPrimary}" Track="{DynamicResource BrushSurfaceContainerHighest}" />
+
+          <!-- Game only: how much later the audience hears this output; lyrics, notes and scoring follow it. -->
+          <Panel IsVisible="{Binding Latency, Converter={x:Static ObjectConverters.IsNotNull}}">
+            <StackPanel Spacing="{StaticResource Space2}" DataContext="{Binding Latency}" x:DataType="vm:GameSyncViewModel">
+              <TextBlock Classes="label" Text="LATENCY" Margin="0,4,0,0"
+                         ToolTip.Tip="How much later the speakers play than the app sends the sound (cable ~15 ms, TV/HDMI 50–150 ms, Bluetooth 150–300 ms). Lyrics and notes are shown this much later. Saved per output device." />
+              <Grid ColumnDefinitions="*,60">
+                <c:Fader Minimum="{Binding MinLatencyMs}" Maximum="{Binding MaxLatencyMs}" ResetValue="0" TickFrequency="5" IsSnapToTickEnabled="True" Value="{Binding LatencyMs}" />
+                <TextBlock Grid.Column="1" Classes="muted" Text="{Binding LatencyMs, StringFormat='{}{0:F0} ms'}" VerticalAlignment="Center" TextAlignment="Right" />
+              </Grid>
+              <Button Classes="tonal" Command="{Binding ToggleCommand}" IsEnabled="{Binding CanToggle}" HorizontalAlignment="Left" Padding="12,4"
+                      ToolTip.Tip="{Binding ToggleTip}" ToolTip.ShowOnDisabled="True">
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                  <c:Icon Glyph="graphic_eq" FontSize="{StaticResource IconSm}" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
+                  <TextBlock Text="Test sync" FontSize="{StaticResource TextSm}" Foreground="{DynamicResource BrushOnSecondaryContainer}" IsVisible="{Binding !IsRunning}" />
+                  <TextBlock Text="Stop test" FontSize="{StaticResource TextSm}" Foreground="{DynamicResource BrushOnSecondaryContainer}" IsVisible="{Binding IsRunning}" />
+                </StackPanel>
+              </Button>
+            </StackPanel>
+          </Panel>
         </StackPanel>
       </Border>
     </DataTemplate>
@@ -53,6 +73,6 @@
     <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap" Text="{Binding Status}"
                IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
     <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap"
-               Text="Multichannel interfaces are listed once per stereo pair. Mic monitoring follows the game output." />
+               Text="Multichannel interfaces are listed once per stereo pair. Mic monitoring follows the game output. Set the game latency before calibrating the mics." />
   </StackPanel>
 </UserControl>

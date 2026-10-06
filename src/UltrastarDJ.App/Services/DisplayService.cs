@@ -104,7 +104,8 @@ public sealed class DisplayService : IDisplayService
 
         // Resolved here, not injected: PlaybackService depends on IDisplayService (would be a constructor cycle).
         PlaybackService playback = _services.GetRequiredService<PlaybackService>();
-        BeamerViewModel vm = new(id, _media.Game.Frames, playback, _players, this, _services.GetRequiredService<AppSettingsService>());
+        BeamerViewModel vm = new(id, _media.Game.Frames, playback, _players, this, _services.GetRequiredService<AppSettingsService>(),
+            _services.GetRequiredService<SyncTestService>());
         BeamerWindow window = new()
         {
             DataContext = vm,

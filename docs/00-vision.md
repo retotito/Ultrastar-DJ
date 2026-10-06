@@ -80,7 +80,7 @@ Everything below exists in the prototype and must exist in v2 unless marked *(la
 - 4 fixed player slots: active, name, colour (blue/red/green/yellow), mic assignment (device + channel L/R/mono).
 - Per player: input gain 0–2, noise gate threshold 0–0.5, mix gain 0–2, mute, mic delay ms (default 40, cap 250 in UI).
 - Live level meters; mic test mode; hot-plug detection (disconnected / reconnected toasts, auto-clear at startup if device gone).
-- Mic delay calibration dialog: beep → echo detection, 5 trials, median, apply per player.
+- Latency: output latency per game device (Test sync: click + beamer flash); mic calibration: tone through the pitch analysis, 5 trials, median, per player.
 - Mic monitoring: mic audio mixed into the game output during the song (mix fader + mute per player in the Game Player card).
 
 ### Audio outputs
@@ -113,7 +113,7 @@ Everything below exists in the prototype and must exist in v2 unless marked *(la
 - Embedded HTTP server serving a mobile web page: guests browse/search the library and request songs. Optional 4-digit party PIN. Public URL via tunnel (bore) for guests not on the LAN. *(v2: keep server; tunnel optional)*.
 
 ### Settings
-- Theme dark/light, difficulty, lyrics offset ms, sources, persisted players/displays/outputs.
+- Theme dark/light, difficulty, output latency per device, sources, persisted players/displays/outputs.
 
 ### Sidecars
 - `yt-dlp` (YouTube stream resolution — used by libmpv), `ffmpeg` (used by yt-dlp for muxing when needed; no longer needed for transcoding).

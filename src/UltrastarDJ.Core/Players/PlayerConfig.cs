@@ -38,8 +38,15 @@ public sealed record PlayerConfig
     public double MixGain { get; init; } = 1.0;
     /// <summary>Mic removed from the speaker mix (scoring unaffected).</summary>
     public bool MixMuted { get; init; }
-    /// <summary>Round-trip mic latency; the scorer evaluates this many ms behind the clock.</summary>
-    public double MicDelayMs { get; init; } = 40;
+    /// <summary>
+    /// Calibrate's result: a tone on the game output until the pitch analysis recognised it (ms); null = never
+    /// calibrated. The scoring delay is this minus the latency of <see cref="CalibrationOutputKey"/>
+    /// (Core.Timing.LatencyModel).
+    /// </summary>
+    public double? CalibratedTotalMs { get; init; }
+
+    /// <summary>The output (OutputsService key) the calibration tone played on.</summary>
+    public string? CalibrationOutputKey { get; init; }
 
     public static PlayerConfig Default(int id) => new()
     {

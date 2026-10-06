@@ -130,7 +130,7 @@ Details: `02-media-engine.md`.
 - `IAudioBackend` (PortAudio impl): enumerate inputs/outputs, open input by device+channel, open output by device+channel offset.
 - `MicPipeline` per player: gain → gate → level → YIN → `PitchRingBuffer` → `PitchSample`.
 - `MonitorMixer`: sums player mics × mixGain (mute aware) into the game output device.
-- `LatencyTest`: beep → echo → round-trip ms.
+- `LatencyTest`: tone on the game output → recognised by the pitch analysis → total ms. `SyncClicks`: Test sync click track.
 Details: `03-game-engine.md`.
 
 ### `UltrastarDJ.Infrastructure`

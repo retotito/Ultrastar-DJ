@@ -9,6 +9,7 @@ using UltrastarDJ.Audio.Mics;
 using UltrastarDJ.Audio.Monitor;
 using UltrastarDJ.Core.Game;
 using UltrastarDJ.Core.Players;
+using UltrastarDJ.Core.Timing;
 
 namespace UltrastarDJ.App.ViewModels;
 
@@ -27,6 +28,7 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
 {
     private readonly AudioInputService _audio;
     private readonly PlayersService _players;
+    private readonly OutputsService _outputs;
     private readonly ILogger<PlayersPanelViewModel> _log;
     private readonly DispatcherTimer _meterTimer;
     private readonly HashSet<int> _tested = [];
@@ -36,10 +38,11 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private AudioDeviceInfo? _monitorOutput;
     [ObservableProperty] private string _status = "";
 
-    public PlayersPanelViewModel(AudioInputService audio, PlayersService players, ILogger<PlayersPanelViewModel> log)
+    public PlayersPanelViewModel(AudioInputService audio, PlayersService players, OutputsService outputs, ILogger<PlayersPanelViewModel> log)
     {
         _audio = audio;
         _players = players;
+        _outputs = outputs;
         _log = log;
         RefreshDevices();
         Players = new ObservableCollection<PlayerCardViewModel>(players.All.Select(p => new PlayerCardViewModel(p, this)));
@@ -47,6 +50,8 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
         _audio.Mics.Analyzed += OnAnalyzed;
         _players.Changed += OnConfigChanged;
         _audio.MicsChanged += OnMicsChanged;
+        // The mic delay depends on the latency of the output it was calibrated through.
+        _outputs.Changed += OnOutputsChanged;
         _meterTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(50), DispatcherPriority.Background, (_, _) => PollMeters());
         _meterTimer.Start();
     }
@@ -223,11 +228,24 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
         }
     }
 
+    private void OnOutputsChanged()
+    {
+        foreach (PlayerCardViewModel card in Players)
+        {
+            card.RefreshDelay();
+        }
+    }
+
+    /// <summary>Scoring delay of a player in ms, and whether it was calibrated or is the default.</summary>
+    internal (double Ms, bool Calibrated) MicDelay(PlayerConfig p)
+        => (LatencyModel.InputDelayMs(p.CalibratedTotalMs, _outputs.LatencyFor(p.CalibrationOutputKey)), p.CalibratedTotalMs is not null);
+
     internal async Task CalibrateAsync(PlayerCardViewModel card)
     {
-        if (card.Config.Mic is null || MonitorOutput is null)
+        string? output = _outputs.GamePortAudioDeviceId();
+        if (card.Config.Mic is null || output is null)
         {
-            Status = "Bind a mic and choose an output to calibrate";
+            Status = card.Config.Mic is null ? "Bind a mic to calibrate" : "The game output was not found — check Audio Output";
             return;
         }
 
@@ -239,14 +257,15 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
         }
 
         card.Calibrating = true;
-        Status = $"Calibrating {card.Config.Name}: playing 5 beeps — hold the mic near the speaker";
+        Status = $"Calibrating {card.Config.Name}: 5 tones on the game speakers — hold the mic in front of them";
         try
         {
-            LatencyTest.Result r = await _audio.Latency.RunAsync(MonitorOutput.Id, card.Config.Mic, trials: 5,
-                new Progress<double>(ms => Status = $"Calibrating {card.Config.Name}: {ms:F0} ms…"));
-            _players.Update(card.Config.Id, p => p with { MicDelayMs = Math.Round(r.MedianMs) });
+            string outputKey = _outputs.GameOutputKey;
+            LatencyTest.Result r = await _audio.Latency.RunAsync(output, card.Config.Mic, card.Config.InputGain, trials: 5,
+                progress: new Progress<double>(ms => Status = $"Calibrating {card.Config.Name}: {ms:F0} ms…"));
+            _players.Update(card.Config.Id, p => p with { CalibratedTotalMs = Math.Round(r.MedianMs), CalibrationOutputKey = outputKey });
             card.Reload();
-            Status = $"{card.Config.Name}: mic delay {r.MedianMs:F0} ms (trials {string.Join(", ", r.TrialsMs.Select(t => t.ToString("F0")))})";
+            Status = $"{card.Config.Name}: {r.MedianMs:F0} ms total, mic delay {card.MicDelayText} (trials {string.Join(", ", r.TrialsMs.Select(t => t.ToString("F0")))})";
         }
         catch (AudioBackendException ex)
         {
@@ -309,6 +328,7 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
         _audio.MicsChanged -= OnMicsChanged;
         _audio.Mics.Analyzed -= OnAnalyzed;
         _players.Changed -= OnConfigChanged;
+        _outputs.Changed -= OnOutputsChanged;
         _audio.StopAll();
     }
 }
@@ -366,7 +386,9 @@ public sealed partial class PlayerCardViewModel : ObservableObject
         _loading = false;
         SyncMicOption();
     }
-    public string MicDelayText => $"{Config.MicDelayMs:F0} ms";
+    public string MicDelayText => _owner.MicDelay(Config) is var (ms, calibrated) ? $"{ms:F0} ms{(calibrated ? "" : " (default)")}" : "";
+
+    public void RefreshDelay() => OnPropertyChanged(nameof(MicDelayText));
     public string GateText => $"{GateDb:F0} dB";
     /// <summary>Level in dB mapped to 0..1 over the meter's 70 dB range — linear RMS is useless for quiet mics.</summary>
     public double LevelDb => Level <= 0 ? 0 : Math.Clamp((20 * Math.Log10(Level) - GateMinDb) / -GateMinDb, 0, 1);

@@ -128,6 +128,7 @@ public sealed partial class App : Application
         services.AddSingleton<SongbookService>();
         services.AddSingleton<OutputsService>();
         services.AddSingleton<PlaybackService>();
+        services.AddSingleton<SyncTestService>();
         services.AddSingleton<DisplayService>();
         services.AddSingleton<IDisplayService>(sp => sp.GetRequiredService<DisplayService>());
 

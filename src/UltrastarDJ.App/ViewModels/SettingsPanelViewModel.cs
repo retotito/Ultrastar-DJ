@@ -14,7 +14,6 @@ public sealed partial class SettingsPanelViewModel : ViewModelBase
     [ObservableProperty] private bool _showTooltips;
     [ObservableProperty] private NoteBarStyle _noteBarStyle;
     [ObservableProperty] private Difficulty _difficulty;
-    [ObservableProperty] private double _lyricsOffsetMs;
 
     public SettingsPanelViewModel(AppSettingsService settings)
     {
@@ -24,7 +23,6 @@ public sealed partial class SettingsPanelViewModel : ViewModelBase
         ShowTooltips = settings.ShowTooltips;
         NoteBarStyle = settings.NoteBarStyle;
         Difficulty = settings.Difficulty;
-        LyricsOffsetMs = settings.LyricsOffsetMs;
         _loading = false;
     }
 
@@ -69,14 +67,6 @@ public sealed partial class SettingsPanelViewModel : ViewModelBase
         if (!_loading)
         {
             _settings.SetDifficulty(value);
-        }
-    }
-
-    partial void OnLyricsOffsetMsChanged(double value)
-    {
-        if (!_loading)
-        {
-            _settings.SetLyricsOffsetMs(value);
         }
     }
 }
