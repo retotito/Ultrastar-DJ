@@ -14,7 +14,8 @@
     </DataTemplate>
   </UserControl.Resources>
 
-  <Border Classes="card floating" Width="860" Padding="{StaticResource Pad6}">
+  <!-- 860 + 16: room between the scrolling content and Fluent's floating scrollbar (as in the sidebar popovers) -->
+  <Border Classes="card floating" Width="876" Padding="{StaticResource Pad6}">
     <DockPanel>
       <!-- Header: picture, title, artist, source; close -->
       <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,16">
@@ -90,7 +91,7 @@
       </Grid>
 
       <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Spacing="{StaticResource Space3}">
+        <StackPanel Spacing="{StaticResource Space3}" Margin="0,0,16,0">
           <TextBlock Classes="muted" Text="{Binding Status}" TextWrapping="Wrap"
                      IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 

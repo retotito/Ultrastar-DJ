@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using UltrastarDJ.App.Services;
 using UltrastarDJ.Infrastructure;
 using UltrastarDJ.Core.Playback;
@@ -175,6 +176,17 @@ public sealed partial class DjWindowViewModel : ViewModelBase
             SidebarPanel.Layout => _services.GetRequiredService<LayoutPanelViewModel>(),
             _ => new PlaceholderPanelViewModel(panel.ToString()),
         };
+    }
+
+    /// <summary>
+    /// Light dismiss (a press outside the panel). Logged with what was pressed: drop-down picks closed the panel now
+    /// and then, and the log names the element if it happens again.
+    /// </summary>
+    public void CloseOnOutsidePress(string pressed)
+    {
+        _services.GetRequiredService<ILogger<DjWindowViewModel>>()
+            .LogInformation("{Panel} panel closed by a press outside it: {Pressed}", ActivePanel, pressed);
+        ClosePanel();
     }
 
     [RelayCommand]

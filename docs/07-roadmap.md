@@ -454,6 +454,9 @@ Drawn directly (meter rate, allocation-free), not a templated Slider.
 - [x] Preview play / pause centred under the picture; the old slider row goes
 - [x] Preview: one row under the picture — play / pause, Queue, Load (short labels; Queue has a tooltip); the separate button row at the bottom goes
 - [x] Fix: startup crash — the spinner's style animation on RenderTransform has no animator in Avalonia; now a `Spinner` control that turns itself while visible
+- [x] Popovers: 16 px between the content and the scrollbar (Fluent's scrollbar floats over the content); `PopoverWidth` 420 → 432 so the content keeps its width
+- [x] Song details popup: the same 16 px scrollbar room (width 860 → 876)
+- [x] Fix: picking a value in a drop-down sometimes closed the panel — a press in any popup (drop-down list, menu) is never "outside"; a panel closed by an outside press is logged with the element pressed
 - [ ] Verified live
 
 ---

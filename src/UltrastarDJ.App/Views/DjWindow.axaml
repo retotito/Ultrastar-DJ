@@ -128,9 +128,10 @@
             </Button>
           </Grid>
         </Border>
-        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
-                      Padding="0,0,4,0">
-          <ContentControl Content="{Binding PanelContent}" />
+        <!-- Fluent's scrollbar floats over the content: the content keeps 16 px free on the right for it, and the
+             popover is that much wider (PopoverWidth), so the content itself keeps its width. -->
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+          <ContentControl Content="{Binding PanelContent}" Margin="0,0,16,0" />
         </ScrollViewer>
       </DockPanel>
     </Border>

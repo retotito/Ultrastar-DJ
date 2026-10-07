@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
@@ -52,14 +53,20 @@ public sealed partial class DjWindow : Window
         }
 
         List<Visual> path = source.GetSelfAndVisualAncestors().ToList();
-        // Drop-down lists and menus opened from a panel are drawn outside it, but stay its logical descendants.
+        // A press in a drop-down list or menu is never "outside": it is a pick (or a scroll) in what the panel opened.
+        // Such lists live in a popup (their own window, or the overlay layer) — no need to trace them back to the panel.
+        if (path.Any(v => v is PopupRoot or OverlayPopupHost) || !ReferenceEquals(TopLevel.GetTopLevel(source), this))
+        {
+            return;
+        }
+
         // Template parts have no logical parent, so walk the logical chain from every element on the visual path.
         bool inPopover = path.Any(v => ReferenceEquals(v, Popover))
             || path.OfType<ILogical>().Any(l => l.GetSelfAndLogicalAncestors().Any(a => ReferenceEquals(a, Popover)));
         bool onSidebarButton = path.OfType<Button>().Any() && path.Any(v => ReferenceEquals(v, Sidebar));
         if (!inPopover && !onSidebarButton)
         {
-            vm.ClosePanelCommand.Execute(null);
+            vm.CloseOnOutsidePress(string.Join(" < ", path.Take(4).Select(v => v.GetType().Name)));
         }
     }
 
