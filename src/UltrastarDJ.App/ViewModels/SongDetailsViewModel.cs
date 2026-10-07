@@ -31,6 +31,7 @@ public sealed partial class SongDetailsViewModel : ViewModelBase
     private readonly UsdbService _usdb;
     private readonly ThumbnailService _thumbnails;
     private readonly ConnectivityService _connectivity;
+    private readonly SongMarksService _marks;
     private readonly Action _close;
 
     [ObservableProperty] private bool _loading = true;
@@ -42,11 +43,19 @@ public sealed partial class SongDetailsViewModel : ViewModelBase
     [ObservableProperty] private IReadOnlyList<DetailFile> _files = [];
     [ObservableProperty] private IReadOnlyList<string> _problems = [];
     [ObservableProperty] private string? _youTubeUrl;
+    // The DJ's marks (SongMarksService): saved as they change.
+    [ObservableProperty] private bool _isFavourite;
+    [ObservableProperty] private bool _isBroken;
+    [ObservableProperty] private string _note = "";
 
     public SongDetailsViewModel(LibraryRow row, LibraryViewModel library, UsdbService usdb, ThumbnailService thumbnails,
-        ConnectivityService connectivity, Action close)
+        ConnectivityService connectivity, SongMarksService marks, Action close)
     {
         Row = row;
+        _marks = marks;
+        _isFavourite = row.IsFavourite;
+        _isBroken = row.IsBroken;
+        _note = row.Mark?.Note ?? "";
         _library = library;
         _usdb = usdb;
         _thumbnails = thumbnails;
@@ -59,6 +68,22 @@ public sealed partial class SongDetailsViewModel : ViewModelBase
     }
 
     public LibraryRow Row { get; }
+    /// <summary>The note field shows for a broken song, or when a note was kept after "broken" was switched off.</summary>
+    public bool ShowNote => IsBroken || Note.Length > 0;
+
+    partial void OnIsFavouriteChanged(bool value) => _marks.SetFavourite(Row.Song, value);
+
+    partial void OnIsBrokenChanged(bool value)
+    {
+        _marks.SetBroken(Row.Song, value);
+        OnPropertyChanged(nameof(ShowNote));
+    }
+
+    partial void OnNoteChanged(string value)
+    {
+        _marks.SetNote(Row.Song, value);
+        OnPropertyChanged(nameof(ShowNote));
+    }
     public string Title => Row.Title;
     public string Artist => Row.Artist;
     public string Source => Row.Source;

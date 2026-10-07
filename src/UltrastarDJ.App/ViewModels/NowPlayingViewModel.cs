@@ -19,6 +19,7 @@ namespace UltrastarDJ.App.ViewModels;
 /// </summary>
 public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
 {
+    private readonly SongMarksService _marks;
     private readonly PlaybackService _playback;
     private readonly OutputsService _outputs;
     private bool _syncingGain;
@@ -47,8 +48,10 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
 
     public NowPlayingViewModel(PlaybackService playback, IDisplayService displays, MediaService media, AudioInputService audio,
         PlayersService players, AppSettingsService settings, OutputsService outputs, NotificationService notifications,
-        SongbookService songbook, YtDlpService ytDlp, ILogger<NowPlayingViewModel> log)
+        SongbookService songbook, YtDlpService ytDlp, SongMarksService marks, ILogger<NowPlayingViewModel> log)
     {
+        _marks = marks;
+        marks.Changed += OnMarksChanged;
         _ytDlp = ytDlp;
         _songbook = songbook;
         // Accepted, cancelled, loaded: who asked for the loaded song may change.
@@ -130,6 +133,33 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
         }
     }
     public bool HasSong => _playback.Song is not null;
+    /// <summary>The DJ's marks on the loaded song — set right here, where a bad song shows (SongMarksService).</summary>
+    public bool IsFavourite => _playback.Song is { } s && _marks.FavouriteIds.Contains(s.Id);
+    public bool IsBroken => _playback.Song is { } s && _marks.BrokenIds.Contains(s.Id);
+
+    [RelayCommand]
+    private void ToggleFavourite()
+    {
+        if (_playback.Song is { } s)
+        {
+            _marks.SetFavourite(s, !IsFavourite);
+        }
+    }
+
+    [RelayCommand]
+    private void ToggleBroken()
+    {
+        if (_playback.Song is { } s)
+        {
+            _marks.SetBroken(s, !IsBroken);
+        }
+    }
+
+    private void OnMarksChanged()
+    {
+        OnPropertyChanged(nameof(IsFavourite));
+        OnPropertyChanged(nameof(IsBroken));
+    }
     /// <summary>The song in the Game Player (a failed load keeps the previous one).</summary>
     public string? LoadedSongId => _playback.Song?.Id;
     /// <summary>The game channel has video (cases 2, 3, 4, 6).</summary>
@@ -225,6 +255,7 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
         };
         OnPropertyChanged(nameof(State));
         OnPropertyChanged(nameof(HasSong));
+        OnMarksChanged();
         OnPropertyChanged(nameof(PlayGlyph));
         OnPropertyChanged(nameof(IsPauseButton));
         OnPropertyChanged(nameof(NoBeamerOpen));

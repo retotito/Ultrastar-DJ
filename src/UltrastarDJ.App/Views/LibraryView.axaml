@@ -221,16 +221,29 @@
                       <MenuItem.Icon><c:Icon Glyph="play_circle" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
                     </MenuItem>
                     <Separator />
+                    <MenuItem Header="{Binding FavouriteMenuText}" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).ToggleFavouriteCommand}" CommandParameter="{Binding}">
+                      <MenuItem.Icon><c:Icon Glyph="favorite" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="{Binding BrokenMenuText}" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).ToggleBrokenCommand}" CommandParameter="{Binding}"
+                              ToolTip.Tip="Bad notes or timing: still playable, but never offered on the songbook. Add a note in Details.">
+                      <MenuItem.Icon><c:Icon Glyph="report" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
+                    </MenuItem>
+                    <Separator />
                     <MenuItem Header="Details" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).ShowDetailsCommand}" CommandParameter="{Binding}">
                       <MenuItem.Icon><c:Icon Glyph="info" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
                     </MenuItem>
                   </ContextMenu>
                 </Grid.ContextMenu>
-                <!-- ⚠ before the title: the last load failed for a reason of the song's own (LoadFailureService). -->
-                <Grid Grid.Column="0" ColumnDefinitions="Auto,*">
+                <!-- Before the title: ⚠ the last load failed for a reason of the song's own (LoadFailureService); the DJ's
+                     marks (SongMarksService): broken (tooltip: the note) and favourite. -->
+                <Grid Grid.Column="0" ColumnDefinitions="Auto,Auto,Auto,*">
                   <c:Icon Glyph="warning" FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushError}" VerticalAlignment="Center" Margin="0,0,6,0"
                           IsVisible="{Binding HasFailure}" ToolTip.Tip="{Binding FailureTip}" Background="Transparent" />
-                  <TextBlock Grid.Column="1" Text="{Binding Title}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                  <c:Icon Grid.Column="1" Glyph="report" FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushError}" VerticalAlignment="Center" Margin="0,0,6,0"
+                          IsVisible="{Binding IsBroken}" ToolTip.Tip="{Binding BrokenTip}" Background="Transparent" />
+                  <c:Icon Grid.Column="2" Glyph="favorite" FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushFavourite}" VerticalAlignment="Center" Margin="0,0,6,0"
+                          IsVisible="{Binding IsFavourite}" ToolTip.Tip="Favourite" Background="Transparent" />
+                  <TextBlock Grid.Column="3" Text="{Binding Title}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                 </Grid>
                 <TextBlock Grid.Column="1" Text="{Binding Artist}" Classes="muted" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,8,0"
                            IsVisible="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).Table.ShowArtist}" />
@@ -286,6 +299,14 @@
                       </MultiBinding>
                     </ToolTip.Tip>
                         <MenuItem.Icon><c:Icon Glyph="play_circle" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
+                      </MenuItem>
+                      <Separator />
+                      <MenuItem Header="{Binding FavouriteMenuText}" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).ToggleFavouriteCommand}" CommandParameter="{Binding}">
+                        <MenuItem.Icon><c:Icon Glyph="favorite" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
+                      </MenuItem>
+                      <MenuItem Header="{Binding BrokenMenuText}" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).ToggleBrokenCommand}" CommandParameter="{Binding}"
+                                ToolTip.Tip="Bad notes or timing: still playable, but never offered on the songbook. Add a note in Details.">
+                        <MenuItem.Icon><c:Icon Glyph="report" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
                       </MenuItem>
                       <Separator />
                       <MenuItem Header="Details" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).ShowDetailsCommand}" CommandParameter="{Binding}">

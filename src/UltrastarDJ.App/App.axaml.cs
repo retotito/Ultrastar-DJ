@@ -36,6 +36,8 @@ public sealed partial class App : Application
 
         AppPaths paths = new();
         ConfigureSerilog(paths);
+        // A restore picked in Settings → Backup: into place before anything reads its settings.
+        int restored = SettingsBackup.ApplyPending(paths.Settings);
 
         _services = BuildServices(paths);
         CatchUnexpectedErrors(_services);
@@ -60,6 +62,12 @@ public sealed partial class App : Application
 
         _services.GetRequiredService<ILogger<App>>().LogInformation(
             "Ultrastar DJ {Version} started", typeof(App).Assembly.GetName().Version?.ToString(3));
+        if (restored > 0)
+        {
+            _services.GetRequiredService<ILogger<App>>().LogInformation("Backup restored: {Count} settings files", restored);
+            _services.GetRequiredService<NotificationService>().Success("Backup restored",
+                "Settings and song marks are back. On a new computer: rescan the song folders and log in to USDB.");
+        }
 
         base.OnFrameworkInitializationCompleted();
     }
@@ -131,6 +139,7 @@ public sealed partial class App : Application
         services.AddSingleton<UsdbService>();
         services.AddSingleton<SongResolver>();
         services.AddSingleton<LoadFailureService>();
+        services.AddSingleton<SongMarksService>();
         services.AddSingleton<SongbookService>();
         services.AddSingleton<OutputsService>();
         services.AddSingleton<PlaybackService>();

@@ -31,6 +31,16 @@ public sealed record SongQuery
     public IReadOnlySet<string>? SourceIds { get; init; }
     /// <summary>Exact <see cref="Song.Stars"/>; songs without stars (local) are dropped. <c>null</c> = no rating filter.</summary>
     public int? Stars { get; init; }
+    /// <summary>The rating filter's "Favourites": only songs in <see cref="FavouriteIds"/>.</summary>
+    public bool FavouritesOnly { get; init; }
+    /// <summary>The DJ's favourites (song ids) — filtered on with <see cref="FavouritesOnly"/>, counted in the facets.</summary>
+    public IReadOnlySet<string> FavouriteIds { get; init; } = new HashSet<string>();
+    /// <summary>The rating filter's "Broken" (shown while broken songs are): only songs in <see cref="BrokenIds"/>.</summary>
+    public bool BrokenOnly { get; init; }
+    /// <summary>Songs the DJ marked broken — filtered on with <see cref="BrokenOnly"/>, counted in the facets.</summary>
+    public IReadOnlySet<string> BrokenIds { get; init; } = new HashSet<string>();
+    /// <summary>Songs left out everywhere, filters and counts included (broken songs while they are not shown).</summary>
+    public IReadOnlySet<string>? Hidden { get; init; }
     public SongSort SortBy { get; init; } = SongSort.Artist;
     public bool Descending { get; init; }
 
@@ -43,14 +53,17 @@ public sealed record SongQuery
 
     public bool MatchesLanguage(Song s) => Language is null || ValueList.Contains(s.Language, Language, ValueList.LanguageSeparators);
     public bool MatchesGenre(Song s) => Genre is null || ValueList.Contains(s.Genre, Genre, ValueList.GenreSeparators);
-    public bool MatchesStars(Song s) => Stars is not { } stars || s.Stars == stars;
+    public bool MatchesStars(Song s) => FavouritesOnly ? FavouriteIds.Contains(s.Id)
+        : BrokenOnly ? BrokenIds.Contains(s.Id)
+        : Stars is not { } stars || s.Stars == stars;
+    public bool IsHidden(Song s) => Hidden is not null && Hidden.Contains(s.Id);
     public bool MatchesSource(Song s) => SourceIds is null || SourceIds.Contains(s.SourceId);
 
     /// <param name="songs">The whole library.</param>
     /// <param name="sourceLabel">Display name of a source id; sorting by source orders by this, not by the id.</param>
     public IEnumerable<Song> Apply(IEnumerable<Song> songs, Func<string, string> sourceLabel)
     {
-        IEnumerable<Song> filtered = songs.Where(s => MatchesSearch(s) && MatchesLanguage(s) && MatchesGenre(s) && MatchesStars(s) && MatchesSource(s));
+        IEnumerable<Song> filtered = songs.Where(s => !IsHidden(s) && MatchesSearch(s) && MatchesLanguage(s) && MatchesGenre(s) && MatchesStars(s) && MatchesSource(s));
 
         IOrderedEnumerable<Song> sorted = SortBy switch
         {

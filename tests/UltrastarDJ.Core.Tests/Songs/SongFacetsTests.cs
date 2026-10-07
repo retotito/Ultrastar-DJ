@@ -65,4 +65,28 @@ public class SongFacetsTests
             Assert.Equal(count, (q with { Language = language }).Apply(Songs, id => id).Count());
         }
     }
+
+    [Fact]
+    public void Favourites_AreCountedUnderTheOtherFilters()
+    {
+        SongQuery q = new() { Language = "English", FavouriteIds = new HashSet<string> { "a::One", "a::Two", "usdb::Four" } };
+        SongFacets f = SongFacets.Of(Songs, q);
+
+        Assert.Equal(2, f.Favourites);   // One and Four are English; Two is French only
+    }
+
+    [Fact]
+    public void HiddenSongs_AreNotCounted()
+    {
+        SongFacets f = SongFacets.Of(Songs, new SongQuery { Hidden = new HashSet<string> { "a::One" } });
+        Assert.Equal(1, f.Languages["English"]);
+        Assert.Equal(3, f.LanguageTotal);
+    }
+
+    [Fact]
+    public void Broken_AreCountedUnderTheOtherFilters()
+    {
+        SongQuery q = new() { Language = "French", BrokenIds = new HashSet<string> { "a::One", "a::Two", "b::Three" } };
+        Assert.Equal(2, SongFacets.Of(Songs, q).Broken);   // One and Two list French
+    }
 }

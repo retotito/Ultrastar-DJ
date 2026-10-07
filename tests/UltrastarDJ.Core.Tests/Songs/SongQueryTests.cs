@@ -116,4 +116,27 @@ public class SongQueryTests
         Assert.Equal(["Lovefool", "Roxanne", "99 Luftballons", "Beautiful Day"], Titles(new SongQuery { SortBy = SongSort.Rating }));
         Assert.Equal(["Beautiful Day", "99 Luftballons", "Lovefool", "Roxanne"], Titles(new SongQuery { SortBy = SongSort.Rating, Descending = true }));
     }
+
+    [Fact]
+    public void Apply_FavouritesOnly_KeepsTheFavourites()
+    {
+        SongQuery q = new() { FavouritesOnly = true, FavouriteIds = new HashSet<string> { "a::Roxanne", "usdb::99 Luftballons" } };
+        Assert.Equal(["99 Luftballons", "Roxanne"], Titles(q));
+    }
+
+    [Fact]
+    public void Apply_Hidden_LeavesThoseOut()
+    {
+        // Broken songs with "Show broken songs" off.
+        SongQuery q = new() { Hidden = new HashSet<string> { "b::Lovefool" } };
+        Assert.DoesNotContain("Lovefool", Titles(q));
+        Assert.Equal(3, Titles(q).Count);
+    }
+
+    [Fact]
+    public void Apply_BrokenOnly_KeepsTheBrokenSongs()
+    {
+        SongQuery q = new() { BrokenOnly = true, BrokenIds = new HashSet<string> { "b::Lovefool" } };
+        Assert.Equal(["Lovefool"], Titles(q));
+    }
 }

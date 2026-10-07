@@ -118,7 +118,7 @@
   </Style>
   <!-- Icon + text side by side: both centred on the button's middle (a TextBlock alone would sit at the top of the
        taller icon line, a few px too high). -->
-  <Style Selector="Button StackPanel[Orientation=Horizontal] > TextBlock">
+  <Style Selector=":is(Button) StackPanel[Orientation=Horizontal] > TextBlock">
     <Setter Property="VerticalAlignment" Value="Center" />
   </Style>
 

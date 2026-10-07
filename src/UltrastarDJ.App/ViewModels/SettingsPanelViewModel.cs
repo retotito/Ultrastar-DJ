@@ -1,4 +1,8 @@
 using System.ComponentModel;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using UltrastarDJ.App.Game;
@@ -6,6 +10,7 @@ using UltrastarDJ.App.Services;
 using UltrastarDJ.Core.Game;
 using UltrastarDJ.Core.Playback;
 using UltrastarDJ.Infrastructure;
+using UltrastarDJ.Infrastructure.Settings;
 
 namespace UltrastarDJ.App.ViewModels;
 
@@ -62,6 +67,12 @@ public sealed partial class SettingsPanelViewModel : ViewModelBase
 
     [ObservableProperty] private string _crashReportsText = "";
     [ObservableProperty] private string _filesStatus = "";
+    [ObservableProperty] private string _backupStatus = "";
+    /// <summary>A restore is staged: it takes effect when the app starts again.</summary>
+    [ObservableProperty] private bool _restorePending;
+
+    /// <summary>The file pickers need the owning window (set by the view).</summary>
+    public TopLevel? Owner { get; set; }
 
     public SettingsPanelViewModel(AppSettingsService settings, AppPaths paths, PlaybackService playback, YtDlpService ytDlp)
     {
@@ -136,6 +147,78 @@ public sealed partial class SettingsPanelViewModel : ViewModelBase
             FileReveal.Reveal(report);
         }
     });
+
+    [RelayCommand]
+    private async Task BackUpAsync()
+    {
+        if (Owner is null)
+        {
+            return;
+        }
+
+        IStorageFile? file = await Owner.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Back up Ultrastar DJ",
+            SuggestedFileName = $"UltrastarDJ-backup-{DateTime.Now:yyyy-MM-dd}.zip",
+            DefaultExtension = "zip",
+            FileTypeChoices = [new FilePickerFileType("Zip") { Patterns = ["*.zip"] }],
+        });
+        if (file?.TryGetLocalPath() is not { } path)
+        {
+            return;
+        }
+
+        try
+        {
+            int n = SettingsBackup.Create(_paths.Settings, path);
+            BackupStatus = $"Saved {n} settings files to {Path.GetFileName(path)}.";
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            BackupStatus = $"Could not save the backup: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task RestoreAsync()
+    {
+        if (Owner is null)
+        {
+            return;
+        }
+
+        IReadOnlyList<IStorageFile> files = await Owner.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Restore a backup",
+            AllowMultiple = false,
+            FileTypeFilter = [new FilePickerFileType("Ultrastar DJ backup") { Patterns = ["*.zip"] }],
+        });
+        if (files.Count == 0 || files[0].TryGetLocalPath() is not { } path)
+        {
+            return;
+        }
+
+        try
+        {
+            SettingsBackup.Stage(path, _paths.Settings);
+            RestorePending = true;
+            BackupStatus = "Restored when Ultrastar DJ starts again — quit now and start it again.";
+        }
+        catch (InvalidDataException ex)
+        {
+            BackupStatus = ex.Message;
+        }
+    }
+
+    /// <summary>After a restore: quit, so the next start applies it.</summary>
+    [RelayCommand]
+    private static void Quit()
+    {
+        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            desktop.Shutdown();
+        }
+    }
 
     [RelayCommand]
     private void ShowDataFolder() => Run(() => FileReveal.OpenFolder(_paths.Data));

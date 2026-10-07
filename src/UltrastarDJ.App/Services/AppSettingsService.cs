@@ -45,6 +45,10 @@ public sealed class AppSettingsService
         }
     }
 
+    /// <summary>Layout → Show broken songs: off leaves songs marked broken out of the library (filters and counts too).</summary>
+    public bool ShowBrokenSongs => _doc.ShowBrokenSongs;
+    public void SetShowBrokenSongs(bool show) => Update(_doc with { ShowBrokenSongs = show });
+
     public void SetLightTheme(bool light) => Update(_doc with { LightTheme = light });
     public void SetShowTooltips(bool show) => Update(_doc with { HideTooltips = !show });
     public void SetNoteBarStyle(NoteBarStyle style) => Update(_doc with { NoteBarStyle = style });
@@ -87,6 +91,7 @@ public sealed class AppSettingsService
         public double? NowPlayingY { get; init; }
         /// <summary>Null = <see cref="LibraryColumns.DefaultVisible"/> (files written before the Layout panel).</summary>
         public IReadOnlyList<LibraryColumn>? VisibleColumns { get; init; }
+        public bool ShowBrokenSongs { get; init; }
 
         /// <summary>A first start is light; a saved choice (light or dark) is kept.</summary>
         public static AppSettingsDocument Default() => new(true, Difficulty.Medium, 0);

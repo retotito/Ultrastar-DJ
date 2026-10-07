@@ -27,6 +27,9 @@ public sealed class LoadFailureService
     /// <summary>A mark was added or removed: the library redraws its rows.</summary>
     public event Action? Changed;
 
+    /// <summary>Songs marked as not loadable (a copy — the songbook keeps it for its server threads).</summary>
+    public IReadOnlyCollection<string> SongIds => [.. _failures.Keys];
+
     /// <summary>The mark for this version of the song, or null. A mark for an older version is dropped here.</summary>
     public LoadFailure? For(Song song)
     {
@@ -43,6 +46,8 @@ public sealed class LoadFailureService
         _log.LogInformation("{Song}: changed since it failed to load — mark removed", song.Id);
         _failures.Remove(song.Id);
         _store.Remove(song.Id);
+        // The songbook offers it again (listeners post their update: this runs inside the library's refresh).
+        Changed?.Invoke();
         return null;
     }
 

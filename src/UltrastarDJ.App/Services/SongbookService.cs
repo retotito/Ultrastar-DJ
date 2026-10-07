@@ -37,8 +37,13 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
     private SongbookDocument _doc;
 
     public SongbookService(LibraryService library, PlaybackService playback, Playlist playlist, NotificationService notifications,
-        ISettingsStore settings, UsdbService usdb, SidecarLocator sidecars, ILoggerFactory loggers)
+        ISettingsStore settings, UsdbService usdb, SidecarLocator sidecars, ILoggerFactory loggers, SongMarksService marks, LoadFailureService failures)
     {
+        _marks = marks;
+        _failures = failures;
+        marks.Changed += UpdateNotOffered;
+        failures.Changed += () => Dispatcher.UIThread.Post(UpdateNotOffered);
+        UpdateNotOffered();
         _sidecars = sidecars;
         _library = library;
         _usdb = usdb;
@@ -337,14 +342,31 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
 
     // ── Catalog for the phones (they search and filter it themselves) ──
     private int _libraryVersion = 1;
+    private readonly SongMarksService _marks;
+    private readonly LoadFailureService _failures;
+    // Broken (DJ's mark) or not loadable: never offered to guests. Swapped whole on the UI thread, read by the server.
+    private volatile IReadOnlySet<string> _notOffered = new HashSet<string>();
 
     public int LibraryVersion => Volatile.Read(ref _libraryVersion);
 
     // Library changed, or a source came or went: phones fetch the catalog again on their next status check.
     private void OnLibraryChanged() => Interlocked.Increment(ref _libraryVersion);
 
-    /// <summary>Only what can be played now — no songs from unplugged drives, no USDB while offline.</summary>
-    public SongbookCatalog Catalog() => SongbookCatalog.Build(_library.Songs.Where(s => _library.IsAvailable(s.SourceId)));
+    /// <summary>
+    /// Only what can be played now — no songs from unplugged drives, no USDB while offline — and plays well: no songs
+    /// marked broken or that could not be loaded.
+    /// </summary>
+    public SongbookCatalog Catalog() => SongbookCatalog.Build(_library.Songs.Where(s => _library.IsAvailable(s.SourceId)), _notOffered);
+
+    private void UpdateNotOffered()
+    {
+        HashSet<string> ids = [.. _marks.BrokenIds, .. _failures.SongIds];
+        if (!ids.SetEquals(_notOffered))
+        {
+            _notOffered = ids;
+            OnLibraryChanged();   // phones fetch the catalog again
+        }
+    }
 
     public async Task<string?> YouTubeIdAsync(string songId, CancellationToken ct)
     {
@@ -429,7 +451,7 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
     public Task<SongbookRequestResult> RequestAsync(string songId, string guestName, string clientId) => Dispatcher.UIThread.InvokeAsync(() =>
     {
         Song? song = _library.Songs.FirstOrDefault(s => s.Id == songId);
-        if (song is null || !_library.IsAvailable(song.SourceId))
+        if (song is null || !_library.IsAvailable(song.SourceId) || _notOffered.Contains(song.Id))
         {
             return new SongbookRequestResult(false, true, null);
         }

@@ -42,4 +42,16 @@ public class SongbookCatalogTests
         Assert.Equal((4, true, (string?)null), (usdb.Stars, usdb.Usdb, usdb.YouTubeId));
         Assert.Equal((0, false, "dQw4w9WgXcQ"), (local.Stars, local.Usdb, local.YouTubeId));
     }
+
+    [Fact]
+    public void NotOffered_SongsAreLeftOut_AndTheirLanguagesWithThem()
+    {
+        // Broken songs and songs that could not be loaded: guests must not request what will not play well.
+        SongbookCatalog c = SongbookCatalog.Build(
+            [S("Good", "A", "English", "Pop"), S("Broken", "B", "French", "Chanson")],
+            notOffered: new HashSet<string> { "x::Broken" });
+
+        Assert.Equal(["Good"], c.Songs.Select(e => e.Title));
+        Assert.Equal(["English"], c.Languages);
+    }
 }

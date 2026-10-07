@@ -208,6 +208,8 @@
   <SolidColorBrush x:Key="BrushTableRowAlt" Color="{DynamicResource ColorTableRowAlt}" />
   <SolidColorBrush x:Key="BrushRequest" Color="{DynamicResource ColorRequest}" />
   <!-- Mic gate on a MeterFader: shade over the range that counts as silence, and its drag handle -->
+  <!-- Favourite songs: the heart in the library and the song details -->
+  <SolidColorBrush x:Key="BrushFavourite" Color="#E91E63" />
   <SolidColorBrush x:Key="BrushGateZone" Color="{StaticResource ColorMeterClip}" Opacity="0.3" />
   <SolidColorBrush x:Key="BrushGateHandle" Color="{StaticResource ColorMeterClip}" />
   <SolidColorBrush x:Key="BrushGo" Color="{DynamicResource ColorGo}" />

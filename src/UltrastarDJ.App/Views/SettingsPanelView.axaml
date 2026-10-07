@@ -105,6 +105,36 @@
       </StackPanel>
     </Border>
 
+    <Border Classes="card">
+      <StackPanel Spacing="{StaticResource Space2}">
+        <TextBlock Text="Backup" />
+        <WrapPanel ItemSpacing="8" LineSpacing="8">
+          <Button Classes="tonal" Command="{Binding BackUpCommand}" ToolTip.Tip="Save your settings and song marks as one zip — on a stick, a drive, a cloud folder">
+            <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
+              <c:Icon Glyph="save" FontSize="{StaticResource IconMd}" />
+              <TextBlock Text="Back up…" />
+            </StackPanel>
+          </Button>
+          <Button Classes="tonal" Command="{Binding RestoreCommand}" ToolTip.Tip="Pick a backup zip: it replaces the current settings and marks at the next start">
+            <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
+              <c:Icon Glyph="settings_backup_restore" FontSize="{StaticResource IconMd}" />
+              <TextBlock Text="Restore…" />
+            </StackPanel>
+          </Button>
+          <Button Classes="tonal stop" Command="{Binding QuitCommand}" IsVisible="{Binding RestorePending}">
+            <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
+              <c:Icon Glyph="power_settings_new" FontSize="{StaticResource IconMd}" />
+              <TextBlock Text="Quit now" />
+            </StackPanel>
+          </Button>
+        </WrapPanel>
+        <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap"
+                   Text="Settings, players and mics, outputs and latency, song sources, songbook, and your song marks (favourites, broken). Not included: the song list (a scan rebuilds it) and your USDB password (log in again after a restore)." />
+        <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap" Text="{Binding BackupStatus}"
+                   IsVisible="{Binding BackupStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      </StackPanel>
+    </Border>
+
     <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="{Binding Version, StringFormat='Ultrastar DJ v{0}'}" HorizontalAlignment="Center" />
   </StackPanel>
 </UserControl>

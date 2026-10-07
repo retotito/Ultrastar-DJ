@@ -22,5 +22,16 @@
                    Text="Title is always shown. When the columns need more room than the window, the table scrolls sideways." />
       </StackPanel>
     </Border>
+
+    <Border Classes="card">
+      <Grid ColumnDefinitions="*,Auto">
+        <StackPanel>
+          <TextBlock Text="Show broken songs" />
+          <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap"
+                     Text="Songs you marked as broken (song menu or Details). Off: left out of the library and its filters. Guests never see them." />
+        </StackPanel>
+        <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowBrokenSongs}" OnContent="" OffContent="" VerticalAlignment="Center" />
+      </Grid>
+    </Border>
   </StackPanel>
 </UserControl>

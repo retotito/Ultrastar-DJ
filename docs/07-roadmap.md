@@ -461,6 +461,26 @@ Drawn directly (meter rate, allocation-free), not a templated Slider.
 
 ---
 
+## Sprint 17 — Song marks & backup  *(done)*
+
+- [x] Marks per song: **Favourite** and **Broken** (with an optional note), stored in `settings/marks.json`; local songs
+      also remember artist + title, so a mark finds its song again after a folder moved (the id contains the path)
+- [x] Set them in the song details (next to the source chip) and in the song menu (right-click / ⋮)
+- [x] Library: ♥ and ⚠ in the row (tooltip: the note); rating filter gets "Favourites" (with its count);
+      Layout → "Show broken songs" (default off)
+- [x] Songbook: broken songs and songs that could not be loaded are not offered to guests
+- [x] Backup: Settings → Backup → "Back up…" saves one zip (settings, players, outputs, sources, songbook, marks) anywhere;
+      "Restore…" picks a zip — staged, applied at the next start before anything reads its settings ("Quit now" button).
+      `usdb.json` is left out: it holds the USDB password in plain text (`Infrastructure.Settings.SettingsBackup`, tested:
+      only plain *.json names, never outside the settings folder)
+- [x] Verified live: marks, filters, songbook (backup not yet)
+- [x] Game Player: ♥ and broken icon buttons right of title / artist for the loaded song
+- [x] Rating filter "⚠ Broken" (with its count) while Layout → Show broken songs is on
+- [x] Fix: text in toggle buttons with an icon (Details: Favourite / Broken) sat high — the centring rule now covers every button kind
+- [x] Verified live: Game Player marks, Broken filter, backup (restore after deleting marks.json)
+
+---
+
 ## Later / ideas
 
 - Flaky test: `SqliteLoadFailureStoreTests.Save_RoundTrips_UpdatesAndRemoves` failed once in a full `dotnet test` run, passes alone —

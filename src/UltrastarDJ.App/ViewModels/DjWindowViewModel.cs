@@ -102,7 +102,7 @@ public sealed partial class DjWindowViewModel : ViewModelBase
         Library = library;
         library.DetailsRequested += row => SongDetails = new SongDetailsViewModel(row, library,
             services.GetRequiredService<UsdbService>(), services.GetRequiredService<ThumbnailService>(),
-            services.GetRequiredService<ConnectivityService>(), () => SongDetails = null);
+            services.GetRequiredService<ConnectivityService>(), services.GetRequiredService<SongMarksService>(), () => SongDetails = null);
         NowPlaying = nowPlaying;
         Preview = preview;
         Queue = queue;

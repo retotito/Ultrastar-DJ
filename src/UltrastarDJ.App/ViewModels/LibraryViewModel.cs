@@ -9,8 +9,14 @@ using UltrastarDJ.Core.Songs;
 namespace UltrastarDJ.App.ViewModels;
 
 /// <summary>A library row: the song plus what the table shows about its source.</summary>
-public sealed record LibraryRow(Song Song, string Source, bool IsAvailable, LoadFailure? Failure = null)
+public sealed record LibraryRow(Song Song, string Source, bool IsAvailable, LoadFailure? Failure = null, SongMark? Mark = null)
 {
+    public bool IsFavourite => Mark?.Favourite == true;
+    /// <summary>Marked broken by the DJ (bad notes / timing) — still playable, never offered on the songbook.</summary>
+    public bool IsBroken => Mark?.Broken == true;
+    public string? BrokenTip => IsBroken ? $"Marked as broken{(Mark!.Note is { } n ? $": {n}" : "")}" : null;
+    public string FavouriteMenuText => IsFavourite ? "Remove from favourites" : "Favourite";
+    public string BrokenMenuText => IsBroken ? "Not broken" : "Mark as broken";
     /// <summary>The last load failed for a reason of the song's own (<see cref="LoadFailureService"/>).</summary>
     public bool HasFailure => Failure is not null;
     public string? FailureTip => Failure is { } f
@@ -38,8 +44,8 @@ public sealed record LibraryRow(Song Song, string Source, bool IsAvailable, Load
     public string Stars => Song.Stars is { } n ? new string('★', n) : "—";
 }
 
-/// <summary>An entry of the rating filter: exactly <see cref="Stars"/> stars, or no filter when null.</summary>
-public sealed record RatingOption(int? Stars, string Label)
+/// <summary>An entry of the rating filter: exactly <see cref="Stars"/> stars, the DJ's favourites or broken songs, or no filter.</summary>
+public sealed record RatingOption(int? Stars, string Label, bool Favourites = false, bool Broken = false)
 {
     public override string ToString() => Label;
 }
@@ -70,6 +76,9 @@ public sealed partial class LibraryViewModel : ViewModelBase
 
     private readonly LibraryService _library;
     private readonly LoadFailureService _failures;
+    private readonly SongMarksService _marks;
+    private readonly AppSettingsService _settings;
+    private bool _showBroken;
     private readonly PreviewViewModel _preview;
     private readonly QueueViewModel _queue;
     private readonly NowPlayingViewModel _nowPlaying;
@@ -89,10 +98,16 @@ public sealed partial class LibraryViewModel : ViewModelBase
     [ObservableProperty] private SongFacets? _facets;
 
     public LibraryViewModel(LibraryService library, PreviewViewModel preview, QueueViewModel queue, NowPlayingViewModel nowPlaying, AppSettingsService settings,
-        LoadFailureService failures)
+        LoadFailureService failures, SongMarksService marks)
     {
         _failures = failures;
+        _marks = marks;
+        _settings = settings;
         failures.Changed += () => Dispatcher.UIThread.Post(Refresh);
+        marks.Changed += Refresh;
+        // Layout → Show broken songs (the other app settings do not touch the rows; Refresh is cheap enough anyway).
+        settings.Changed += OnSettingsChanged;
+        _showBroken = settings.ShowBrokenSongs;
         Table = new LibraryTableLayout(settings);
         _library = library;
         _preview = preview;
@@ -113,7 +128,7 @@ public sealed partial class LibraryViewModel : ViewModelBase
     public ObservableCollection<string> Languages { get; } = [AnyLanguage];
     public ObservableCollection<string> Genres { get; } = [AnyGenre];
     /// <summary>Any of rating/language/genre/source set (search has its own clear button). Shows "Clear".</summary>
-    public bool HasActiveFilters => Rating?.Stars is not null || Language != AnyLanguage || Genre != AnyGenre
+    public bool HasActiveFilters => Rating?.Stars is not null || Rating?.Favourites == true || Rating?.Broken == true || Language != AnyLanguage || Genre != AnyGenre
         || Source?.Key is not (null or SourceOption.AllKey);
 
     [RelayCommand]
@@ -125,7 +140,27 @@ public sealed partial class LibraryViewModel : ViewModelBase
         Source = AllSources;
     }
 
-    public IReadOnlyList<RatingOption> Ratings { get; } = [AnyRating, new(1, "★"), new(2, "★★"), new(3, "★★★"), new(4, "★★★★")];
+    private static readonly RatingOption[] BaseRatings = [AnyRating, new(null, "♥ Favourites", Favourites: true), new(1, "★"), new(2, "★★"), new(3, "★★★"), new(4, "★★★★")];
+    private static readonly RatingOption BrokenRating = new(null, "⚠ Broken", Broken: true);
+
+    /// <summary>"⚠ Broken" only while broken songs are shown (Layout): hidden songs cannot be filtered on.</summary>
+    public IReadOnlyList<RatingOption> Ratings => _showBroken ? [.. BaseRatings, BrokenRating] : BaseRatings;
+
+    private void OnSettingsChanged()
+    {
+        if (_showBroken == _settings.ShowBrokenSongs)
+        {
+            return;
+        }
+
+        // Swapping the list makes the ComboBox drop its selection: keep it, unless it was "Broken" and that is gone.
+        _showBroken = _settings.ShowBrokenSongs;
+        RatingOption keep = Rating is { Broken: true } && !_showBroken ? AnyRating : Rating ?? AnyRating;
+        OnPropertyChanged(nameof(Ratings));
+        Rating = keep;
+        OnPropertyChanged(nameof(Rating));
+        Refresh();
+    }
     public ObservableCollection<SourceOption> Sources { get; } = [AllSources];
 
     public string SortIndicator(SongSort column) => Sort == column ? (Descending ? " ▼" : " ▲") : "";
@@ -188,6 +223,24 @@ public sealed partial class LibraryViewModel : ViewModelBase
         }
     }
 
+    [RelayCommand]
+    private void ToggleFavourite(LibraryRow? row)
+    {
+        if (row is not null)
+        {
+            _marks.SetFavourite(row.Song, !row.IsFavourite);
+        }
+    }
+
+    [RelayCommand]
+    private void ToggleBroken(LibraryRow? row)
+    {
+        if (row is not null)
+        {
+            _marks.SetBroken(row.Song, !row.IsBroken);
+        }
+    }
+
     [RelayCommand(CanExecute = nameof(IsPlayable))]
     private void AddToQueue(LibraryRow? row)
     {
@@ -244,13 +297,18 @@ public sealed partial class LibraryViewModel : ViewModelBase
             Language = Language == AnyLanguage ? null : Language,
             Genre = Genre == AnyGenre ? null : Genre,
             Stars = Rating?.Stars,
+            FavouritesOnly = Rating?.Favourites == true,
+            FavouriteIds = _marks.FavouriteIds,
+            BrokenOnly = Rating?.Broken == true,
+            BrokenIds = _marks.BrokenIds,
+            Hidden = _showBroken ? null : _marks.BrokenIds,
             SourceIds = SelectedSourceIds(),
             SortBy = Sort,
             Descending = Descending,
         };
         Facets = SongFacets.Of(all, query);
         Rows = query.Apply(all, _library.SourceLabel)
-            .Select(s => new LibraryRow(s, _library.SourceLabel(s.SourceId), _library.IsAvailable(s.SourceId), _failures.For(s)))
+            .Select(s => new LibraryRow(s, _library.SourceLabel(s.SourceId), _library.IsAvailable(s.SourceId), _failures.For(s), _marks.For(s)))
             .ToList();
         ShownCount = Rows.Count;
         OnPropertyChanged(nameof(HasActiveFilters));

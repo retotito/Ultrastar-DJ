@@ -20,9 +20,11 @@ public sealed record SongbookEntry(string Id, string Title, string Artist, int Y
 /// </summary>
 public sealed record SongbookCatalog(IReadOnlyList<string> Languages, IReadOnlyList<string> Genres, IReadOnlyList<SongbookEntry> Songs)
 {
-    public static SongbookCatalog Build(IEnumerable<Song> songs)
+    /// <param name="songs">What can be played now.</param>
+    /// <param name="notOffered">Song ids guests do not get: marked broken, or could not be loaded.</param>
+    public static SongbookCatalog Build(IEnumerable<Song> songs, IReadOnlySet<string>? notOffered = null)
     {
-        List<Song> sorted = [.. songs.OrderBy(s => s.Artist, StringComparer.OrdinalIgnoreCase).ThenBy(s => s.Title, StringComparer.OrdinalIgnoreCase)];
+        List<Song> sorted = [.. songs.Where(s => notOffered is null || !notOffered.Contains(s.Id)).OrderBy(s => s.Artist, StringComparer.OrdinalIgnoreCase).ThenBy(s => s.Title, StringComparer.OrdinalIgnoreCase)];
         IReadOnlyList<string> languages = ValueList.Distinct(sorted.Select(s => s.Language), ValueList.LanguageSeparators);
         IReadOnlyList<string> genres = ValueList.Distinct(sorted.Select(s => s.Genre), ValueList.GenreSeparators);
         Dictionary<string, int> languageIndex = Index(languages);

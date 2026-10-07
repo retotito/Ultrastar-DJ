@@ -30,15 +30,34 @@
         <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center" Spacing="{StaticResource Space1}">
           <SelectableTextBlock Text="{Binding Title}" FontSize="{StaticResource Text2Xl}" FontWeight="{StaticResource WeightBold}" TextWrapping="Wrap" />
           <SelectableTextBlock Text="{Binding Artist}" Classes="muted" FontSize="{StaticResource TextLg}" TextWrapping="Wrap" />
-          <Border Background="{DynamicResource BrushSecondaryContainer}" CornerRadius="{StaticResource RadiusFull}" Padding="8,2"
-                  HorizontalAlignment="Left" Margin="0,4,0,0" Classes.usdb="{Binding IsUsdb}">
-            <Border.Styles>
-              <Style Selector="Border.usdb">
-                <Setter Property="Background" Value="{DynamicResource BrushUsdb}" />
-              </Style>
-            </Border.Styles>
-            <TextBlock Text="{Binding Source}" FontSize="{StaticResource TextXs}" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
-          </Border>
+          <!-- Source, then the DJ's marks: favourite, broken (with a note below). -->
+          <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space2}" Margin="0,4,0,0">
+            <Border Background="{DynamicResource BrushSecondaryContainer}" CornerRadius="{StaticResource RadiusFull}" Padding="8,2"
+                    VerticalAlignment="Center" Classes.usdb="{Binding IsUsdb}">
+              <Border.Styles>
+                <Style Selector="Border.usdb">
+                  <Setter Property="Background" Value="{DynamicResource BrushUsdb}" />
+                </Style>
+              </Border.Styles>
+              <TextBlock Text="{Binding Source}" FontSize="{StaticResource TextXs}" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
+            </Border>
+            <ToggleButton IsChecked="{Binding IsFavourite}" Padding="10,2" CornerRadius="{StaticResource RadiusFull}" VerticalAlignment="Center"
+                          ToolTip.Tip="Favourite — find it with the rating filter's ♥ Favourites">
+              <StackPanel Orientation="Horizontal" Spacing="4">
+                <c:Icon Glyph="favorite" FontSize="{StaticResource IconSm}" Foreground="{DynamicResource BrushFavourite}" />
+                <TextBlock Text="Favourite" FontSize="{StaticResource TextXs}" />
+              </StackPanel>
+            </ToggleButton>
+            <ToggleButton IsChecked="{Binding IsBroken}" Padding="10,2" CornerRadius="{StaticResource RadiusFull}" VerticalAlignment="Center"
+                          ToolTip.Tip="Broken (bad notes or timing): still playable, but never offered on the songbook; hidden in the library unless Layout → Show broken songs">
+              <StackPanel Orientation="Horizontal" Spacing="4">
+                <c:Icon Glyph="report" FontSize="{StaticResource IconSm}" Foreground="{DynamicResource BrushError}" />
+                <TextBlock Text="Broken" FontSize="{StaticResource TextXs}" />
+              </StackPanel>
+            </ToggleButton>
+          </StackPanel>
+          <TextBox Text="{Binding Note}" IsVisible="{Binding ShowNote}" PlaceholderText="What is wrong? (e.g. lyrics 1 s late, pitch off in the chorus)"
+                   FontSize="{StaticResource TextSm}" Margin="0,4,0,0" MaxWidth="520" HorizontalAlignment="Left" />
         </StackPanel>
         <Button Grid.Column="2" Classes="sidebar" VerticalAlignment="Top" Command="{Binding CloseCommand}" ToolTip.Tip="Close (Esc)">
           <c:Icon Glyph="close" FontSize="{StaticResource IconLg}" />

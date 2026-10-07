@@ -58,8 +58,31 @@
           <c:Spinner IsVisible="{Binding Loading}" />
         </Panel>
       </Border>
-      <TextBlock Classes="title" Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
-      <TextBlock Classes="muted" Text="{Binding Artist}" TextTrimming="CharacterEllipsis" />
+      <!-- Title / artist, and the DJ's marks on the loaded song: in the game is where a bad song shows. -->
+      <Grid ColumnDefinitions="*,Auto">
+        <StackPanel>
+          <TextBlock Classes="title" Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
+          <TextBlock Classes="muted" Text="{Binding Artist}" TextTrimming="CharacterEllipsis" />
+        </StackPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" IsVisible="{Binding HasSong}">
+          <StackPanel.Styles>
+            <Style Selector="c|Icon.favourite">
+              <Setter Property="Foreground" Value="{DynamicResource BrushFavourite}" />
+            </Style>
+            <Style Selector="c|Icon.broken">
+              <Setter Property="Foreground" Value="{DynamicResource BrushError}" />
+            </Style>
+          </StackPanel.Styles>
+          <Button Classes="sidebar small" Width="32" Height="32" Command="{Binding ToggleFavouriteCommand}"
+                  ToolTip.Tip="{Binding IsFavourite, Converter={x:Static vm:BoolConverters.Text}, ConverterParameter='Remove from favourites|Favourite'}">
+            <c:Icon Glyph="favorite" FontSize="{StaticResource IconMd}" Classes.favourite="{Binding IsFavourite}" />
+          </Button>
+          <Button Classes="sidebar small" Width="32" Height="32" Command="{Binding ToggleBrokenCommand}"
+                  ToolTip.Tip="{Binding IsBroken, Converter={x:Static vm:BoolConverters.Text}, ConverterParameter='Not broken|Mark as broken (bad notes or timing) — never offered on the songbook; add a note in Details'}">
+            <c:Icon Glyph="report" FontSize="{StaticResource IconMd}" Classes.broken="{Binding IsBroken}" />
+          </Button>
+        </StackPanel>
+      </Grid>
       <!-- Requested on the songbook: who to call to the mic (same look as in the queue) -->
       <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,-4,0,0"
                   IsVisible="{Binding RequestedBy, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" ToolTip.Tip="Requested on the songbook">
