@@ -101,9 +101,18 @@
       <!-- Song and mic mix: faders with their meter as the track (as in the preview and Audio Input).
            Columns shared with the mic rows: icon + name, fader, %. All meters put yellow at 80 % and red at 90 %
            of their range, so they look alike although song and mic use different dB ranges. -->
-      <Grid ColumnDefinitions="84,*,44">
+      <!-- No display open: nothing can play, so the song fader is invisible and inert — but keeps its space,
+           so the card does not change height when a beamer opens. -->
+      <Grid ColumnDefinitions="104,*,44" Classes.unused="{Binding NoBeamerOpen}">
+        <Grid.Styles>
+          <Style Selector="Grid.unused">
+            <Setter Property="Opacity" Value="0" />
+            <Setter Property="IsHitTestVisible" Value="False" />
+            <Setter Property="IsEnabled" Value="False" />
+          </Style>
+        </Grid.Styles>
         <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-          <c:Icon Glyph="volume_up" FontSize="{StaticResource IconMd}" Width="28" />
+          <c:Icon Glyph="volume_up" FontSize="{StaticResource IconMd}" Width="28" TextAlignment="Center" />
           <TextBlock Classes="muted" FontSize="{StaticResource TextSm}" Text="Song" VerticalAlignment="Center" />
         </StackPanel>
         <c:MeterFader Grid.Column="1" Minimum="0" Maximum="1" Value="{Binding Gain}" Level="{Binding SongLevel}"
@@ -115,14 +124,14 @@
       <ItemsControl ItemsSource="{Binding MixRows}" IsVisible="{Binding HasMixRows}">
         <ItemsControl.ItemTemplate>
           <DataTemplate x:DataType="vm:MixRowViewModel">
-            <Grid ColumnDefinitions="84,*,44" Margin="0,2,0,0">
+            <Grid ColumnDefinitions="104,*,44" Margin="0,2,0,0">
               <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
                 <Button Classes="sidebar small" Command="{Binding ToggleMuteCommand}" ToolTip.Tip="Mute in the speakers">
                   <c:Icon Glyph="{Binding MuteGlyph}" FontSize="{StaticResource IconMd}"
                           Foreground="{Binding ColorKey, Converter={x:Static vm:PlayerConverters.BrushByKey}}" />
                 </Button>
                 <TextBlock Classes="muted" FontSize="{StaticResource TextSm}" Text="{Binding Name}" VerticalAlignment="Center"
-                           TextTrimming="CharacterEllipsis" MaxWidth="52" />
+                           TextTrimming="CharacterEllipsis" MaxWidth="72" />
               </StackPanel>
               <c:MeterFader Grid.Column="1" Minimum="0" Maximum="1" ResetValue="1" Value="{Binding MixGain}" Level="{Binding MixLevel}"
                             MinDb="-70" MaxDb="0" WarnDb="-14" ClipDb="-7" VerticalAlignment="Center" IsEnabled="{Binding !Muted}" ToolTip.Tip="Mix knob" />

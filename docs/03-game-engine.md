@@ -88,7 +88,7 @@ PortAudio input (device, channel L/R/mono)
 
 `MonitorMixer` opens one PortAudio **output** stream on the game output device (respecting channel offset)
 and sums each active player's gated mic × `mixGain` (0–1 = 0–100 %: mix only turns a mic down, boosting is the input gain's job; older
-settings above 1 read as 1; muted → 0, fader position kept). Starts when the
+settings above 1 read as 1; muted → 0, fader position kept — the mute is for the song only, the Audio Input mic test always plays the mic). Starts when the
 song starts, stops on `Score`/`Stop`. In the mic test it is on whenever at least one mic is tested, on the
 **MONITOR** output picked at the top of Audio Input (always shown; defaults to the game output).
 

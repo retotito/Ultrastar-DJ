@@ -98,14 +98,14 @@ public sealed class AudioInputService : IDisposable
         Mics.Stop();
     }
 
-    /// <summary>Routes the running mics to an output (test mode monitoring).</summary>
+    /// <summary>Routes the running mics to an output: the song's monitor, or the Audio Input test (where the Game Player's mute does not apply).</summary>
     public void StartMonitor(string outputDeviceId, int channelOffset = 0)
     {
         Monitor.Start(outputDeviceId, channelOffset, Mics.Pipelines);
         foreach (PlayerConfig p in _players.All)
         {
             Monitor.SetGain(p.Id, p.MixGain);
-            Monitor.SetMuted(p.Id, p.MixMuted);
+            Monitor.SetMuted(p.Id, p.MutedInMonitor(_gameMode));
         }
     }
 
@@ -121,7 +121,7 @@ public sealed class AudioInputService : IDisposable
         }
 
         Monitor.SetGain(p.Id, p.MixGain);
-        Monitor.SetMuted(p.Id, p.MixMuted);
+        Monitor.SetMuted(p.Id, p.MutedInMonitor(_gameMode));
     }
 
     private HashSet<string> InputIds() => [.. InputDevices.Select(d => d.Id)];

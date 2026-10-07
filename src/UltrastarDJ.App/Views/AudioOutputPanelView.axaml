@@ -29,13 +29,7 @@
             </ComboBox.ItemTemplate>
           </ComboBox>
 
-          <TextBlock Classes="label" Text="VOLUME" />
-          <Grid ColumnDefinitions="*,44">
-            <c:Fader Minimum="0" Maximum="1" Value="{Binding Gain}" />
-            <TextBlock Grid.Column="1" Classes="muted" Text="{Binding Gain, StringFormat='{}{0:P0}'}" VerticalAlignment="Center" TextAlignment="Right" />
-          </Grid>
-          <c:LevelMeter Height="6" Level="{Binding Level}" Fill="{DynamicResource BrushPrimary}" Track="{DynamicResource BrushSurfaceContainerHighest}" />
-
+          <!-- No volume here: the Game Player and the preview player have the faders, where the music plays. -->
           <!-- Game only: how much later the audience hears this output; lyrics, notes and scoring follow it. -->
           <Panel IsVisible="{Binding Latency, Converter={x:Static ObjectConverters.IsNotNull}}">
             <StackPanel Spacing="{StaticResource Space2}" DataContext="{Binding Latency}" x:DataType="vm:GameSyncViewModel">

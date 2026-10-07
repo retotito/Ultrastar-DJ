@@ -402,18 +402,18 @@ Details: `03-game-engine.md` "Mic plug / unplug".
 
 ---
 
-## Sprint 15 — Volume slider with built-in meter  *(in progress)*
+## Sprint 15 — Volume slider with built-in meter  *(done)*
 
 One control, `MeterFader`, instead of a slider with a separate thin meter underneath (as in the Tauri HorizontalFader).
 Drawn directly (meter rate, allocation-free), not a templated Slider.
 
-- [ ] Track = segmented meter (~30 segments green → yellow → red, unlit segments as dark tints); knob 12×28 on top
+- [x] Track = segmented meter (~30 segments green → yellow → red, unlit segments as dark tints); knob 12×28 on top
       (selected blue, or the player colour on mic rows), grows while dragged, ring on hover
-- [ ] Behaviour as `Fader`: only the knob moves (track clicks do nothing), double-click resets, grab / grabbing cursor; arrow keys
-- [ ] Meter scale per element, settable from XAML or a binding: floor and top in dB, where yellow and red start
+- [x] Behaviour as `Fader`: only the knob moves (track clicks do nothing), double-click resets, grab / grabbing cursor; arrow keys
+- [x] Meter scale per element, settable from XAML or a binding: floor and top in dB, where yellow and red start
       (e.g. song −40…0 dB, mic −70…−20 dB); the dB mapping is a tested pure function
-- [ ] Peak hold: thin line at the last peak, falling back slowly
-- [ ] Level shown after the fader (like a mixing desk)
+- [x] Peak hold: thin line at the last peak, falling back slowly
+- [x] Level shown after the fader (like a mixing desk)
 - [x] `MeterFader` control + `Core.Playback.MeterScale` (dB range per fader, tested) and `VolumeCurve` (mpv's volume is cubic: the meter after the fader = level × volume³, tested)
 - [x] Trial in the Preview Player first → verified live
 - [x] Audio Input cards: GAIN + GATE in one `MeterFader` (`ShowGate`: shaded range below the gate, handle under the track, double-click −50 dB) and MIX (meter = gated level × mix); the separate meter and Gate slider are gone
@@ -427,18 +427,29 @@ Drawn directly (meter rate, allocation-free), not a templated Slider.
 - [x] All meters: yellow from 80 %, red from 90 % of their range (song −40…0: −8 / −4; mic −70…0: −14 / −7), so song and mic meters show the same segments (were 5 vs 2 yellow)
 - [x] Mix 0–100 % (was 0–200 %): mix only turns a mic down, the input gain boosts; older settings above 100 % read as 100 %
 - [x] Game Player 50 px wider (`GamePlayerWidth` 390, picture box scaled to keep its shape); the mute button moved from the right of each mic row to the left — the mic in the player's colour, before the name — so the faders are longer; a gap under the transport buttons
-- [ ] Verified live: Game Player layout
-- [ ] Audio Output (game)
+- [x] Verified live: Game Player layout
+- [x] Song speaker icon centred over the mic buttons (it sat ~4 px left); name column 104 px so "Player 2" fits (fader 20 px shorter)
+- [x] Verified live: alignment, names
+- [x] Fix: the Game Player's mic mute also silenced the Audio Input mic test — mute is for the song only (`PlayerConfig.MutedInMonitor`, test first)
+- [x] Verified live: mute vs mic test
+- [x] Game Player: the song fader is invisible and inert while no display is open (keeps its space: the card keeps its height)
+- [x] Verified live: song fader without display
+- [x] Audio Output: VOLUME fader and meter removed from both cards — duplicates of the Game Player's song fader and the preview player's; the panel keeps device, latency and Test sync
+- [x] Verified live: Audio Output
+- [x] Audio Output (game): not needed — its fader is gone (see above)
 - [x] Mic inputs (Tauri PlayerCard), two per input: **1. Gain + Gate** in one — knob = input gain, meter = mic after gain,
       dimmed zone below the gate with a drag handle under the track (replaces the separate Gate slider and meter);
       **2. Output mix** — knob = monitor mix, meter = what the speakers get (level × mix, empty when muted)
-- [ ] Sliders in the same blue as the toggle switches
-- [ ] Verified live
+- [x] Meter faders in the toggles' selected blue (plain sliders — seek bars, latency — moved to Later)
+- [x] Verified live
 
 ---
 
 ## Later / ideas
 
+- Plain sliders (seek bars, latency) in the toggles' selected blue, like the meter faders (still Fluent's solid accent)
+- Flaky test: `SqliteLoadFailureStoreTests.Save_RoundTrips_UpdatesAndRemoves` failed once in a full `dotnet test` run, passes alone —
+  probably another test class's `SqliteConnection.ClearAllPools()` running in parallel
 - Cap mpv read-ahead (~60 s) so YouTube streams like a player instead of pulling the whole song into RAM
 - OpenGL frame path (shared texture) if CPU copy shows up in profiles
 - Global hotkeys, keyboard-only DJ operation

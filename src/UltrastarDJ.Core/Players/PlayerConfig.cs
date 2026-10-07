@@ -36,8 +36,12 @@ public sealed record PlayerConfig
     public double Threshold { get; init; } = 0.003;
     /// <summary>Level of this mic in the speaker mix, 0–1 (older settings may hold up to 2; read as 1).</summary>
     public double MixGain { get; init; } = 1.0;
-    /// <summary>Mic removed from the speaker mix (scoring unaffected).</summary>
+    /// <summary>Mic removed from the speaker mix during a song (Game Player mute; scoring unaffected).</summary>
     public bool MixMuted { get; init; }
+
+    /// <summary>The Game Player's mute is for the song only: in the Audio Input mic test the mic is always heard.</summary>
+    public bool MutedInMonitor(bool duringSong) => duringSong && MixMuted;
+
     /// <summary>
     /// Calibrate's result: a tone on the game output until the pitch analysis recognised it (ms); null = never
     /// calibrated. The scoring delay is this minus the latency of <see cref="CalibrationOutputKey"/>
