@@ -139,9 +139,10 @@ signal and missed it; the tone-through-analysis calibration includes it.
 Prototype NoteLane.svelte, drawn in `GameOverlayControl`: ≤ 2 players on a beamer → 16 rows, bars ≥ 40 px, radius 8;
 3–4 players → 12 rows, ≥ 28 px, radius 4 (bar = max(80 % row, minimum)). Settings → **Note bar style**: White
 (white 18 % fill, white 35 % border) or Black (black 45 %, white 55 %); border mixed 55 % with the player colour,
-2 px, soft glow. Golden: gold tint + border, glow, shimmer (1.4 s). Rap: dashed orange, never filled; hit (any voice) → solid with an orange
-glow settling over 0.5 s, badge R (★ golden rap). Freestyle: thin white dots (1 px); once the player is heard on it, a solid border in their colour with a glow,
-badge F, never filled. ≥ 50 % correct → border pulse (white; gold for golden) peaking at 40 % of 0.5 s, then a lasting glow.
+2 px, soft glow. Golden: gold tint + border, glow, shimmer (1.4 s). Rap and freestyle use hues no player has (players blue/red/green/yellow, golden gold), each a 12 % tint
+with a 2 px dashed border over a dark 3 px underlay so it reads on bright video. Rap: magenta `#E040FB`, never filled; hit (any voice) → solid
+with a magenta glow settling over 0.5 s, badge R (★ golden rap). Freestyle: teal `#2DD4BF`; once the player is heard on it, a solid border in their
+colour with a glow, badge F, never filled. ≥ 50 % correct → border pulse (white; gold for golden) peaking at 40 % of 0.5 s, then a lasting glow.
 Correct fill = player colour 85 % inside the bar (golden: gold); wrong = player colour 50 % on the sung row.
 Grid lines (Settings → **Grid lines**, default on, live): a stave as in USDX — a semitone is half a line spacing, so one
 faint line runs through the middle of every second row (8 or 6 lines); notes sit alternately on a line and between two.
@@ -286,7 +287,7 @@ static int PitchToRow(int pitch, double avg, int rowCount)
 ```
 
 Styles: normal = white/black bar (setting), golden = gold with pulsing glow, rap = dashed border,
-freestyle = dotted border; syllable text centred inside when `lengthBeats ≥ 2`. Bars have min height
+freestyle = dashed border (rap magenta, freestyle teal); syllable text centred inside when `lengthBeats ≥ 2`. Bars have min height
 (readability floor) and rounded corners (8 px for ≤ 2 players, 4 px for 3–4).
 
 ### Sung fill

@@ -392,6 +392,8 @@ Details: `03-game-engine.md` "Mic plug / unplug".
 - [x] Verified live: output switch reaches the loaded song
 - [x] Beamer grid lines as a stave (like USDX): a line through the middle of every second semitone row instead of on row edges, so notes sit on a line or between two; bars unchanged. Settings → Grid lines (on/off, live, default on)
 - [x] Verified live: grid lines
+- [x] Rap and freestyle notes readable on bright video, in hues no player has: rap magenta, freestyle teal (was white dots, hard to see); both dashed with a faint tint and a dark underlay under the dashes; R/F badges in the same colours
+- [x] Verified live: rap/freestyle colours
 
 ---
 

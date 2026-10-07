@@ -48,14 +48,18 @@ public sealed class GameOverlayControl : Control
     private static readonly IBrush GoldBarBg = new SolidColorBrush(Gold, 0.2);
     private static readonly Pen GoldBarPen = new(new SolidColorBrush(Gold, 0.85), 2);
     private static readonly IBrush GoldFill = new SolidColorBrush(Color.FromRgb(255, 215, 0), 0.85);
-    private static readonly Color Orange = Color.FromRgb(255, 165, 50);
-    private static readonly IBrush RapBarBg = new SolidColorBrush(Orange, 0.08);
-    private static readonly Pen RapDashPen = new(new SolidColorBrush(Orange, 0.5), 2) { DashStyle = DashStyle.Dash };
-    // Not DashStyle.Dot: that is {0, 2} — zero-length dashes, invisible with the default flat caps.
-    private static readonly Pen FreestyleDotPen = new(new SolidColorBrush(Colors.White, 0.6), 1) { DashStyle = new DashStyle([2, 2], 0) };
+    // Rap and freestyle take hues no player has (players: blue, red, green, yellow; golden: gold).
+    private static readonly Color Magenta = Color.FromRgb(0xE0, 0x40, 0xFB);
+    private static readonly Color Teal = Color.FromRgb(0x2D, 0xD4, 0xBF);
+    private static readonly IBrush RapBarBg = new SolidColorBrush(Magenta, 0.12);
+    private static readonly Pen RapDashPen = new(new SolidColorBrush(Magenta, 0.85), 2) { DashStyle = DashStyle.Dash };
+    private static readonly IBrush FreestyleBarBg = new SolidColorBrush(Teal, 0.12);
+    private static readonly Pen FreestyleDashPen = new(new SolidColorBrush(Teal, 0.85), 2) { DashStyle = DashStyle.Dash };
+    // A dark line under the dashes keeps them readable on bright video (like an outline on subtitles).
+    private static readonly Pen DashUnderlay = new(new SolidColorBrush(Colors.Black, 0.4), 3);
     private static readonly IBrush BadgeBg = new SolidColorBrush(Colors.Black, 0.6);
-    private static readonly IBrush RapBadge = new SolidColorBrush(Color.FromRgb(255, 140, 0));
-    private static readonly IBrush FreestyleBadge = new SolidColorBrush(Colors.White, 0.55);
+    private static readonly IBrush RapBadge = new SolidColorBrush(Magenta);
+    private static readonly IBrush FreestyleBadge = new SolidColorBrush(Teal);
     private static readonly IBrush SyllableShadow = new SolidColorBrush(Colors.Black, 0.6);
     // Correct pulse: 0.5 s, peak at 40 % (prototype keyframes note-correct-pulse / -golden, rap-border-glow).
     private const double PulseSec = 0.5;
@@ -479,7 +483,7 @@ public sealed class GameOverlayControl : Control
                 break;
 
             case NoteType.Rap or NoteType.RapGolden:
-                // Rap: dashed orange; once hit, solid with an orange glow that settles over 0.5 s.
+                // Rap: dashed magenta; once hit, solid with a magenta glow that settles over 0.5 s.
                 if (scorer.CorrectBeats(note) > 0)
                 {
                     state.RapHitAt.TryAdd(note.StartBeat, pos);
@@ -494,26 +498,28 @@ public sealed class GameOverlayControl : Control
                     }
                     else
                     {
-                        ctx.DrawRectangle(RapBarBg, new Pen(new SolidColorBrush(Orange, Lerp(1, 0.8, k)), 2), rr, GlowOf(Color.FromRgb(255, 140, 0), Lerp(0.85, 0.35, k), Lerp(18, 6, k)));
+                        ctx.DrawRectangle(RapBarBg, new Pen(new SolidColorBrush(Magenta, Lerp(1, 0.8, k)), 2), rr, GlowOf(Magenta, Lerp(0.85, 0.35, k), Lerp(18, 6, k)));
                     }
                 }
                 else
                 {
-                    ctx.DrawRectangle(RapBarBg, RapDashPen, rr);
+                    ctx.DrawRectangle(RapBarBg, DashUnderlay, rr);
+                    ctx.DrawRectangle(null, RapDashPen, rr);
                 }
 
                 break;
 
             case NoteType.Freestyle:
-                // Freestyle: thin white dots; once the player is heard on it, a solid border in their colour with a glow.
+                // Freestyle: dashed teal; once the player is heard on it, a solid border in their colour with a glow.
                 // Not scored — the voice alone lights it, like a rap hit.
                 if (Heard(note, state))
                 {
-                    ctx.DrawRectangle(null, paint.FreestyleLit, rr, paint.FreestyleGlow);
+                    ctx.DrawRectangle(FreestyleBarBg, paint.FreestyleLit, rr, paint.FreestyleGlow);
                 }
                 else
                 {
-                    ctx.DrawRectangle(null, FreestyleDotPen, rr);
+                    ctx.DrawRectangle(FreestyleBarBg, DashUnderlay, rr);
+                    ctx.DrawRectangle(null, FreestyleDashPen, rr);
                 }
 
                 break;
@@ -622,8 +628,8 @@ public sealed class GameOverlayControl : Control
     private static readonly BoxShadows SettledWhiteGlow = GlowOf(Colors.White, 0.25, 6);
     private static readonly Pen SettledGold = new(new SolidColorBrush(Color.FromRgb(255, 215, 0), 0.9), 2);
     private static readonly BoxShadows SettledGoldGlow = GlowOf(Color.FromRgb(255, 215, 0), 0.4, 8);
-    private static readonly Pen SettledRap = new(new SolidColorBrush(Orange, 0.8), 2);
-    private static readonly BoxShadows SettledRapGlow = GlowOf(Color.FromRgb(255, 140, 0), 0.35, 6);
+    private static readonly Pen SettledRap = new(new SolidColorBrush(Magenta, 0.8), 2);
+    private static readonly BoxShadows SettledRapGlow = GlowOf(Magenta, 0.35, 6);
     private static readonly BoxShadows GoldGlow = GlowOf(Gold, 0.45, 8);
 
     private static Rect BoxRect(NoteBox box, Rect lane, double rowH, double barH)
