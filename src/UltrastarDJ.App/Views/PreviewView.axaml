@@ -17,7 +17,20 @@
         <Image Source="{Binding Cover}" Stretch="UniformToFill" IsVisible="{Binding ShowCover}" />
         <c:VideoSurface Source="{Binding Frames}" IsVisible="{Binding HasVideo}" />
         <c:Icon Glyph="music_note" FontSize="{StaticResource IconXl}" IsVisible="{Binding !HasSong}" />
-        <ProgressBar IsIndeterminate="True" IsVisible="{Binding Loading}" VerticalAlignment="Bottom" Height="3" />
+        <c:Spinner IsVisible="{Binding Loading}" />
+        <!-- Elapsed / remaining and the progress line, as in the Game Player and on the beamer — but seekable. -->
+        <Grid RowDefinitions="Auto,Auto" VerticalAlignment="Bottom" IsVisible="{Binding HasTimes}">
+          <Grid ColumnDefinitions="Auto,*,Auto" Margin="8,0,8,2">
+            <Border Background="{DynamicResource BrushStagePill}" CornerRadius="{StaticResource RadiusFull}" Padding="8,1">
+              <TextBlock Classes="beamer" Text="{Binding Elapsed}" FontSize="{StaticResource TextXs}" FontWeight="{StaticResource WeightSemibold}" />
+            </Border>
+            <Border Grid.Column="2" Background="{DynamicResource BrushStagePill}" CornerRadius="{StaticResource RadiusFull}" Padding="8,1">
+              <TextBlock Classes="beamer" Text="{Binding Remaining}" FontSize="{StaticResource TextXs}" FontWeight="{StaticResource WeightSemibold}" />
+            </Border>
+          </Grid>
+          <c:SeekStrip Grid.Row="1" Value="{Binding Fraction}" Track="{DynamicResource BrushStageTrack}" Fill="{DynamicResource BrushStageProgress}"
+                       Knob="{DynamicResource BrushBeamerText}" ToolTip.Tip="Click or drag to jump" />
+        </Grid>
       </Panel>
     </Border>
 
@@ -26,15 +39,25 @@
       <TextBlock Classes="muted" FontSize="{StaticResource TextSm}" Text="{Binding Artist}" TextTrimming="CharacterEllipsis" />
     </StackPanel>
 
-    <!-- Transport + progress -->
-    <Grid ColumnDefinitions="Auto,*,Auto" IsEnabled="{Binding HasSong}">
-      <Button Grid.Column="0" Classes="transport small" Classes.go="{Binding !IsPlaying}" Classes.pause="{Binding IsPlaying}"
-              Command="{Binding TogglePlayCommand}" ToolTip.Tip="Play / pause">
-        <c:Icon Glyph="{Binding IsPlaying, Converter={x:Static vm:PlayerConverters.PlayPauseGlyph}}" />
+    <!-- One row under the picture: play / pause, then Queue and Load (short labels, so it fits the panel width). -->
+    <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space2}" HorizontalAlignment="Center">
+      <Button Classes="transport" Classes.go="{Binding !IsPlaying}" Classes.pause="{Binding IsPlaying}" VerticalAlignment="Center"
+              Command="{Binding TogglePlayCommand}" IsEnabled="{Binding HasSong}" ToolTip.Tip="Play / pause">
+        <c:Icon Glyph="{Binding IsPlaying, Converter={x:Static vm:PlayerConverters.PlayPauseGlyph}}" FontSize="{StaticResource IconXl}" />
       </Button>
-      <Slider Grid.Column="1" Minimum="0" Maximum="1" Value="{Binding Fraction}" Margin="8,0" VerticalAlignment="Center" />
-      <TextBlock Grid.Column="2" Classes="muted" FontFamily="{StaticResource FontMono}" FontSize="{StaticResource TextXs}" Text="{Binding TimeText}" VerticalAlignment="Center" />
-    </Grid>
+      <Button Classes="tonal" Command="{Binding AddToQueueCommand}" VerticalAlignment="Center" ToolTip.Tip="Add this song to the end of the queue">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <c:Icon Glyph="queue_music" FontSize="{StaticResource IconMd}" />
+          <TextBlock Text="Queue" />
+        </StackPanel>
+      </Button>
+      <Button Classes="tonal" Command="{Binding LoadIntoGameCommand}" VerticalAlignment="Center" ToolTip.Tip="{Binding LoadSongTip}">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <c:Icon Glyph="play_circle" FontSize="{StaticResource IconMd}" />
+          <TextBlock Text="Load" />
+        </StackPanel>
+      </Button>
+    </StackPanel>
 
     <!-- Preview fader -->
     <Grid ColumnDefinitions="Auto,*,44">
@@ -43,21 +66,6 @@
                     MinDb="-40" MaxDb="0" WarnDb="-8" ClipDb="-4" VerticalAlignment="Center" />
       <TextBlock Grid.Column="2" Classes="muted" Text="{Binding Gain, StringFormat='{}{0:P0}'}" VerticalAlignment="Center" TextAlignment="Right" />
     </Grid>
-
-    <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space2}">
-      <Button Classes="tonal" Command="{Binding AddToQueueCommand}">
-        <StackPanel Orientation="Horizontal" Spacing="6">
-          <c:Icon Glyph="queue_music" FontSize="{StaticResource IconMd}" />
-          <TextBlock Text="Add to queue" />
-        </StackPanel>
-      </Button>
-      <Button Classes="tonal" Command="{Binding LoadIntoGameCommand}" ToolTip.Tip="{Binding LoadSongTip}">
-        <StackPanel Orientation="Horizontal" Spacing="6">
-          <c:Icon Glyph="play_circle" FontSize="{StaticResource IconMd}" />
-          <TextBlock Text="Load" />
-        </StackPanel>
-      </Button>
-    </StackPanel>
 
   </StackPanel>
   </StackPanel>

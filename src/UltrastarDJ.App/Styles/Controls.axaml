@@ -172,6 +172,16 @@
     <Setter Property="GateHandle" Value="{DynamicResource BrushGateHandle}" />
   </Style>
 
+  <!-- Loading spinner in the middle of a player picture (Preview, Game Player) -->
+  <Style Selector="c|Spinner">
+    <Setter Property="Width" Value="40" />
+    <Setter Property="Height" Value="40" />
+    <Setter Property="Stroke" Value="{DynamicResource BrushBeamerText}" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Opacity" Value="0.9" />
+  </Style>
+
   <!-- Round transport buttons (Game Player 48 px, Preview Player .small 36 px): play = go, pause = normal tint, stop = stop -->
   <Style Selector="Button.transport">
     <Setter Property="Width" Value="48" />

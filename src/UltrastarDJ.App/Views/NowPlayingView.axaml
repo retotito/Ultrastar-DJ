@@ -55,7 +55,7 @@
             </Grid>
             <c:LevelMeter Grid.Row="1" Height="4" Level="{Binding Progress}" Fill="{DynamicResource BrushStageProgress}" Track="{DynamicResource BrushStageTrack}" />
           </Grid>
-          <ProgressBar IsIndeterminate="True" IsVisible="{Binding Loading}" VerticalAlignment="Bottom" Height="3" />
+          <c:Spinner IsVisible="{Binding Loading}" />
         </Panel>
       </Border>
       <TextBlock Classes="title" Text="{Binding Title}" TextTrimming="CharacterEllipsis" />

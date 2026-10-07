@@ -53,6 +53,15 @@
       <Color x:Key="ColorTableRowAlt">#0AFFFFFF</Color>
       <!-- Songbook requests: a light green wash, so guests' wishes stand out (REQUESTS, request toasts). -->
       <Color x:Key="ColorRequest">#1F3A2A</Color>
+      <!-- Plain sliders (latency) like the toggle switches: filled part in the selected blue, knob in the text colour. -->
+      <SolidColorBrush x:Key="SliderTrackValueFill" Color="{DynamicResource SystemAccentColor}" Opacity="0.6" />
+      <SolidColorBrush x:Key="SliderTrackValueFillDisabled" Color="{DynamicResource SystemAccentColor}" Opacity="0.6" />
+      <SolidColorBrush x:Key="SliderTrackValueFillPointerOver" Color="{DynamicResource SystemAccentColor}" Opacity="0.8" />
+      <SolidColorBrush x:Key="SliderTrackValueFillPressed" Color="{DynamicResource SystemAccentColor}" Opacity="0.9" />
+      <SolidColorBrush x:Key="SliderThumbBackground" Color="{DynamicResource ColorOnSurface}" />
+      <SolidColorBrush x:Key="SliderThumbBackgroundDisabled" Color="{DynamicResource ColorOnSurface}" />
+      <SolidColorBrush x:Key="SliderThumbBackgroundPointerOver" Color="{DynamicResource ColorOnSurface}" />
+      <SolidColorBrush x:Key="SliderThumbBackgroundPressed" Color="{DynamicResource ColorOnSurface}" />
       <!-- Toggle switches "on" = the same selected blue as the sidebar's active button (Fluent's solid accent was too loud),
            knob in the text colour like the active sidebar icon. Overrides Fluent's own ToggleSwitch keys. -->
       <SolidColorBrush x:Key="ToggleSwitchFillOn" Color="{DynamicResource SystemAccentColor}" Opacity="0.6" />
@@ -119,6 +128,15 @@
       <SolidColorBrush x:Key="BrushStatePressed" Color="{DynamicResource SystemAccentColor}" Opacity="0.7" />
       <Color x:Key="ColorTableRowAlt">#0A000000</Color>
       <Color x:Key="ColorRequest">#E6F4EA</Color>
+      <!-- Plain sliders (latency) like the toggle switches: filled part in the selected blue, knob in the text colour. -->
+      <SolidColorBrush x:Key="SliderTrackValueFill" Color="{DynamicResource SystemAccentColor}" Opacity="0.4" />
+      <SolidColorBrush x:Key="SliderTrackValueFillDisabled" Color="{DynamicResource SystemAccentColor}" Opacity="0.4" />
+      <SolidColorBrush x:Key="SliderTrackValueFillPointerOver" Color="{DynamicResource SystemAccentColor}" Opacity="0.6" />
+      <SolidColorBrush x:Key="SliderTrackValueFillPressed" Color="{DynamicResource SystemAccentColor}" Opacity="0.7" />
+      <SolidColorBrush x:Key="SliderThumbBackground" Color="{DynamicResource ColorOnSurface}" />
+      <SolidColorBrush x:Key="SliderThumbBackgroundDisabled" Color="{DynamicResource ColorOnSurface}" />
+      <SolidColorBrush x:Key="SliderThumbBackgroundPointerOver" Color="{DynamicResource ColorOnSurface}" />
+      <SolidColorBrush x:Key="SliderThumbBackgroundPressed" Color="{DynamicResource ColorOnSurface}" />
       <!-- Toggle switches "on" = the same selected blue as the sidebar's active button (Fluent's solid accent was too loud),
            knob in the text colour like the active sidebar icon. Overrides Fluent's own ToggleSwitch keys. -->
       <SolidColorBrush x:Key="ToggleSwitchFillOn" Color="{DynamicResource SystemAccentColor}" Opacity="0.4" />

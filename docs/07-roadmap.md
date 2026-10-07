@@ -445,9 +445,21 @@ Drawn directly (meter rate, allocation-free), not a templated Slider.
 
 ---
 
+## Sprint 16 — Adjustments & fixes  *(in progress)*
+
+- [x] Plain sliders (latency) in the toggles' selected blue, like the meter faders
+- [x] Preview Player picture box like the Game Player's: time pills (elapsed / remaining) and the progress line at the
+      bottom of the picture — but seekable: the line thickens on hover (with a knob), click or drag jumps
+- [x] Loading: a spinner in the middle of the picture instead of the blue bar at its bottom (Preview and Game Player alike)
+- [x] Preview play / pause centred under the picture; the old slider row goes
+- [x] Preview: one row under the picture — play / pause, Queue, Load (short labels; Queue has a tooltip); the separate button row at the bottom goes
+- [x] Fix: startup crash — the spinner's style animation on RenderTransform has no animator in Avalonia; now a `Spinner` control that turns itself while visible
+- [ ] Verified live
+
+---
+
 ## Later / ideas
 
-- Plain sliders (seek bars, latency) in the toggles' selected blue, like the meter faders (still Fluent's solid accent)
 - Flaky test: `SqliteLoadFailureStoreTests.Save_RoundTrips_UpdatesAndRemoves` failed once in a full `dotnet test` run, passes alone —
   probably another test class's `SqliteConnection.ClearAllPools()` running in parallel
 - Cap mpv read-ahead (~60 s) so YouTube streams like a player instead of pulling the whole song into RAM

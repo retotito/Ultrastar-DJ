@@ -36,7 +36,10 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private bool _isPlaying;
     [ObservableProperty] private bool _loading;
     [ObservableProperty] private double _fraction;
-    [ObservableProperty] private string _timeText = "0:00 / 0:00";
+    [ObservableProperty] private string _elapsed = "0:00";
+    [ObservableProperty] private string _remaining = "0:00";
+    /// <summary>A song with a known length is loaded: the time pills and the seek line show.</summary>
+    [ObservableProperty] private bool _hasTimes;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(MeterLevel))] private double _gain;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(MeterLevel))] private double _level;
 
@@ -96,7 +99,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
         }
     }
 
-    /// <summary>User dragged the progress slider.</summary>
+    /// <summary>User clicked or dragged the seek line.</summary>
     partial void OnFractionChanged(double value)
     {
         if (!_polling && _media.Preview.Duration is { } d && d.TotalSeconds > 0)
@@ -202,7 +205,9 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
         double pos = ch.Clock?.PositionSec ?? 0;
         double dur = ch.Duration?.TotalSeconds ?? 0;
         Fraction = dur > 0 ? Math.Clamp(pos / dur, 0, 1) : 0;
-        TimeText = $"{Fmt(pos)} / {Fmt(dur)}";
+        HasTimes = HasSong && dur > 0;
+        Elapsed = Fmt(Math.Clamp(pos, 0, dur));
+        Remaining = Fmt(Math.Max(0, dur - pos));
         _polling = false;
     }
 
