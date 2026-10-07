@@ -143,6 +143,9 @@ Prototype NoteLane.svelte, drawn in `GameOverlayControl`: ≤ 2 players on a bea
 glow settling over 0.5 s, badge R (★ golden rap). Freestyle: thin white dots (1 px); once the player is heard on it, a solid border in their colour with a glow,
 badge F, never filled. ≥ 50 % correct → border pulse (white; gold for golden) peaking at 40 % of 0.5 s, then a lasting glow.
 Correct fill = player colour 85 % inside the bar (golden: gold); wrong = player colour 50 % on the sung row.
+Grid lines (Settings → **Grid lines**, default on, live): a stave as in USDX — a semitone is half a line spacing, so one
+faint line runs through the middle of every second row (8 or 6 lines); notes sit alternately on a line and between two.
+Bar height is unaffected.
 Scoring effects (`App.Game.ScoreEffects`, after USDX UGraphicClasses / USingScores, allocation-free): a perfect
 note (every beat right) gets three twinkling stars at its top-right corner once sung through; golden notes sparkle on
 the sung part with a twinkle at the fill edge while hit; at the end of each phrase (when the mic has delivered its

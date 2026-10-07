@@ -263,11 +263,13 @@ public sealed class GameOverlayControl : Control
         DrawMicMeter(ctx, new Point(lane.X + label.WidthIncludingTrailingWhitespace + labelSize * 0.6, lane.Y - 4 + label.Baseline),
             labelSize, player, scene.MicActivity(player.Id));
 
+        // A stave, as in UltraStar Deluxe (a semitone = half a line spacing): a line through the middle of every second
+        // semitone row, so notes sit alternately on a line and in the space between two — never "just above / below".
         if (ShowPianoRollLines)
         {
-            for (int r = 0; r <= rows; r += 2)
+            for (int r = 0; r < rows; r += 2)
             {
-                double y = lane.Y + r * rowH;
+                double y = Math.Round(lane.Y + (r + 0.5) * rowH);
                 ctx.FillRectangle(PianoLine, new Rect(lane.X, y, lane.Width, 1));
             }
         }

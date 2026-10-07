@@ -37,6 +37,8 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private int _countdownValue;
     /// <summary>Settings → Note bar style, applied live.</summary>
     [ObservableProperty] private NoteBarStyle _noteBarStyle;
+    /// <summary>Settings → Grid lines, applied live.</summary>
+    [ObservableProperty] private bool _showGridLines = true;
     [ObservableProperty] private GameScene? _scene;
     [ObservableProperty] private int _winnerId = -1;
     /// <summary>Score screen: the count-up has finished — the winner's stars start (only if they scored).</summary>
@@ -55,6 +57,7 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
         syncTest.Changed += OnSyncTestChanged;
         _settings = settings;
         _noteBarStyle = settings.NoteBarStyle;
+        _showGridLines = settings.ShowGridLines;
         settings.Changed += OnSettingsChanged;
         GameFrames = gameFrames;
         _playback = playback;
@@ -74,7 +77,11 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
         RefreshAssignedPlayers();
     }
 
-    private void OnSettingsChanged() => Dispatcher.UIThread.Post(() => NoteBarStyle = _settings.NoteBarStyle);
+    private void OnSettingsChanged() => Dispatcher.UIThread.Post(() =>
+    {
+        NoteBarStyle = _settings.NoteBarStyle;
+        ShowGridLines = _settings.ShowGridLines;
+    });
 
     public DisplayId Id { get; }
     public string Label => $"Beamer {(int)Id}";

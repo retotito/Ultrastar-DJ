@@ -57,6 +57,7 @@ public sealed partial class SettingsPanelViewModel : ViewModelBase
     [ObservableProperty] private string _theme = LightName;
     [ObservableProperty] private bool _showTooltips;
     [ObservableProperty] private NoteBarStyle _noteBarStyle;
+    [ObservableProperty] private bool _showGridLines;
     [ObservableProperty] private Difficulty _difficulty;
 
     [ObservableProperty] private string _crashReportsText = "";
@@ -74,6 +75,7 @@ public sealed partial class SettingsPanelViewModel : ViewModelBase
         Theme = settings.LightTheme ? LightName : DarkName;
         ShowTooltips = settings.ShowTooltips;
         NoteBarStyle = settings.NoteBarStyle;
+        ShowGridLines = settings.ShowGridLines;
         Difficulty = settings.Difficulty;
         _loading = false;
     }
@@ -161,6 +163,14 @@ public sealed partial class SettingsPanelViewModel : ViewModelBase
     };
 
     public IReadOnlyList<NoteBarStyle> NoteBarStyles { get; } = [NoteBarStyle.White, NoteBarStyle.Black];
+
+    partial void OnShowGridLinesChanged(bool value)
+    {
+        if (!_loading)
+        {
+            _settings.SetShowGridLines(value);
+        }
+    }
 
     partial void OnNoteBarStyleChanged(NoteBarStyle value)
     {

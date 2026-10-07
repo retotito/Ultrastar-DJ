@@ -48,6 +48,9 @@ public sealed class AppSettingsService
     public void SetLightTheme(bool light) => Update(_doc with { LightTheme = light });
     public void SetShowTooltips(bool show) => Update(_doc with { HideTooltips = !show });
     public void SetNoteBarStyle(NoteBarStyle style) => Update(_doc with { NoteBarStyle = style });
+    /// <summary>Beamer: the stave lines behind the note bars.</summary>
+    public bool ShowGridLines => !_doc.HideGridLines;
+    public void SetShowGridLines(bool show) => Update(_doc with { HideGridLines = !show });
     public void SetDifficulty(Difficulty d) => Update(_doc with { Difficulty = d });
     /// <summary>Migrated into the game output's latency (OutputsService); kept only to read old settings files.</summary>
     public void ClearLyricsOffset() => Update(_doc with { LyricsOffsetMs = 0 });
@@ -78,6 +81,8 @@ public sealed class AppSettingsService
         /// <summary>Stored inverted so settings files written before this option keep tooltips on.</summary>
         public bool HideTooltips { get; init; }
         public NoteBarStyle NoteBarStyle { get; init; }
+        /// <summary>Stored inverted so settings files from before the switch keep the lines.</summary>
+        public bool HideGridLines { get; init; }
         public double? NowPlayingX { get; init; }
         public double? NowPlayingY { get; init; }
         /// <summary>Null = <see cref="LibraryColumns.DefaultVisible"/> (files written before the Layout panel).</summary>

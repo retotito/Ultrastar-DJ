@@ -34,6 +34,14 @@
         <TextBlock Text="Note bar style" Margin="0,8,0,0" />
         <ComboBox ItemsSource="{Binding NoteBarStyles}" SelectedItem="{Binding NoteBarStyle}" HorizontalAlignment="Stretch" />
         <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="Background of the note bars on the beamer — White for dark videos, Black for bright ones" TextWrapping="Wrap" />
+        <Grid ColumnDefinitions="*,Auto" Margin="0,8,0,0">
+          <StackPanel>
+            <TextBlock Text="Grid lines" />
+            <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap"
+                       Text="Faint lines behind the notes, every two semitones — notes sit on a line or between two, like sheet music" />
+          </StackPanel>
+          <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowGridLines}" OnContent="" OffContent="" VerticalAlignment="Center" />
+        </Grid>
       </StackPanel>
     </Border>
 
