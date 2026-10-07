@@ -37,7 +37,7 @@
   </Style>
 
   <!-- The app's disabled state: dimmed to OpacityDisabled, normal arrow (Fluent's own disabled look is too subtle) -->
-  <Style Selector=":is(Button):disabled, ComboBox:disabled, ToggleSwitch:disabled, CheckBox:disabled, Slider:disabled, TextBox:disabled, MenuItem:disabled, ComboBoxItem:disabled">
+  <Style Selector=":is(Button):disabled, ComboBox:disabled, ToggleSwitch:disabled, CheckBox:disabled, Slider:disabled, c|MeterFader:disabled, TextBox:disabled, MenuItem:disabled, ComboBoxItem:disabled">
     <Setter Property="Opacity" Value="{StaticResource OpacityDisabled}" />
     <Setter Property="Cursor" Value="Arrow" />
   </Style>
@@ -157,6 +157,19 @@
   </Style>
   <Style Selector="ListBoxItem:selected:pressed /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="{DynamicResource BrushStatePressed}" />
+  </Style>
+
+  <!-- Volume fader with built-in meter: knob in the toggles' selected blue on an opaque base, meter colours from tokens -->
+  <Style Selector="c|MeterFader">
+    <Setter Property="Knob" Value="{DynamicResource BrushStateSelected}" />
+    <Setter Property="KnobBase" Value="{DynamicResource BrushSurface}" />
+    <Setter Property="KnobGrip" Value="{DynamicResource BrushOnSurfaceVariant}" />
+    <Setter Property="PeakBrush" Value="{DynamicResource BrushOnSurface}" />
+    <Setter Property="LowColor" Value="{StaticResource ColorMeterLow}" />
+    <Setter Property="WarnColor" Value="{StaticResource ColorMeterWarn}" />
+    <Setter Property="ClipColor" Value="{StaticResource ColorMeterClip}" />
+    <Setter Property="GateZone" Value="{DynamicResource BrushGateZone}" />
+    <Setter Property="GateHandle" Value="{DynamicResource BrushGateHandle}" />
   </Style>
 
   <!-- Round transport buttons (Game Player 48 px, Preview Player .small 36 px): play = go, pause = normal tint, stop = stop -->

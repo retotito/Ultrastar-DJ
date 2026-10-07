@@ -38,7 +38,7 @@ public sealed class MicPipeline
     public MicChannelSide Channel { get; }
     public double SampleRateHz { get; }
 
-    /// <summary>Input gain 0–10, applied before the gate. SingStar-class mics sit around −50 dBFS and need 4–8×.</summary>
+    /// <summary>Input gain 0.01–10, applied before the gate. USB singing mics differ a lot: SingStar / Let's Sing need ~0.1×.</summary>
     public double InputGain { get; set; } = 1.0;
 
     /// <summary>Noise gate on block RMS (linear, post-gain). Below it the block is treated as silence. Default −50 dBFS.</summary>

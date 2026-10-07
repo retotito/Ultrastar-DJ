@@ -7,6 +7,7 @@
              x:DataType="vm:PlayersPanelViewModel">
 
   <UserControl.Resources>
+    <x:String x:Key="GainGateTip">Gain knob · Gate knob (below)</x:String>
     <DataTemplate x:Key="PlayerCard" x:DataType="vm:PlayerCardViewModel">
       <Border Classes="card" Margin="0,0,0,8" Padding="12">
         <StackPanel Spacing="{StaticResource Space2}">
@@ -39,24 +40,27 @@
             </Button>
           </Grid>
 
-          <!-- Meter (dB) with the gate position drawn as a marker on the same scale -->
-          <c:LevelMeter Height="6" Margin="0,4" Level="{Binding LevelDb}" Mark="{Binding GateMark}"
-                        Fill="{Binding ColorKey, Converter={x:Static vm:PlayerConverters.BrushByKey}}"
-                        Track="{DynamicResource BrushSurfaceContainerHighest}"
-                        MarkBrush="{DynamicResource BrushOnSurface}" />
+          <!-- Two faders with their meter as the track (Tauri PlayerCard), on the mic scale −70…0 dB:
+               GAIN + GATE in one — meter = the mic after gain, shaded below the gate, gate handle under the track;
+               MIX — meter = what the speakers get (gated signal × mix). -->
+          <Grid ColumnDefinitions="52,*,60" RowDefinitions="Auto,Auto" RowSpacing="{StaticResource Space1}">
+            <TextBlock Grid.Row="0" Grid.Column="0" Classes="label" Text="GAIN" VerticalAlignment="Top" Margin="0,9,0,0"
+                       ToolTip.Tip="{StaticResource GainGateTip}" />
+            <c:MeterFader Grid.Row="0" Grid.Column="1" Minimum="-40" Maximum="20" ResetValue="0" Value="{Binding InputGainDb}" Level="{Binding Level}"
+                          MinDb="-70" MaxDb="0" WarnDb="-12" ClipDb="-6"
+                          ShowGate="True" GateDb="{Binding GateDb}" GateMinDb="-70" GateMaxDb="-20" GateResetDb="-50"
+                          ToolTip.Tip="{StaticResource GainGateTip}" />
+            <StackPanel Grid.Row="0" Grid.Column="2" VerticalAlignment="Top">
+              <TextBlock Classes="muted" Text="{Binding GainText}" TextAlignment="Right" Margin="0,5,0,0" />
+              <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="{Binding GateText}" TextAlignment="Right" />
+            </StackPanel>
 
-          <Grid ColumnDefinitions="52,*,52" RowDefinitions="Auto,Auto,Auto">
-            <TextBlock Grid.Row="0" Grid.Column="0" Classes="label" Text="GAIN" VerticalAlignment="Center" ToolTip.Tip="Input gain, 0–10×. Amplifies the mic before everything else. Raise it for quiet USB mics (4–8× is common) until normal singing moves the meter well past the gate marker. Double-click the knob: 1×." />
-            <c:Fader Grid.Row="0" Grid.Column="1" ResetValue="1" Minimum="0" Maximum="10" Value="{Binding InputGain}" ToolTip.Tip="Input gain, 0–10×. Amplifies the mic before everything else. Raise it for quiet USB mics (4–8× is common) until normal singing moves the meter well past the gate marker. Double-click the knob: 1×." />
-            <TextBlock Grid.Row="0" Grid.Column="2" Classes="muted" Text="{Binding InputGain, StringFormat='{}{0:F1}×'}" VerticalAlignment="Center" TextAlignment="Right" />
-
-            <TextBlock Grid.Row="1" Grid.Column="0" Classes="label" Text="GATE" VerticalAlignment="Center" ToolTip.Tip="Noise gate. Below this level the mic counts as silence — no notes, no points — so background noise and the speakers don't score. Set it with the music playing: singing should pass the marker on the meter, silence stay below it. Double-click the knob: −50 dB." />
-            <c:Fader Grid.Row="1" Grid.Column="1" ResetValue="-50" Minimum="-70" Maximum="-20" Value="{Binding GateDb}" ToolTip.Tip="Noise gate. Below this level the mic counts as silence — no notes, no points — so background noise and the speakers don't score. Set it with the music playing: singing should pass the marker on the meter, silence stay below it. Double-click the knob: −50 dB." />
-            <TextBlock Grid.Row="1" Grid.Column="2" Classes="muted" Text="{Binding GateText}" VerticalAlignment="Center" TextAlignment="Right" />
-
-            <TextBlock Grid.Row="2" Grid.Column="0" Classes="label" Text="MIX" VerticalAlignment="Center" ToolTip.Tip="How loud this mic is in the speakers (monitor), 0–2×. Only what the room hears — scoring is not affected. Double-click the knob: 1×." />
-            <c:Fader Grid.Row="2" Grid.Column="1" ResetValue="1" Minimum="0" Maximum="2" Value="{Binding MixGain}" ToolTip.Tip="How loud this mic is in the speakers (monitor), 0–2×. Only what the room hears — scoring is not affected. Double-click the knob: 1×." />
-            <TextBlock Grid.Row="2" Grid.Column="2" Classes="muted" Text="{Binding MixGain, StringFormat='{}{0:F2}'}" VerticalAlignment="Center" TextAlignment="Right" />
+            <TextBlock Grid.Row="1" Grid.Column="0" Classes="label" Text="MIX" VerticalAlignment="Center"
+                       ToolTip.Tip="Mix knob" />
+            <c:MeterFader Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="2" ResetValue="1" Value="{Binding MixGain}" Level="{Binding MixLevel}"
+                          MinDb="-70" MaxDb="0" WarnDb="-12" ClipDb="-6"
+                          ToolTip.Tip="Mix knob" />
+            <TextBlock Grid.Row="1" Grid.Column="2" Classes="muted" Text="{Binding MixGain, StringFormat='{}{0:F2}'}" VerticalAlignment="Center" TextAlignment="Right" />
           </Grid>
 
           <Grid ColumnDefinitions="*,Auto">

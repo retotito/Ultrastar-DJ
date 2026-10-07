@@ -152,6 +152,10 @@
   <Color x:Key="ColorPlayer4">#F7C84F</Color>
   <Color x:Key="ColorGolden">#FFD700</Color>
   <Color x:Key="ColorUsdb">#2E9E5B</Color>
+  <!-- Level meters (MeterFader): green → yellow → red, as in the Tauri app -->
+  <Color x:Key="ColorMeterLow">#4ECB71</Color>
+  <Color x:Key="ColorMeterWarn">#F7C84F</Color>
+  <Color x:Key="ColorMeterClip">#F75F5F</Color>
   <Color x:Key="ColorBeamerBackground">#000000</Color>
   <Color x:Key="ColorBeamerText">#FFFFFF</Color>
   <!-- Stage time strip (beamer bottom, Game Player box): lead-in blue bar on a faint track, translucent time pills. -->
@@ -185,6 +189,9 @@
   <SolidColorBrush x:Key="BrushOutlineVariant" Color="{DynamicResource ColorOutlineVariant}" />
   <SolidColorBrush x:Key="BrushTableRowAlt" Color="{DynamicResource ColorTableRowAlt}" />
   <SolidColorBrush x:Key="BrushRequest" Color="{DynamicResource ColorRequest}" />
+  <!-- Mic gate on a MeterFader: shade over the range that counts as silence, and its drag handle -->
+  <SolidColorBrush x:Key="BrushGateZone" Color="{StaticResource ColorMeterClip}" Opacity="0.3" />
+  <SolidColorBrush x:Key="BrushGateHandle" Color="{StaticResource ColorMeterClip}" />
   <SolidColorBrush x:Key="BrushGo" Color="{DynamicResource ColorGo}" />
   <SolidColorBrush x:Key="BrushGoHover" Color="{DynamicResource ColorGoHover}" />
   <SolidColorBrush x:Key="BrushStop" Color="{DynamicResource ColorStop}" />

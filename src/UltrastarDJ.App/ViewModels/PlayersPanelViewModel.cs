@@ -341,7 +341,8 @@ public sealed partial class PlayerCardViewModel : ObservableObject
     [ObservableProperty] private PlayerConfig _config;
     [ObservableProperty] private MicOption? _selectedMic;
     [ObservableProperty] private string _name;
-    [ObservableProperty] private double _inputGain;
+    /// <summary>The gain knob, in dB (−40…+20); stored as a linear factor.</summary>
+    [ObservableProperty] private double _inputGainDb;
     [ObservableProperty] private double _gateDb;
     [ObservableProperty] private double _mixGain;
     [ObservableProperty] private double _level;
@@ -356,7 +357,7 @@ public sealed partial class PlayerCardViewModel : ObservableObject
         _owner = owner;
         _config = config;
         _name = config.Name;
-        _inputGain = config.InputGain;
+        _inputGainDb = InputGainScale.ToDb(config.InputGain);
         _gateDb = ToDb(config.Threshold);
         _mixGain = config.MixGain;
         SyncMicOption();
@@ -390,14 +391,18 @@ public sealed partial class PlayerCardViewModel : ObservableObject
 
     public void RefreshDelay() => OnPropertyChanged(nameof(MicDelayText));
     public string GateText => $"{GateDb:F0} dB";
-    /// <summary>Level in dB mapped to 0..1 over the meter's 70 dB range — linear RMS is useless for quiet mics.</summary>
-    public double LevelDb => Level <= 0 ? 0 : Math.Clamp((20 * Math.Log10(Level) - GateMinDb) / -GateMinDb, 0, 1);
-    /// <summary>Gate position on the same 0..1 meter scale, so the user sees where the gate cuts.</summary>
-    public double GateMark => (GateDb - GateMinDb) / -GateMinDb;
+    public string GainText => $"{InputGainScale.Snap(InputGainDb):+0.#;-0.#;0} dB";
+    /// <summary>What the speakers get from this mic: the monitor mixes the gated signal × mix (linear).</summary>
+    public double MixLevel => IsGated ? 0 : Level * MixGain;
     public string NoteText => IsGated ? "gated" : Note;
 
-    partial void OnLevelChanged(double value) => OnPropertyChanged(nameof(LevelDb));
-    partial void OnIsGatedChanged(bool value) => OnPropertyChanged(nameof(NoteText));
+    partial void OnLevelChanged(double value) => OnPropertyChanged(nameof(MixLevel));
+    partial void OnIsGatedChanged(bool value)
+    {
+        OnPropertyChanged(nameof(NoteText));
+        OnPropertyChanged(nameof(MixLevel));
+    }
+
     partial void OnNoteChanged(string value) => OnPropertyChanged(nameof(NoteText));
 
     private static double ToDb(double linear) => Math.Clamp(linear <= 0 ? GateMinDb : 20 * Math.Log10(linear), GateMinDb, GateMaxDb);
@@ -457,14 +462,21 @@ public sealed partial class PlayerCardViewModel : ObservableObject
     }
 
     partial void OnNameChanged(string value) => Save(p => p with { Name = value });
-    partial void OnInputGainChanged(double value) => Save(p => p with { InputGain = Math.Round(value, 2) });
+    partial void OnInputGainDbChanged(double value)
+    {
+        OnPropertyChanged(nameof(GainText));
+        Save(p => p with { InputGain = Math.Round(InputGainScale.ToGain(InputGainScale.Snap(value)), 4) });
+    }
     partial void OnGateDbChanged(double value)
     {
         OnPropertyChanged(nameof(GateText));
-        OnPropertyChanged(nameof(GateMark));
         Save(p => p with { Threshold = ToLinear(Math.Round(value)) });
     }
-    partial void OnMixGainChanged(double value) => Save(p => p with { MixGain = Math.Round(value, 2) });
+    partial void OnMixGainChanged(double value)
+    {
+        OnPropertyChanged(nameof(MixLevel));
+        Save(p => p with { MixGain = Math.Round(value, 2) });
+    }
 
     private void Save(Func<PlayerConfig, PlayerConfig> change)
     {

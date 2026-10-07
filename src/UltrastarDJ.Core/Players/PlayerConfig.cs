@@ -30,7 +30,7 @@ public sealed record PlayerConfig
     /// <summary>Colour key (blue/red/green/yellow); the UI maps it to <c>ColorPlayerN</c>.</summary>
     public required string Color { get; init; }
     public MicBinding? Mic { get; init; }
-    /// <summary>Input gain 0–10 applied before the gate (quiet USB mics need 4–8).</summary>
+    /// <summary>Input gain 0.01–10 (the UI edits it in dB, <see cref="InputGainScale"/>), applied before the gate.</summary>
     public double InputGain { get; init; } = 1.0;
     /// <summary>Noise gate on block RMS (linear, post-gain). Default 0.003 ≈ −50 dBFS; the UI edits it in dB.</summary>
     public double Threshold { get; init; } = 0.003;

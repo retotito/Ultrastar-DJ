@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using UltrastarDJ.App.Services;
+using UltrastarDJ.Core.Playback;
 using UltrastarDJ.Core.Songs;
 using UltrastarDJ.Infrastructure.Library;
 using UltrastarDJ.Media;
@@ -36,8 +37,11 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private bool _loading;
     [ObservableProperty] private double _fraction;
     [ObservableProperty] private string _timeText = "0:00 / 0:00";
-    [ObservableProperty] private double _gain;
-    [ObservableProperty] private double _level;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(MeterLevel))] private double _gain;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(MeterLevel))] private double _level;
+
+    /// <summary>What the fader lets through: mpv meters before its (cubic) volume, the meter shows after it.</summary>
+    public double MeterLevel => Level * VolumeCurve.MpvAmplitude(Gain);
 
     public PreviewViewModel(MediaService media, OutputsService outputs, SongResolver resolver, QueueViewModel queue, NowPlayingViewModel nowPlaying,
         NotificationService notifications, ThumbnailService thumbnails, LoadFailureService failures, YtDlpService ytDlp, ILogger<PreviewViewModel> log)
@@ -60,7 +64,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
         _gain = outputs.Preview.Gain;
         outputs.Changed += () => { _polling = true; Gain = outputs.Preview.Gain; _polling = false; };
         media.Preview.Frames.SourceChanged += () => Dispatcher.UIThread.Post(() => HasVideo = media.Preview.Frames.HasSource);
-        _poll = new DispatcherTimer(TimeSpan.FromMilliseconds(100), DispatcherPriority.Background, (_, _) => Poll());
+        _poll = new DispatcherTimer(TimeSpan.FromMilliseconds(50), DispatcherPriority.Background, (_, _) => Poll());
         _poll.Start();
     }
 

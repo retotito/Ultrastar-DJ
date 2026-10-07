@@ -414,9 +414,13 @@ Drawn directly (meter rate, allocation-free), not a templated Slider.
       (e.g. song −40…0 dB, mic −70…−20 dB); the dB mapping is a tested pure function
 - [ ] Peak hold: thin line at the last peak, falling back slowly
 - [ ] Level shown after the fader (like a mixing desk)
-- [ ] Trial in the Preview Player first → verified live
+- [x] `MeterFader` control + `Core.Playback.MeterScale` (dB range per fader, tested) and `VolumeCurve` (mpv's volume is cubic: the meter after the fader = level × volume³, tested)
+- [x] Trial in the Preview Player first → verified live
+- [x] Audio Input cards: GAIN + GATE in one `MeterFader` (`ShowGate`: shaded range below the gate, handle under the track, double-click −50 dB) and MIX (meter = gated level × mix); the separate meter and Gate slider are gone
+- [x] Mic gain knob in dB (−40…+20, half-dB steps, double-click 0 dB; `Core.Players.InputGainScale`, tested), stored linear as before (0.7× → −3.1 dB). A linear 0–10× knob left SingStar / Let's Sing mics (~0.1×) in its first 3 %. Mic meters: red from −6 dB (the meter is RMS, voice peaks are 10–15 dB higher — red = distortion in the speakers); target: loudest singing just reaches the yellow
+- [x] Verified live: Audio Input (tooltips just name the knobs)
 - [ ] Then: Game Player (song, mic mix), Audio Output (game)
-- [ ] Mic inputs (Tauri PlayerCard), two per input: **1. Gain + Gate** in one — knob = input gain, meter = mic after gain,
+- [x] Mic inputs (Tauri PlayerCard), two per input: **1. Gain + Gate** in one — knob = input gain, meter = mic after gain,
       dimmed zone below the gate with a drag handle under the track (replaces the separate Gate slider and meter);
       **2. Output mix** — knob = monitor mix, meter = what the speakers get (level × mix, empty when muted)
 - [ ] Sliders in the same blue as the toggle switches
