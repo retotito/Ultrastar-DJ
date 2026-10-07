@@ -37,6 +37,29 @@
       </StackPanel>
     </Border>
 
+    <!-- YouTube songs need a current yt-dlp: YouTube changes often, yt-dlp follows within days. -->
+    <Border Classes="card">
+      <StackPanel Spacing="{StaticResource Space2}">
+        <TextBlock Text="YouTube" />
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel VerticalAlignment="Center">
+            <TextBlock Text="{Binding YtDlpVersionText}" FontSize="{StaticResource TextSm}" />
+            <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="{Binding YtDlpStatusText}" TextWrapping="Wrap"
+                       IsVisible="{Binding YtDlpStatusText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+          </StackPanel>
+          <Button Grid.Column="1" Classes="tonal" Command="{Binding UpdateYtDlpCommand}" IsEnabled="{Binding YtDlpIdle}" VerticalAlignment="Center"
+                  ToolTip.Tip="Downloads the newest yt-dlp from its official GitHub releases — used from the next YouTube song on">
+            <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
+              <c:Icon Glyph="system_update_alt" FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushOnSecondaryContainer}" VerticalAlignment="Center" />
+              <TextBlock Text="{Binding YtDlpButtonText}" Foreground="{DynamicResource BrushOnSecondaryContainer}" VerticalAlignment="Center" />
+            </StackPanel>
+          </Button>
+        </Grid>
+        <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap"
+                   Text="yt-dlp fetches every YouTube song. When YouTube changes something, songs fail until yt-dlp is updated — usually within days." />
+      </StackPanel>
+    </Border>
+
     <Border Classes="card">
       <StackPanel Spacing="{StaticResource Space2}">
         <TextBlock Text="Logs &amp; data" />

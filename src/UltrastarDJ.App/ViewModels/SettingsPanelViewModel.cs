@@ -14,6 +14,37 @@ public sealed partial class SettingsPanelViewModel : ViewModelBase
     private readonly AppSettingsService _settings;
     private readonly AppPaths _paths;
     private readonly PlaybackService _playback;
+    private readonly YtDlpService _ytDlp;
+
+    // ── YouTube (yt-dlp): version, newer one, update ──
+    public string YtDlpVersionText => _ytDlp.CurrentVersion is { } v ? $"yt-dlp {v}" : "yt-dlp not found";
+    public string YtDlpStatusText => _ytDlp.Status is { Length: > 0 } s ? s
+        : _ytDlp.UpdateAvailable ? $"Newer version {_ytDlp.LatestVersion} available"
+        : _ytDlp.LatestVersion is not null ? "Up to date" : "";
+    public string YtDlpButtonText => _ytDlp.UpdateAvailable ? $"Update to {_ytDlp.LatestVersion}" : "Check for update";
+    public bool YtDlpIdle => !_ytDlp.Busy;
+
+    [RelayCommand]
+    private async Task UpdateYtDlpAsync()
+    {
+        // A check that finds a newer one only turns the button into "Update to …": the DJ decides when.
+        if (_ytDlp.UpdateAvailable)
+        {
+            await _ytDlp.UpdateAsync();
+        }
+        else
+        {
+            await _ytDlp.CheckAsync();
+        }
+    }
+
+    private void OnYtDlpChanged()
+    {
+        OnPropertyChanged(nameof(YtDlpVersionText));
+        OnPropertyChanged(nameof(YtDlpStatusText));
+        OnPropertyChanged(nameof(YtDlpButtonText));
+        OnPropertyChanged(nameof(YtDlpIdle));
+    }
 
     /// <summary>
     /// Each player's scorer takes the tolerance when the song starts; a change mid-song would only apply to the next
@@ -31,8 +62,10 @@ public sealed partial class SettingsPanelViewModel : ViewModelBase
     [ObservableProperty] private string _crashReportsText = "";
     [ObservableProperty] private string _filesStatus = "";
 
-    public SettingsPanelViewModel(AppSettingsService settings, AppPaths paths, PlaybackService playback)
+    public SettingsPanelViewModel(AppSettingsService settings, AppPaths paths, PlaybackService playback, YtDlpService ytDlp)
     {
+        _ytDlp = ytDlp;
+        ytDlp.Changed += OnYtDlpChanged;
         _settings = settings;
         _paths = paths;
         _playback = playback;

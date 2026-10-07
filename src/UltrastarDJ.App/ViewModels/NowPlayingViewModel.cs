@@ -47,8 +47,9 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
 
     public NowPlayingViewModel(PlaybackService playback, IDisplayService displays, MediaService media, AudioInputService audio,
         PlayersService players, AppSettingsService settings, OutputsService outputs, NotificationService notifications,
-        SongbookService songbook, ILogger<NowPlayingViewModel> log)
+        SongbookService songbook, YtDlpService ytDlp, ILogger<NowPlayingViewModel> log)
     {
+        _ytDlp = ytDlp;
         _songbook = songbook;
         // Accepted, cancelled, loaded: who asked for the loaded song may change.
         songbook.Changed += () => OnPropertyChanged(nameof(RequestedBy));
@@ -90,6 +91,7 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
     public PlaybackState State => _playback.State;
 
     private readonly SongbookService _songbook;
+    private readonly YtDlpService _ytDlp;
 
     /// <summary>The guest who requested the loaded song on the songbook (as in the queue) — the DJ calls them up.</summary>
     public string? RequestedBy => _playback.Song is { } song ? _songbook.RequesterOf(song.Id) : null;
@@ -282,7 +284,7 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
         catch (SongLoadException ex)
         {
             _log.LogWarning("Load failed: {Error}", ex.Message);
-            _notifications.ShowError("Song cannot be loaded", ex.Reasons, ex.Details);
+            _notifications.ShowError("Song cannot be loaded", _ytDlp.WithHint(ex.Reasons, ex.YtDlpMayHelp), ex.Details);
         }
         finally
         {

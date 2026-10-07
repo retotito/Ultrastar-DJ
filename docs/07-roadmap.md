@@ -105,7 +105,7 @@ Still open from earlier sprints: pre-resolving YouTube on queue-add, duet lyrics
 - [x] `UsdbClient` (login, streamed full catalog paging, incremental sync from the mtime watermark, song txt) + `UsdbHtml` scraper (AngleSharp); `SqliteUsdbCatalog` table in `library.db`; `UsdbService` (credentials persisted in `settings/usdb.json` — plain text, like the prototype; auto-connect at start; full/incremental sync with abort — a stopped full sync keeps what it fetched; disconnect removes the songs); green USDB badge, rows greyed while offline. **Verified live: 28.7k songs, preview and game from YouTube.**
 - [x] `SongResolver` (App): one load path for game and preview — USDB txt from disk cache (`cache/usdb/<id>.txt`) or network → BPM/GAP/YouTube id/notes → `SongValidator`. USDB writes `#VIDEO:a=<ytid>,co=…,bg=…`; `YouTubeId.TryExtract` understands that form.
 - [x] Songbook: `SongbookServer` (Kestrel, Infrastructure) serves the embedded `songbook.html` + `/api/songs|state|request|verify-pin`, optional 4-digit PIN; `SongbookService` (App) with persisted port/PIN/autostart, LAN URLs, guest requests → toast + REQUESTS section above the queue; Songbook sidebar panel. **Not yet tested from a phone.** Tunnel sidecar (bore) dropped for now — LAN only.
-- [ ] yt-dlp self-update action; error dialogs for blocked/unavailable videos
+- [x] yt-dlp self-update action; error dialogs for blocked/unavailable videos — done in Sprint 13
 - [ ] Packaging polish: icons, version display, README download instructions (Gatekeeper/SmartScreen)
 - [ ] Remove debug logs, close TODOs, tag `v0.2.0-beta.1`
 
@@ -374,6 +374,15 @@ Details: `03-game-engine.md` "Mic plug / unplug".
 - [x] One way in at a time: Songbook panel → "Guests connect via" Wi-Fi (default, no internet needed) or Public link. In public-link mode the server listens on this Mac only (127.0.0.1) so the Wi-Fi address is really closed, and the QR code shows only the public address (hidden while connecting / after the link is lost). Switching while running stops the one and starts the other automatically. (Phones keep "My requests" and the name per address, so they start fresh after a switch; the requests stay on the Mac.)
 - [x] Beamer songbook card: just the QR code and "Songbook" (plus the PIN when set — guests need it to get in), on the start view and get ready only — not on the score screen. The briefly added typed Wi-Fi name, the address and the explanations were dropped again.
 - [x] Verified live: phone over Wi-Fi and the public link, requests, queue, beamer card
+
+---
+
+## Sprint 13 — yt-dlp update  *(done)*
+
+- [x] Settings → YouTube: running yt-dlp version, newest release (GitHub API), "Check for update" / "Update to …". The update downloads the official folder build (`yt-dlp_macos.zip` / `yt-dlp_win.zip`) into the app data folder (`sidecars/yt-dlp/`, searched first by `SidecarLocator` — a signed bundle may not change itself), runs it once, swaps it in; the next YouTube song uses it (mpv's yt-dlp path is changeable), no restart. `Infrastructure.YtDlpUpdater`, `App.Services.YtDlpService`; versions compared by `Core.Sidecars.YtDlpVersion` (tested).
+- [x] Quiet check at start (when online): a toast if a newer yt-dlp exists — never an automatic update, nothing changes mid-party.
+- [x] Hint on YouTube errors an update usually fixes (refused stream, "not a bot", format / page not readable, unexplained YouTube failures): the error dialog adds "A newer yt-dlp is available (…) — update it in Settings → YouTube", or "Your yt-dlp is N days old — check for an update…" / "If this keeps happening…". Not for removed / private / age-restricted / blocked videos or no internet (`PlaybackError.YtDlpMayHelp`, tested).
+- [x] Verified live: version, "Up to date" and the check. The update itself waits for a release newer than 2026.08.19.
 
 ---
 

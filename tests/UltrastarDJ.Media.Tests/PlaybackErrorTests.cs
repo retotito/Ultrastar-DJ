@@ -11,8 +11,8 @@ public class PlaybackErrorTests
     [InlineData("ERROR: [youtube] abc: Private video. Sign in if you've been granted access", "private")]
     [InlineData("ERROR: [youtube] abc: The uploader has not made this video available in your country", "your country")]
     [InlineData("ERROR: [youtube] abc: Unable to download webpage: <urlopen error [Errno 8] nodename nor servname provided>", "internet")]
-    [InlineData("ERROR: [youtube] abc: Requested format is not available. Use --list-formats", "yt-dlp")]
-    [InlineData("ERROR: unable to download video data: HTTP Error 403: Forbidden", "yt-dlp")]
+    [InlineData("ERROR: [youtube] abc: Requested format is not available. Use --list-formats", "refused")]
+    [InlineData("ERROR: unable to download video data: HTTP Error 403: Forbidden", "refused")]
     [InlineData("youtube-dl failed: not found or not enough permissions", "yt-dlp is missing")]
     public void Explain_KnownYouTubeErrors_GivesPlainReason(string raw, string expectedPart)
     {
@@ -51,5 +51,18 @@ public class PlaybackErrorTests
     {
         // Marked in the library only when it would fail again tomorrow; connection trouble never marks a song.
         Assert.Equal(songProblem, PlaybackError.Explain(raw).SongProblem);
+    }
+
+    [Theory]
+    [InlineData("ERROR: [youtube] abc: Sign in to confirm you’re not a bot.", true)]
+    [InlineData("ERROR: unable to download video data: HTTP Error 403: Forbidden", true)]
+    [InlineData("ERROR: [youtube] abc: Requested format is not available.", true)]
+    [InlineData("ERROR: [youtube] abc: Unable to extract nsig function code", true)]
+    [InlineData("ERROR: [youtube] abc: Video unavailable. This video has been removed by the uploader", false)]
+    [InlineData("ERROR: [youtube] abc: Unable to download webpage: nodename nor servname provided", false)]
+    [InlineData("ERROR: [youtube] OPXUeeFXc90: Sign in to confirm your age.", false)]
+    public void YtDlpMayHelp_OnlyWhereANewerYtDlpUsuallyFixesIt(string raw, bool mayHelp)
+    {
+        Assert.Equal(mayHelp, PlaybackError.Explain(raw).YtDlpMayHelp);
     }
 }

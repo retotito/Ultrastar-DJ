@@ -10,30 +10,35 @@ namespace UltrastarDJ.Media;
 /// The video itself is the problem (removed, private, age-restricted, blocked) — it fails again tomorrow, so the
 /// library marks the song. Connection trouble, YouTube refusing streams or a missing yt-dlp are not.
 /// </param>
-public sealed record PlaybackError(string Reason, string Details, bool SongProblem = false)
+/// <param name="YtDlpMayHelp">
+/// What a newer yt-dlp usually fixes: YouTube refused the stream, a "not a bot" block, formats or pages yt-dlp could
+/// not read. The app then points the DJ to Settings → YouTube.
+/// </param>
+public sealed record PlaybackError(string Reason, string Details, bool SongProblem = false, bool YtDlpMayHelp = false)
 {
-    private static readonly (string[] Patterns, string Reason, bool SongProblem)[] Known =
+    private static readonly (string[] Patterns, string Reason, bool SongProblem, bool YtDlpMayHelp)[] Known =
     [
-        (["confirm your age"], "This video is age-restricted on YouTube and cannot be played without a YouTube login.", true),
-        (["not a bot"], "YouTube is blocking playback right now. Try again later, or update yt-dlp.", false),
-        (["private video", "this video is private"], "This video is private on YouTube.", true),
-        (["in your country", "geo restrict"], "This video is blocked in your country.", true),
-        (["copyright"], "This video was blocked on YouTube for copyright reasons.", true),
+        (["confirm your age"], "This video is age-restricted on YouTube and cannot be played without a YouTube login.", true, false),
+        (["not a bot"], "YouTube is blocking playback right now.", false, true),
+        (["private video", "this video is private"], "This video is private on YouTube.", true, false),
+        (["in your country", "geo restrict"], "This video is blocked in your country.", true, false),
+        (["copyright"], "This video was blocked on YouTube for copyright reasons.", true, false),
         (["video unavailable", "this video is unavailable", "has been removed", "account associated with this video has been terminated"],
-            "This video is no longer available on YouTube.", true),
+            "This video is no longer available on YouTube.", true, false),
         (["unable to download webpage", "nodename nor servname", "failed to resolve", "getaddrinfo", "network is unreachable", "timed out"],
-            "No connection to YouTube — check the internet connection.", false),
-        (["requested format is not available", "http error 403"], "YouTube refused the stream. Updating yt-dlp usually fixes this.", false),
-        (["youtube-dl failed: not found"], "yt-dlp is missing — run scripts/fetch-natives.", false),
+            "No connection to YouTube — check the internet connection.", false, false),
+        (["requested format is not available", "http error 403"], "YouTube refused the stream.", false, true),
+        (["unable to extract", "nsig extraction failed", "signature extraction failed"], "yt-dlp could not read YouTube's page.", false, true),
+        (["youtube-dl failed: not found"], "yt-dlp is missing — run scripts/fetch-natives.", false, false),
     ];
 
     public static PlaybackError Explain(string raw)
     {
-        foreach ((string[] patterns, string reason, bool songProblem) in Known)
+        foreach ((string[] patterns, string reason, bool songProblem, bool ytDlp) in Known)
         {
             if (patterns.Any(p => raw.Contains(p, StringComparison.OrdinalIgnoreCase)))
             {
-                return new PlaybackError(reason, raw, songProblem);
+                return new PlaybackError(reason, raw, songProblem, ytDlp);
             }
         }
 

@@ -37,6 +37,7 @@ public sealed class PlaybackService : IDisposable
     private readonly OutputsService _outputs;
     private readonly LoadFailureService _failures;
     private readonly LibraryService _library;
+    private readonly YtDlpService _ytDlp;
     private readonly NotificationService _notifications;
     private readonly ThumbnailService _thumbnails;
     private readonly ILogger<PlaybackService> _log;
@@ -46,7 +47,7 @@ public sealed class PlaybackService : IDisposable
     private PlaybackState _state = PlaybackState.Idle;
 
     public PlaybackService(MediaService media, AudioInputService audio, PlayersService players, IDisplayService displays, AppSettingsService settings, SongResolver resolver,
-        OutputsService outputs, LoadFailureService failures, LibraryService library, NotificationService notifications, ThumbnailService thumbnails, ILogger<PlaybackService> log)
+        OutputsService outputs, LoadFailureService failures, LibraryService library, YtDlpService ytDlp, NotificationService notifications, ThumbnailService thumbnails, ILogger<PlaybackService> log)
     {
         _media = media;
         _audio = audio;
@@ -57,6 +58,7 @@ public sealed class PlaybackService : IDisposable
         _outputs = outputs;
         _failures = failures;
         _library = library;
+        _ytDlp = ytDlp;
         _notifications = notifications;
         _thumbnails = thumbnails;
         _log = log;
@@ -81,7 +83,8 @@ public sealed class PlaybackService : IDisposable
             }
 
             PlaybackError explained = PlaybackError.Explain(error);
-            _notifications.ShowError("Playback stopped", explained.Reason, explained.Details);
+            bool youTube = Plan?.Audio.Source is MediaSource.YouTube;
+            _notifications.ShowError("Playback stopped", _ytDlp.WithHint([explained.Reason], explained.YtDlpMayHelp || youTube && explained.Reason == PlaybackError.Explain("").Reason), explained.Details);
         }
     }
 
@@ -226,7 +229,9 @@ public sealed class PlaybackService : IDisposable
     {
         PlaybackError e = PlaybackError.Explain(ex.Message);
         bool local = plan is not null && plan.Audio.Source is not MediaSource.YouTube;
-        return new SongLoadException(e.Reason, e.Details, e.SongProblem || local);
+        // An unexplained YouTube failure (e.g. still refused after the retries) is the typical outdated-yt-dlp case too.
+        bool unexplainedYouTube = !local && plan is not null && e.Reason == PlaybackError.Explain("").Reason;
+        return new SongLoadException(e.Reason, e.Details, e.SongProblem || local, e.YtDlpMayHelp || unexplainedYouTube);
     }
 
     /// <summary>Thumbnail download must not hold up the load: pictures follow; ignored if another song came meanwhile.</summary>
@@ -302,7 +307,7 @@ public sealed class PlaybackService : IDisposable
         catch (MediaException ex)
         {
             SongLoadException explained = Explain(ex, plan);
-            _notifications.ShowError("Song cannot be played again", explained.Reasons, explained.Details);
+            _notifications.ShowError("Song cannot be played again", _ytDlp.WithHint(explained.Reasons, explained.YtDlpMayHelp), explained.Details);
             return false;
         }
         finally
@@ -546,10 +551,13 @@ public sealed class PlaybackService : IDisposable
 /// <param name="details">Raw cause for "Show details".</param>
 /// <param name="songProblem">The song itself is the problem (broken file, no YouTube link, video removed): the
 /// library marks it (<see cref="LoadFailureService"/>). False for connection trouble.</param>
-public sealed class SongLoadException(string message, string? details = null, bool songProblem = false) : Exception(message)
+/// <param name="ytDlpMayHelp">A newer yt-dlp would likely fix it (YouTube refused or blocked the stream).</param>
+public sealed class SongLoadException(string message, string? details = null, bool songProblem = false, bool ytDlpMayHelp = false) : Exception(message)
 {
     public string? Details { get; } = details;
     public bool SongProblem { get; } = songProblem;
+    /// <summary>The dialog then points to Settings → YouTube (YtDlpService.WithHint).</summary>
+    public bool YtDlpMayHelp { get; } = ytDlpMayHelp;
 
     public IReadOnlyList<string> Reasons => Message.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 }

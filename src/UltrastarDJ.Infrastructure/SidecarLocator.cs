@@ -3,7 +3,8 @@ using System.Runtime.InteropServices;
 namespace UltrastarDJ.Infrastructure;
 
 /// <summary>
-/// Finds sidecar executables (yt-dlp, ffmpeg, cloudflared): next to the app in <c>natives/</c>, then the
+/// Finds sidecar executables (yt-dlp, ffmpeg, cloudflared): first updates in the app's data folder
+/// (<c>sidecars/</c>, see <see cref="YtDlpUpdater"/>), then next to the app in <c>natives/</c>, then the
 /// repository's <c>natives/&lt;rid&gt;/</c> during development, then <c>PATH</c>.
 /// In each directory a folder build (<c>yt-dlp/yt-dlp</c> beside its <c>_internal/</c>) wins over a single file.
 /// </summary>
@@ -11,7 +12,10 @@ public sealed class SidecarLocator
 {
     private readonly Lazy<IReadOnlyList<string>> _dirs;
 
-    public SidecarLocator() => _dirs = new(BuildDirs);
+    public SidecarLocator() => _dirs = new(() => BuildDirs(null));
+
+    /// <param name="paths">Its <c>sidecars/</c> folder holds updated copies and is searched first.</param>
+    public SidecarLocator(AppPaths paths) => _dirs = new(() => BuildDirs(Path.Combine(paths.Data, "sidecars")));
 
     /// <param name="searchDirs">Directories searched in order before <c>PATH</c>.</param>
     public SidecarLocator(IReadOnlyList<string> searchDirs) => _dirs = new(searchDirs);
@@ -52,9 +56,10 @@ public sealed class SidecarLocator
         return null;
     }
 
-    private static List<string> BuildDirs()
+    private static List<string> BuildDirs(string? updates)
     {
-        List<string> dirs = [Path.Combine(AppContext.BaseDirectory, "natives"), AppContext.BaseDirectory];
+        List<string> dirs = updates is null ? [] : [updates];
+        dirs.AddRange([Path.Combine(AppContext.BaseDirectory, "natives"), AppContext.BaseDirectory]);
         DirectoryInfo? dir = new(AppContext.BaseDirectory);
         for (int i = 0; i < 8 && dir is not null; i++, dir = dir.Parent)
         {

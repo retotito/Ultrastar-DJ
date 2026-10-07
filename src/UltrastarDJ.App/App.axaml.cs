@@ -96,6 +96,8 @@ public sealed partial class App : Application
     private static async Task StartNetworkAsync(ServiceProvider services)
     {
         await services.GetRequiredService<ConnectivityService>().StartAsync();
+        // Version check off the first YouTube song (and a quiet "newer yt-dlp" toast) — never an automatic update.
+        _ = services.GetRequiredService<YtDlpService>().StartAsync();
         await services.GetRequiredService<UsdbService>().AutoConnectAsync();
     }
 
@@ -121,6 +123,7 @@ public sealed partial class App : Application
         services.AddSingleton<ThumbnailService>();
         services.AddSingleton<AppSettingsService>();
         services.AddSingleton<MediaService>();
+        services.AddSingleton<YtDlpService>();
         services.AddSingleton<IAudioBackend, PortAudioBackend>();
         services.AddSingleton<PlayersService>();
         services.AddSingleton<AudioInputService>();

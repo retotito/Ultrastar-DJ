@@ -20,6 +20,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
     private readonly OutputsService _outputs;
     private readonly ThumbnailService _thumbnails;
     private readonly LoadFailureService _failures;
+    private readonly YtDlpService _ytDlp;
     private readonly SongResolver _resolver;
     private readonly QueueViewModel _queue;
     private readonly NowPlayingViewModel _nowPlaying;
@@ -39,8 +40,9 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private double _level;
 
     public PreviewViewModel(MediaService media, OutputsService outputs, SongResolver resolver, QueueViewModel queue, NowPlayingViewModel nowPlaying,
-        NotificationService notifications, ThumbnailService thumbnails, LoadFailureService failures, ILogger<PreviewViewModel> log)
+        NotificationService notifications, ThumbnailService thumbnails, LoadFailureService failures, YtDlpService ytDlp, ILogger<PreviewViewModel> log)
     {
+        _ytDlp = ytDlp;
         _failures = failures;
         _thumbnails = thumbnails;
         _media = media;
@@ -135,7 +137,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
                 _failures.Failed(song, ex.Reasons[0]);
             }
 
-            _notifications.ShowError("Song cannot be previewed", ex.Reasons, ex.Details);
+            _notifications.ShowError("Song cannot be previewed", _ytDlp.WithHint(ex.Reasons, ex.YtDlpMayHelp), ex.Details);
         }
         catch (MediaException ex)
         {
@@ -146,7 +148,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
                 _failures.Failed(song, explained.Reasons[0]);
             }
 
-            _notifications.ShowError("Song cannot be previewed", explained.Reasons, explained.Details);
+            _notifications.ShowError("Song cannot be previewed", _ytDlp.WithHint(explained.Reasons, explained.YtDlpMayHelp), explained.Details);
         }
         finally
         {
