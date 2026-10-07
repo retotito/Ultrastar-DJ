@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 namespace UltrastarDJ.Infrastructure;
 
 /// <summary>
-/// Finds sidecar executables (yt-dlp, ffmpeg): next to the app in <c>natives/</c>, then the
+/// Finds sidecar executables (yt-dlp, ffmpeg, cloudflared): next to the app in <c>natives/</c>, then the
 /// repository's <c>natives/&lt;rid&gt;/</c> during development, then <c>PATH</c>.
 /// In each directory a folder build (<c>yt-dlp/yt-dlp</c> beside its <c>_internal/</c>) wins over a single file.
 /// </summary>
@@ -18,6 +18,8 @@ public sealed class SidecarLocator
 
     public string? YtDlp => Find("yt-dlp");
     public string? Ffmpeg => Find("ffmpeg");
+    /// <summary>Cloudflare's tunnel client — the songbook's public link for guests not on the Wi-Fi.</summary>
+    public string? Cloudflared => Find("cloudflared");
 
     public string? Find(string name)
     {

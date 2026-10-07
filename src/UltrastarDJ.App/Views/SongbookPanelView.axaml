@@ -17,19 +17,43 @@
       </Button>
     </StackPanel>
     <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap"
-               Text="Guests on the same Wi-Fi open the address on their phone, search the library and request songs. Requests appear above the queue." />
+               Text="Guests scan the QR code on the beamer (or open the address), search the library and request songs. Requests appear above the queue." />
+
+    <!-- One way in at a time: switching while running stops the one and starts the other. -->
+    <Border Classes="card">
+      <StackPanel Spacing="{StaticResource Space2}">
+        <TextBlock Text="Guests connect via" />
+        <ComboBox ItemsSource="{Binding ConnectChoices}" SelectedItem="{Binding ConnectVia}" HorizontalAlignment="Stretch" IsEnabled="{Binding !Busy}" />
+        <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap" IsVisible="{Binding IsWifi}"
+                   Text="Only phones on the same Wi-Fi as this Mac. Works without internet." />
+        <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap" IsVisible="{Binding IsPublic}"
+                   Text="A public https link (Cloudflare) — works on mobile data and any Wi-Fi. Needs internet on this Mac; the party PIN is switched on. The Wi-Fi address is closed meanwhile." />
+      </StackPanel>
+    </Border>
 
     <Border Classes="card" IsVisible="{Binding IsRunning}">
       <StackPanel Spacing="{StaticResource Space1}">
         <TextBlock Classes="label" Text="ADDRESS" />
-        <SelectableTextBlock Text="{Binding Urls}" FontFamily="{StaticResource FontMono}" FontSize="{StaticResource TextLg}" />
-        <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="Several addresses = several network interfaces; the Wi-Fi one usually starts with 192.168." TextWrapping="Wrap" />
+        <SelectableTextBlock Text="{Binding Urls}" FontFamily="{StaticResource FontMono}" FontSize="{StaticResource TextLg}" IsVisible="{Binding IsWifi}" />
+        <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="Several addresses = several network interfaces; the Wi-Fi one usually starts with 192.168." TextWrapping="Wrap" IsVisible="{Binding IsWifi}" />
+        <SelectableTextBlock Text="{Binding PublicUrl}" FontFamily="{StaticResource FontMono}" FontSize="{StaticResource TextSm}" TextWrapping="Wrap"
+                             IsVisible="{Binding IsPublic}" />
+        <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="{Binding PublicStatus}" TextWrapping="Wrap"
+                   IsVisible="{Binding PublicStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
       </StackPanel>
     </Border>
 
 
     <Border Classes="card">
       <StackPanel Spacing="{StaticResource Space3}">
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel>
+            <TextBlock Text="Allow requests" />
+            <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap"
+                       Text="Off: guests can browse the songbook, but not request songs from their phone" />
+          </StackPanel>
+          <ToggleSwitch Grid.Column="1" IsChecked="{Binding RequestsOpen}" OnContent="" OffContent="" />
+        </Grid>
         <Grid ColumnDefinitions="*,Auto">
           <StackPanel>
             <TextBlock Text="Party PIN" />

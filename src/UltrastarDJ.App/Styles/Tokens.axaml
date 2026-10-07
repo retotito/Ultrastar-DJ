@@ -51,6 +51,8 @@
       <SolidColorBrush x:Key="BrushStatePressed" Color="{DynamicResource SystemAccentColor}" Opacity="0.9" />
       <!-- Zebra stripe: on-surface at 4%, as in the prototype -->
       <Color x:Key="ColorTableRowAlt">#0AFFFFFF</Color>
+      <!-- Songbook requests: a light green wash, so guests' wishes stand out (REQUESTS, request toasts). -->
+      <Color x:Key="ColorRequest">#1F3A2A</Color>
     </ResourceDictionary>
 
     <ResourceDictionary x:Key="Light">
@@ -93,6 +95,7 @@
       <SolidColorBrush x:Key="BrushStateSelectedHover" Color="{DynamicResource SystemAccentColor}" Opacity="0.6" />
       <SolidColorBrush x:Key="BrushStatePressed" Color="{DynamicResource SystemAccentColor}" Opacity="0.7" />
       <Color x:Key="ColorTableRowAlt">#0A000000</Color>
+      <Color x:Key="ColorRequest">#E6F4EA</Color>
     </ResourceDictionary>
 
   </ResourceDictionary.ThemeDictionaries>
@@ -136,6 +139,7 @@
   <SolidColorBrush x:Key="BrushOutline" Color="{DynamicResource ColorOutline}" />
   <SolidColorBrush x:Key="BrushOutlineVariant" Color="{DynamicResource ColorOutlineVariant}" />
   <SolidColorBrush x:Key="BrushTableRowAlt" Color="{DynamicResource ColorTableRowAlt}" />
+  <SolidColorBrush x:Key="BrushRequest" Color="{DynamicResource ColorRequest}" />
   <!-- Neutral hover for rows and icon buttons (on-surface at 10%, like Fluent's list hover) -->
   <SolidColorBrush x:Key="BrushStateHover" Color="{DynamicResource ColorOnSurface}" Opacity="0.1" />
   <SolidColorBrush x:Key="BrushPlayer1" Color="{StaticResource ColorPlayer1}" />

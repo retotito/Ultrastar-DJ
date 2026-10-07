@@ -110,13 +110,13 @@ Everything below exists in the prototype and must exist in v2 unless marked *(la
 - YIN pitch detection per mic, median ring buffer (5), octave-invariant matching, difficulty easy/medium/hard (±2 / ±1 / ±0.5 semitones), points per beat (normal 1×, golden 2×, rap = any sound, freestyle = 0), max 10 000 per song, phrase bonus.
 
 ### Songbook for guests
-- Embedded HTTP server serving a mobile web page: guests browse/search the library and request songs. Optional 4-digit party PIN. Public URL via tunnel (bore) for guests not on the LAN. *(v2: keep server; tunnel optional)*.
+- Embedded HTTP server serving a mobile web page: guests browse/search the library and request songs. Optional 4-digit party PIN. Public https link via a Cloudflare Quick Tunnel (`cloudflared`) for guests not on the Wi-Fi, optional next to the Wi-Fi address; the beamer shows a QR code.
 
 ### Settings
 - Theme dark/light, difficulty, output latency per device, sources, persisted players/displays/outputs.
 
 ### Sidecars
-- `yt-dlp` (YouTube stream resolution — used by libmpv), `ffmpeg` (used by yt-dlp for muxing when needed; no longer needed for transcoding).
+- `yt-dlp` (YouTube stream resolution — used by libmpv), `ffmpeg` (used by yt-dlp for muxing when needed; no longer needed for transcoding), `cloudflared` (the songbook's optional public link).
 
 ---
 

@@ -299,7 +299,8 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
     /// <summary>The party PIN guests must type, or null without one.</summary>
     public string? SongbookPin { get; private set; }
     public bool HasSongbookPin => SongbookPin is not null;
-    public bool ShowSongbookQr => SongbookUrl is not null && State is PlaybackState.Idle or PlaybackState.Loaded or PlaybackState.Preview or PlaybackState.Score;
+    // Start view and get ready only: not over the game, not over the scores.
+    public bool ShowSongbookQr => SongbookUrl is not null && State is PlaybackState.Idle or PlaybackState.Loaded or PlaybackState.Preview;
 
     // Re-read on the songbook's changes and on every state change (a Wi-Fi switch changes the address too).
     private void OnSongbookChanged()

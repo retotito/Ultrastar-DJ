@@ -45,6 +45,15 @@ else {
   Write-Host "✓ ffmpeg"
 }
 
+# ── cloudflared (songbook public link: Cloudflare Quick Tunnel) ─────────────
+$cloudflared = Join-Path $Dest 'cloudflared.exe'
+if (Test-Path $cloudflared) { Write-Host "✓ cloudflared present" }
+else {
+  Write-Host "→ downloading cloudflared…"
+  Invoke-WebRequest 'https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe' -OutFile $cloudflared
+  Write-Host "✓ cloudflared"
+}
+
 # ── libmpv-2.dll (shinchiro mpv-dev builds, published on SourceForge) ──────
 $libmpv = Join-Path $Dest 'libmpv-2.dll'
 if (Test-Path $libmpv) { Write-Host "✓ libmpv present" }

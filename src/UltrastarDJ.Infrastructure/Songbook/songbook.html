@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#121218">
 <title>Ultrastar DJ — Songbook</title>
 <style>
-  :root { --bg:#121218; --card:#1c1c26; --card2:#262633; --text:#ecebf3; --muted:#9a98ab; --accent:#c8b8ff; --accent-text:#1a1a24; --danger:#ff6b6b; --ok:#4ecb71; }
+  :root { --request:#1f3a2a; --bg:#121218; --card:#1c1c26; --card2:#262633; --text:#ecebf3; --muted:#9a98ab; --accent:#c8b8ff; --accent-text:#1a1a24; --danger:#ff6b6b; --ok:#4ecb71; }
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html, body { margin:0; background:var(--bg); color:var(--text); font:16px/1.4 -apple-system, "Segoe UI", Roboto, Inter, sans-serif; }
   header { position:sticky; top:0; z-index:5; background:var(--bg); padding:calc(env(safe-area-inset-top) + 12px) 16px 10px; border-bottom:1px solid #2a2a3a; }
@@ -31,8 +31,11 @@
   .btn:disabled { opacity:.5; }
   .btn.ok { background:var(--ok); }
   .hint { color:var(--muted); text-align:center; padding:24px 0; font-size:14px; }
-  .toast { position:fixed; left:16px; right:16px; bottom:calc(env(safe-area-inset-bottom) + 16px); background:var(--card2); border:1px solid #33334a; border-radius:12px; padding:12px 14px; text-align:center; opacity:0; transform:translateY(10px); transition:.25s; pointer-events:none; }
-  .toast.show { opacity:1; transform:none; }
+  /* In the middle of the screen, where the eye is after tapping in the dialog. */
+  .toast { position:fixed; left:24px; right:24px; top:50%; z-index:110; background:var(--card2); border:1px solid #33334a; border-radius:14px; padding:16px; text-align:center; font-weight:600;
+           opacity:0; transform:translateY(-50%) scale(.96); transition:.25s; pointer-events:none; box-shadow:0 8px 28px rgba(0,0,0,.5); }
+  .toast.show { opacity:1; transform:translateY(-50%); }
+  .toast.ok { background:var(--request); border-color:#3a6a4b; }
   .overlay { display:none; position:fixed; inset:0; background:var(--bg); z-index:100; align-items:center; justify-content:center; padding:24px; }
   .overlay.visible { display:flex; }
   .card { background:var(--card); border:1px solid #2a2a3a; border-radius:16px; padding:28px 24px; width:100%; max-width:320px; display:flex; flex-direction:column; gap:14px; align-items:center; text-align:center; }
@@ -65,13 +68,24 @@
   .modal input:focus { border-color:var(--accent); }
   .modal label { color:var(--muted); font-size:13px; margin-bottom:-4px; }
   .mark { font-size:11px; color:var(--accent); white-space:nowrap; flex:none; }
-  .mine { background:var(--card); border-radius:14px; padding:4px 14px 8px; margin-bottom:12px; }
-  .mine summary { color:var(--muted); font-size:11px; letter-spacing:1px; text-transform:uppercase; padding:8px 0 4px; cursor:pointer; }
-  .mine .r { display:flex; align-items:center; gap:10px; padding:8px 0; border-top:1px solid #2a2a3a; }
+  /* Requests: the green wash the DJ's app uses for them too. */
+  .mine { background:var(--request); border-radius:14px; padding:4px 14px 8px; margin-bottom:12px; }
+  .mine summary, .mine .title { color:var(--muted); font-size:11px; letter-spacing:1px; text-transform:uppercase; padding:8px 0 4px; cursor:pointer; }
+  .mine .r { display:flex; align-items:center; gap:10px; padding:8px 0; border-top:1px solid #2c4a37; }
   .mine .r:first-of-type { border-top:none; }
   .mine .r .meta { flex:1; min-width:0; }
   .mine .st { font-size:13px; color:var(--accent); }
-  .mine .cancel { background:var(--card2); color:var(--text); border:none; border-radius:9px; padding:8px 10px; font-size:13px; }
+  .mine .cancel { background:#2c4a37; color:var(--text); border:none; border-radius:9px; padding:8px 10px; font-size:13px; }
+  /* "My requests" scrolled away: a small tab under the search shows how many; tap to open them right there. */
+  .handle { position:absolute; top:100%; right:16px; background:var(--request); color:var(--text); border:1px solid #3a6a4b; border-top:none;
+            border-radius:0 0 12px 12px; padding:4px 14px 6px; font-size:14px; font-weight:700; cursor:pointer; }
+  .handle[hidden] { display:none; }
+  .drop { position:absolute; top:100%; left:0; right:0; padding:0 16px; }
+  .drop .mine { margin:8px 0 0; box-shadow:0 10px 30px rgba(0,0,0,.55); max-height:60vh; overflow:auto; }
+  .top { position:fixed; right:16px; bottom:calc(env(safe-area-inset-bottom) + 16px); width:48px; height:48px; border-radius:50%; border:none;
+         background:var(--accent); color:var(--accent-text); font-size:22px; font-weight:700; box-shadow:0 4px 14px rgba(0,0,0,.45);
+         opacity:0; transform:translateY(12px); pointer-events:none; transition:.2s; z-index:20; cursor:pointer; }
+  .top.visible { opacity:1; transform:none; pointer-events:auto; }
   .more { width:100%; background:var(--card); color:var(--text); }
 </style>
 </head>
@@ -90,6 +104,8 @@
     </select>
     <select id="fv" onchange="valueChanged()" disabled><option value="">—</option></select>
   </div>
+  <button class="handle" id="handle" hidden onclick="openDrop()" aria-label="My requests"></button>
+  <div class="drop" id="drop" hidden><div class="mine"><div class="title" id="dropTitle">My requests</div><div id="dropList"></div></div></div>
 </header>
 <main>
   <!-- This phone's requests and where they stand; cancel while the DJ has not decided. -->
@@ -97,18 +113,14 @@
     <summary id="mineTitle">My requests</summary>
     <div id="mineList"></div>
   </details>
-  <section class="now" id="now" hidden>
-    <div class="label">Now playing</div>
-    <div class="title" id="nowTitle"></div>
-    <div class="artist" id="nowArtist"></div>
-    <ol class="queue" id="queue"></ol>
-  </section>
   <div class="count" id="matches"></div>
   <div id="list"></div>
   <button class="btn more" id="more" hidden onclick="showMore()"></button>
   <div class="hint" id="hint">Loading the songbook…</div>
 </main>
 <div class="toast" id="toast"></div>
+<!-- Back to the search after scrolling down a long list. -->
+<button class="top" id="top" aria-label="Back to top" onclick="toTop()">↑</button>
 
 <div class="overlay" id="pinOverlay">
   <div class="card">
@@ -143,13 +155,20 @@
   // A random id for this phone: its own requests ("My requests") — never shown, not tied to the name.
   var client = localStorage.getItem('sb_client');
   if (!client) { client = Array.from(crypto.getRandomValues(new Uint8Array(12)), function (b) { return ('0' + b.toString(16)).slice(-2); }).join(''); localStorage.setItem('sb_client', client); }
-  var mine = [], taken = {};
+  var mine = [], taken = {}, requestsOpen = true;
   var lib = null, libVersion = 0, matches = [], shown = PAGE, timer = null;
   var STARS = ['Not rated', '★', '★★', '★★★', '★★★★'];
 
   function api(path) { return fetch(path + (path.indexOf('?') < 0 ? '?' : '&') + 'pin=' + encodeURIComponent(pin)); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
-  function toast(msg) { var t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(function () { t.classList.remove('show'); }, 2200); }
+  // ok: the green of requests — only for "it worked". Visible 3.2 s.
+  var toastTimer = null;
+  function toast(msg, ok) {
+    var t = document.getElementById('toast');
+    t.textContent = msg; t.classList.toggle('ok', !!ok); t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.classList.remove('show'); }, 3200);
+  }
 
   async function verify() {
     var res = await api('/api/verify-pin');
@@ -281,8 +300,11 @@
     var own = mine.filter(function (m) { return m.songId === id && m.canCancel; })[0];
     if (own) { btn.disabled = false; btn.textContent = 'Cancel my request'; btn.dataset.cancel = own.id; return; }
     delete btn.dataset.cancel;
-    btn.disabled = !!taken[id];
-    btn.textContent = taken[id] ? taken[id] : 'Request song';
+    // The DJ switched requests off: the songbook is for browsing (the name field goes too).
+    document.getElementById('mName').hidden = !requestsOpen;
+    document.querySelector('label[for="mName"]').hidden = !requestsOpen;
+    btn.disabled = !requestsOpen || !!taken[id];
+    btn.textContent = !requestsOpen ? 'The DJ isn\'t taking requests right now' : taken[id] ? taken[id] : 'Request song';
   }
   async function requestOpen() {
     var btn = document.getElementById('mRequest');
@@ -301,22 +323,15 @@
     if (!res.ok) { if (res.status === 401) verify(); return; }
     var s = await res.json();
     if (s.libraryVersion !== libVersion) loadLibrary(s.libraryVersion);
-    mine = s.mine || []; taken = s.taken || {};
-    renderMine(); updateMarks(); updateRequestButton();
+    mine = s.mine || []; taken = s.taken || {}; requestsOpen = s.requestsOpen !== false;
+    renderMine(); updateMarks(); updateRequestButton(); updateHandle();
     document.getElementById('count').textContent = s.songCount.toLocaleString() + ' songs';
-    var now = document.getElementById('now');
-    if (s.nowPlaying || s.queue.length) {
-      now.hidden = false;
-      document.getElementById('nowTitle').textContent = s.nowPlaying ? s.nowPlaying.title : '—';
-      document.getElementById('nowArtist').textContent = s.nowPlaying ? s.nowPlaying.artist : '';
-      document.getElementById('queue').innerHTML = s.queue.map(function (q) { return '<li>' + esc(q.artist) + ' – ' + esc(q.title) + '</li>'; }).join('');
-    } else { now.hidden = true; }
   }
 
   // ── Requests ──
   async function send(songId) {
     var res = await fetch('/api/request?pin=' + encodeURIComponent(pin), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ songId: songId, guest: guest, client: client }) });
-    if (res.ok) toast('Requested — the DJ has been told 🎶');
+    if (res.ok) toast('Requested — the DJ has been told 🎶', true);
     else if (res.status === 401) verify();
     else if (res.status === 404) toast('This song is no longer available');
     else if (res.status === 409) toast((await res.json()).message);
@@ -325,19 +340,31 @@
   }
   async function cancel(id) {
     var res = await fetch('/api/cancel?pin=' + encodeURIComponent(pin), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id, client: client }) });
-    toast(res.ok ? 'Request cancelled' : 'Too late — the DJ already decided');
+    toast(res.ok ? 'Request cancelled' : 'Too late — the DJ already decided', res.ok);
     refreshState();
   }
 
   function renderMine() {
     var box = document.getElementById('mine');
     box.hidden = mine.length === 0;
-    document.getElementById('mineTitle').textContent = 'My requests (' + mine.length + ')';
-    document.getElementById('mineList').innerHTML = mine.map(function (m) {
+    document.getElementById('mineTitle').textContent = document.getElementById('dropTitle').textContent = 'My requests (' + mine.length + ')';
+    document.getElementById('handle').textContent = mine.length;
+    document.getElementById('mineList').innerHTML = document.getElementById('dropList').innerHTML = mine.map(function (m) {
       return '<div class="r"><div class="meta"><div class="t">' + esc(m.title) + '</div><div class="st">' + esc(m.status) + '</div></div>'
         + (m.canCancel ? '<button class="cancel" onclick="cancel(\'' + esc(m.id) + '\')">Cancel</button>' : '') + '</div>';
     }).join('');
   }
+  // The handle shows while the card is scrolled away under the header; an open drop closes on the next scroll.
+  var dropAt = -1;
+  function updateHandle() {
+    var card = document.getElementById('mine'), header = document.querySelector('header');
+    var away = mine.length > 0 && card.getBoundingClientRect().bottom < header.getBoundingClientRect().bottom;
+    document.getElementById('handle').hidden = !away || dropAt >= 0;
+    if (!away) closeDrop();
+  }
+  function openDrop() { dropAt = window.scrollY; document.getElementById('drop').hidden = false; document.getElementById('handle').hidden = true; }
+  function closeDrop() { if (dropAt < 0) return; dropAt = -1; document.getElementById('drop').hidden = true; updateHandle(); }
+
   // Markers on the rows already shown ("Requested", "In the queue #3") — updated in place, the list keeps its place.
   function updateMarks() {
     document.querySelectorAll('#list .song').forEach(function (el) {
@@ -348,6 +375,20 @@
   document.getElementById('q').addEventListener('input', function () { clearTimeout(timer); timer = setTimeout(function () { shown = PAGE; fillValues(); render(); }, 150); });
   document.getElementById('pinInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') submitPin(); });
   document.getElementById('mName').addEventListener('keydown', function (e) { if (e.key === 'Enter') requestOpen(); });
+  // A quarter second, eased — the browser's own smooth scroll takes ages on a long list.
+  function toTop() {
+    var from = window.scrollY, start = performance.now();
+    (function step(now) {
+      var t = Math.min(1, (now - start) / 250);
+      window.scrollTo(0, from * Math.pow(1 - t, 3));
+      if (t < 1) requestAnimationFrame(step);
+    })(start);
+  }
+  window.addEventListener('scroll', function () {
+    document.getElementById('top').classList.toggle('visible', window.scrollY > 600);
+    if (dropAt >= 0 && Math.abs(window.scrollY - dropAt) > 24) closeDrop();
+    updateHandle();
+  }, { passive: true });
   verify().then(function (ok) { if (ok) refreshState(); });
   setInterval(refreshState, 5000);
 </script>

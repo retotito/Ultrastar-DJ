@@ -71,12 +71,13 @@ public sealed partial class QueueViewModel : ViewModelBase
     internal void MoveUp(Song s) => _playlist.MoveUp(s.Id);
     internal void MoveDown(Song s) => _playlist.MoveDown(s.Id);
 
+    /// <summary>Into the Game Player and out of the queue: the queue is what is still to come.</summary>
     internal async Task LoadAsync(Song s)
     {
         await _nowPlaying.LoadCommand.ExecuteAsync(s);
-        if (_nowPlaying.HasSong)
+        if (_nowPlaying.LoadedSongId == s.Id)
         {
-            _playlist.SetActive(s.Id);
+            _playlist.Remove(s.Id);
         }
     }
 

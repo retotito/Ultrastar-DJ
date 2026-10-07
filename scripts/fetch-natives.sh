@@ -53,6 +53,21 @@ else
   echo "✓ ffmpeg"
 fi
 
+# ── cloudflared (songbook public link: Cloudflare Quick Tunnel) ──────────────
+if [[ -x "$DEST/cloudflared" ]]; then
+  echo "✓ cloudflared present ($("$DEST/cloudflared" --version | head -1))"
+else
+  echo "→ downloading cloudflared…"
+  case "$ARCH" in arm64) CF=cloudflared-darwin-arm64.tgz ;; *) CF=cloudflared-darwin-amd64.tgz ;; esac
+  TMP=$(mktemp -d)
+  curl -fsSL "https://github.com/cloudflare/cloudflared/releases/latest/download/$CF" -o "$TMP/cf.tgz"
+  tar -xzf "$TMP/cf.tgz" -C "$TMP"
+  mv "$TMP/cloudflared" "$DEST/cloudflared"
+  chmod +x "$DEST/cloudflared"
+  rm -rf "$TMP"
+  echo "✓ cloudflared $("$DEST/cloudflared" --version | head -1)"
+fi
+
 # ── libmpv + dependency dylibs ───────────────────────────────────────────────
 if [[ -f "$DEST/libmpv.2.dylib" ]]; then
   echo "✓ libmpv present"

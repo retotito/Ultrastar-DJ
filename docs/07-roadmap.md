@@ -349,7 +349,7 @@ Details: `03-game-engine.md` "Mic plug / unplug".
 
 ---
 
-## Sprint 12 — Songbook  *(in progress)*
+## Sprint 12 — Songbook  *(done)*
 
 - [x] Phone test over Wi-Fi: works (browse, search, request).
 - [x] Pears (P2P, Hyperswarm) considered instead of Wi-Fi: needs an installed app on every phone (browsers cannot hole-punch) and a Bare sidecar — not for a party. Browser + Wi-Fi stays; a tunnel link is the option for guests on mobile data.
@@ -360,7 +360,20 @@ Details: `03-game-engine.md` "Mic plug / unplug".
 - [x] Requests: name field in the song dialog (remembered on the phone, editable); "My requests" at the top of the page with status (Waiting for the DJ, In the queue #n / Up next, On stage now, Sung, Not this time) and Cancel while waiting; markers in the list ("Requested", "In the queue #3", "On stage"); the dialog's button turns into "Cancel my request" or shows why a song can't be requested. Rules in `Core.Songbook.GuestRequests` (tested): no song requested twice or while queued / on stage, at most 3 open requests per guest, cancel only own + waiting, status read from the queue. Each phone has a random id (its requests survive a renamed guest).
 - [x] The DJ's queue shows "🎤 Name" under songs requested on the songbook — who to call to the mic.
 - [x] State, requests and cancels run on the UI thread (the queue and the request book live there; the old status call read the queue from Kestrel threads).
-- [ ] Verified live (phone)
+- [x] Game Player shows "🎤 Name" under the artist for a requested song (as in the queue).
+- [x] Requests stand out: light green background (`BrushRequest`, per theme) for the REQUESTS list and the request toasts (new toast kind with a mic icon); the phone's "My requests" in the same green.
+- [x] Phone: "↑" back-to-top button after scrolling down.
+- [x] Fix: a request stayed "On stage now" after the DJ loaded the next song from the library (the queue's active entry does not move then). On stage = loaded in the Game Player; `GuestRequests` takes the loaded song (test first).
+- [x] Loading a song from the queue removes it from the queue (it is in the Game Player; the queue is what is still to come).
+- [x] Songbook panel → "Allow requests" (default on, persisted): off = guests browse only; the phone hides the name field and says "The DJ isn't taking requests right now"; the server refuses requests too.
+- [x] Phone: no "now playing" card; back-to-top in a quarter second (eased) instead of the browser's slow smooth scroll.
+- [x] Phone toasts in the middle of the screen, 3.2 s; "Requested" (and "Request cancelled") in the requests' green, other messages neutral.
+- [x] Phone: when "My requests" is scrolled away, a green tab under the search shows the number of requests; tapping it opens them right there (Cancel works), the next scroll closes them.
+- [x] Phone: the requests panel opened from the tab has its title ("My requests (n)") too.
+- [x] Public link (second way in, next to Wi-Fi): Songbook panel → "Public link" starts a Cloudflare Quick Tunnel (`cloudflared` sidecar, fetched by scripts/fetch-natives; free, no account) and shows its `https://….trycloudflare.com` address; the beamer's QR code then uses it (works on Wi-Fi and mobile data); the party PIN is switched on; up to 3 reconnects 5 s apart if cloudflared dies, then a warning, the QR falls back to Wi-Fi. `Songbook.CloudflareTunnel` (address parsing tested — not cloudflared's own api.trycloudflare.com from its error lines). Chosen over bore (the prototype's: one-person server, odd port, plain http, no reconnect).
+- [x] One way in at a time: Songbook panel → "Guests connect via" Wi-Fi (default, no internet needed) or Public link. In public-link mode the server listens on this Mac only (127.0.0.1) so the Wi-Fi address is really closed, and the QR code shows only the public address (hidden while connecting / after the link is lost). Switching while running stops the one and starts the other automatically. (Phones keep "My requests" and the name per address, so they start fresh after a switch; the requests stay on the Mac.)
+- [x] Beamer songbook card: just the QR code and "Songbook" (plus the PIN when set — guests need it to get in), on the start view and get ready only — not on the score screen. The briefly added typed Wi-Fi name, the address and the explanations were dropped again.
+- [x] Verified live: phone over Wi-Fi and the public link, requests, queue, beamer card
 
 ---
 

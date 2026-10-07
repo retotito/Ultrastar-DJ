@@ -60,6 +60,13 @@
       </Border>
       <TextBlock Classes="title" Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
       <TextBlock Classes="muted" Text="{Binding Artist}" TextTrimming="CharacterEllipsis" />
+      <!-- Requested on the songbook: who to call to the mic (same look as in the queue) -->
+      <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,-4,0,0"
+                  IsVisible="{Binding RequestedBy, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" ToolTip.Tip="Requested on the songbook">
+        <c:Icon Glyph="mic" FontSize="{StaticResource IconSm}" Foreground="{DynamicResource BrushPrimary}" VerticalAlignment="Center" />
+        <TextBlock Text="{Binding RequestedBy}" FontSize="{StaticResource TextXs}" FontWeight="{StaticResource WeightSemibold}"
+                   Foreground="{DynamicResource BrushPrimary}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+      </StackPanel>
 
       <Grid ColumnDefinitions="*,Auto">
         <!-- Status line hidden on purpose (the DJ doesn't need it); NowPlayingViewModel.Status still computes it. -->

@@ -9,6 +9,7 @@ using UltrastarDJ.Core.Playback;
 using UltrastarDJ.Core.Queue;
 using UltrastarDJ.Core.Songbook;
 using UltrastarDJ.Core.Songs;
+using UltrastarDJ.Infrastructure;
 using UltrastarDJ.Infrastructure.Songbook;
 
 namespace UltrastarDJ.App.Services;
@@ -26,6 +27,7 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
 
     private readonly LibraryService _library;
     private readonly UsdbService _usdb;
+    private readonly SidecarLocator _sidecars;
     private readonly PlaybackService _playback;
     private readonly Playlist _playlist;
     private readonly NotificationService _notifications;
@@ -35,20 +37,19 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
     private SongbookDocument _doc;
 
     public SongbookService(LibraryService library, PlaybackService playback, Playlist playlist, NotificationService notifications,
-        ISettingsStore settings, UsdbService usdb, ILoggerFactory loggers)
+        ISettingsStore settings, UsdbService usdb, SidecarLocator sidecars, ILoggerFactory loggers)
     {
+        _sidecars = sidecars;
         _library = library;
         _usdb = usdb;
         library.Changed += OnLibraryChanged;
         library.AvailabilityChanged += OnLibraryChanged;
         _playback = playback;
         _playlist = playlist;
-        // Remember which accepted requests went on stage (their status turns "sung" when the queue moves on).
-        playlist.Changed += () =>
-        {
-            _requests.Observe(QueueIds(), _playlist.ActiveIndex);
-            Changed?.Invoke();
-        };
+        // Remember which accepted requests went on stage (their status turns "sung" once another song is loaded —
+        // from the queue or the library), and refresh who is shown as requester in the queue and the Game Player.
+        playlist.Changed += OnStageChanged;
+        playback.StateChanged += _ => OnStageChanged();
         _notifications = notifications;
         _settings = settings;
         _log = loggers.CreateLogger<SongbookService>();
@@ -64,6 +65,10 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
     public bool PinEnabled => _doc.PinEnabled;
     public string Pin => _doc.Pin;
     public bool AutoStart => _doc.AutoStart;
+    /// <summary>Guests may request songs; off = the songbook is only for browsing (not every DJ wants requests).</summary>
+    public bool RequestsOpen => !_doc.RequestsClosed;
+
+    public void SetRequestsOpen(bool open) => Save(_doc with { RequestsClosed = !open });
     public string? LastError { get; private set; }
     public ObservableCollection<SongRequest> Requests { get; } = [];
 
@@ -120,6 +125,12 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
             }
         }
 
+        // Public-link mode: only the public address works (none while connecting); Wi-Fi mode: the Wi-Fi address.
+        if (_doc.PublicLink)
+        {
+            return PublicUrl;
+        }
+
         return SongbookAddress.Best(addresses) is { } best ? $"http://{best}:{_doc.Port}" : null;
     }
 
@@ -128,7 +139,8 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
         LastError = null;
         try
         {
-            await _server.StartAsync(_doc.Port).ConfigureAwait(false);
+            // One way in at a time: in public-link mode only cloudflared (on this Mac) reaches the server.
+            await _server.StartAsync(_doc.Port, localOnly: _doc.PublicLink).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is IOException or SocketException or InvalidOperationException)
         {
@@ -137,11 +149,124 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
         }
 
         Notify();
+        if (_server.IsRunning && _doc.PublicLink)
+        {
+            await StartTunnelAsync().ConfigureAwait(false);
+        }
     }
 
     public async Task StopAsync()
     {
+        await StopTunnelAsync().ConfigureAwait(false);
         await _server.StopAsync().ConfigureAwait(false);
+        Notify();
+    }
+
+    // ── Public link (Cloudflare Quick Tunnel) for guests on mobile data ──
+    private const int TunnelRetries = 3;
+    private static readonly TimeSpan TunnelRetryDelay = TimeSpan.FromSeconds(5);
+    private CloudflareTunnel? _tunnel;
+    private int _tunnelRetries;
+
+    public bool PublicLink => _doc.PublicLink;
+    /// <summary>The public https address while the tunnel runs; the beamer's QR code shows it instead of the Wi-Fi one.</summary>
+    public string? PublicUrl { get; private set; }
+    /// <summary>"Connecting…", "Reconnecting…" or why the link failed; empty while it works or is off.</summary>
+    public string PublicStatus { get; private set; } = "";
+
+    /// <summary>
+    /// Wi-Fi or public link — one at a time. While running, the active one stops and the other starts: the server
+    /// restarts on the other binding (all interfaces / this Mac only) and the tunnel follows.
+    /// </summary>
+    public async Task SetPublicLinkAsync(bool on)
+    {
+        if (on == _doc.PublicLink)
+        {
+            return;
+        }
+
+        bool wasRunning = IsRunning;
+        if (wasRunning)
+        {
+            await StopAsync().ConfigureAwait(false);
+        }
+
+        Save(_doc with { PublicLink = on });
+        _tunnelRetries = 0;
+        if (wasRunning)
+        {
+            await StartAsync().ConfigureAwait(false);
+        }
+
+        Notify();
+    }
+
+    private async Task StartTunnelAsync()
+    {
+        if (_sidecars.Cloudflared is not { } exe)
+        {
+            SetPublic(null, "cloudflared is missing — run scripts/fetch-natives");
+            return;
+        }
+
+        // Anyone with the link could open it: the party PIN keeps strangers out.
+        if (!_doc.PinEnabled)
+        {
+            SetPinEnabled(true);
+        }
+
+        SetPublic(null, _tunnelRetries == 0 ? "Connecting…" : "Reconnecting…");
+        _tunnel ??= new CloudflareTunnel(exe, _log);
+        _tunnel.Ended -= OnTunnelEnded;
+        _tunnel.Ended += OnTunnelEnded;
+        try
+        {
+            string url = await _tunnel.StartAsync(_doc.Port).ConfigureAwait(false);
+            _tunnelRetries = 0;
+            SetPublic(url, "");
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            _log.LogWarning(ex, "Public link failed");
+            SetPublic(null, ex.Message);
+        }
+    }
+
+    // cloudflared died (network gone, Cloudflare hiccup): a few retries, then the reason in the panel. The beamer's QR
+    // code is hidden meanwhile (the Wi-Fi address is closed in this mode).
+    private void OnTunnelEnded()
+    {
+        if (!_doc.PublicLink || !IsRunning)
+        {
+            return;
+        }
+
+        if (_tunnelRetries++ >= TunnelRetries)
+        {
+            SetPublic(null, "The public link was lost — stop and start the songbook, or switch to Wi-Fi.");
+            _notifications.Warn("Public songbook link lost", "Guests cannot reach the songbook — switch to Wi-Fi in the Songbook panel, or restart it.");
+            return;
+        }
+
+        SetPublic(null, "Reconnecting…");
+        _ = Task.Delay(TunnelRetryDelay).ContinueWith(_ => StartTunnelAsync(), TaskScheduler.Default).Unwrap();
+    }
+
+    private async Task StopTunnelAsync()
+    {
+        if (_tunnel is { } t)
+        {
+            t.Ended -= OnTunnelEnded;
+            await t.StopAsync().ConfigureAwait(false);
+        }
+
+        SetPublic(null, "");
+    }
+
+    private void SetPublic(string? url, string status)
+    {
+        PublicUrl = url;
+        PublicStatus = status;
         Notify();
     }
 
@@ -181,9 +306,18 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
     }
 
     /// <summary>The guest who asked for a queued or on-stage song — the queue shows it so the DJ can call them up.</summary>
-    public string? RequesterOf(string songId) => _requests.RequesterOf(songId, QueueIds(), _playlist.ActiveIndex);
+    public string? RequesterOf(string songId) => _requests.RequesterOf(songId, QueueIds(), _playlist.ActiveIndex, LoadedId);
 
     private IReadOnlyList<string> QueueIds() => [.. _playlist.Items.Select(s => s.Id)];
+
+    /// <summary>The song in the Game Player — the one on stage, wherever it was loaded from.</summary>
+    private string? LoadedId => _playback.Song?.Id;
+
+    private void OnStageChanged()
+    {
+        _requests.Observe(LoadedId);
+        Changed?.Invoke();
+    }
 
     private void RefreshRequests()
     {
@@ -259,9 +393,14 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
             taken[r.SongId] = "Requested";
         }
 
-        for (int i = Math.Max(0, active); i < ids.Count; i++)
+        for (int i = active + 1; i < ids.Count; i++)
         {
-            taken[ids[i]] = i == active ? "On stage" : i == active + 1 ? "Up next" : $"In the queue #{i - active}";
+            taken[ids[i]] = i == active + 1 ? "Up next" : $"In the queue #{i - active}";
+        }
+
+        if (LoadedId is { } loaded)
+        {
+            taken[loaded] = "On stage";
         }
 
         List<SongbookMine> mine = [];
@@ -269,13 +408,13 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
         {
             foreach (GuestRequest r in _requests.Of(clientId).Reverse())
             {
-                GuestRequestStatus status = GuestRequests.StatusOf(r, ids, active, out int position);
+                GuestRequestStatus status = GuestRequests.StatusOf(r, ids, active, LoadedId, out int position);
                 Song? song = _library.Songs.FirstOrDefault(s => s.Id == r.SongId);
                 mine.Add(new SongbookMine(r.Id, r.SongId, song?.Title ?? "", song?.Artist ?? "", StatusText(status, position), status == GuestRequestStatus.Waiting));
             }
         }
 
-        return new SongbookState(now is null ? null : ToGuestSong(now), queue, _library.Songs.Count, LibraryVersion, mine, taken);
+        return new SongbookState(now is null ? null : ToGuestSong(now), queue, _library.Songs.Count, LibraryVersion, mine, taken, RequestsOpen);
     }
 
     private static string StatusText(GuestRequestStatus status, int position) => status switch
@@ -295,14 +434,19 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
             return new SongbookRequestResult(false, true, null);
         }
 
-        RequestOutcome outcome = _requests.Add(songId, guestName, clientId, DateTime.Now, QueueIds(), _playlist.ActiveIndex);
+        if (!RequestsOpen)
+        {
+            return new SongbookRequestResult(false, false, "The DJ isn't taking requests right now.");
+        }
+
+        RequestOutcome outcome = _requests.Add(songId, guestName, clientId, DateTime.Now, QueueIds(), _playlist.ActiveIndex, LoadedId);
         if (outcome.Request is null)
         {
             return new SongbookRequestResult(false, false, outcome.Refusal);
         }
 
         RefreshRequests();
-        _notifications.Info($"{guestName} wants to sing", $"{song.Artist} – {song.Title}");
+        _notifications.Request($"{guestName} wants to sing", $"{song.Artist} – {song.Title}");
         return new SongbookRequestResult(true, false, null);
     }).GetTask();
 
@@ -340,10 +484,19 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
 
     private static string NewPin() => RandomNumberGenerator.GetInt32(0, 10000).ToString("0000", System.Globalization.CultureInfo.InvariantCulture);
 
-    public ValueTask DisposeAsync() => _server.DisposeAsync();
+    public async ValueTask DisposeAsync()
+    {
+        await StopTunnelAsync().ConfigureAwait(false);
+        await _server.DisposeAsync().ConfigureAwait(false);
+    }
 
     public sealed record SongbookDocument(int Port, bool PinEnabled, string Pin, bool AutoStart)
     {
+        /// <summary>Stored inverted so settings files from before the switch keep requests open.</summary>
+        public bool RequestsClosed { get; init; }
+        /// <summary>Guests connect via the public link instead of the Wi-Fi (default Wi-Fi: no internet needed).</summary>
+        public bool PublicLink { get; init; }
+
         public static SongbookDocument Default() => new(4747, false, NewPin(), false);
     }
 }

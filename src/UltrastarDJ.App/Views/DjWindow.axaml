@@ -146,7 +146,7 @@
     </ItemsControl.Styles>
     <ItemsControl.ItemTemplate>
       <DataTemplate x:DataType="svc:Toast">
-        <Border Classes="card floating" Margin="0,0,0,8" Classes.warn="{Binding IsWarning}" Classes.success="{Binding IsSuccess}">
+        <Border Classes="card floating" Margin="0,0,0,8" Classes.warn="{Binding IsWarning}" Classes.success="{Binding IsSuccess}" Classes.request="{Binding IsRequest}">
           <Border.Styles>
             <Style Selector="Border.warn">
               <Setter Property="BorderBrush" Value="{DynamicResource BrushError}" />
@@ -156,6 +156,9 @@
             </Style>
             <Style Selector="Border.success c|Icon.kind">
               <Setter Property="Foreground" Value="{DynamicResource BrushTertiary}" />
+            </Style>
+            <Style Selector="Border.request">
+              <Setter Property="Background" Value="{DynamicResource BrushRequest}" />
             </Style>
           </Border.Styles>
           <Grid ColumnDefinitions="Auto,*,Auto">

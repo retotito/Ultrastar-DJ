@@ -16,6 +16,10 @@ public sealed partial class SongbookPanelViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private bool _busy;
     [ObservableProperty] private bool _pinEnabled;
     [ObservableProperty] private bool _autoStart;
+    [ObservableProperty] private bool _requestsOpen;
+    [ObservableProperty] private string _connectVia = WifiChoice;
+    [ObservableProperty] private string _publicUrl = "";
+    [ObservableProperty] private string _publicStatus = "";
     [ObservableProperty] private string _pin = "";
     [ObservableProperty] private string _port = "";
     [ObservableProperty] private string _urls = "";
@@ -36,9 +40,13 @@ public sealed partial class SongbookPanelViewModel : ViewModelBase, IDisposable
         IsRunning = _songbook.IsRunning;
         PinEnabled = _songbook.PinEnabled;
         AutoStart = _songbook.AutoStart;
+        RequestsOpen = _songbook.RequestsOpen;
         Pin = _songbook.Pin;
         Port = _songbook.Port.ToString(System.Globalization.CultureInfo.InvariantCulture);
         Urls = IsRunning ? string.Join("\n", _songbook.Urls()) : "";
+        ConnectVia = _songbook.PublicLink ? PublicChoice : WifiChoice;
+        PublicUrl = _songbook.PublicUrl ?? "";
+        PublicStatus = _songbook.PublicStatus;
         _loading = false;
     }
 
@@ -71,6 +79,38 @@ public sealed partial class SongbookPanelViewModel : ViewModelBase, IDisposable
 
     partial void OnPinEnabledChanged(bool value) { if (!_loading) { _songbook.SetPinEnabled(value); } }
     partial void OnAutoStartChanged(bool value) { if (!_loading) { _songbook.SetAutoStart(value); } }
+    // ── How guests connect: one at a time ──
+    private const string WifiChoice = "Wi-Fi";
+    private const string PublicChoice = "Public link";
+    public IReadOnlyList<string> ConnectChoices { get; } = [WifiChoice, PublicChoice];
+    public bool IsPublic => ConnectVia == PublicChoice;
+    public bool IsWifi => !IsPublic;
+
+    partial void OnConnectViaChanged(string value)
+    {
+        OnPropertyChanged(nameof(IsPublic));
+        OnPropertyChanged(nameof(IsWifi));
+        if (!_loading && value is not null)
+        {
+            _ = SwitchAsync(value == PublicChoice);
+        }
+    }
+
+    // Running: stops the active way in and starts the other (a few seconds); the Start button waits meanwhile.
+    private async Task SwitchAsync(bool toPublic)
+    {
+        Busy = true;
+        try
+        {
+            await _songbook.SetPublicLinkAsync(toPublic);
+        }
+        finally
+        {
+            Busy = false;
+        }
+    }
+
+    partial void OnRequestsOpenChanged(bool value) { if (!_loading) { _songbook.SetRequestsOpen(value); } }
     partial void OnPortChanged(string value)
     {
         if (!_loading && int.TryParse(value, System.Globalization.CultureInfo.InvariantCulture, out int port))

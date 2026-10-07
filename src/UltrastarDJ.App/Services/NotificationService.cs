@@ -9,6 +9,8 @@ public enum ToastKind
     Info,
     Success,
     Warning,
+    /// <summary>A guest asked for a song on the songbook (light green, like the REQUESTS list).</summary>
+    Request,
 }
 
 /// <summary>A transient notification shown in the DJ window's corner.</summary>
@@ -19,10 +21,12 @@ public sealed partial class Toast(string title, string? detail, ToastKind kind) 
     public ToastKind Kind { get; } = kind;
     public bool IsWarning => Kind == ToastKind.Warning;
     public bool IsSuccess => Kind == ToastKind.Success;
+    public bool IsRequest => Kind == ToastKind.Request;
     public string Glyph => Kind switch
     {
         ToastKind.Success => "check_circle",
         ToastKind.Warning => "warning",
+        ToastKind.Request => "mic",
         _ => "info",
     };
 
@@ -68,6 +72,7 @@ public sealed class NotificationService
     public void Info(string title, string? detail = null) => Show(new Toast(title, detail, ToastKind.Info));
     public void Success(string title, string? detail = null) => Show(new Toast(title, detail, ToastKind.Success));
     public void Warn(string title, string? detail = null) => Show(new Toast(title, detail, ToastKind.Warning));
+    public void Request(string title, string? detail = null) => Show(new Toast(title, detail, ToastKind.Request));
 
     /// <summary>An action the DJ started failed. <paramref name="reasons"/>: one plain sentence each.</summary>
     public void ShowError(string title, IEnumerable<string> reasons, string? details = null)

@@ -47,8 +47,11 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
 
     public NowPlayingViewModel(PlaybackService playback, IDisplayService displays, MediaService media, AudioInputService audio,
         PlayersService players, AppSettingsService settings, OutputsService outputs, NotificationService notifications,
-        ILogger<NowPlayingViewModel> log)
+        SongbookService songbook, ILogger<NowPlayingViewModel> log)
     {
+        _songbook = songbook;
+        // Accepted, cancelled, loaded: who asked for the loaded song may change.
+        songbook.Changed += () => OnPropertyChanged(nameof(RequestedBy));
         _outputs = outputs;
         _playback = playback;
         _displays = displays;
@@ -86,6 +89,11 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
 
     public PlaybackState State => _playback.State;
 
+    private readonly SongbookService _songbook;
+
+    /// <summary>The guest who requested the loaded song on the songbook (as in the queue) — the DJ calls them up.</summary>
+    public string? RequestedBy => _playback.Song is { } song ? _songbook.RequesterOf(song.Id) : null;
+
     // ── Countdown and pause in the box, as on the beamers ──
     private readonly DispatcherTimer _countdown;
     /// <summary>3, 2, 1 — started on the same state change as the beamers' countdown, so both count together.</summary>
@@ -120,6 +128,8 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
         }
     }
     public bool HasSong => _playback.Song is not null;
+    /// <summary>The song in the Game Player (a failed load keeps the previous one).</summary>
+    public string? LoadedSongId => _playback.Song?.Id;
     /// <summary>The game channel has video (cases 2, 3, 4, 6).</summary>
     [ObservableProperty] private bool _hasVideo;
 

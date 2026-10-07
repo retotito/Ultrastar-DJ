@@ -7,7 +7,8 @@ public enum GuestRequestStatus
     Waiting,
     /// <summary>Accepted, in the queue after the current song.</summary>
     Queued,
-    /// <summary>Loaded in the Game Player — the guest is up.</summary>
+    /// <summary>Loaded in the Game Player — the guest is up. Only while it is loaded: the DJ may load the next song from
+    /// the library, so the queue's active entry alone does not say who is on stage.</summary>
     OnStage,
     /// <summary>Was on stage and the queue moved on.</summary>
     Sung,
@@ -36,7 +37,7 @@ public sealed record RequestOutcome(GuestRequest? Request, string? Refusal);
 /// <summary>
 /// The songbook's requests for one party: no song requested twice or while already queued, at most
 /// <see cref="MaxOpenPerGuest"/> open requests per guest, cancel while waiting, and the status of each request read
-/// from the DJ's queue (song ids in order, the active one = loaded in the Game Player). UI thread only.
+/// from the DJ's queue (song ids in order, the active entry) and the song loaded in the Game Player. UI thread only.
 /// </summary>
 public sealed class GuestRequests
 {
@@ -46,13 +47,14 @@ public sealed class GuestRequests
 
     public IEnumerable<GuestRequest> Waiting => _all.Where(r => !r.Accepted && !r.Dismissed);
 
-    public RequestOutcome Add(string songId, string guest, string clientId, DateTime now, IReadOnlyList<string> queue, int activeIndex)
+    public RequestOutcome Add(string songId, string guest, string clientId, DateTime now, IReadOnlyList<string> queue, int activeIndex, string? loadedSongId)
     {
-        int at = IndexAfter(queue, songId, activeIndex - 1);
-        if (at == activeIndex && at >= 0)
+        if (songId == loadedSongId)
         {
             return new(null, "This song is on stage right now.");
         }
+
+        int at = IndexAfter(queue, songId, activeIndex);
 
         if (at > activeIndex)
         {
@@ -64,7 +66,7 @@ public sealed class GuestRequests
             return new(null, pending.ClientId == clientId ? "You already requested this song." : $"Already requested by {pending.Guest}.");
         }
 
-        int open = _all.Count(r => r.ClientId == clientId && StatusOf(r, queue, activeIndex, out _) is GuestRequestStatus.Waiting or GuestRequestStatus.Queued or GuestRequestStatus.OnStage);
+        int open = _all.Count(r => r.ClientId == clientId && StatusOf(r, queue, activeIndex, loadedSongId, out _) is GuestRequestStatus.Waiting or GuestRequestStatus.Queued or GuestRequestStatus.OnStage);
         if (open >= MaxOpenPerGuest)
         {
             return new(null, $"You have {MaxOpenPerGuest} open requests — wait until one has been sung.");
@@ -97,11 +99,10 @@ public sealed class GuestRequests
         return r;
     }
 
-    /// <summary>Call after every queue change: remembers which accepted requests have been on stage (→ later "sung").</summary>
-    public void Observe(IReadOnlyList<string> queue, int activeIndex)
+    /// <summary>Call after every queue change and song load: remembers which accepted requests have been on stage (→ later "sung").</summary>
+    public void Observe(string? loadedSongId)
     {
-        string? active = activeIndex >= 0 && activeIndex < queue.Count ? queue[activeIndex] : null;
-        foreach (GuestRequest r in _all.Where(r => r.Accepted && r.SongId == active))
+        foreach (GuestRequest r in _all.Where(r => r.Accepted && r.SongId == loadedSongId))
         {
             r.WasOnStage = true;
         }
@@ -110,8 +111,9 @@ public sealed class GuestRequests
     /// <param name="r">The request.</param>
     /// <param name="queue">Song ids in queue order.</param>
     /// <param name="activeIndex">The loaded song's index, -1 for none.</param>
+    /// <param name="loadedSongId">The song in the Game Player, null for none.</param>
     /// <param name="position">For <see cref="GuestRequestStatus.Queued"/>: 1 = next.</param>
-    public static GuestRequestStatus StatusOf(GuestRequest r, IReadOnlyList<string> queue, int activeIndex, out int position)
+    public static GuestRequestStatus StatusOf(GuestRequest r, IReadOnlyList<string> queue, int activeIndex, string? loadedSongId, out int position)
     {
         position = 0;
         if (r.Dismissed)
@@ -124,12 +126,13 @@ public sealed class GuestRequests
             return GuestRequestStatus.Waiting;
         }
 
-        int at = IndexAfter(queue, r.SongId, activeIndex - 1);
-        if (at >= 0 && at == activeIndex)
+        if (r.SongId == loadedSongId)
         {
             return GuestRequestStatus.OnStage;
         }
 
+        // The active entry is done once something else is loaded: only later entries are still to come.
+        int at = IndexAfter(queue, r.SongId, activeIndex);
         if (at > activeIndex)
         {
             position = at - activeIndex;
@@ -139,11 +142,15 @@ public sealed class GuestRequests
         return r.WasOnStage ? GuestRequestStatus.Sung : GuestRequestStatus.Declined;
     }
 
+    /// <summary>For callers whose active queue entry is the loaded song (the usual case, and the tests' shorthand).</summary>
+    public static GuestRequestStatus StatusOf(GuestRequest r, IReadOnlyList<string> queue, int activeIndex, out int position)
+        => StatusOf(r, queue, activeIndex, activeIndex >= 0 && activeIndex < queue.Count ? queue[activeIndex] : null, out position);
+
     public IReadOnlyList<GuestRequest> Of(string clientId) => [.. _all.Where(r => r.ClientId == clientId)];
 
-    /// <summary>Who asked for a queued or on-stage song — shown in the DJ's queue so they can call the singer up.</summary>
-    public string? RequesterOf(string songId, IReadOnlyList<string> queue, int activeIndex)
-        => _all.LastOrDefault(r => r.SongId == songId && StatusOf(r, queue, activeIndex, out _) is GuestRequestStatus.Queued or GuestRequestStatus.OnStage)?.Guest;
+    /// <summary>Who asked for a queued or on-stage song — shown in the DJ's queue and the Game Player so they can call the singer up.</summary>
+    public string? RequesterOf(string songId, IReadOnlyList<string> queue, int activeIndex, string? loadedSongId)
+        => _all.LastOrDefault(r => r.SongId == songId && StatusOf(r, queue, activeIndex, loadedSongId, out _) is GuestRequestStatus.Queued or GuestRequestStatus.OnStage)?.Guest;
 
     // First occurrence of the song after index `from` (queue entries before the active one are already sung).
     private static int IndexAfter(IReadOnlyList<string> queue, string songId, int from)

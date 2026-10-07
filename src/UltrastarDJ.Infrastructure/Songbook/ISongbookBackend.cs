@@ -17,7 +17,7 @@ public sealed record SongbookRequestResult(bool Ok, bool UnknownSong, string? Me
 /// phone's requests; <see cref="Taken"/> marks songs already requested or queued ("Requested", "In the queue #3").
 /// </summary>
 public sealed record SongbookState(SongbookSong? NowPlaying, IReadOnlyList<SongbookSong> Queue, int SongCount, int LibraryVersion,
-    IReadOnlyList<SongbookMine> Mine, IReadOnlyDictionary<string, string> Taken);
+    IReadOnlyList<SongbookMine> Mine, IReadOnlyDictionary<string, string> Taken, bool RequestsOpen);
 
 /// <summary>
 /// What the guest server needs from the app. Implemented by the App layer; every member may be called from

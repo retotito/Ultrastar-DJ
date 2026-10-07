@@ -43,7 +43,11 @@ public sealed class SongbookServer : IAsyncDisposable
         set => _pin = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 
-    public async Task StartAsync(int port, CancellationToken ct = default)
+    /// <param name="port">TCP port.</param>
+    /// <param name="localOnly">Listen on this Mac only (127.0.0.1): the public link mode, where cloudflared forwards
+    /// the guests and the Wi-Fi address must stay closed. Otherwise every network interface (the Wi-Fi mode).</param>
+    /// <param name="ct">Cancels the start.</param>
+    public async Task StartAsync(int port, bool localOnly = false, CancellationToken ct = default)
     {
         if (_app is not null)
         {
@@ -52,7 +56,7 @@ public sealed class SongbookServer : IAsyncDisposable
 
         WebApplicationBuilder builder = WebApplication.CreateSlimBuilder();
         builder.Logging.ClearProviders();
-        builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+        builder.WebHost.UseUrls(localOnly ? $"http://127.0.0.1:{port}" : $"http://0.0.0.0:{port}");
         builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase);
 
         WebApplication app = builder.Build();

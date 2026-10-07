@@ -32,7 +32,7 @@ That is the entire onboarding — the same "clone, one script, build" flow as th
 `UltrastarDJ.App.csproj` copies `natives/$(RuntimeIdentifier)/**` next to the executable on build/publish.
 
 Rule of thumb: **in-process libraries** (libmpv, PortAudio) must be the exact architecture of the app;
-**sidecar processes** (yt-dlp, ffmpeg) may be universal or even x64 under Rosetta.
+**sidecar processes** (yt-dlp, ffmpeg, cloudflared) may be universal or even x64 under Rosetta.
 
 `SidecarLocator` resolves sidecars in this order: next to the executable → `natives/<rid>/` (dev) → `PATH`.
 

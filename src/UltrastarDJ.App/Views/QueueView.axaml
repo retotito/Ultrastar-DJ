@@ -8,7 +8,7 @@
 
   <Grid RowDefinitions="Auto,Auto,*">
     <!-- Guest requests from the songbook -->
-    <Border Grid.Row="0" IsVisible="{Binding HasRequests}" BorderBrush="{DynamicResource BrushOutlineVariant}" BorderThickness="0,1,0,0">
+    <Border Grid.Row="0" IsVisible="{Binding HasRequests}" Background="{DynamicResource BrushRequest}" BorderBrush="{DynamicResource BrushOutlineVariant}" BorderThickness="0,1,0,0">
       <StackPanel>
         <TextBlock Classes="label" Margin="{StaticResource Pad3}" Text="{Binding Requests.Count, StringFormat='REQUESTS ({0})'}" />
         <ScrollViewer MaxHeight="180">
