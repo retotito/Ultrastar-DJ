@@ -194,10 +194,31 @@ public sealed class MpvPlayer : IMediaPlayer
         set { _speed = Math.Clamp(value, 0.5, 2.0); SetDouble("speed", _speed); }
     }
 
+    /// <summary>
+    /// The output device. A loaded song switches too: mpv takes the new device but keeps an already open audio output on
+    /// the old one, so the output is rebuilt (<c>ao-reload</c>) — otherwise the next Play still sounded on the old device.
+    /// </summary>
     public string AudioDevice
     {
         get => _audioDevice;
-        set { _audioDevice = string.IsNullOrEmpty(value) ? "auto" : value; SetProp("audio-device", _audioDevice); }
+        set
+        {
+            string device = string.IsNullOrEmpty(value) ? "auto" : value;
+            bool changed = device != _audioDevice;
+            _audioDevice = device;
+            SetProp("audio-device", _audioDevice);
+            bool loaded;
+            lock (_stateLock)
+            {
+                loaded = _fileLoaded;
+            }
+
+            if (changed && loaded)
+            {
+                Command("ao-reload");
+                _log.LogInformation("{Player}: audio output moved to {Device}", Name, _audioDevice);
+            }
+        }
     }
 
     public event Action<MediaState>? StateChanged;

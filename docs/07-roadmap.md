@@ -386,6 +386,13 @@ Details: `03-game-engine.md` "Mic plug / unplug".
 
 ---
 
+## Sprint 14 — Fixes  *(in progress)*
+
+- [x] Fix: with a song loaded, switching the game output (e.g. to headphones) only took effect with the next song. The new device did reach the loaded player (`MediaChannel` test), but mpv keeps an already open audio output on the old device; `MpvPlayer.AudioDevice` now rebuilds it (`ao-reload`) when a song is loaded. Preview channel likewise.
+- [x] Verified live: output switch reaches the loaded song
+
+---
+
 ## Later / ideas
 
 - Cap mpv read-ahead (~60 s) so YouTube streams like a player instead of pulling the whole song into RAM
