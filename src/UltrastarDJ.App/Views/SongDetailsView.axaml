@@ -82,8 +82,8 @@
           </Button>
           <Button Classes="tonal" Command="{Binding LoadIntoGameCommand}" ToolTip.Tip="{Binding LoadTip}" ToolTip.ShowOnDisabled="True">
             <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
-              <c:Icon Glyph="play_circle" FontSize="{StaticResource IconLg}" Foreground="{DynamicResource BrushOnSecondaryContainer}" VerticalAlignment="Center" />
-              <TextBlock Text="Load into game" Foreground="{DynamicResource BrushOnSecondaryContainer}" VerticalAlignment="Center" />
+              <c:Icon Glyph="play_circle" FontSize="{StaticResource IconLg}" VerticalAlignment="Center" />
+              <TextBlock Text="Load into game" VerticalAlignment="Center" />
             </StackPanel>
           </Button>
         </StackPanel>

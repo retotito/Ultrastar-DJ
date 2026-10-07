@@ -58,8 +58,8 @@
           <Button Grid.Column="1" Classes="tonal" Command="{Binding UpdateYtDlpCommand}" IsEnabled="{Binding YtDlpIdle}" VerticalAlignment="Center"
                   ToolTip.Tip="Downloads the newest yt-dlp from its official GitHub releases — used from the next YouTube song on">
             <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
-              <c:Icon Glyph="system_update_alt" FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushOnSecondaryContainer}" VerticalAlignment="Center" />
-              <TextBlock Text="{Binding YtDlpButtonText}" Foreground="{DynamicResource BrushOnSecondaryContainer}" VerticalAlignment="Center" />
+              <c:Icon Glyph="system_update_alt" FontSize="{StaticResource IconMd}" VerticalAlignment="Center" />
+              <TextBlock Text="{Binding YtDlpButtonText}" VerticalAlignment="Center" />
             </StackPanel>
           </Button>
         </Grid>
@@ -74,27 +74,27 @@
         <WrapPanel ItemSpacing="8" LineSpacing="8">
           <Button Classes="tonal" Command="{Binding ShowLogFolderCommand}" ToolTip.Tip="Finder with today's log selected — the file to send when asking for help">
             <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
-              <c:Icon Glyph="folder_open" FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushOnSecondaryContainer}" VerticalAlignment="Center" />
-              <TextBlock Text="Log folder" Foreground="{DynamicResource BrushOnSecondaryContainer}" VerticalAlignment="Center" />
+              <c:Icon Glyph="folder_open" FontSize="{StaticResource IconMd}" VerticalAlignment="Center" />
+              <TextBlock Text="Log folder" VerticalAlignment="Center" />
             </StackPanel>
           </Button>
           <Button Classes="tonal" Command="{Binding OpenLogCommand}" ToolTip.Tip="Today's log in Console: search it and watch new lines arrive">
             <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
-              <c:Icon Glyph="description" FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushOnSecondaryContainer}" VerticalAlignment="Center" />
-              <TextBlock Text="Today's log" Foreground="{DynamicResource BrushOnSecondaryContainer}" VerticalAlignment="Center" />
+              <c:Icon Glyph="description" FontSize="{StaticResource IconMd}" VerticalAlignment="Center" />
+              <TextBlock Text="Today's log" VerticalAlignment="Center" />
             </StackPanel>
           </Button>
           <Button Classes="tonal" Command="{Binding ShowCrashReportsCommand}" IsVisible="{Binding HasCrashReports}"
                   ToolTip.Tip="macOS wrote these when the app crashed; the newest is selected in Finder">
             <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
-              <c:Icon Glyph="bug_report" FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushOnSecondaryContainer}" VerticalAlignment="Center" />
-              <TextBlock Text="{Binding CrashReportsText}" Foreground="{DynamicResource BrushOnSecondaryContainer}" VerticalAlignment="Center" />
+              <c:Icon Glyph="bug_report" FontSize="{StaticResource IconMd}" VerticalAlignment="Center" />
+              <TextBlock Text="{Binding CrashReportsText}" VerticalAlignment="Center" />
             </StackPanel>
           </Button>
           <Button Classes="tonal" Command="{Binding ShowDataFolderCommand}" ToolTip.Tip="Settings, song library and cache — for backups or a clean start">
             <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
-              <c:Icon Glyph="inventory_2" FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushOnSecondaryContainer}" VerticalAlignment="Center" />
-              <TextBlock Text="App data" Foreground="{DynamicResource BrushOnSecondaryContainer}" VerticalAlignment="Center" />
+              <c:Icon Glyph="inventory_2" FontSize="{StaticResource IconMd}" VerticalAlignment="Center" />
+              <TextBlock Text="App data" VerticalAlignment="Center" />
             </StackPanel>
           </Button>
         </WrapPanel>

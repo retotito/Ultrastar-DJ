@@ -28,7 +28,8 @@
 
     <!-- Transport + progress -->
     <Grid ColumnDefinitions="Auto,*,Auto" IsEnabled="{Binding HasSong}">
-      <Button Grid.Column="0" Classes="sidebar" Command="{Binding TogglePlayCommand}" ToolTip.Tip="Play / pause">
+      <Button Grid.Column="0" Classes="transport small" Classes.go="{Binding !IsPlaying}" Classes.pause="{Binding IsPlaying}"
+              Command="{Binding TogglePlayCommand}" ToolTip.Tip="Play / pause">
         <c:Icon Glyph="{Binding IsPlaying, Converter={x:Static vm:PlayerConverters.PlayPauseGlyph}}" />
       </Button>
       <Slider Grid.Column="1" Minimum="0" Maximum="1" Value="{Binding Fraction}" Margin="8,0" VerticalAlignment="Center" />
@@ -46,14 +47,14 @@
     <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space2}">
       <Button Classes="tonal" Command="{Binding AddToQueueCommand}">
         <StackPanel Orientation="Horizontal" Spacing="6">
-          <c:Icon Glyph="queue_music" FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
-          <TextBlock Text="Add to queue" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
+          <c:Icon Glyph="queue_music" FontSize="{StaticResource IconMd}" />
+          <TextBlock Text="Add to queue" />
         </StackPanel>
       </Button>
       <Button Classes="tonal" Command="{Binding LoadIntoGameCommand}" ToolTip.Tip="{Binding LoadSongTip}">
         <StackPanel Orientation="Horizontal" Spacing="6">
-          <c:Icon Glyph="play_circle" FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
-          <TextBlock Text="Load" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
+          <c:Icon Glyph="play_circle" FontSize="{StaticResource IconMd}" />
+          <TextBlock Text="Load" />
         </StackPanel>
       </Button>
     </StackPanel>

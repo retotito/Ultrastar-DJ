@@ -80,7 +80,7 @@
                 IsVisible="{Binding !NoBeamerOpen}" VerticalAlignment="Center"><c:Icon Glyph="home" /></Button>
         <Button Classes="sidebar" Command="{Binding PreviewCommand}" ToolTip.Tip="Show the get-ready screen"
                 IsVisible="{Binding !NoBeamerOpen}" VerticalAlignment="Center"><c:Icon Glyph="tv" /></Button>
-        <Button Classes="transport" Classes.play="{Binding !IsPauseButton}" Classes.pause="{Binding IsPauseButton}"
+        <Button Classes="transport" Classes.go="{Binding !IsPauseButton}" Classes.pause="{Binding IsPauseButton}"
                 Command="{Binding PlayPauseCommand}" ToolTip.Tip="{Binding PlayTip}" IsVisible="{Binding !NoBeamerOpen}">
           <c:Icon Glyph="{Binding PlayGlyph}" FontSize="{StaticResource IconXl}" />
         </Button>
@@ -92,8 +92,8 @@
         <Button Classes="tonal" Command="{Binding SelectDisplaysCommand}" IsVisible="{Binding NoBeamerOpen}"
                 ToolTip.Tip="Opens the Displays panel: open a beamer and choose which players sing on it">
           <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space2}">
-            <c:Icon Glyph="tv" FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
-            <TextBlock Text="Select displays" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
+            <c:Icon Glyph="tv" FontSize="{StaticResource IconMd}" />
+            <TextBlock Text="Select displays" />
           </StackPanel>
         </Button>
       </StackPanel>

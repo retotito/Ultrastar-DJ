@@ -57,8 +57,6 @@ public sealed partial class DisplayRowViewModel : ObservableObject
     private readonly DisplaysPanelViewModel _owner;
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(OpenCommand))]
-    [NotifyCanExecuteChangedFor(nameof(CloseCommand))]
     [NotifyCanExecuteChangedFor(nameof(ToggleFullScreenCommand))]
     private bool _isOpen;
 
@@ -111,13 +109,19 @@ public sealed partial class DisplayRowViewModel : ObservableObject
         _owner.SyncAssignments();
     }
 
-    [RelayCommand(CanExecute = nameof(CanOpen))]
-    private void Open() => _displays.Open(Id);
-
-    private bool CanOpen() => !IsOpen;
-
-    [RelayCommand(CanExecute = nameof(IsOpen))]
-    private void Close() => _displays.Close(Id);
+    /// <summary>The panel's one Open / Close button.</summary>
+    [RelayCommand]
+    private void ToggleOpen()
+    {
+        if (IsOpen)
+        {
+            _displays.Close(Id);
+        }
+        else
+        {
+            _displays.Open(Id);
+        }
+    }
 
     [RelayCommand(CanExecute = nameof(IsOpen))]
     private void ToggleFullScreen() => _displays.ToggleFullScreen(Id);

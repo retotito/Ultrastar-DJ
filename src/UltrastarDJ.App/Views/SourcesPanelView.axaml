@@ -9,8 +9,8 @@
     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="{StaticResource Space1}">
       <Button Classes="tonal" Command="{Binding AddFolderCommand}" IsEnabled="{Binding !Busy}">
         <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
-          <c:Icon Glyph="create_new_folder" FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
-          <TextBlock Text="Add folder" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
+          <c:Icon Glyph="create_new_folder" FontSize="{StaticResource IconMd}" />
+          <TextBlock Text="Add folder" />
         </StackPanel>
       </Button>
     </StackPanel>
@@ -72,16 +72,16 @@
 
         <!-- Connected -->
         <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}" IsVisible="{Binding UsdbConnected}">
-          <Button Classes="tonal" Command="{Binding UsdbSyncCommand}" ToolTip.Tip="Fetch songs added or changed since the last sync" IsVisible="{Binding !UsdbSyncing}">
+          <Button Classes="tonal go" Command="{Binding UsdbSyncCommand}" ToolTip.Tip="Fetch songs added or changed since the last sync" IsVisible="{Binding !UsdbSyncing}">
             <StackPanel Orientation="Horizontal" Spacing="4">
-              <c:Icon Glyph="sync" FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
-              <TextBlock Text="Sync" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
+              <c:Icon Glyph="sync" FontSize="{StaticResource IconMd}" />
+              <TextBlock Text="Sync" />
             </StackPanel>
           </Button>
           <Button Classes="sidebar" Command="{Binding UsdbFullSyncCommand}" ToolTip.Tip="Download the whole catalog again" IsVisible="{Binding !UsdbSyncing}">
             <c:Icon Glyph="cloud_download" FontSize="{StaticResource IconMd}" />
           </Button>
-          <Button Classes="tonal" Command="{Binding UsdbAbortCommand}" Content="Stop sync" IsVisible="{Binding UsdbSyncing}" />
+          <Button Classes="tonal stop" Command="{Binding UsdbAbortCommand}" Content="Stop sync" IsVisible="{Binding UsdbSyncing}" />
           <Button Classes="sidebar" Command="{Binding UsdbDisconnectCommand}" ToolTip.Tip="Disconnect and remove USDB songs from the library" IsEnabled="{Binding !UsdbSyncing}">
             <c:Icon Glyph="logout" FontSize="{StaticResource IconMd}" />
           </Button>

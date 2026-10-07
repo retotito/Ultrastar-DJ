@@ -30,11 +30,11 @@
               </ComboBox.Styles>
             </ComboBox>
             <Button Grid.Column="1" Classes="tonal" Margin="8,0,0,0" Padding="12,4" Command="{Binding ToggleTestCommand}"
-                    IsEnabled="{Binding HasMic}" Classes.active="{Binding Testing}" ToolTip.Tip="Open this mic: live meter and note">
+                    IsEnabled="{Binding HasMic}" Classes.go="{Binding !Testing}" Classes.stop="{Binding Testing}" ToolTip.Tip="Open this mic: live meter and note">
               <StackPanel Orientation="Horizontal" Spacing="4">
-                <c:Icon Glyph="{Binding Testing, Converter={x:Static vm:PlayerConverters.TestGlyph}}" FontSize="{StaticResource IconSm}" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
+                <c:Icon Glyph="{Binding Testing, Converter={x:Static vm:PlayerConverters.TestGlyph}}" FontSize="{StaticResource IconSm}" />
                 <TextBlock Text="{Binding Testing, Converter={x:Static vm:BoolConverters.Text}, ConverterParameter='Stop|Test'}"
-                           FontSize="{StaticResource TextSm}" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
+                           FontSize="{StaticResource TextSm}" />
               </StackPanel>
             </Button>
           </Grid>
@@ -65,8 +65,8 @@
             <Button Grid.Column="1" Classes="tonal" Command="{Binding CalibrateCommand}" IsEnabled="{Binding !Calibrating}" Padding="12,4"
                     ToolTip.Tip="Measures this mic's delay: plays 5 tones on the game speakers and listens for them through the same pitch analysis as the game. Hold the mic in front of the speakers in a quiet moment. Set the speakers' latency (Audio Output → Test sync) first; it is subtracted from the result.">
               <StackPanel Orientation="Horizontal" Spacing="4">
-                <c:Icon Glyph="timer" FontSize="{StaticResource IconSm}" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
-                <TextBlock Text="Calibrate" FontSize="{StaticResource TextSm}" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
+                <c:Icon Glyph="timer" FontSize="{StaticResource IconSm}" />
+                <TextBlock Text="Calibrate" FontSize="{StaticResource TextSm}" />
               </StackPanel>
             </Button>
           </Grid>

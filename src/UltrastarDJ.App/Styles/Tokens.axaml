@@ -53,6 +53,29 @@
       <Color x:Key="ColorTableRowAlt">#0AFFFFFF</Color>
       <!-- Songbook requests: a light green wash, so guests' wishes stand out (REQUESTS, request toasts). -->
       <Color x:Key="ColorRequest">#1F3A2A</Color>
+      <!-- Toggle switches "on" = the same selected blue as the sidebar's active button (Fluent's solid accent was too loud),
+           knob in the text colour like the active sidebar icon. Overrides Fluent's own ToggleSwitch keys. -->
+      <SolidColorBrush x:Key="ToggleSwitchFillOn" Color="{DynamicResource SystemAccentColor}" Opacity="0.6" />
+      <SolidColorBrush x:Key="ToggleSwitchFillOnDisabled" Color="{DynamicResource SystemAccentColor}" Opacity="0.6" />
+      <SolidColorBrush x:Key="ToggleSwitchFillOnPointerOver" Color="{DynamicResource SystemAccentColor}" Opacity="0.8" />
+      <SolidColorBrush x:Key="ToggleSwitchFillOnPressed" Color="{DynamicResource SystemAccentColor}" Opacity="0.9" />
+      <SolidColorBrush x:Key="ToggleSwitchStrokeOn" Color="Transparent" />
+      <SolidColorBrush x:Key="ToggleSwitchStrokeOnDisabled" Color="Transparent" />
+      <SolidColorBrush x:Key="ToggleSwitchStrokeOnPointerOver" Color="Transparent" />
+      <SolidColorBrush x:Key="ToggleSwitchStrokeOnPressed" Color="Transparent" />
+      <SolidColorBrush x:Key="ToggleSwitchKnobFillOn" Color="{DynamicResource ColorOnSurface}" />
+      <SolidColorBrush x:Key="ToggleSwitchKnobFillOnDisabled" Color="{DynamicResource ColorOnSurface}" />
+      <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPointerOver" Color="{DynamicResource ColorOnSurface}" />
+      <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPressed" Color="{DynamicResource ColorOnSurface}" />
+      <!-- Buttons: start (green) / stop (red), filled with white text; normal = a light blue tint with a thin outline. -->
+      <Color x:Key="ColorGo">#2D9B57</Color>
+      <Color x:Key="ColorGoHover">#36AD63</Color>
+      <Color x:Key="ColorStop">#D93025</Color>
+      <Color x:Key="ColorStopHover">#E8453C</Color>
+      <Color x:Key="ColorButton">#1D3A52</Color>
+      <Color x:Key="ColorButtonHover">#264B69</Color>
+      <Color x:Key="ColorButtonBorder">#2F5878</Color>
+      <Color x:Key="ColorOnButton">#D6EAF8</Color>
     </ResourceDictionary>
 
     <ResourceDictionary x:Key="Light">
@@ -96,6 +119,28 @@
       <SolidColorBrush x:Key="BrushStatePressed" Color="{DynamicResource SystemAccentColor}" Opacity="0.7" />
       <Color x:Key="ColorTableRowAlt">#0A000000</Color>
       <Color x:Key="ColorRequest">#E6F4EA</Color>
+      <!-- Toggle switches "on" = the same selected blue as the sidebar's active button (Fluent's solid accent was too loud),
+           knob in the text colour like the active sidebar icon. Overrides Fluent's own ToggleSwitch keys. -->
+      <SolidColorBrush x:Key="ToggleSwitchFillOn" Color="{DynamicResource SystemAccentColor}" Opacity="0.4" />
+      <SolidColorBrush x:Key="ToggleSwitchFillOnDisabled" Color="{DynamicResource SystemAccentColor}" Opacity="0.4" />
+      <SolidColorBrush x:Key="ToggleSwitchFillOnPointerOver" Color="{DynamicResource SystemAccentColor}" Opacity="0.6" />
+      <SolidColorBrush x:Key="ToggleSwitchFillOnPressed" Color="{DynamicResource SystemAccentColor}" Opacity="0.7" />
+      <SolidColorBrush x:Key="ToggleSwitchStrokeOn" Color="Transparent" />
+      <SolidColorBrush x:Key="ToggleSwitchStrokeOnDisabled" Color="Transparent" />
+      <SolidColorBrush x:Key="ToggleSwitchStrokeOnPointerOver" Color="Transparent" />
+      <SolidColorBrush x:Key="ToggleSwitchStrokeOnPressed" Color="Transparent" />
+      <SolidColorBrush x:Key="ToggleSwitchKnobFillOn" Color="{DynamicResource ColorOnSurface}" />
+      <SolidColorBrush x:Key="ToggleSwitchKnobFillOnDisabled" Color="{DynamicResource ColorOnSurface}" />
+      <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPointerOver" Color="{DynamicResource ColorOnSurface}" />
+      <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPressed" Color="{DynamicResource ColorOnSurface}" />
+      <Color x:Key="ColorGo">#1E8E3E</Color>
+      <Color x:Key="ColorGoHover">#188038</Color>
+      <Color x:Key="ColorStop">#C5221F</Color>
+      <Color x:Key="ColorStopHover">#A50E0E</Color>
+      <Color x:Key="ColorButton">#E3EDFB</Color>
+      <Color x:Key="ColorButtonHover">#D3E3FD</Color>
+      <Color x:Key="ColorButtonBorder">#C2D5F2</Color>
+      <Color x:Key="ColorOnButton">#0B2A55</Color>
     </ResourceDictionary>
 
   </ResourceDictionary.ThemeDictionaries>
@@ -123,7 +168,7 @@
   <SolidColorBrush x:Key="BrushOnSecondaryContainer" Color="{DynamicResource ColorOnSecondaryContainer}" />
   <SolidColorBrush x:Key="BrushError" Color="{DynamicResource ColorError}" />
   <SolidColorBrush x:Key="BrushOnError" Color="{DynamicResource ColorOnError}" />
-  <!-- The OS accent colour, solid: the play button (its pause is BrushStateSelected, the same blue lighter) -->
+  <!-- The OS accent colour, solid -->
   <SolidColorBrush x:Key="BrushAccent" Color="{DynamicResource SystemAccentColor}" />
   <SolidColorBrush x:Key="BrushOnAccent" Color="White" />
   <SolidColorBrush x:Key="BrushTertiary" Color="{DynamicResource ColorTertiary}" />
@@ -140,6 +185,15 @@
   <SolidColorBrush x:Key="BrushOutlineVariant" Color="{DynamicResource ColorOutlineVariant}" />
   <SolidColorBrush x:Key="BrushTableRowAlt" Color="{DynamicResource ColorTableRowAlt}" />
   <SolidColorBrush x:Key="BrushRequest" Color="{DynamicResource ColorRequest}" />
+  <SolidColorBrush x:Key="BrushGo" Color="{DynamicResource ColorGo}" />
+  <SolidColorBrush x:Key="BrushGoHover" Color="{DynamicResource ColorGoHover}" />
+  <SolidColorBrush x:Key="BrushStop" Color="{DynamicResource ColorStop}" />
+  <SolidColorBrush x:Key="BrushStopHover" Color="{DynamicResource ColorStopHover}" />
+  <SolidColorBrush x:Key="BrushOnGoStop" Color="White" />
+  <SolidColorBrush x:Key="BrushButton" Color="{DynamicResource ColorButton}" />
+  <SolidColorBrush x:Key="BrushButtonHover" Color="{DynamicResource ColorButtonHover}" />
+  <SolidColorBrush x:Key="BrushButtonBorder" Color="{DynamicResource ColorButtonBorder}" />
+  <SolidColorBrush x:Key="BrushOnButton" Color="{DynamicResource ColorOnButton}" />
   <!-- Neutral hover for rows and icon buttons (on-surface at 10%, like Fluent's list hover) -->
   <SolidColorBrush x:Key="BrushStateHover" Color="{DynamicResource ColorOnSurface}" Opacity="0.1" />
   <SolidColorBrush x:Key="BrushPlayer1" Color="{StaticResource ColorPlayer1}" />

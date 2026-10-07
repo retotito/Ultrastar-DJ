@@ -7,12 +7,12 @@
 
   <StackPanel Spacing="{StaticResource Space2}">
     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="{StaticResource Space1}">
-      <Button Classes="tonal" Command="{Binding ToggleCommand}" IsEnabled="{Binding !Busy}">
+      <Button Classes="tonal" Classes.go="{Binding !IsRunning}" Classes.stop="{Binding IsRunning}" Command="{Binding ToggleCommand}" IsEnabled="{Binding !Busy}">
         <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
           <c:Icon Glyph="{Binding IsRunning, Converter={x:Static vm:BoolConverters.Glyph}, ConverterParameter='stop|play_arrow'}"
-                  FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
+                  FontSize="{StaticResource IconMd}" />
           <TextBlock Text="{Binding IsRunning, Converter={x:Static vm:BoolConverters.Text}, ConverterParameter='Stop|Start'}"
-                     Foreground="{DynamicResource BrushOnSecondaryContainer}" />
+ />
         </StackPanel>
       </Button>
     </StackPanel>

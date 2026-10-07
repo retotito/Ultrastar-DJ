@@ -386,7 +386,7 @@ Details: `03-game-engine.md` "Mic plug / unplug".
 
 ---
 
-## Sprint 14 — Fixes  *(in progress)*
+## Sprint 14 — Fixes  *(done)*
 
 - [x] Fix: with a song loaded, switching the game output (e.g. to headphones) only took effect with the next song. The new device did reach the loaded player (`MediaChannel` test), but mpv keeps an already open audio output on the old device; `MpvPlayer.AudioDevice` now rebuilds it (`ao-reload`) when a song is loaded. Preview channel likewise.
 - [x] Verified live: output switch reaches the loaded song
@@ -394,6 +394,33 @@ Details: `03-game-engine.md` "Mic plug / unplug".
 - [x] Verified live: grid lines
 - [x] Rap and freestyle notes readable on bright video, in hues no player has: rap magenta, freestyle teal (was white dots, hard to see); both dashed with a faint tint and a dark underlay under the dashes; R/F badges in the same colours
 - [x] Verified live: rap/freestyle colours
+- [x] Buttons: one look per job — normal (light blue tint, outline, soft shadow), start/open filled green, stop/close filled red; start/stop pairs are one button (display Open/Close merged); Game Player and Preview Player transport in the same colours; text next to an icon centred (was a few px high)
+- [x] Follow-ups: display row no longer shifts on Open/Close (tv icon hidden, not collapsed); disabled icon buttons (queue: load next, clear) have no grey background, just dimmed; tooltips on green/red buttons had white text (the button text style reached the tooltip) — tooltips keep Fluent's text colour
+- [x] Verified live: buttons
+- [x] Toggle switches: "on" in the sidebar's selected blue (accent 40 % light / 60 % dark, hover and pressed stronger), knob in the text colour — was Fluent's solid accent
+- [x] Verified live: toggle switches
+
+---
+
+## Sprint 15 — Volume slider with built-in meter  *(in progress)*
+
+One control, `MeterFader`, instead of a slider with a separate thin meter underneath (as in the Tauri HorizontalFader).
+Drawn directly (meter rate, allocation-free), not a templated Slider.
+
+- [ ] Track = segmented meter (~30 segments green → yellow → red, unlit segments as dark tints); knob 12×28 on top
+      (selected blue, or the player colour on mic rows), grows while dragged, ring on hover
+- [ ] Behaviour as `Fader`: only the knob moves (track clicks do nothing), double-click resets, grab / grabbing cursor; arrow keys
+- [ ] Meter scale per element, settable from XAML or a binding: floor and top in dB, where yellow and red start
+      (e.g. song −40…0 dB, mic −70…−20 dB); the dB mapping is a tested pure function
+- [ ] Peak hold: thin line at the last peak, falling back slowly
+- [ ] Level shown after the fader (like a mixing desk)
+- [ ] Trial in the Preview Player first → verified live
+- [ ] Then: Game Player (song, mic mix), Audio Output (game)
+- [ ] Mic inputs (Tauri PlayerCard), two per input: **1. Gain + Gate** in one — knob = input gain, meter = mic after gain,
+      dimmed zone below the gate with a drag handle under the track (replaces the separate Gate slider and meter);
+      **2. Output mix** — knob = monitor mix, meter = what the speakers get (level × mix, empty when muted)
+- [ ] Sliders in the same blue as the toggle switches
+- [ ] Verified live
 
 ---
 

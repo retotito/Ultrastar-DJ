@@ -45,12 +45,12 @@
                 <c:Fader Minimum="{Binding MinLatencyMs}" Maximum="{Binding MaxLatencyMs}" ResetValue="0" TickFrequency="5" IsSnapToTickEnabled="True" Value="{Binding LatencyMs}" />
                 <TextBlock Grid.Column="1" Classes="muted" Text="{Binding LatencyMs, StringFormat='{}{0:F0} ms'}" VerticalAlignment="Center" TextAlignment="Right" />
               </Grid>
-              <Button Classes="tonal" Command="{Binding ToggleCommand}" IsEnabled="{Binding CanToggle}" HorizontalAlignment="Left" Padding="12,4"
+              <Button Classes="tonal" Classes.go="{Binding !IsRunning}" Classes.stop="{Binding IsRunning}" Command="{Binding ToggleCommand}" IsEnabled="{Binding CanToggle}" HorizontalAlignment="Left" Padding="12,4"
                       ToolTip.Tip="{Binding ToggleTip}" ToolTip.ShowOnDisabled="True">
                 <StackPanel Orientation="Horizontal" Spacing="4">
-                  <c:Icon Glyph="graphic_eq" FontSize="{StaticResource IconSm}" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
-                  <TextBlock Text="Test sync" FontSize="{StaticResource TextSm}" Foreground="{DynamicResource BrushOnSecondaryContainer}" IsVisible="{Binding !IsRunning}" />
-                  <TextBlock Text="Stop test" FontSize="{StaticResource TextSm}" Foreground="{DynamicResource BrushOnSecondaryContainer}" IsVisible="{Binding IsRunning}" />
+                  <c:Icon Glyph="graphic_eq" FontSize="{StaticResource IconSm}" />
+                  <TextBlock Text="Test sync" FontSize="{StaticResource TextSm}" IsVisible="{Binding !IsRunning}" />
+                  <TextBlock Text="Stop test" FontSize="{StaticResource TextSm}" IsVisible="{Binding IsRunning}" />
                 </StackPanel>
               </Button>
             </StackPanel>

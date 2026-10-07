@@ -62,6 +62,11 @@
     <Setter Property="HorizontalContentAlignment" Value="Center" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
   </Style>
+  <!-- Disabled: no background (Fluent would paint a grey one), just the app-wide dimming -->
+  <Style Selector="Button.sidebar:disabled /template/ ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+  </Style>
   <!-- Interaction states shared with library rows and toggles (BrushState* tokens) -->
   <Style Selector="Button.sidebar:pointerover /template/ ContentPresenter">
     <Setter Property="Background" Value="{DynamicResource BrushStateHover}" />
@@ -83,22 +88,38 @@
     <Setter Property="Height" Value="28" />
   </Style>
 
-  <!-- Tonal button (secondary action) -->
+  <!-- Buttons, one look per job:
+         tonal            = normal action (Add to queue, Load, Fullscreen…): light blue tint, thin outline, soft shadow
+         tonal.go         = starts / opens something (Start, Open, Test, Play): filled green
+         tonal.stop       = stops / closes it again (Stop, Close): filled red
+       A start/stop pair is one button that swaps go ↔ stop. The Game Player's round transport uses the same colours. -->
   <Style Selector="Button.tonal">
-    <Setter Property="Background" Value="{DynamicResource BrushSecondaryContainer}" />
-    <Setter Property="Foreground" Value="{DynamicResource BrushOnSecondaryContainer}" />
+    <Setter Property="Background" Value="{DynamicResource BrushButton}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BrushButtonBorder}" />
+    <Setter Property="BorderThickness" Value="1" />
     <Setter Property="CornerRadius" Value="{StaticResource RadiusFull}" />
     <Setter Property="Padding" Value="16,8" />
-    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Effect">
+      <DropShadowEffect OffsetX="0" OffsetY="1" BlurRadius="3" Color="Black" Opacity="0.18" />
+    </Setter>
   </Style>
   <Style Selector="Button.tonal:pointerover /template/ ContentPresenter">
-    <Setter Property="Background" Value="{DynamicResource BrushSurfaceContainerHighest}" />
+    <Setter Property="Background" Value="{DynamicResource BrushButtonHover}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BrushButtonBorder}" />
   </Style>
-  <Style Selector="Button.tonal.active /template/ ContentPresenter">
+  <Style Selector="Button.tonal:pressed /template/ ContentPresenter">
     <Setter Property="Background" Value="{DynamicResource BrushStateSelected}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BrushButtonBorder}" />
   </Style>
-  <Style Selector="Button.tonal.active:pointerover /template/ ContentPresenter">
-    <Setter Property="Background" Value="{DynamicResource BrushStateSelectedHover}" />
+  <!-- Disabled keeps its look, only dimmed (the app-wide disabled rule) — Fluent would turn it grey. -->
+  <Style Selector="Button.tonal:disabled /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BrushButton}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BrushButtonBorder}" />
+  </Style>
+  <!-- Icon + text side by side: both centred on the button's middle (a TextBlock alone would sit at the top of the
+       taller icon line, a few px too high). -->
+  <Style Selector="Button StackPanel[Orientation=Horizontal] > TextBlock">
+    <Setter Property="VerticalAlignment" Value="Center" />
   </Style>
 
   <!-- Toggle buttons (player chips, monitor): checked = selected state, not Fluent's solid accent -->
@@ -138,7 +159,7 @@
     <Setter Property="Background" Value="{DynamicResource BrushStatePressed}" />
   </Style>
 
-  <!-- Game Player transport: round buttons — play blue (accent), pause light blue (selected state), stop red -->
+  <!-- Round transport buttons (Game Player 48 px, Preview Player .small 36 px): play = go, pause = normal tint, stop = stop -->
   <Style Selector="Button.transport">
     <Setter Property="Width" Value="48" />
     <Setter Property="Height" Value="48" />
@@ -148,29 +169,44 @@
     <Setter Property="HorizontalContentAlignment" Value="Center" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
   </Style>
-  <Style Selector="Button.transport:pointerover">
-    <Setter Property="Opacity" Value="0.85" />
+  <Style Selector="Button.transport.small">
+    <Setter Property="Width" Value="36" />
+    <Setter Property="Height" Value="36" />
   </Style>
-  <Style Selector="Button.transport:pressed">
-    <Setter Property="Opacity" Value="0.7" />
+  <Style Selector="Button.transport.pause /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BrushButton}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BrushButtonBorder}" />
+    <Setter Property="BorderThickness" Value="1" />
   </Style>
-  <Style Selector="Button.transport.play /template/ ContentPresenter, Button.transport.play:pointerover /template/ ContentPresenter">
-    <Setter Property="Background" Value="{DynamicResource BrushAccent}" />
+  <Style Selector="Button.transport.pause:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BrushButtonHover}" />
   </Style>
-  <Style Selector="Button.transport.play c|Icon">
-    <Setter Property="Foreground" Value="{DynamicResource BrushOnAccent}" />
+
+  <!-- Foregrounds and the go / stop fills: after the tonal and transport looks so they win. -->
+  <!-- Only the button's own content (direct child, or inside its one StackPanel): a plain "Button.go TextBlock" also
+       reaches the tooltip's text, because a tooltip is a logical child of its control (white text on a light tooltip). -->
+  <Style Selector="Button.tonal > TextBlock, Button.tonal > StackPanel > TextBlock, Button.tonal > StackPanel > c|Icon, Button.transport > c|Icon">
+    <Setter Property="Foreground" Value="{DynamicResource BrushOnButton}" />
   </Style>
-  <Style Selector="Button.transport.pause /template/ ContentPresenter, Button.transport.pause:pointerover /template/ ContentPresenter">
-    <Setter Property="Background" Value="{DynamicResource BrushStateSelected}" />
+  <Style Selector="Button.go /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BrushGo}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BrushGo}" />
   </Style>
-  <Style Selector="Button.transport.pause c|Icon">
-    <Setter Property="Foreground" Value="{DynamicResource BrushOnSurface}" />
+  <Style Selector="Button.go:pointerover /template/ ContentPresenter, Button.go:pressed /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BrushGoHover}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BrushGoHover}" />
   </Style>
-  <Style Selector="Button.transport.stop /template/ ContentPresenter, Button.transport.stop:pointerover /template/ ContentPresenter">
-    <Setter Property="Background" Value="{DynamicResource BrushError}" />
+  <Style Selector="Button.stop /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BrushStop}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BrushStop}" />
   </Style>
-  <Style Selector="Button.transport.stop c|Icon">
-    <Setter Property="Foreground" Value="{DynamicResource BrushOnError}" />
+  <Style Selector="Button.stop:pointerover /template/ ContentPresenter, Button.stop:pressed /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource BrushStopHover}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BrushStopHover}" />
+  </Style>
+  <Style Selector="Button.go > TextBlock, Button.go > StackPanel > TextBlock, Button.go > StackPanel > c|Icon, Button.go > c|Icon,
+                   Button.stop > TextBlock, Button.stop > StackPanel > TextBlock, Button.stop > StackPanel > c|Icon, Button.stop > c|Icon">
+    <Setter Property="Foreground" Value="{DynamicResource BrushOnGoStop}" />
   </Style>
 
   <!-- Text button (low-emphasis action, e.g. "Clear" filters) -->
