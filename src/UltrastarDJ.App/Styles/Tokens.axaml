@@ -285,10 +285,14 @@
   <!-- ── Layout constants ─────────────────────────────────────────────── -->
   <x:Double x:Key="SidebarWidth">56</x:Double>
   <x:Double x:Key="RightPanelWidth">340</x:Double>
+  <!-- The floating Game Player card: wider than the right panel so its faders have room -->
+  <x:Double x:Key="GamePlayerWidth">390</x:Double>
   <x:Double x:Key="PopoverWidth">420</x:Double>
   <!-- Text width inside a popover of PopoverWidth (minus PadPanel): hints in a wider popover keep it. -->
   <x:Double x:Key="PopoverTextWidth">396</x:Double>
   <!-- Picture box of the preview player and the Game Player: same width, so the same height keeps the same shape -->
   <x:Double x:Key="PlayerPictureHeight">170</x:Double>
+  <!-- The Game Player's box, scaled with its extra width so the picture keeps the same shape -->
+  <x:Double x:Key="GamePlayerPictureHeight">197</x:Double>
 
 </ResourceDictionary>

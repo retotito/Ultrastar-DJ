@@ -4,7 +4,7 @@
              xmlns:c="using:UltrastarDJ.App.Controls"
              x:Class="UltrastarDJ.App.Views.NowPlayingView"
              x:DataType="vm:NowPlayingViewModel"
-             Width="{StaticResource RightPanelWidth}"
+             Width="{StaticResource GamePlayerWidth}"
              ClipToBounds="False">
 
   <!-- The card's shadow reaches outside this control; see DjWindow.axaml. -->
@@ -32,7 +32,7 @@
 
       <!-- Always there (fixed size), like the preview player: note when empty, loader while loading, then what the
            beamers show behind the game (Core.Playback.StageView): song picture, video while it runs, or backdrop. -->
-      <Border Background="{DynamicResource BrushBeamerBackground}" CornerRadius="{StaticResource RadiusMd}" Height="{StaticResource PlayerPictureHeight}" ClipToBounds="True">
+      <Border Background="{DynamicResource BrushBeamerBackground}" CornerRadius="{StaticResource RadiusMd}" Height="{StaticResource GamePlayerPictureHeight}" ClipToBounds="True">
         <Panel>
           <Image Source="{Binding BoxImage}" Stretch="UniformToFill" IsVisible="{Binding ShowBoxImage}" />
           <c:VideoSurface Source="{Binding GameFrames}" IsVisible="{Binding ShowVideo}" />
@@ -74,7 +74,7 @@
                    IsVisible="False" />
       </Grid>
 
-      <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}" HorizontalAlignment="Center">
+      <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}" HorizontalAlignment="Center" Margin="0,0,0,8">
         <!-- Four buttons (prototype): rules in Core.Playback.PlaybackRules. Hidden while no beamer is open. -->
         <Button Classes="sidebar" Command="{Binding HomeCommand}" ToolTip.Tip="Beamers to the start view (the song stays loaded)"
                 IsVisible="{Binding !NoBeamerOpen}" VerticalAlignment="Center"><c:Icon Glyph="home" /></Button>
@@ -98,37 +98,35 @@
         </Button>
       </StackPanel>
 
-      <!-- Song fader (game output) -->
-      <Grid ColumnDefinitions="72,*,44" RowDefinitions="Auto,Auto">
-        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-          <c:Icon Glyph="volume_up" FontSize="{StaticResource IconMd}" />
+      <!-- Song and mic mix: faders with their meter as the track (as in the preview and Audio Input).
+           Columns shared with the mic rows: icon + name, fader, %. All meters put yellow at 80 % and red at 90 %
+           of their range, so they look alike although song and mic use different dB ranges. -->
+      <Grid ColumnDefinitions="84,*,44">
+        <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+          <c:Icon Glyph="volume_up" FontSize="{StaticResource IconMd}" Width="28" />
           <TextBlock Classes="muted" FontSize="{StaticResource TextSm}" Text="Song" VerticalAlignment="Center" />
         </StackPanel>
-        <c:Fader Grid.Column="1" Minimum="0" Maximum="1" Value="{Binding Gain}" VerticalAlignment="Center" />
+        <c:MeterFader Grid.Column="1" Minimum="0" Maximum="1" Value="{Binding Gain}" Level="{Binding SongLevel}"
+                      MinDb="-40" MaxDb="0" WarnDb="-8" ClipDb="-4" VerticalAlignment="Center" ToolTip.Tip="Song knob" />
         <TextBlock Grid.Column="2" Classes="muted" Text="{Binding Gain, StringFormat='{}{0:P0}'}" VerticalAlignment="Center" TextAlignment="Right" />
-        <c:LevelMeter Grid.Row="1" Grid.Column="1" Height="4" Margin="0,-4,0,0" Level="{Binding Level}"
-                      Fill="{DynamicResource BrushPrimary}" Track="{DynamicResource BrushSurfaceContainerHighest}" />
       </Grid>
 
-      <!-- Mic mix: one row per player assigned to an open beamer -->
+      <!-- Mic mix: one row per player assigned to an open beamer. The mic in the player's colour is the mute button. -->
       <ItemsControl ItemsSource="{Binding MixRows}" IsVisible="{Binding HasMixRows}">
         <ItemsControl.ItemTemplate>
           <DataTemplate x:DataType="vm:MixRowViewModel">
-            <Grid ColumnDefinitions="72,*,44" RowDefinitions="Auto,Auto" Margin="0,2,0,0">
-              <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                <Border Width="10" Height="10" CornerRadius="5" VerticalAlignment="Center"
-                        Background="{Binding ColorKey, Converter={x:Static vm:PlayerConverters.BrushByKey}}" />
+            <Grid ColumnDefinitions="84,*,44" Margin="0,2,0,0">
+              <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                <Button Classes="sidebar small" Command="{Binding ToggleMuteCommand}" ToolTip.Tip="Mute in the speakers">
+                  <c:Icon Glyph="{Binding MuteGlyph}" FontSize="{StaticResource IconMd}"
+                          Foreground="{Binding ColorKey, Converter={x:Static vm:PlayerConverters.BrushByKey}}" />
+                </Button>
                 <TextBlock Classes="muted" FontSize="{StaticResource TextSm}" Text="{Binding Name}" VerticalAlignment="Center"
                            TextTrimming="CharacterEllipsis" MaxWidth="52" />
               </StackPanel>
-              <c:Fader Grid.Column="1" Minimum="0" Maximum="2" Value="{Binding MixGain}" VerticalAlignment="Center" IsEnabled="{Binding !Muted}" />
-              <Button Grid.Column="2" Classes="sidebar small" HorizontalAlignment="Right" Command="{Binding ToggleMuteCommand}"
-                      ToolTip.Tip="Mute this mic in the speakers (scoring unaffected)">
-                <c:Icon Glyph="{Binding MuteGlyph}" FontSize="{StaticResource IconMd}" />
-              </Button>
-              <c:LevelMeter Grid.Row="1" Grid.Column="1" Height="4" Margin="0,-4,0,0" Level="{Binding LevelDb}"
-                            Fill="{Binding ColorKey, Converter={x:Static vm:PlayerConverters.BrushByKey}}"
-                            Track="{DynamicResource BrushSurfaceContainerHighest}" />
+              <c:MeterFader Grid.Column="1" Minimum="0" Maximum="1" ResetValue="1" Value="{Binding MixGain}" Level="{Binding MixLevel}"
+                            MinDb="-70" MaxDb="0" WarnDb="-14" ClipDb="-7" VerticalAlignment="Center" IsEnabled="{Binding !Muted}" ToolTip.Tip="Mix knob" />
+              <TextBlock Grid.Column="2" Classes="muted" Text="{Binding MixGain, StringFormat='{}{0:P0}'}" VerticalAlignment="Center" TextAlignment="Right" />
             </Grid>
           </DataTemplate>
         </ItemsControl.ItemTemplate>

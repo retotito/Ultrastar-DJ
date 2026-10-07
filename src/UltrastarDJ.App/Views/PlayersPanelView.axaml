@@ -40,14 +40,15 @@
             </Button>
           </Grid>
 
-          <!-- Two faders with their meter as the track (Tauri PlayerCard), on the mic scale −70…0 dB:
+          <!-- Two faders with their meter as the track (Tauri PlayerCard), on the mic scale −70…0 dB (yellow at 80 %,
+               red at 90 % of the range, like every meter):
                GAIN + GATE in one — meter = the mic after gain, shaded below the gate, gate handle under the track;
                MIX — meter = what the speakers get (gated signal × mix). -->
           <Grid ColumnDefinitions="52,*,60" RowDefinitions="Auto,Auto" RowSpacing="{StaticResource Space1}">
             <TextBlock Grid.Row="0" Grid.Column="0" Classes="label" Text="GAIN" VerticalAlignment="Top" Margin="0,9,0,0"
                        ToolTip.Tip="{StaticResource GainGateTip}" />
             <c:MeterFader Grid.Row="0" Grid.Column="1" Minimum="-40" Maximum="20" ResetValue="0" Value="{Binding InputGainDb}" Level="{Binding Level}"
-                          MinDb="-70" MaxDb="0" WarnDb="-12" ClipDb="-6"
+                          MinDb="-70" MaxDb="0" WarnDb="-14" ClipDb="-7"
                           ShowGate="True" GateDb="{Binding GateDb}" GateMinDb="-70" GateMaxDb="-20" GateResetDb="-50"
                           ToolTip.Tip="{StaticResource GainGateTip}" />
             <StackPanel Grid.Row="0" Grid.Column="2" VerticalAlignment="Top">
@@ -57,10 +58,10 @@
 
             <TextBlock Grid.Row="1" Grid.Column="0" Classes="label" Text="MIX" VerticalAlignment="Center"
                        ToolTip.Tip="Mix knob" />
-            <c:MeterFader Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="2" ResetValue="1" Value="{Binding MixGain}" Level="{Binding MixLevel}"
-                          MinDb="-70" MaxDb="0" WarnDb="-12" ClipDb="-6"
+            <c:MeterFader Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="1" ResetValue="1" Value="{Binding MixGain}" Level="{Binding MixLevel}"
+                          MinDb="-70" MaxDb="0" WarnDb="-14" ClipDb="-7"
                           ToolTip.Tip="Mix knob" />
-            <TextBlock Grid.Row="1" Grid.Column="2" Classes="muted" Text="{Binding MixGain, StringFormat='{}{0:F2}'}" VerticalAlignment="Center" TextAlignment="Right" />
+            <TextBlock Grid.Row="1" Grid.Column="2" Classes="muted" Text="{Binding MixGain, StringFormat='{}{0:P0}'}" VerticalAlignment="Center" TextAlignment="Right" />
           </Grid>
 
           <Grid ColumnDefinitions="*,Auto">
@@ -86,7 +87,8 @@
       </Button>
     </StackPanel>
 
-    <Grid ColumnDefinitions="Auto,*,Auto" IsVisible="{Binding Testing}">
+    <!-- Where the tested mics are heard: on as soon as one mic is tested, off with the last. -->
+    <Grid ColumnDefinitions="Auto,*" ToolTip.Tip="Tested mics are heard here">
       <TextBlock Grid.Column="0" Classes="label" Text="MONITOR" VerticalAlignment="Center" Margin="0,0,8,0" />
       <ComboBox Grid.Column="1" ItemsSource="{Binding Outputs}" SelectedItem="{Binding MonitorOutput}" HorizontalAlignment="Stretch">
         <ComboBox.ItemTemplate>
@@ -95,9 +97,6 @@
           </DataTemplate>
         </ComboBox.ItemTemplate>
       </ComboBox>
-      <ToggleButton Grid.Column="2" IsChecked="{Binding Monitoring}" Margin="8,0,0,0" ToolTip.Tip="Hear the mics on this output">
-        <c:Icon Glyph="hearing" FontSize="{StaticResource IconMd}" />
-      </ToggleButton>
     </Grid>
 
     <ItemsControl ItemsSource="{Binding Players}" ItemTemplate="{StaticResource PlayerCard}" />

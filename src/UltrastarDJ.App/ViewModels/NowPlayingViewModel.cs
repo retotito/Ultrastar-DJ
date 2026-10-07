@@ -83,7 +83,7 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
         _displays.OpenStateChanged += (_, _) => Refresh();
         _players.Changed += OnPlayerChanged;
         media.Game.Frames.SourceChanged += () => Dispatcher.UIThread.Post(() => HasVideo = media.Game.Frames.HasSource);
-        _poll = new DispatcherTimer(TimeSpan.FromMilliseconds(100), DispatcherPriority.Background, (_, _) => Poll());
+        _poll = new DispatcherTimer(TimeSpan.FromMilliseconds(50), DispatcherPriority.Background, (_, _) => Poll());
         _poll.Start();
         Refresh();
     }
@@ -150,7 +150,8 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(ShowBoxImage));
         OnPropertyChanged(nameof(ShowVideo));
     }
-    public double Level => _media.Game.LevelRms;
+    /// <summary>What the song fader lets through: mpv meters before its (cubic) volume, the meter shows after it.</summary>
+    public double SongLevel => _media.Game.LevelRms * VolumeCurve.MpvAmplitude(Gain);
     /// <summary>Small monitor of what the beamers show.</summary>
     public Media.FrameBus GameFrames => _media.Game.Frames;
     /// <summary>One row per player that will sing (mic bound, assigned to an open beamer).</summary>
@@ -161,6 +162,7 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
 
     partial void OnGainChanged(double value)
     {
+        OnPropertyChanged(nameof(SongLevel));
         if (!_syncingGain)
         {
             _outputs.SetGameGain(value);
@@ -237,12 +239,13 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
 
     private void Poll()
     {
-        OnPropertyChanged(nameof(Level));
+        OnPropertyChanged(nameof(SongLevel));
         SyncRows();
         foreach (MixRowViewModel row in MixRows)
         {
             MicPipeline? pipe = _audio.Mics.Pipeline(row.Id);
             row.Level = pipe?.LevelRms ?? 0;
+            row.IsGated = pipe?.IsGated ?? false;
         }
 
         if (_playback.Clock is { } clock && _playback.Timeline is { } timeline && _playback.State is PlaybackState.Playing or PlaybackState.Paused)
@@ -419,41 +422,48 @@ public sealed partial class MixRowViewModel : ObservableObject
     [ObservableProperty] private double _mixGain;
     [ObservableProperty] private bool _muted;
     [ObservableProperty] private double _level;
+    [ObservableProperty] private bool _isGated;
 
     public MixRowViewModel(PlayerConfig config, PlayersService players)
     {
         _players = players;
         Id = config.Id;
         _name = config.Name;
-        _mixGain = config.MixGain;
+        _mixGain = Math.Min(1, config.MixGain);   // mix is 0–100 % (older settings went to 200 %)
         _muted = config.MixMuted;
     }
 
     public int Id { get; }
     public string ColorKey => $"BrushPlayer{Id}";
     public string MuteGlyph => Muted ? "mic_off" : "mic";
-    /// <summary>Same dB mapping as the players panel so both meters agree.</summary>
-    public double LevelDb => Level <= 0 ? 0 : Math.Clamp((20 * Math.Log10(Level) - PlayerCardViewModel.GateMinDb) / -PlayerCardViewModel.GateMinDb, 0, 1);
+    /// <summary>What the speakers get from this mic (as on the Audio Input card's MIX): gated signal × mix, nothing when muted.</summary>
+    public double MixLevel => Muted || IsGated ? 0 : Level * MixGain;
 
     public void Reload(PlayerConfig config)
     {
         _loading = true;
         Name = config.Name;
-        MixGain = config.MixGain;
+        MixGain = Math.Min(1, config.MixGain);
         Muted = config.MixMuted;
         _loading = false;
     }
 
     [RelayCommand] private void ToggleMute() => Muted = !Muted;
 
-    partial void OnLevelChanged(double value) => OnPropertyChanged(nameof(LevelDb));
+    partial void OnLevelChanged(double value) => OnPropertyChanged(nameof(MixLevel));
+    partial void OnIsGatedChanged(bool value) => OnPropertyChanged(nameof(MixLevel));
     partial void OnMutedChanged(bool value)
     {
         OnPropertyChanged(nameof(MuteGlyph));
+        OnPropertyChanged(nameof(MixLevel));
         Save(p => p with { MixMuted = value });
     }
 
-    partial void OnMixGainChanged(double value) => Save(p => p with { MixGain = Math.Round(value, 2) });
+    partial void OnMixGainChanged(double value)
+    {
+        OnPropertyChanged(nameof(MixLevel));
+        Save(p => p with { MixGain = Math.Round(value, 2) });
+    }
 
     private void Save(Func<PlayerConfig, PlayerConfig> change)
     {

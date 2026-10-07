@@ -40,7 +40,7 @@
     <Grid ColumnDefinitions="Auto,*,44">
       <c:Icon Glyph="headphones" FontSize="{StaticResource IconMd}" Margin="0,0,8,0" />
       <c:MeterFader Grid.Column="1" Minimum="0" Maximum="1" Value="{Binding Gain}" Level="{Binding MeterLevel}"
-                    MinDb="-40" MaxDb="0" WarnDb="-10" ClipDb="-4" VerticalAlignment="Center" />
+                    MinDb="-40" MaxDb="0" WarnDb="-8" ClipDb="-4" VerticalAlignment="Center" />
       <TextBlock Grid.Column="2" Classes="muted" Text="{Binding Gain, StringFormat='{}{0:P0}'}" VerticalAlignment="Center" TextAlignment="Right" />
     </Grid>
 

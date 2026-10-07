@@ -7,8 +7,8 @@ namespace UltrastarDJ.Core.Playback;
 /// </summary>
 public readonly record struct MeterScale(double MinDb, double MaxDb, double WarnDb, double ClipDb)
 {
-    /// <summary>Music after the fader: RMS of a loud master is around −10 dBFS.</summary>
-    public static MeterScale Music { get; } = new(-40, 0, -10, -4);
+    /// <summary>Music after the fader: RMS of a loud master is around −10 dBFS. Yellow at 80 %, red at 90 % of the range, as on every meter.</summary>
+    public static MeterScale Music { get; } = new(-40, 0, -8, -4);
 
     /// <summary>Linear amplitude (RMS, 1 = full scale) → 0..1 along the meter.</summary>
     public double Fraction(double amplitude) => amplitude <= 0 ? 0 : FractionOfDb(20 * Math.Log10(amplitude));

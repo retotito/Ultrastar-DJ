@@ -419,7 +419,16 @@ Drawn directly (meter rate, allocation-free), not a templated Slider.
 - [x] Audio Input cards: GAIN + GATE in one `MeterFader` (`ShowGate`: shaded range below the gate, handle under the track, double-click −50 dB) and MIX (meter = gated level × mix); the separate meter and Gate slider are gone
 - [x] Mic gain knob in dB (−40…+20, half-dB steps, double-click 0 dB; `Core.Players.InputGainScale`, tested), stored linear as before (0.7× → −3.1 dB). A linear 0–10× knob left SingStar / Let's Sing mics (~0.1×) in its first 3 %. Mic meters: red from −6 dB (the meter is RMS, voice peaks are 10–15 dB higher — red = distortion in the speakers); target: loudest singing just reaches the yellow
 - [x] Verified live: Audio Input (tooltips just name the knobs)
-- [ ] Then: Game Player (song, mic mix), Audio Output (game)
+- [x] Game Player: song fader (−40…0 dB, level × volume³) and mic mix rows (−70…0 dB, gated level × mix, empty when muted — the fader dims) as `MeterFader`; polled at 20 Hz; tooltips name the knob
+- [x] Mix shown in % (Audio Input MIX, Game Player mic rows — next to the mute button), like the song and preview faders; gain stays in dB
+- [x] Audio Input: MONITOR output always shown (defaults to the game output); the ear toggle is gone — the monitor is on while at least one mic is tested
+- [x] Fix: tested voice sometimes metallic / robotic — the monitor mixer's fixed 512-sample lead ran dry with USB mic blocks and clock drift; adaptive lead + ±0.3 % speed nudge (tests first: live-timed callbacks, 512/1024 blocks, ±0.02 % drift)
+- [x] Verified live: Game Player, monitor, mix %
+- [x] All meters: yellow from 80 %, red from 90 % of their range (song −40…0: −8 / −4; mic −70…0: −14 / −7), so song and mic meters show the same segments (were 5 vs 2 yellow)
+- [x] Mix 0–100 % (was 0–200 %): mix only turns a mic down, the input gain boosts; older settings above 100 % read as 100 %
+- [x] Game Player 50 px wider (`GamePlayerWidth` 390, picture box scaled to keep its shape); the mute button moved from the right of each mic row to the left — the mic in the player's colour, before the name — so the faders are longer; a gap under the transport buttons
+- [ ] Verified live: Game Player layout
+- [ ] Audio Output (game)
 - [x] Mic inputs (Tauri PlayerCard), two per input: **1. Gain + Gate** in one — knob = input gain, meter = mic after gain,
       dimmed zone below the gate with a drag handle under the track (replaces the separate Gate slider and meter);
       **2. Output mix** — knob = monitor mix, meter = what the speakers get (level × mix, empty when muted)

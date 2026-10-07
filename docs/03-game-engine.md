@@ -87,8 +87,17 @@ PortAudio input (device, channel L/R/mono)
 ### Monitoring mix
 
 `MonitorMixer` opens one PortAudio **output** stream on the game output device (respecting channel offset)
-and sums each active player's gated mic × `mixGain` (0–2, muted → 0, fader position kept). Starts when the
-song starts, stops on `Score`/`Stop`. Optionally available in mic-test mode.
+and sums each active player's gated mic × `mixGain` (0–1 = 0–100 %: mix only turns a mic down, boosting is the input gain's job; older
+settings above 1 read as 1; muted → 0, fader position kept). Starts when the
+song starts, stops on `Score`/`Stop`. In the mic test it is on whenever at least one mic is tested, on the
+**MONITOR** output picked at the top of Audio Input (always shown; defaults to the game output).
+
+Mic and output are separate devices: the mic writes in bursts (its block size, 256–1024 frames on USB), the
+output reads in its own, and the two clocks drift apart slightly. Each mic's reader therefore keeps a lead behind
+the writer covering both blocks (largest mic block, max 2048 + 1.5 output blocks + 128) and nudges its read speed
+by at most ±0.3 % to hold it; about to starve or far behind → jump back to the lead. A fixed 512-sample lead ran
+dry — the reader overtook the writer and played gaps, heard as a metallic, robotic voice (tests drive both
+callbacks interleaved in time, with drift).
 
 ### Latency and sync
 

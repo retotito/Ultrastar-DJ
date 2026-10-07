@@ -36,7 +36,16 @@ public class MeterScaleTests
     public void FractionOfDb_Clamps(double db, double expected) => Assert.Equal(expected, Song.FractionOfDb(db), 3);
 
     [Fact]
-    public void Default_IsMusicRange() => Assert.Equal(new MeterScale(-40, 0, -10, -4), MeterScale.Music);
+    public void Default_IsMusicRange() => Assert.Equal(new MeterScale(-40, 0, -8, -4), MeterScale.Music);
+
+    [Fact]
+    public void SongAndMicScales_PutYellowAndRedAtTheSamePlace()
+    {
+        // The Game Player shows them one under the other: the same number of yellow and red segments.
+        MeterScale mic = new(-70, 0, -14, -7);
+        Assert.Equal(MeterScale.Music.WarnFraction, mic.WarnFraction, 3);
+        Assert.Equal(MeterScale.Music.ClipFraction, mic.ClipFraction, 3);
+    }
 }
 
 public class VolumeCurveTests

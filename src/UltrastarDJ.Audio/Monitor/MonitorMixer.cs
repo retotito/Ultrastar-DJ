@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using UltrastarDJ.Audio.Dsp;
 using UltrastarDJ.Audio.Mics;
 
 namespace UltrastarDJ.Audio.Monitor;
@@ -59,7 +60,8 @@ public sealed class MonitorMixer : IDisposable
         {
             if (s.Pipeline.PlayerId == playerId)
             {
-                s.Gain = (float)Math.Clamp(gain, 0, 2);
+                // Mix only turns a mic down (0–100 %): boosting is the input gain's job (Audio Input).
+                s.Gain = (float)Math.Clamp(gain, 0, 1);
             }
         }
     }
@@ -82,6 +84,7 @@ public sealed class MonitorMixer : IDisposable
         int off = _channelOffset;
         foreach (Source s in sources)
         {
+            s.Track(frames);
             if (s.Muted || s.Gain <= 0)
             {
                 s.SkipAhead(frames);
@@ -109,43 +112,86 @@ public sealed class MonitorMixer : IDisposable
 
     public void Dispose() => Stop();
 
-    /// <summary>Reads one pipeline's monitor ring at the output rate (linear interpolation), keeping a small lead to absorb jitter.</summary>
+    /// <summary>
+    /// Reads one pipeline's monitor ring at the output rate (linear interpolation). Mic and output are separate
+    /// devices: the mic writes in bursts (its block size), the output reads in its own, and their clocks drift apart
+    /// slightly. The reader therefore stays a lead behind the writer that covers both blocks, and nudges its speed
+    /// (at most ±0.3 %, inaudible) to hold that lead. A fixed 512-sample lead ran dry with 512+ frame USB blocks —
+    /// the reader overtook the writer and played gaps: a metallic, robotic voice.
+    /// </summary>
     private sealed class Source(MicPipeline pipeline, double ratio)
     {
-        private const int LeadSamples = 512; // read this far behind the writer so the callback never starves
+        private const int Margin = 128;
+        // Bursts up to this many samples are covered (USB mics deliver 256–1024); bigger ones are stalls, not blocks.
+        private const int MaxBurst = 2048;
+        private const double MaxNudge = 0.003;
         private readonly float[] _buf = new float[8192];
         private double _pos = -1;    // absolute (input-rate) read position
+        private double _fill;        // smoothed lead (written − read position), input samples
         private long _bufStart;
         private int _bufLen;
 
         public MicPipeline Pipeline { get; } = pipeline;
         public float Gain { get; set; } = 1f;
         public bool Muted { get; set; }
+        private readonly double _ratio = ratio;   // nominal input samples per output sample
+        private double _step = ratio;             // the same, nudged to hold the lead
+
+        /// <summary>Audio thread, once per output callback: (re)places the read position and adjusts the speed.</summary>
+        public void Track(int outFrames)
+        {
+            SampleRing ring = Pipeline.Monitor;
+            long written = ring.TotalWritten;
+            double perCallback = outFrames * _ratio;
+            double target = Math.Min(ring.LargestWrite, MaxBurst) + 1.5 * perCallback + Margin;
+            if (_pos < 0)
+            {
+                // Wait for the lead to exist: started right after the mics (song replay) the ring is still nearly
+                // empty, and a negative read position crashed the audio callback.
+                if (written >= target)
+                {
+                    Resync(written, target);
+                }
+
+                return;
+            }
+
+            double fill = written - _pos;
+            if (fill < perCallback + 2 || fill > ring.Capacity / 2.0)
+            {
+                // About to starve, or far behind (a stall): jump back to the lead instead of playing gaps or lag.
+                Resync(written, target);
+                return;
+            }
+
+            _fill += 0.05 * (fill - _fill);
+            double nudge = Math.Clamp((_fill - target) / target * 0.01, -MaxNudge, MaxNudge);
+            _step = _ratio * (1 + nudge);
+        }
+
+        private void Resync(long written, double target)
+        {
+            _pos = written - target;
+            _fill = target;
+            _step = _ratio;
+        }
 
         public float Next()
         {
             if (_pos < 0)
             {
-                // Wait for the lead to exist: started right after the mics (song replay) the ring is still nearly
-                // empty, and a negative read position crashed the audio callback.
-                long written = Pipeline.Monitor.TotalWritten;
-                if (written < LeadSamples)
-                {
-                    return 0;
-                }
-
-                _pos = written - LeadSamples;
+                return 0;
             }
 
             long i0 = (long)Math.Floor(_pos);
             float a = Sample(i0);
             float b = Sample(i0 + 1);
             float frac = (float)(_pos - i0);
-            _pos += ratio;
+            _pos += _step;
             return a + (b - a) * frac;
         }
 
-        public void SkipAhead(int frames) => _pos = _pos < 0 ? -1 : _pos + frames * ratio;
+        public void SkipAhead(int frames) => _pos = _pos < 0 ? -1 : _pos + frames * _step;
 
         private float Sample(long index)
         {

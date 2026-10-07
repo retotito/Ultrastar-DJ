@@ -34,7 +34,6 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
     private readonly HashSet<int> _tested = [];
 
     [ObservableProperty] private bool _testing;
-    [ObservableProperty] private bool _monitoring;
     [ObservableProperty] private AudioDeviceInfo? _monitorOutput;
     [ObservableProperty] private string _status = "";
 
@@ -107,7 +106,9 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
             Outputs.Add(d);
         }
 
-        MonitorOutput ??= Outputs.FirstOrDefault(o => o.IsDefaultOutput) ?? Outputs.FirstOrDefault();
+        // The game output by default: that is where the mics are heard during a song.
+        MonitorOutput ??= Outputs.FirstOrDefault(o => o.Id == _outputs.GamePortAudioDeviceId())
+            ?? Outputs.FirstOrDefault(o => o.IsDefaultOutput) ?? Outputs.FirstOrDefault();
         RefreshCardOptions();
     }
 
@@ -148,16 +149,14 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
         ApplyTests();
     }
 
-    /// <summary>(Re)opens the tested players' mics; drops players that lost their mic. Keeps the monitor on if it was.</summary>
+    /// <summary>(Re)opens the tested players' mics; drops players that lost their mic. While any mic is tested it is heard on the monitor output.</summary>
     private void ApplyTests()
     {
         _tested.RemoveWhere(id => _players.Get(id).Mic is null);
-        bool monitor = Monitoring;
         if (_tested.Count == 0)
         {
             _audio.StopAll();
             Testing = false;
-            Monitoring = false;
             Status = "";
         }
         else
@@ -165,14 +164,7 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
             _audio.StartTest(_tested.Select(_players.Get));
             Testing = _audio.Mics.IsRunning;
             Status = Testing ? "" : "Could not open the microphone (see log)";
-            if (monitor && Testing && MonitorOutput is not null)
-            {
-                _audio.StartMonitor(MonitorOutput.Id);
-            }
-            else
-            {
-                Monitoring = false;
-            }
+            StartMonitor();
         }
 
         foreach (PlayerCardViewModel c in Players)
@@ -187,19 +179,10 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
         }
     }
 
-    // Bound two-way to the ear toggle: the property change *is* the command.
-    partial void OnMonitoringChanged(bool value)
+    private void StartMonitor()
     {
-        if (!value)
-        {
-            _audio.StopMonitor();
-            return;
-        }
-
         if (!Testing || MonitorOutput is null)
         {
-            Status = Testing ? "Choose a monitor output first" : "Start the mic test first";
-            Dispatcher.UIThread.Post(() => Monitoring = false);
             return;
         }
 
@@ -207,17 +190,10 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
         if (!_audio.Monitor.IsRunning)
         {
             Status = "Could not open the monitor output (see log)";
-            Dispatcher.UIThread.Post(() => Monitoring = false);
         }
     }
 
-    partial void OnMonitorOutputChanged(AudioDeviceInfo? value)
-    {
-        if (Monitoring && value is not null)
-        {
-            _audio.StartMonitor(value.Id);
-        }
-    }
+    partial void OnMonitorOutputChanged(AudioDeviceInfo? value) => StartMonitor();
 
     /// <summary>Mic bindings changed → streams must be reopened.</summary>
     internal void RestartIfTesting()
@@ -359,7 +335,7 @@ public sealed partial class PlayerCardViewModel : ObservableObject
         _name = config.Name;
         _inputGainDb = InputGainScale.ToDb(config.InputGain);
         _gateDb = ToDb(config.Threshold);
-        _mixGain = config.MixGain;
+        _mixGain = Math.Min(1, config.MixGain);   // mix is 0–100 % (older settings went to 200 %)
         SyncMicOption();
     }
 
@@ -435,7 +411,7 @@ public sealed partial class PlayerCardViewModel : ObservableObject
         bool micChanged = !Equals(Config.Mic, config.Mic);
         _loading = true;
         Config = config;
-        MixGain = config.MixGain;
+        MixGain = Math.Min(1, config.MixGain);
         _loading = false;
         if (micChanged)
         {

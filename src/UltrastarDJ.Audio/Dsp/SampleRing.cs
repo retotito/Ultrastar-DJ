@@ -8,6 +8,7 @@ public sealed class SampleRing
 {
     private readonly float[] _buf;
     private long _written; // total samples ever written; read by consumer via Volatile
+    private int _largestWrite;
 
     public SampleRing(int capacity)
     {
@@ -16,6 +17,8 @@ public sealed class SampleRing
 
     public int Capacity => _buf.Length;
     public long TotalWritten => Volatile.Read(ref _written);
+    /// <summary>The biggest block written so far: how bursty the producer is (a streaming reader must stay this far behind).</summary>
+    public int LargestWrite => Volatile.Read(ref _largestWrite);
 
     /// <summary>Producer side (audio thread).</summary>
     public void Write(ReadOnlySpan<float> samples)
@@ -27,6 +30,11 @@ public sealed class SampleRing
         if (first < samples.Length)
         {
             samples[first..].CopyTo(_buf.AsSpan(0, samples.Length - first));
+        }
+
+        if (samples.Length > _largestWrite)
+        {
+            Volatile.Write(ref _largestWrite, samples.Length);
         }
 
         Volatile.Write(ref _written, w + samples.Length);

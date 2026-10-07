@@ -34,7 +34,7 @@ public sealed record PlayerConfig
     public double InputGain { get; init; } = 1.0;
     /// <summary>Noise gate on block RMS (linear, post-gain). Default 0.003 ≈ −50 dBFS; the UI edits it in dB.</summary>
     public double Threshold { get; init; } = 0.003;
-    /// <summary>Level of this mic in the speaker mix, 0–2.</summary>
+    /// <summary>Level of this mic in the speaker mix, 0–1 (older settings may hold up to 2; read as 1).</summary>
     public double MixGain { get; init; } = 1.0;
     /// <summary>Mic removed from the speaker mix (scoring unaffected).</summary>
     public bool MixMuted { get; init; }
