@@ -462,6 +462,7 @@ Drawn directly (meter rate, allocation-free), not a templated Slider.
 - [x] Game Displays: status pill per display (Closed / Open / Fullscreen) and the screen it is on (name · resolution, "same screen as Ultrastar DJ" until dragged away)
 - [x] Game Displays: player buttons have a 3 px border (as the Tauri chips) — the player's colour while the player sings on that display, invisible otherwise (always there, so nothing moves on a click)
 - [x] Library bar: the search ✕ floats over the box and shows whenever there is text (Fluent's only while focused — two clicks); the clear icon (no text) is always in place, dimmed when nothing is set, and also empties the search
+- [x] Fix: library table left an empty strip (~95 px) after the ⋮ column in wide windows — Avalonia's star columns came out short (measured with a width probe and screenshots); Title / Artist widths are now computed in pixels from the table width
 - [ ] Verified live
 
 ---

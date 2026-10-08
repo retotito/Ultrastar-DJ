@@ -97,6 +97,7 @@ public sealed partial class LibraryView : UserControl
         }
 
         TableGrid.Width = Math.Max(TableScroll.Bounds.Width, _vm.Table.MinWidth);
+        _vm.Table.Fit(TableGrid.Width);
     }
 
     private Task LoadAsync() => DataContext is LibraryViewModel vm ? vm.PreviewSelectedAsync() : Task.CompletedTask;

@@ -166,7 +166,7 @@
         <!-- Header row: click to sort -->
         <Grid Grid.Row="0" Margin="16,6">
           <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="2*" MinWidth="{Binding Table.TitleMinWidth}" />
+            <ColumnDefinition Width="{Binding Table.TitleWidth}" MinWidth="{Binding Table.TitleMinWidth}" />
             <ColumnDefinition Width="{Binding Table.ArtistWidth}" MinWidth="{Binding Table.ArtistMinWidth}" />
             <ColumnDefinition Width="{Binding Table.YearWidth}" />
             <ColumnDefinition Width="{Binding Table.LanguageWidth}" />
@@ -204,7 +204,7 @@
               <Grid Height="32" Background="Transparent" Opacity="{Binding Opacity}"
                     ToolTip.Tip="{Binding IsAvailable, Converter={x:Static vm:PlayerConverters.AvailabilityTooltip}}">
                 <Grid.ColumnDefinitions>
-                  <ColumnDefinition Width="2*" MinWidth="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).Table.TitleMinWidth}" />
+                  <ColumnDefinition Width="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).Table.TitleWidth}" MinWidth="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).Table.TitleMinWidth}" />
                   <ColumnDefinition Width="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).Table.ArtistWidth}" MinWidth="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).Table.ArtistMinWidth}" />
                   <ColumnDefinition Width="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).Table.YearWidth}" />
                   <ColumnDefinition Width="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).Table.LanguageWidth}" />
