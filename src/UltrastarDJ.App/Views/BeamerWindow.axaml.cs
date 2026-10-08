@@ -14,6 +14,9 @@ public sealed partial class BeamerWindow : Window
 {
     private static readonly Cursor HiddenCursor = new(StandardCursorType.None);
     private readonly DispatcherTimer _hideCursor = new() { Interval = TimeSpan.FromSeconds(2) };
+    // What fullscreen came from: leaving it returns there (maximised on the projector stays maximised), not to the
+    // small window the display first opened as.
+    private WindowState _beforeFullScreen = WindowState.Normal;
 
     public BeamerWindow()
     {
@@ -37,12 +40,18 @@ public sealed partial class BeamerWindow : Window
         base.OnPropertyChanged(change);
         if (change.Property == WindowStateProperty)
         {
+            if (change.GetNewValue<WindowState>() == WindowState.FullScreen && change.GetOldValue<WindowState>() is var before and not WindowState.FullScreen and not WindowState.Minimized)
+            {
+                _beforeFullScreen = before;
+            }
+
             ShowCursorForAWhile();
         }
     }
 
-    private void ToggleFullScreen() =>
-        WindowState = WindowState == WindowState.FullScreen ? WindowState.Normal : WindowState.FullScreen;
+    /// <summary>Into fullscreen, or back to what it was before (maximised or the normal window).</summary>
+    public void ToggleFullScreen() =>
+        WindowState = WindowState == WindowState.FullScreen ? _beforeFullScreen : WindowState.FullScreen;
 
     private void ShowCursorForAWhile()
     {
@@ -63,7 +72,7 @@ public sealed partial class BeamerWindow : Window
                 e.Handled = true;
                 break;
             case Key.Escape when WindowState == WindowState.FullScreen:
-                WindowState = WindowState.Normal;
+                WindowState = _beforeFullScreen;
                 e.Handled = true;
                 break;
         }

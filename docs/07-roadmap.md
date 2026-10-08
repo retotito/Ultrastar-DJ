@@ -464,6 +464,9 @@ Drawn directly (meter rate, allocation-free), not a templated Slider.
 - [x] Library bar: the search ✕ floats over the box and shows whenever there is text (Fluent's only while focused — two clicks); the clear icon (no text) is always in place, dimmed when nothing is set, and also empties the search
 - [x] Fix: library table left an empty strip (~95 px) after the ⋮ column in wide windows — Avalonia's star columns came out short (measured with a width probe and screenshots); Title / Artist widths are now computed in pixels from the table width
 - [x] DJ window opens where it was when the app closed: same screen, position, size and maximised / fullscreen; centred when that screen is gone (`WindowPlacement.Fit`, tested); first start 1420 × 860 (was 1400)
+- [x] Fix: leaving fullscreen on a display went back to the small first window, not to maximised / the size it had — it now returns to what it was before fullscreen
+- [x] Displays open where they were last closed: screen (by name, then position — survives a changed monitor arrangement), position, size, maximised / fullscreen; screen not connected → next to the DJ window (`WindowPlacement.Fit`, tested)
+- [x] Fix: after quitting the app, displays reopened on the main screen — a window closing with the app reports position (0, 0); placement is now taken from what was tracked while the window lived (verified with a probe run on a second monitor: normal and fullscreen, quit, restart, open)
 - [ ] Verified live
 
 ---

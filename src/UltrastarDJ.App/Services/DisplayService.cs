@@ -114,7 +114,18 @@ public sealed class DisplayService : IDisplayService
             Width = InitialWidth,
             Height = InitialHeight,
         };
-        PlaceOnOwnerScreen(window, id);
+        // Where it was last time (on the projector, maximised / fullscreen); its screen not connected → next to the
+        // DJ window as on a first open.
+        if (!WindowMemory.Restore(window, _doc.Get(id).Placement))
+        {
+            PlaceOnOwnerScreen(window, id);
+        }
+
+        WindowMemory.Track(window, p =>
+        {
+            _doc = _doc.With(_doc.Get(id) with { Placement = p });
+            _settings.Save(SettingsName, _doc);
+        });
 
         window.PropertyChanged += (_, e) =>
         {
@@ -159,7 +170,7 @@ public sealed class DisplayService : IDisplayService
     {
         if (_open.TryGetValue(id, out BeamerWindow? window))
         {
-            window.WindowState = window.WindowState == WindowState.FullScreen ? WindowState.Normal : WindowState.FullScreen;
+            window.ToggleFullScreen();
         }
     }
 
