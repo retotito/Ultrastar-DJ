@@ -60,6 +60,15 @@ public sealed partial class DjWindow : Window
             return;
         }
 
+        // While a drop-down list is open, Avalonia lays an invisible layer over the whole window: the next press lands
+        // there (not on what is under the pointer) and only closes the list. It must not close the panel too — the
+        // pointer may well be over the panel (log: "LightDismissOverlayLayer < VisualLayerManager < Panel < DjWindow").
+        // (The layer type is internal to Avalonia: matched by name.)
+        if (path.Any(v => v.GetType().Name == "LightDismissOverlayLayer"))
+        {
+            return;
+        }
+
         // Template parts have no logical parent, so walk the logical chain from every element on the visual path.
         bool inPopover = path.Any(v => ReferenceEquals(v, Popover))
             || path.OfType<ILogical>().Any(l => l.GetSelfAndLogicalAncestors().Any(a => ReferenceEquals(a, Popover)));

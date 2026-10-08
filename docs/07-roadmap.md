@@ -457,6 +457,7 @@ Drawn directly (meter rate, allocation-free), not a templated Slider.
 - [x] Popovers: 16 px between the content and the scrollbar (Fluent's scrollbar floats over the content); `PopoverWidth` 420 → 432 so the content keeps its width
 - [x] Song details popup: the same 16 px scrollbar room (width 860 → 876)
 - [x] Fix: picking a value in a drop-down sometimes closed the panel — a press in any popup (drop-down list, menu) is never "outside"; a panel closed by an outside press is logged with the element pressed
+- [x] Fix: with a drop-down open, a press anywhere closed the whole panel — that press lands on Avalonia's LightDismissOverlayLayer (found via the outside-press log line) and now only closes the list
 - [ ] Verified live
 
 ---
