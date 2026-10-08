@@ -3,6 +3,7 @@ using Avalonia.Styling;
 using UltrastarDJ.App.Game;
 using UltrastarDJ.App.Library;
 using UltrastarDJ.Core.Abstractions;
+using UltrastarDJ.Core.Displays;
 using UltrastarDJ.Core.Game;
 
 namespace UltrastarDJ.App.Services;
@@ -49,6 +50,10 @@ public sealed class AppSettingsService
     public bool ShowBrokenSongs => _doc.ShowBrokenSongs;
     public void SetShowBrokenSongs(bool show) => Update(_doc with { ShowBrokenSongs = show });
 
+    /// <summary>Where the DJ window was when the app last closed (null: first start → centred).</summary>
+    public WindowPlacement? DjWindowPlacement => _doc.DjWindow;
+    public void SetDjWindowPlacement(WindowPlacement placement) => Update(_doc with { DjWindow = placement });
+
     public void SetLightTheme(bool light) => Update(_doc with { LightTheme = light });
     public void SetShowTooltips(bool show) => Update(_doc with { HideTooltips = !show });
     public void SetNoteBarStyle(NoteBarStyle style) => Update(_doc with { NoteBarStyle = style });
@@ -92,6 +97,7 @@ public sealed class AppSettingsService
         /// <summary>Null = <see cref="LibraryColumns.DefaultVisible"/> (files written before the Layout panel).</summary>
         public IReadOnlyList<LibraryColumn>? VisibleColumns { get; init; }
         public bool ShowBrokenSongs { get; init; }
+        public WindowPlacement? DjWindow { get; init; }
 
         /// <summary>A first start is light; a saved choice (light or dark) is kept.</summary>
         public static AppSettingsDocument Default() => new(true, Difficulty.Medium, 0);

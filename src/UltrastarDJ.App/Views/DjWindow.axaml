@@ -6,7 +6,7 @@
         x:Class="UltrastarDJ.App.Views.DjWindow"
         x:DataType="vm:DjWindowViewModel"
         Title="Ultrastar DJ"
-        Width="1400" Height="860"
+        Width="1420" Height="860"
         MinWidth="1100" MinHeight="700"
         Icon="avares://UltrastarDJ/Assets/icon.png"
         Background="{DynamicResource BrushBackground}">

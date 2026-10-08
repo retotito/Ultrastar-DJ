@@ -50,6 +50,10 @@ public sealed partial class App : Application
         desktop.Exit += (_, _) => Log.CloseAndFlush();
 
         DjWindow window = new() { DataContext = _services.GetRequiredService<DjWindowViewModel>() };
+        // Opens where it was when the app last closed (same screen, size, maximised / fullscreen).
+        AppSettingsService appSettings = _services.GetRequiredService<AppSettingsService>();
+        WindowMemory.Restore(window, appSettings.DjWindowPlacement);
+        WindowMemory.Track(window, appSettings.SetDjWindowPlacement);
         _services.GetRequiredService<DisplayService>().AttachOwner(window);
         // Applies the persisted output routing to the media channels before anything plays, and the theme.
         _services.GetRequiredService<OutputsService>();
