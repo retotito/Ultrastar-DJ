@@ -127,13 +127,17 @@ public sealed partial class LibraryViewModel : ViewModelBase
     [ObservableProperty] private IReadOnlyList<LibraryRow> _rows = [];
     public ObservableCollection<string> Languages { get; } = [AnyLanguage];
     public ObservableCollection<string> Genres { get; } = [AnyGenre];
-    /// <summary>Any of rating/language/genre/source set (search has its own clear button). Shows "Clear".</summary>
-    public bool HasActiveFilters => Rating?.Stars is not null || Rating?.Favourites == true || Rating?.Broken == true || Language != AnyLanguage || Genre != AnyGenre
+    /// <summary>A search or any of rating/language/genre/source set: Clear is active (it clears them all).</summary>
+    public bool HasActiveFilters => Search.Length > 0 || Rating?.Stars is not null || Rating?.Favourites == true || Rating?.Broken == true || Language != AnyLanguage || Genre != AnyGenre
         || Source?.Key is not (null or SourceOption.AllKey);
 
     [RelayCommand]
+    private void ClearSearch() => Search = "";
+
+    [RelayCommand(CanExecute = nameof(HasActiveFilters))]
     private void ClearFilters()
     {
+        Search = "";
         Rating = AnyRating;
         Language = AnyLanguage;
         Genre = AnyGenre;
@@ -312,6 +316,7 @@ public sealed partial class LibraryViewModel : ViewModelBase
             .ToList();
         ShownCount = Rows.Count;
         OnPropertyChanged(nameof(HasActiveFilters));
+        ClearFiltersCommand.NotifyCanExecuteChanged();
     }
 
     private HashSet<string>? SelectedSourceIds() => Source?.Key switch

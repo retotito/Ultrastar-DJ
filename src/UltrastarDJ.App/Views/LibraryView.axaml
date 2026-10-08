@@ -29,7 +29,24 @@
     <Border Grid.Row="0" Padding="{StaticResource Pad3}"
             BorderBrush="{DynamicResource BrushOutlineVariant}" BorderThickness="0,0,0,1">
       <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto,Auto">
-        <TextBox Grid.Column="0" Margin="0,0,16,0" Classes="clearButton" PlaceholderText="Search title or artist" Text="{Binding Search}" />
+        <!-- The clear X floats over the search box (same cell, drawn after it): visible whenever there is text — Fluent's
+             own X shows only while the box has focus — and it cannot change the box's size. -->
+        <Panel Grid.Column="0" Margin="0,0,16,0">
+          <TextBox PlaceholderText="Search title or artist" Text="{Binding Search}" />
+          <!-- Opaque in the box's own colour (Fluent's focused text box background): a long search runs under it, not through it. -->
+          <Button Classes="sidebar" Width="26" Height="26" Margin="0,0,4,0" HorizontalAlignment="Right" VerticalAlignment="Center"
+                  Background="{DynamicResource TextControlBackgroundFocused}"
+                  Command="{Binding ClearSearchCommand}" ToolTip.Tip="Clear the search"
+                  IsVisible="{Binding Search, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+            <!-- Hover stays opaque: the usual 10 % tint would let the text under it show through. -->
+            <Button.Styles>
+              <Style Selector="Button:pointerover /template/ ContentPresenter">
+                <Setter Property="Background" Value="{DynamicResource BrushSearchClearHover}" />
+              </Style>
+            </Button.Styles>
+            <c:Icon Glyph="close" FontSize="{StaticResource IconSm}" />
+          </Button>
+        </Panel>
         <ComboBox Grid.Column="1" ItemsSource="{Binding Ratings}" c:FitWidestItem.IsEnabled="True" c:FitWidestItem.Suffix=" (88,888)" SelectedItem="{Binding Rating}" MinWidth="110" Margin="0,0,8,0" ToolTip.Tip="Popularity on USDB (★ 100–499, ★★ 500–999, ★★★ 1000–1999, ★★★★ 2000+ views) — hides local songs">
           <!-- Closed box: just the name; the counts are for choosing, in the open list. -->
           <ComboBox.SelectionBoxItemTemplate>
@@ -134,12 +151,10 @@
             </DataTemplate>
           </ComboBox.ItemTemplate>
         </ComboBox>
+        <!-- Always in place (nothing shifts when a filter is set); dimmed while there is nothing to clear. -->
         <Button Grid.Column="5" Classes="text" Margin="8,0,0,0" Command="{Binding ClearFiltersCommand}"
-                IsVisible="{Binding HasActiveFilters}" ToolTip.Tip="Reset rating, language, genre and source">
-          <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
-            <c:Icon Glyph="filter_list_off" FontSize="{StaticResource IconSm}" VerticalAlignment="Center" />
-            <TextBlock Text="Clear" VerticalAlignment="Center" />
-          </StackPanel>
+                ToolTip.Tip="Clear the search and the filters (rating, language, genre, source)">
+          <c:Icon Glyph="filter_list_off" FontSize="{StaticResource IconSm}" VerticalAlignment="Center" />
         </Button>
       </Grid>
     </Border>

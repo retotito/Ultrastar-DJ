@@ -461,6 +461,7 @@ Drawn directly (meter rate, allocation-free), not a templated Slider.
 - [x] One name for the singers' screens: **Display 1 / 2** (window title, idle screen, panel, toasts, tooltips — "beamer" only in code); the panel is **Game Displays**; Audio Output's game subtitle "Main speakers"
 - [x] Game Displays: status pill per display (Closed / Open / Fullscreen) and the screen it is on (name · resolution, "same screen as Ultrastar DJ" until dragged away)
 - [x] Game Displays: player buttons have a 3 px border (as the Tauri chips) — the player's colour while the player sings on that display, invisible otherwise (always there, so nothing moves on a click)
+- [x] Library bar: the search ✕ floats over the box and shows whenever there is text (Fluent's only while focused — two clicks); the clear icon (no text) is always in place, dimmed when nothing is set, and also empties the search
 - [ ] Verified live
 
 ---

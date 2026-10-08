@@ -85,6 +85,8 @@
       <Color x:Key="ColorButtonHover">#264B69</Color>
       <Color x:Key="ColorButtonBorder">#2F5878</Color>
       <Color x:Key="ColorOnButton">#D6EAF8</Color>
+      <!-- The search box's clear X on hover: the 10 % hover tint, made opaque over the box's own background. -->
+      <Color x:Key="ColorSearchClearHover">#323232</Color>
     </ResourceDictionary>
 
     <ResourceDictionary x:Key="Light">
@@ -159,6 +161,7 @@
       <Color x:Key="ColorButtonHover">#D3E3FD</Color>
       <Color x:Key="ColorButtonBorder">#C2D5F2</Color>
       <Color x:Key="ColorOnButton">#0B2A55</Color>
+      <Color x:Key="ColorSearchClearHover">#E9E9E9</Color>
     </ResourceDictionary>
 
   </ResourceDictionary.ThemeDictionaries>
@@ -221,6 +224,7 @@
   <SolidColorBrush x:Key="BrushButtonHover" Color="{DynamicResource ColorButtonHover}" />
   <SolidColorBrush x:Key="BrushButtonBorder" Color="{DynamicResource ColorButtonBorder}" />
   <SolidColorBrush x:Key="BrushOnButton" Color="{DynamicResource ColorOnButton}" />
+  <SolidColorBrush x:Key="BrushSearchClearHover" Color="{DynamicResource ColorSearchClearHover}" />
   <!-- Neutral hover for rows and icon buttons (on-surface at 10%, like Fluent's list hover) -->
   <SolidColorBrush x:Key="BrushStateHover" Color="{DynamicResource ColorOnSurface}" Opacity="0.1" />
   <SolidColorBrush x:Key="BrushPlayer1" Color="{StaticResource ColorPlayer1}" />
