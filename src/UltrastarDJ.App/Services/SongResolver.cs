@@ -72,6 +72,8 @@ public sealed class SongResolver(UsdbService usdb, LibraryService library)
             VideoGapSec = h.VideoGapSec,
             StartSec = h.StartSec,
             EndMs = h.EndMs,
+            Voice1 = h.Voice1,
+            Voice2 = h.Voice2,
             Notes = UltraStarParser.ParseNotes(txt),
         };
     }

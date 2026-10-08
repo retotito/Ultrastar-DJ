@@ -5,23 +5,43 @@ namespace UltrastarDJ.Core.Tests.Game;
 
 public class DuetVoicesTests
 {
-    [Fact]
-    public void Solo_EveryoneSingsTheOneVoice() => Assert.Equal([0, 0, 0], DuetVoices.Assign(3, tracks: 1));
+    // Players set up to sing (mic, on an open display), in player order.
+    private static IReadOnlyList<(int PlayerId, int Voice)> Sing(int tracks, DuetChoice? chosen, params int[] players)
+        => DuetVoices.Singers(players, tracks, chosen);
 
     [Fact]
-    public void Duet_TwoSingers_OneVoiceEach() => Assert.Equal([0, 1], DuetVoices.Assign(2, tracks: 2));
+    public void Solo_EveryoneSingsTheOneVoice() => Assert.Equal([(1, 0), (2, 0), (3, 0)], Sing(1, null, 1, 2, 3));
 
     [Fact]
-    public void Duet_ByOrderOfTheSingers_NotByPlayerNumber()
-        // Players 1 and 3 sing (no player 2): the second singer still gets voice 2 — by number both had voice 1
-        // and nobody sang voice 2.
-        => Assert.Equal([0, 1], DuetVoices.Assign(2, tracks: 2));
+    public void Duet_OnlyOnePlayer_SingsBothVoices() => Assert.Equal([(1, DuetVoices.BothVoices)], Sing(2, null, 1));
 
     [Fact]
-    public void Duet_ThreeAndFour_Alternate() => Assert.Equal([0, 1, 0, 1], DuetVoices.Assign(4, tracks: 2));
+    public void Duet_TwoPlayers_OneVoiceEach() => Assert.Equal([(1, 0), (2, 1)], Sing(2, null, 1, 2));
 
     [Fact]
-    public void Duet_OneSinger_IsMarkedForBothVoices() => Assert.Equal([DuetVoices.BothVoices], DuetVoices.Assign(1, tracks: 2));
+    public void Duet_PlayersOneAndThree_TheSecondSingsVoiceTwo() => Assert.Equal([(1, 0), (3, 1)], Sing(2, null, 1, 3));
+
+    [Fact]
+    public void Duet_ThreeOrFourPlayers_TheFirstTwoSing_TheOthersSitOut()
+    {
+        Assert.Equal([(1, 0), (2, 1)], Sing(2, null, 1, 2, 3));
+        Assert.Equal([(1, 0), (2, 1)], Sing(2, null, 1, 2, 3, 4));
+    }
+
+    [Fact]
+    public void Duet_TheDjsChoice_Wins() => Assert.Equal([(4, 0), (2, 1)], Sing(2, new DuetChoice(4, 2), 1, 2, 3, 4));
+
+    [Fact]
+    public void Duet_ChoiceNoLongerPossible_FallsBackToTheFirstTwo()
+    {
+        // Player 4 was chosen, but has no mic / display any more.
+        Assert.Equal([(1, 0), (2, 1)], Sing(2, new DuetChoice(4, 2), 1, 2, 3));
+        // The same player twice is not a choice.
+        Assert.Equal([(1, 0), (2, 1)], Sing(2, new DuetChoice(2, 2), 1, 2));
+    }
+
+    [Fact]
+    public void NobodySetUp_NobodySings() => Assert.Empty(Sing(2, null));
 
     private static LyricLine Line(int start, int length, string text) => new(start, [new Note(NoteType.Normal, start, length, 0, text)]);
 

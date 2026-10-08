@@ -167,7 +167,9 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
                 if (_playback.Session is { } session && !ReferenceEquals(Scene?.Session, session) && _playback.Clock is not null)
                 {
                     RefreshAssignedPlayers();
-                    Scene = new GameScene(session, [.. AssignedPlayers], () => _playback.GamePositionSec,
+                    // Only who sings: in a duet the players sitting out get no lane (a display with none of the
+                    // singers shows just the lyrics).
+                    Scene = new GameScene(session, [.. AssignedPlayers.Where(p => session.PlayerIds.Contains(p.Id))], () => _playback.GamePositionSec,
                         _playback.Timeline, () => _playback.Clock?.PositionSec ?? 0, _playback.MicActivityOf);
                 }
 

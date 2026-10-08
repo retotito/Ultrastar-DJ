@@ -113,6 +113,25 @@ public sealed class PlaybackService : IDisposable
 
     public Song? Song { get; private set; }
 
+    /// <summary>The loaded song has two voices.</summary>
+    public bool IsDuet => Song?.Notes is { Count: > 1 };
+
+    /// <summary>The DJ's pick of who sings which voice of the loaded duet (null: the first two set up). Reset per song.</summary>
+    public DuetChoice? DuetChoice { get; private set; }
+
+    /// <summary>Raised when the duet singers were picked again.</summary>
+    public event Action? DuetChoiceChanged;
+
+    public void SetDuetChoice(DuetChoice? choice)
+    {
+        DuetChoice = choice;
+        DuetChoiceChanged?.Invoke();
+    }
+
+    /// <summary>Who sings the loaded song and which voice, as it stands now (players set up, the DJ's duet pick).</summary>
+    public IReadOnlyList<(int PlayerId, int Voice)> Singers()
+        => Song?.Notes is { } notes ? DuetVoices.Singers([.. ActivePlayers().Select(p => p.Id)], notes.Count, DuetChoice) : [];
+
     /// <summary>Song picture (cover, YouTube thumbnail, background) — get ready, countdown, score, Game Player box.</summary>
     public Bitmap? Picture { get; private set; }
 
@@ -194,6 +213,7 @@ public sealed class PlaybackService : IDisposable
 
             await _media.Game.LoadAsync(plan, ct);
             Song = loaded;
+            DuetChoice = null;   // a new song: the DJ picks its duet singers again
             Plan = plan;
             State = PlaybackState.Loaded;
             _ = LoadPicturesAsync(loaded);
@@ -334,10 +354,11 @@ public sealed class PlaybackService : IDisposable
             return;
         }
 
-        IReadOnlyList<PlayerConfig> active = ActivePlayers();
-        // Voices by the order of the singers (Core.Game.DuetVoices): with players 1 and 3, the second still sings voice 2.
-        IReadOnlyList<int> voices = DuetVoices.Assign(active.Count, Song.Notes!.Count);
-        Session = new GameSession(Song, active.Select((p, i) => new GamePlayer(p.Id, voices[i], MicDelayMs(p))).ToList(), Difficulty);
+        // Who sings which voice (Core.Game.DuetVoices): solo everyone; a duet exactly two — the DJ's pick or the first
+        // two set up — the others sit out (no lane, no score, no mic in the mix); one player alone sings both voices.
+        IReadOnlyList<(int PlayerId, int Voice)> singers = Singers();
+        IReadOnlyList<PlayerConfig> active = [.. singers.Select(s => _players.Get(s.PlayerId))];
+        Session = new GameSession(Song, singers.Select(s => new GamePlayer(s.PlayerId, s.Voice, MicDelayMs(_players.Get(s.PlayerId)))).ToList(), Difficulty);
         // Media length in game time: when the video is the audio, its #VIDEOGAP intro is not part of the song.
         double? mediaLengthSec = _media.Game.Duration is { } d ? d.TotalSeconds - (Plan?.AudioOriginSec ?? 0) : null;
         Timeline = SongTimeline.For(Song, Session.LastBeat, TailAfterLastNoteSec, mediaLengthSec);

@@ -499,10 +499,16 @@ USDB marks them "[DUET]" in the title). The format has no third voice.
 - [x] Lanes: a phrase appears 3 s before it is sung; a voice with nothing to sing for longer has an empty lane (in
       "Shallow" the second lane showed Lady Gaga's first phrase — same melody — while Bradley Cooper sang).
       `NoteLaneGeometry.ActiveLine` lead-in, tested. Also in solo songs: empty lane during long instrumentals.
-- [x] Voices by the order of the singing players (1st → voice 1, 2nd → voice 2, 3rd → voice 1 …), not by player number (`Core.Game.DuetVoices.Assign`, tested)
+- [x] Who sings a duet (`Core.Game.DuetVoices.Singers`, tested): exactly two — the DJ's pick, else the first two set up
+      (players 1 and 3 → 1 voice 1, 3 voice 2); the others sit out (no lane, no score, no mic in the mix)
 - [x] A single singer gets both voices merged into one track (where both sing at once, voice 1) (`DuetVoices.Merge`, tested)
 - [ ] Lyrics line per display: the voice singing now, swept in its colour; two lines while both sing
-- [ ] Game Player: who sings which voice ("Duet: P1 → Bradley Cooper · P2 → Lady Gaga" / "sung solo: both voices")
+- [x] Loading a duet with 2+ players set up opens "Duet: <title> — who sings which voice?" (two drop-downs with the
+      singers' names from `#P1`/`#P2`, `#DUETSINGERP1/2` or USDB's `p1=`/`p2=` in `#VIDEO`; Swap; picking the other
+      voice's singer swaps; Esc / backdrop keeps the pick). One player: a note "… is a duet — <name> sings both voices"
+- [x] Game Player: "Duet: Reto → Bradley Cooper · Anna → Lady Gaga" under the artist, "change" reopens the pick (not while it runs)
+- [x] Verified live: duet with players 1 + 2 (popup, lanes, Game Player line)
+- [ ] Bug: players 1 + 4 picked for a duet — player 4 gets no note bars (found live, not yet investigated)
 - [ ] Verified live
 - Next: duet marker in the library (filter) and on the songbook; swapping voices
 

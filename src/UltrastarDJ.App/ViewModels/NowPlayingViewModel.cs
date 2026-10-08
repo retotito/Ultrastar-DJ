@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using UltrastarDJ.App.Services;
 using UltrastarDJ.Audio.Mics;
 using UltrastarDJ.Core.Displays;
+using UltrastarDJ.Core.Game;
 using UltrastarDJ.Core.Playback;
 using UltrastarDJ.Core.Players;
 using UltrastarDJ.Core.Songs;
@@ -81,6 +82,7 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
         }
 
         _playback.StateChanged += OnStateChanged;
+        _playback.DuetChoiceChanged += () => OnPropertyChanged(nameof(DuetText));
         _countdown = new DispatcherTimer(TimeSpan.FromSeconds(1), DispatcherPriority.Normal, (_, _) => CountdownTick());
         _playback.PicturesChanged += RefreshBox;
         _displays.OpenStateChanged += (_, _) => Refresh();
@@ -215,6 +217,7 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
     {
         MixRows.FirstOrDefault(r => r.Id == p.Id)?.Reload(p);
         SyncRows();
+        OnPropertyChanged(nameof(DuetText));   // a player renamed, or a singer lost their mic
     }
 
     /// <summary>Rows mirror the players that will actually sing: mic bound and assigned to an open beamer.</summary>
@@ -255,6 +258,9 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
         };
         OnPropertyChanged(nameof(State));
         OnPropertyChanged(nameof(HasSong));
+        OnPropertyChanged(nameof(IsDuet));
+        OnPropertyChanged(nameof(DuetText));
+        ChangeDuetSingersCommand.NotifyCanExecuteChanged();
         OnMarksChanged();
         OnPropertyChanged(nameof(PlayGlyph));
         OnPropertyChanged(nameof(IsPauseButton));
@@ -422,6 +428,46 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
     public event Action? DisplaysRequested;
 
     [RelayCommand] private void SelectDisplays() => DisplaysRequested?.Invoke();
+
+    /// <summary>
+    /// Who sings the loaded duet: "Duet: Reto → Bradley Cooper · Anna → Lady Gaga", or "Duet — Reto sings both voices".
+    /// Empty for a solo song.
+    /// </summary>
+    public string DuetText
+    {
+        get
+        {
+            if (!_playback.IsDuet || _playback.Song is not { } song)
+            {
+                return "";
+            }
+
+            IReadOnlyList<(int PlayerId, int Voice)> singers = _playback.Singers();
+            if (singers.Count == 0)
+            {
+                return "Duet";
+            }
+
+            if (singers is [(int only, DuetVoices.BothVoices)])
+            {
+                return $"Duet — {_players.Get(only).Name} sings both voices";
+            }
+
+            string VoiceName(int voice) => (voice == 0 ? song.Voice1 : song.Voice2) is { Length: > 0 } n ? n : $"voice {voice + 1}";
+            return "Duet: " + string.Join(" · ", singers.OrderBy(s => s.Voice).Select(s => $"{_players.Get(s.PlayerId).Name} → {VoiceName(s.Voice)}"));
+        }
+    }
+
+    public bool IsDuet => _playback.IsDuet && _playback.Song is not null;
+
+    /// <summary>"change" next to the duet line: the DJ window reopens the pick (2+ players, not while it runs).</summary>
+    public event Action? DuetSingersRequested;
+
+    [RelayCommand(CanExecute = nameof(CanChangeDuetSingers))]
+    private void ChangeDuetSingers() => DuetSingersRequested?.Invoke();
+
+    private bool CanChangeDuetSingers() => IsDuet && _playback.ActivePlayers().Count >= 2
+        && _playback.State is not (PlaybackState.Countdown or PlaybackState.Playing or PlaybackState.Paused);
 
     public string PlayGlyph => PlaybackRules.PlayButtonFor(_playback.State) == PlayButton.Pause ? "pause" : "play_arrow";
     public string PlayTip => _playback.State switch

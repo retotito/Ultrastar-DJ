@@ -25,6 +25,9 @@ public sealed record SongHeader
     public string? Comment { get; init; }
     /// <summary><c>#RELATIVE:yes</c> — legacy relative beat numbering. Detected, not supported.</summary>
     public bool Relative { get; init; }
+    /// <summary>Duet singers: <c>#P1:</c> / <c>#P2:</c>, older <c>#DUETSINGERP1:</c>, or USDB's <c>p1=</c> / <c>p2=</c> in <c>#VIDEO</c>.</summary>
+    public string? Voice1 { get; init; }
+    public string? Voice2 { get; init; }
 }
 
 /// <summary>
@@ -65,7 +68,9 @@ public static class UltraStarParser
                 "COVER" => h with { Cover = value },
                 "BACKGROUND" => h with { Background = value },
                 // #VIDEO may be a local file or a YouTube URL/id.
-                "VIDEO" => Songs.YouTubeId.TryExtract(value) is { } yt ? h with { YouTubeId = yt } : h with { Video = value },
+                "VIDEO" => WithVideoSingers(Songs.YouTubeId.TryExtract(value) is { } yt ? h with { YouTubeId = yt } : h with { Video = value }, value),
+                "P1" or "DUETSINGERP1" => h with { Voice1 = value },
+                "P2" or "DUETSINGERP2" => h with { Voice2 = value },
                 "YOUTUBE" => h with { YouTubeId = Songs.YouTubeId.TryExtract(value) ?? value },
                 "VIDEOGAP" => h with { VideoGapSec = Num(value) },
                 "START" => h with { StartSec = Num(value) },
@@ -180,6 +185,25 @@ public static class UltraStarParser
     }
 
     /// <summary>Header → <see cref="Song"/> with sibling paths resolved. Null when title or artist is missing.</summary>
+    // USDB writes duet singers into #VIDEO's key-value list: "v=…,co=…,p1=Bradley Cooper,p2=Lady Gaga".
+    private static SongHeader WithVideoSingers(SongHeader h, string video)
+    {
+        foreach (string part in video.Split(','))
+        {
+            string kv = part.Trim();
+            if (kv.StartsWith("p1=", StringComparison.OrdinalIgnoreCase) && h.Voice1 is null)
+            {
+                h = h with { Voice1 = kv[3..].Trim() };
+            }
+            else if (kv.StartsWith("p2=", StringComparison.OrdinalIgnoreCase) && h.Voice2 is null)
+            {
+                h = h with { Voice2 = kv[3..].Trim() };
+            }
+        }
+
+        return h;
+    }
+
     public static Song? ParseSong(string txtPath, string sourceId, string text)
     {
         SongHeader h = ParseHeader(text);
@@ -206,6 +230,8 @@ public static class UltraStarParser
             Edition = h.Edition,
             Creator = h.Creator,
             Comment = h.Comment,
+            Voice1 = h.Voice1,
+            Voice2 = h.Voice2,
             TxtPath = txtPath,
             AudioPath = Sibling(h.Mp3),
             CoverPath = Sibling(h.Cover),

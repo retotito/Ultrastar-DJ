@@ -23,10 +23,24 @@ public sealed partial class DjWindow : Window
     // Esc closes the Details popup before anything else sees the key.
     private void OnKeyDownAnywhere(object? sender, KeyEventArgs e)
     {
-        if (e.Key == Key.Escape && DataContext is DjWindowViewModel { SongDetails: not null } vm)
+        if (e.Key == Key.Escape && DataContext is DjWindowViewModel { DuetSingers: not null } duet)
+        {
+            duet.DuetSingers = null;
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Escape && DataContext is DjWindowViewModel { SongDetails: not null } vm)
         {
             vm.SongDetails = null;
             e.Handled = true;
+        }
+    }
+
+    // The duet pick: a press on the dimmed area keeps the current pick (the first two set up, or the last choice).
+    private void OnDuetBackdropPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (ReferenceEquals(e.Source, DuetLayer) && DataContext is DjWindowViewModel vm)
+        {
+            vm.DuetSingers = null;
         }
     }
 

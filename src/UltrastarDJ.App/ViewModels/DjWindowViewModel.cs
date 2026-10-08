@@ -113,7 +113,12 @@ public sealed partial class DjWindowViewModel : ViewModelBase
             Dialog = d;
             DialogDetailsShown = false;
         };
-        playback.StateChanged += _ => UpdateLock();
+        playback.StateChanged += _ =>
+        {
+            UpdateLock();
+            AskForDuetSingers();
+        };
+        nowPlaying.DuetSingersRequested += () => DuetSingers = new DuetSingersViewModel(playback, () => DuetSingers = null);
         nowPlaying.DisplaysRequested += () =>
         {
             if (ActivePanel != SidebarPanel.Displays)
@@ -139,6 +144,38 @@ public sealed partial class DjWindowViewModel : ViewModelBase
         if (AudioLocked && ActivePanel is SidebarPanel.AudioInput or SidebarPanel.AudioOutput or SidebarPanel.Displays)
         {
             ClosePanel();
+        }
+    }
+
+    /// <summary>The "who sings which voice" popup of a loaded duet; null when closed.</summary>
+    [ObservableProperty] private DuetSingersViewModel? _duetSingers;
+    private Core.Songs.Song? _askedFor;
+
+    /// <summary>
+    /// A duet was just loaded: 2+ players set up → the popup to pick the two singers; one player → a note that they
+    /// sing both voices. Once per load (Home, Stop, Play again keep the pick).
+    /// </summary>
+    private void AskForDuetSingers()
+    {
+        if (_playback.State != PlaybackState.Loaded || _playback.Song is not { } song || ReferenceEquals(song, _askedFor))
+        {
+            return;
+        }
+
+        _askedFor = song;
+        if (!_playback.IsDuet)
+        {
+            return;
+        }
+
+        IReadOnlyList<Core.Players.PlayerConfig> available = _playback.ActivePlayers();
+        if (available.Count >= 2)
+        {
+            DuetSingers = new DuetSingersViewModel(_playback, () => DuetSingers = null);
+        }
+        else if (available.Count == 1)
+        {
+            Notifications.Info($"{song.Title} is a duet", $"{available[0].Name} sings both voices.");
         }
     }
 

@@ -2,24 +2,40 @@ using UltrastarDJ.Core.Songs;
 
 namespace UltrastarDJ.Core.Game;
 
+/// <summary>The DJ's pick for a duet: which player sings voice 1 and which voice 2.</summary>
+public sealed record DuetChoice(int Voice1PlayerId, int Voice2PlayerId);
+
 /// <summary>
-/// Which voice (note track) each singer of a song sings, in the order the singers are listed. A duet alternates by
-/// that order — 1st voice 1, 2nd voice 2, 3rd voice 1 … — not by player number: with players 1 and 3 both would have
-/// had voice 1 and nobody voice 2. A single singer of a duet sings both voices (<see cref="BothVoices"/>).
+/// Who sings a song, and which voice (note track). Solo: everyone set up, voice 1. Duet: exactly two — the DJ's
+/// choice, else the first two set up (players 1 and 3 → 1 sings voice 1, 3 voice 2) — and the others sit out. A
+/// single player sings both voices merged (<see cref="BothVoices"/>).
 /// </summary>
 public static class DuetVoices
 {
     /// <summary>The singer sings both voices, merged into one track.</summary>
     public const int BothVoices = -1;
 
-    public static IReadOnlyList<int> Assign(int singers, int tracks)
+    /// <param name="available">Players set up to sing (mic, on an open display), in player order.</param>
+    /// <param name="tracks">Voices in the song (2 = duet).</param>
+    /// <param name="chosen">The DJ's pick; ignored when one of them is no longer set up, or both are the same player.</param>
+    public static IReadOnlyList<(int PlayerId, int Voice)> Singers(IReadOnlyList<int> available, int tracks, DuetChoice? chosen)
     {
         if (tracks < 2)
         {
-            return [.. Enumerable.Repeat(0, singers)];
+            return [.. available.Select(id => (id, 0))];
         }
 
-        return singers == 1 ? [BothVoices] : [.. Enumerable.Range(0, singers).Select(i => i % tracks)];
+        if (available.Count == 1)
+        {
+            return [(available[0], BothVoices)];
+        }
+
+        if (chosen is { } c && c.Voice1PlayerId != c.Voice2PlayerId && available.Contains(c.Voice1PlayerId) && available.Contains(c.Voice2PlayerId))
+        {
+            return [(c.Voice1PlayerId, 0), (c.Voice2PlayerId, 1)];
+        }
+
+        return [.. available.Take(2).Select((id, i) => (id, i))];
     }
 
     /// <summary>

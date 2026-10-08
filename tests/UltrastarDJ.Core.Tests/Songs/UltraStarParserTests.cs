@@ -152,4 +152,18 @@ public class UltraStarParserTests
     {
         Assert.Equal(120, UltraStarParser.ParseSong("/x.txt", "s", "#TITLE:t\n#ARTIST:a\n")!.Bpm);
     }
+
+    [Theory]
+    [InlineData("#P1:Bradley Cooper\n#P2:Lady Gaga\n")]                      // newer files
+    [InlineData("#DUETSINGERP1:Bradley Cooper\n#DUETSINGERP2:Lady Gaga\n")]  // older files
+    [InlineData("#VIDEO:v=bo_efYhYU2A,co=x.jpg,p1=Bradley Cooper,p2=Lady Gaga\n")]   // USDB: inside #VIDEO
+    public void DuetSingerNames_AreRead(string tags)
+    {
+        SongHeader h = UltraStarParser.ParseHeader("#TITLE:Shallow\n#ARTIST:x\n" + tags);
+        Assert.Equal(("Bradley Cooper", "Lady Gaga"), (h.Voice1, h.Voice2));
+    }
+
+    [Fact]
+    public void UsdbVideoTag_StillGivesTheYouTubeId()
+        => Assert.Equal("bo_efYhYU2A", UltraStarParser.ParseHeader("#VIDEO:v=bo_efYhYU2A,co=x.jpg,p1=A,p2=B\n").YouTubeId);
 }

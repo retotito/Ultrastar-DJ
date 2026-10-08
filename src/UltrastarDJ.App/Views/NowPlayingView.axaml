@@ -63,6 +63,14 @@
         <StackPanel>
           <TextBlock Classes="title" Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
           <TextBlock Classes="muted" Text="{Binding Artist}" TextTrimming="CharacterEllipsis" />
+          <!-- A duet: who sings which voice; "change" reopens the pick before Play. -->
+          <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}" IsVisible="{Binding IsDuet}" Margin="0,2,0,0">
+            <c:Icon Glyph="group" FontSize="{StaticResource IconSm}" VerticalAlignment="Center" />
+            <TextBlock Text="{Binding DuetText}" FontSize="{StaticResource TextXs}" TextTrimming="CharacterEllipsis" MaxWidth="250" VerticalAlignment="Center" />
+            <Button Classes="text" Padding="6,0" Command="{Binding ChangeDuetSingersCommand}" ToolTip.Tip="Choose who sings which voice">
+              <TextBlock Text="change" FontSize="{StaticResource TextXs}" />
+            </Button>
+          </StackPanel>
         </StackPanel>
         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" IsVisible="{Binding HasSong}">
           <StackPanel.Styles>

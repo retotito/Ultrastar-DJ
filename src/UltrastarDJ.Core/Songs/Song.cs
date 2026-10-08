@@ -59,6 +59,9 @@ public sealed record Song
     public string? Genre { get; init; }
     public string? Edition { get; init; }
     public string? Creator { get; init; }
+    /// <summary>Duet singers named in the file (<see cref="SongHeader.Voice1"/>), for "Voice 1 — Bradley Cooper".</summary>
+    public string? Voice1 { get; init; }
+    public string? Voice2 { get; init; }
     public string? Comment { get; init; }
 
     public string? TxtPath { get; init; }
