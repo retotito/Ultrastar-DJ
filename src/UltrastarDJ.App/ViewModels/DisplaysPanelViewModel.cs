@@ -21,6 +21,7 @@ public sealed partial class DisplaysPanelViewModel : ViewModelBase
         Beamer2 = new DisplayRowViewModel(DisplayId.Beamer2, _displays, _players, this);
         _displays.OpenStateChanged += OnOpenStateChanged;
         _displays.FullScreenChanged += OnFullScreenChanged;
+        _displays.PlacementChanged += id => Row(id).RefreshScreen();
         // A player that loses its mic (unplugged, or set to none) leaves its beamer and its toggle disables.
         _displays.PlayersChanged += SyncAssignments;
         _players.Changed += _ => SyncAssignments();
@@ -45,6 +46,8 @@ public sealed partial class DisplaysPanelViewModel : ViewModelBase
         {
             Row(id).IsFullScreen = false;
         }
+
+        Row(id).RefreshScreen();
     }
 
     private void OnFullScreenChanged(DisplayId id, bool fullScreen) => Row(id).IsFullScreen = fullScreen;
@@ -61,7 +64,18 @@ public sealed partial class DisplayRowViewModel : ObservableObject
     private bool _isOpen;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(StateText))]
     private bool _isFullScreen;
+
+    /// <summary>The screen the window is on (null while closed).</summary>
+    [ObservableProperty] private string? _screen;
+
+    /// <summary>The status pill: Closed (grey) / Open (green) / Fullscreen (blue).</summary>
+    public string StateText => !IsOpen ? "Closed" : IsFullScreen ? "Fullscreen" : "Open";
+
+    internal void RefreshScreen() => Screen = _displays.ScreenText(Id);
+
+    partial void OnIsOpenChanged(bool value) => OnPropertyChanged(nameof(StateText));
 
     public DisplayRowViewModel(DisplayId id, IDisplayService displays, PlayersService players, DisplaysPanelViewModel owner)
     {
@@ -71,6 +85,7 @@ public sealed partial class DisplayRowViewModel : ObservableObject
         _owner = owner;
         IsOpen = displays.IsOpen(id);
         IsFullScreen = displays.IsFullScreen(id);
+        Screen = displays.ScreenText(id);
         foreach (PlayerConfig p in players.All)
         {
             Players.Add(new PlayerToggleViewModel(p, this));
@@ -80,7 +95,7 @@ public sealed partial class DisplayRowViewModel : ObservableObject
     }
 
     public DisplayId Id { get; }
-    public string Title => $"Beamer {(int)Id}";
+    public string Title => $"Display {(int)Id}";
     public ObservableCollection<PlayerToggleViewModel> Players { get; } = [];
 
     internal void LoadAssignments()

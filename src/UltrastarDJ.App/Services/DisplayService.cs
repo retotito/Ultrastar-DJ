@@ -60,6 +60,7 @@ public sealed class DisplayService : IDisplayService
 
     public event Action<DisplayId, bool>? OpenStateChanged;
     public event Action<DisplayId, bool>? FullScreenChanged;
+    public event Action<DisplayId>? PlacementChanged;
 
     /// <summary>
     /// Called once by the composition root. Beamers are independent windows (an owned window would always stay in
@@ -109,7 +110,7 @@ public sealed class DisplayService : IDisplayService
         BeamerWindow window = new()
         {
             DataContext = vm,
-            Title = $"Ultrastar DJ — Beamer {(int)id}",
+            Title = $"Ultrastar DJ — Display {(int)id}",
             Width = InitialWidth,
             Height = InitialHeight,
         };
@@ -120,20 +121,36 @@ public sealed class DisplayService : IDisplayService
             if (e.Property == Window.WindowStateProperty)
             {
                 FullScreenChanged?.Invoke(id, window.WindowState == WindowState.FullScreen);
+                PlacementChanged?.Invoke(id);
             }
         };
+        // Dragged to the projector: the panel shows the screen it is on now.
+        window.PositionChanged += (_, _) => PlacementChanged?.Invoke(id);
         window.Closed += (_, _) =>
         {
             vm.Dispose();
             _open.Remove(id);
-            _log.LogInformation("Beamer {Display} closed", (int)id);
+            _log.LogInformation("Display {Display} closed", (int)id);
             OpenStateChanged?.Invoke(id, false);
         };
 
         _open[id] = window;
         window.Show();
-        _log.LogInformation("Beamer {Display} opened", (int)id);
+        _log.LogInformation("Display {Display} opened", (int)id);
         OpenStateChanged?.Invoke(id, true);
+    }
+
+    public string? ScreenText(DisplayId id)
+    {
+        if (!_open.TryGetValue(id, out BeamerWindow? window) || window.Screens.ScreenFromWindow(window) is not { } screen)
+        {
+            return null;
+        }
+
+        string name = string.IsNullOrWhiteSpace(screen.DisplayName) ? (screen.IsPrimary ? "Main screen" : "Other screen") : screen.DisplayName;
+        string text = $"{name} · {screen.Bounds.Width}×{screen.Bounds.Height}";
+        bool withDj = _owner is not null && _owner.Screens.ScreenFromWindow(_owner) is { } djScreen && djScreen.Bounds == screen.Bounds;
+        return withDj ? $"{text} — same screen as Ultrastar DJ" : text;
     }
 
     public bool IsFullScreen(DisplayId id) => _open.TryGetValue(id, out BeamerWindow? w) && w.WindowState == WindowState.FullScreen;

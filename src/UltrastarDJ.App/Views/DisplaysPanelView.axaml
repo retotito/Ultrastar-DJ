@@ -5,25 +5,56 @@
              x:Class="UltrastarDJ.App.Views.DisplaysPanelView"
              x:DataType="vm:DisplaysPanelViewModel">
 
+  <!-- Player buttons: a 3 px border (as the Tauri chips) always (so nothing moves on a click), in the player's colour (Tag) while the
+       player sings on this display, invisible otherwise. Every state is set: Fluent's own states would recolour it. -->
+  <UserControl.Styles>
+    <Style Selector="ToggleButton.player /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="BorderThickness" Value="3" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+    <Style Selector="ToggleButton.player:pointerover /template/ ContentPresenter#PART_ContentPresenter, ToggleButton.player:pressed /template/ ContentPresenter#PART_ContentPresenter, ToggleButton.player:disabled /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+    <Style Selector="ToggleButton.player:checked /template/ ContentPresenter#PART_ContentPresenter, ToggleButton.player:checked:pointerover /template/ ContentPresenter#PART_ContentPresenter, ToggleButton.player:checked:pressed /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="BorderBrush" Value="{Binding $parent[ToggleButton].Tag}" />
+    </Style>
+  </UserControl.Styles>
+
   <UserControl.Resources>
     <DataTemplate x:Key="DisplayRow" x:DataType="vm:DisplayRowViewModel">
       <Border Classes="card" Margin="0,0,0,8">
-        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto">
-          <TextBlock Grid.Row="0" Grid.Column="0" Classes="title" Text="{Binding Title}" />
-          <!-- The tv icon is hidden, not collapsed, while closed: it is taller than the title, and collapsing it moved
-               the buttons below down a few px on every Open / Close. -->
-          <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="{StaticResource Space2}">
-            <StackPanel.Styles>
-              <Style Selector="c|Icon.off">
-                <Setter Property="Opacity" Value="0" />
+        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto">
+          <TextBlock Grid.Row="0" Grid.Column="0" Classes="title" Text="{Binding Title}" VerticalAlignment="Center" />
+          <!-- Status pill: Closed grey, Open green, Fullscreen blue. -->
+          <Border Grid.Row="0" Grid.Column="1" CornerRadius="{StaticResource RadiusFull}" Padding="10,2" VerticalAlignment="Center"
+                  Classes.open="{Binding IsOpen}" Classes.full="{Binding IsFullScreen}">
+            <Border.Styles>
+              <Style Selector="Border">
+                <Setter Property="Background" Value="{DynamicResource BrushSurfaceContainerHighest}" />
               </Style>
-            </StackPanel.Styles>
-            <c:Icon Glyph="tv" Classes.off="{Binding !IsOpen}" Foreground="{DynamicResource BrushPrimary}" />
-            <TextBlock Classes="muted" VerticalAlignment="Center"
-                       Text="{Binding IsOpen, Converter={x:Static vm:BoolConverters.OpenClosed}}" />
-          </StackPanel>
+              <Style Selector="Border.open">
+                <Setter Property="Background" Value="{DynamicResource BrushGo}" />
+              </Style>
+              <Style Selector="Border.full">
+                <Setter Property="Background" Value="{DynamicResource BrushStateSelected}" />
+              </Style>
+              <Style Selector="Border TextBlock">
+                <Setter Property="Foreground" Value="{DynamicResource BrushOnSurfaceVariant}" />
+              </Style>
+              <Style Selector="Border.open TextBlock">
+                <Setter Property="Foreground" Value="{DynamicResource BrushOnGoStop}" />
+              </Style>
+              <Style Selector="Border.full TextBlock">
+                <Setter Property="Foreground" Value="{DynamicResource BrushOnSurface}" />
+              </Style>
+            </Border.Styles>
+            <TextBlock Text="{Binding StateText}" FontSize="{StaticResource TextXs}" FontWeight="{StaticResource WeightSemibold}" />
+          </Border>
+          <!-- Which screen it is on — always one line (also while closed), so opening does not shift the buttons. -->
+          <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Classes="muted" FontSize="{StaticResource TextXs}" Margin="0,2,0,0"
+                     TextTrimming="CharacterEllipsis" Text="{Binding Screen, TargetNullValue='Opens next to this window'}" />
 
-          <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="{StaticResource Space2}" Margin="0,12,0,0">
+          <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="{StaticResource Space2}" Margin="0,12,0,0">
             <Button Classes="tonal" Classes.go="{Binding !IsOpen}" Classes.stop="{Binding IsOpen}" Command="{Binding ToggleOpenCommand}">
               <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
                 <c:Icon Glyph="{Binding IsOpen, Converter={x:Static vm:BoolConverters.Glyph}, ConverterParameter='close|open_in_new'}" FontSize="{StaticResource IconMd}" />
@@ -42,13 +73,14 @@
           </StackPanel>
 
           <!-- Which players sing on this screen (a player can be on one screen only) -->
-          <ItemsControl Grid.Row="2" Grid.ColumnSpan="2" ItemsSource="{Binding Players}" Margin="0,12,0,0">
+          <ItemsControl Grid.Row="3" Grid.ColumnSpan="2" ItemsSource="{Binding Players}" Margin="0,12,0,0">
             <ItemsControl.ItemsPanel>
               <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
             </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:PlayerToggleViewModel">
-                <ToggleButton IsChecked="{Binding IsOn}" IsEnabled="{Binding HasMic}" Margin="0,0,8,8" Padding="12,6"
+                <ToggleButton Classes="player" Tag="{Binding ColorKey, Converter={x:Static vm:PlayerConverters.BrushByKey}}"
+                              IsChecked="{Binding IsOn}" IsEnabled="{Binding HasMic}" Margin="0,0,8,8" Padding="12,6"
                               ToolTip.Tip="{Binding HasMic, Converter={x:Static vm:PlayerConverters.MicTooltip}}">
                   <StackPanel Orientation="Horizontal" Spacing="8">
                     <Border Width="10" Height="10" CornerRadius="{StaticResource RadiusFull}" VerticalAlignment="Center"
@@ -66,7 +98,7 @@
 
   <StackPanel Spacing="{StaticResource Space2}">
     <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap" MaxWidth="{StaticResource PopoverTextWidth}" HorizontalAlignment="Left"
-               Text="A beamer opens next to this window: drag it to the projector, then go fullscreen (button, double-click or F)." />
+               Text="A display opens next to this window: drag it to the projector or TV, then go fullscreen (button, double-click or F)." />
 
     <ContentControl Content="{Binding Beamer1}" ContentTemplate="{StaticResource DisplayRow}" />
     <ContentControl Content="{Binding Beamer2}" ContentTemplate="{StaticResource DisplayRow}" />

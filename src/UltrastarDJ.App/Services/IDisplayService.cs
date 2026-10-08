@@ -28,4 +28,13 @@ public interface IDisplayService
 
     /// <summary>Raised on the UI thread after <see cref="SetPlayers"/> (both displays may have changed).</summary>
     event Action? PlayersChanged;
+
+    /// <summary>
+    /// Which screen an open display's window is on, for the panel: "LG TV · 1920×1080", plus a hint while it still
+    /// shares the DJ window's screen. Null while closed.
+    /// </summary>
+    string? ScreenText(DisplayId id);
+
+    /// <summary>Raised on the UI thread when an open display moved (it may be on another screen now).</summary>
+    event Action<DisplayId>? PlacementChanged;
 }

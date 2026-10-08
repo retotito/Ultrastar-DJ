@@ -458,6 +458,9 @@ Drawn directly (meter rate, allocation-free), not a templated Slider.
 - [x] Song details popup: the same 16 px scrollbar room (width 860 → 876)
 - [x] Fix: picking a value in a drop-down sometimes closed the panel — a press in any popup (drop-down list, menu) is never "outside"; a panel closed by an outside press is logged with the element pressed
 - [x] Fix: with a drop-down open, a press anywhere closed the whole panel — that press lands on Avalonia's LightDismissOverlayLayer (found via the outside-press log line) and now only closes the list
+- [x] One name for the singers' screens: **Display 1 / 2** (window title, idle screen, panel, toasts, tooltips — "beamer" only in code); the panel is **Game Displays**; Audio Output's game subtitle "Main speakers"
+- [x] Game Displays: status pill per display (Closed / Open / Fullscreen) and the screen it is on (name · resolution, "same screen as Ultrastar DJ" until dragged away)
+- [x] Game Displays: player buttons have a 3 px border (as the Tauri chips) — the player's colour while the player sings on that display, invisible otherwise (always there, so nothing moves on a click)
 - [ ] Verified live
 
 ---

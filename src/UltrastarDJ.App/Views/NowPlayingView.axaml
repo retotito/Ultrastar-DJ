@@ -99,7 +99,7 @@
 
       <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}" HorizontalAlignment="Center" Margin="0,0,0,8">
         <!-- Four buttons (prototype): rules in Core.Playback.PlaybackRules. Hidden while no beamer is open. -->
-        <Button Classes="sidebar" Command="{Binding HomeCommand}" ToolTip.Tip="Beamers to the start view (the song stays loaded)"
+        <Button Classes="sidebar" Command="{Binding HomeCommand}" ToolTip.Tip="Displays to the start view (the song stays loaded)"
                 IsVisible="{Binding !NoBeamerOpen}" VerticalAlignment="Center"><c:Icon Glyph="home" /></Button>
         <Button Classes="sidebar" Command="{Binding PreviewCommand}" ToolTip.Tip="Show the get-ready screen"
                 IsVisible="{Binding !NoBeamerOpen}" VerticalAlignment="Center"><c:Icon Glyph="tv" /></Button>
@@ -113,7 +113,7 @@
 
         <!-- Nothing to play on yet: one clear action instead of four dead buttons -->
         <Button Classes="tonal" Command="{Binding SelectDisplaysCommand}" IsVisible="{Binding NoBeamerOpen}"
-                ToolTip.Tip="Opens the Displays panel: open a beamer and choose which players sing on it">
+                ToolTip.Tip="Opens Game Displays: open a display and choose which players sing on it">
           <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space2}">
             <c:Icon Glyph="tv" FontSize="{StaticResource IconMd}" />
             <TextBlock Text="Select displays" />

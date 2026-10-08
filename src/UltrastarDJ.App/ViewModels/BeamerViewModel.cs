@@ -84,7 +84,7 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
     });
 
     public DisplayId Id { get; }
-    public string Label => $"Beamer {(int)Id}";
+    public string Label => $"Display {(int)Id}";
     public FrameBus GameFrames { get; }
     public ObservableCollection<ScenePlayer> AssignedPlayers { get; } = [];
     public bool HasAssignedPlayers => AssignedPlayers.Count > 0;

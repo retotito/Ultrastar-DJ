@@ -17,7 +17,7 @@
       </Button>
     </StackPanel>
     <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap"
-               Text="Guests scan the QR code on the beamer (or open the address), search the library and request songs. Requests appear above the queue." />
+               Text="Guests scan the QR code on the display (or open the address), search the library and request songs. Requests appear above the queue." />
 
     <!-- One way in at a time: switching while running stops the one and starts the other. -->
     <Border Classes="card">

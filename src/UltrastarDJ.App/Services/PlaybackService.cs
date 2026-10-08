@@ -422,7 +422,7 @@ public sealed class PlaybackService : IDisposable
         }
 
         Stop();
-        _notifications.Warn($"Beamer {(int)id} closed — song stopped", "Open it again under Displays and press Play to sing the song again.");
+        _notifications.Warn($"Display {(int)id} closed — song stopped", "Open it again under Game Displays and press Play to sing the song again.");
     }
 
     /// <summary>
@@ -447,7 +447,7 @@ public sealed class PlaybackService : IDisposable
         string who = players.Count > 0 ? string.Join(", ", players.Select(MicPresence.Describe)) : "A microphone";
         _notifications.Warn(
             "Microphone disconnected — song stopped",
-            $"{who}. The beamers were closed; plug the mic in, assign it under Audio Input and start again.");
+            $"{who}. The displays were closed; plug the mic in, assign it under Audio Input and start again.");
     }
 
     /// <summary>Ends the song: media paused, mics off, score screen. The song stays loaded.</summary>

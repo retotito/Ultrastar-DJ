@@ -23,7 +23,7 @@ public sealed partial class AudioOutputPanelViewModel : ViewModelBase, IDisposab
     {
         _outputs = outputs;
         _media = media;
-        Game = new OutputChannelViewModel("Game", "Beamer / main speakers", "music_note", media.Game, Options, o => outputs.SetGameOutput(o))
+        Game = new OutputChannelViewModel("Game", "Main speakers", "music_note", media.Game, Options, o => outputs.SetGameOutput(o))
         {
             Latency = new GameSyncViewModel(outputs, sync),
         };
@@ -90,7 +90,7 @@ public sealed partial class GameSyncViewModel : ObservableObject, IDisposable
     public bool CanToggle => _sync.IsRunning || _sync.CanRun;
     public string ToggleTip => _sync.Blocker ?? (_sync.IsRunning
         ? "Stop the clicks"
-        : "Plays a click every second on the game speakers and flashes the beamers when each click should be heard. Move LATENCY until flash and click happen together.");
+        : "Plays a click every second on the game speakers and flashes the displays when each click should be heard. Move LATENCY until flash and click happen together.");
 
     [RelayCommand]
     private void Toggle()

@@ -246,7 +246,7 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
         {
             PlaybackState.Idle => "Load a song from the library",
             PlaybackState.Loaded => "Ready",
-            PlaybackState.Preview => "Get-ready screen on the beamers",
+            PlaybackState.Preview => "Get-ready screen on the displays",
             PlaybackState.Countdown => "3 – 2 – 1 …",
             PlaybackState.Playing => "Playing",
             PlaybackState.Paused => "Paused",
@@ -429,8 +429,8 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
         PlaybackState.Playing => "Pause",
         PlaybackState.Paused => "Resume",
         PlaybackState.Countdown => "Starting…",
-        PlaybackState.Score => "Play again from the start (countdown on the beamers)",
-        _ => "Play (countdown on the beamers)",
+        PlaybackState.Score => "Play again from the start (countdown on the displays)",
+        _ => "Play (countdown on the displays)",
     };
 
     [RelayCommand(CanExecute = nameof(CanStop))] private void Stop() => _playback.Stop();

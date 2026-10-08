@@ -33,7 +33,7 @@
         <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="{Binding DifficultyHint}" />
         <TextBlock Text="Note bar style" Margin="0,8,0,0" />
         <ComboBox ItemsSource="{Binding NoteBarStyles}" SelectedItem="{Binding NoteBarStyle}" HorizontalAlignment="Stretch" />
-        <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="Background of the note bars on the beamer — White for dark videos, Black for bright ones" TextWrapping="Wrap" />
+        <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="Background of the note bars on the displays — White for dark videos, Black for bright ones" TextWrapping="Wrap" />
         <Grid ColumnDefinitions="*,Auto" Margin="0,8,0,0">
           <StackPanel>
             <TextBlock Text="Grid lines" />

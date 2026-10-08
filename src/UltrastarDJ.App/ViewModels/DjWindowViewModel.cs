@@ -36,6 +36,7 @@ public sealed partial class DjWindowViewModel : ViewModelBase
         SidebarPanel.Sources => "Song Sources",
         SidebarPanel.AudioInput => "Audio Input",
         SidebarPanel.AudioOutput => "Audio Output",
+        SidebarPanel.Displays => "Game Displays",
         _ => ActivePanel.ToString(),
     };
 
