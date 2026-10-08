@@ -58,8 +58,10 @@ public static class NoteLaneGeometry
     /// <summary>
     /// The phrase to show at <paramref name="beat"/>: the one containing it, else the next upcoming one, else the last.
     /// <paramref name="extendBeats"/> keeps a phrase active a little past its end so late mic data still lands in it.
+    /// With <paramref name="leadInBeats"/> an upcoming phrase only shows that close to its start, and nothing shows
+    /// after the last one: a duet voice that is silent for a while has an empty lane, not its next phrase all along.
     /// </summary>
-    public static LyricLine? ActiveLine(NoteTrack track, double beat, double extendBeats = 0)
+    public static LyricLine? ActiveLine(NoteTrack track, double beat, double extendBeats = 0, double leadInBeats = double.PositiveInfinity)
     {
         IReadOnlyList<LyricLine> lines = track.Lines;
         for (int i = 0; i < lines.Count; i++)
@@ -69,10 +71,10 @@ public static class NoteLaneGeometry
             double end = l.EndBeat + Math.Min(extendBeats, gapToNext / 2);
             if (beat < end)
             {
-                return l;
+                return beat < l.FirstNoteBeat - leadInBeats ? null : l;
             }
         }
 
-        return lines.Count > 0 ? lines[^1] : null;
+        return lines.Count > 0 && double.IsPositiveInfinity(leadInBeats) ? lines[^1] : null;
     }
 }

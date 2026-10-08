@@ -5,7 +5,8 @@ namespace UltrastarDJ.Core.Game;
 
 /// <summary>A player taking part in one song.</summary>
 /// <param name="PlayerId">1–4.</param>
-/// <param name="TrackIndex">Which <see cref="NoteTrack"/> the player sings (0 for solo songs; duet P2 = 1).</param>
+/// <param name="TrackIndex">Which <see cref="NoteTrack"/> the player sings (0 for solo songs; duet P2 = 1;
+/// <see cref="DuetVoices.BothVoices"/> = a single singer of a duet, both voices merged).</param>
 /// <param name="MicDelayMs">Round-trip mic latency; the sample is matched against the beat this many ms earlier.</param>
 public sealed record GamePlayer(int PlayerId, int TrackIndex, double MicDelayMs);
 
@@ -15,7 +16,7 @@ public sealed record GamePlayer(int PlayerId, int TrackIndex, double MicDelayMs)
 /// </summary>
 public sealed class GameSession
 {
-    private readonly Dictionary<int, (PlayerScorer Scorer, GamePlayer Player)> _players = [];
+    private readonly Dictionary<int, (PlayerScorer Scorer, GamePlayer Player, NoteTrack Track)> _players = [];
 
     public GameSession(Song song, IReadOnlyList<GamePlayer> players, Difficulty difficulty)
     {
@@ -24,8 +25,10 @@ public sealed class GameSession
         Difficulty = difficulty;
         foreach (GamePlayer p in players)
         {
-            NoteTrack track = song.Notes[Math.Clamp(p.TrackIndex, 0, song.Notes.Count - 1)];
-            _players[p.PlayerId] = (new PlayerScorer(p.PlayerId, track, difficulty), p);
+            NoteTrack track = p.TrackIndex == DuetVoices.BothVoices && song.Notes.Count > 1
+                ? DuetVoices.Merge(song.Notes)
+                : song.Notes[Math.Clamp(p.TrackIndex, 0, song.Notes.Count - 1)];
+            _players[p.PlayerId] = (new PlayerScorer(p.PlayerId, track, difficulty), p, track);
         }
     }
 
@@ -34,7 +37,7 @@ public sealed class GameSession
     public IEnumerable<int> PlayerIds => _players.Keys;
 
     public PlayerScorer Scorer(int playerId) => _players[playerId].Scorer;
-    public NoteTrack TrackOf(int playerId) => Song.Notes![Math.Clamp(_players[playerId].Player.TrackIndex, 0, Song.Notes.Count - 1)];
+    public NoteTrack TrackOf(int playerId) => _players[playerId].Track;
 
     /// <summary>Song beat at a game time (undelayed; what the beamer draws).</summary>
     public double BeatAt(double positionSec) => BeatMath.BeatAt(positionSec, Song.Bpm, Song.GapMs);
@@ -46,7 +49,7 @@ public sealed class GameSession
     public IReadOnlyList<PitchTick> Tick(double positionSec, Func<int, double> midiOf)
     {
         List<PitchTick> ticks = new(_players.Count);
-        foreach ((PlayerScorer scorer, GamePlayer player) in _players.Values)
+        foreach ((PlayerScorer scorer, GamePlayer player, _) in _players.Values)
         {
             ticks.Add(scorer.Evaluate(midiOf(player.PlayerId), SungBeatAt(positionSec, player.PlayerId)));
         }

@@ -335,8 +335,9 @@ public sealed class PlaybackService : IDisposable
         }
 
         IReadOnlyList<PlayerConfig> active = ActivePlayers();
-        int tracks = Song.Notes!.Count;
-        Session = new GameSession(Song, active.Select(p => new GamePlayer(p.Id, tracks > 1 ? (p.Id - 1) % tracks : 0, MicDelayMs(p))).ToList(), Difficulty);
+        // Voices by the order of the singers (Core.Game.DuetVoices): with players 1 and 3, the second still sings voice 2.
+        IReadOnlyList<int> voices = DuetVoices.Assign(active.Count, Song.Notes!.Count);
+        Session = new GameSession(Song, active.Select((p, i) => new GamePlayer(p.Id, voices[i], MicDelayMs(p))).ToList(), Difficulty);
         // Media length in game time: when the video is the audio, its #VIDEOGAP intro is not part of the song.
         double? mediaLengthSec = _media.Game.Duration is { } d ? d.TotalSeconds - (Plan?.AudioOriginSec ?? 0) : null;
         Timeline = SongTimeline.For(Song, Session.LastBeat, TailAfterLastNoteSec, mediaLengthSec);

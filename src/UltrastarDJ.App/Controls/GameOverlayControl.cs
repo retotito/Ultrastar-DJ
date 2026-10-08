@@ -25,6 +25,7 @@ public sealed class GameOverlayControl : Control
     private static readonly FontFamily Font = FontFamily.Parse("fonts:Inter#Inter");
     private static readonly Typeface Regular = new(Font, FontStyle.Normal, FontWeight.SemiBold);
     private static readonly Typeface Bold = new(Font, FontStyle.Normal, FontWeight.Bold);
+    private const double LaneLeadInMs = 3000;
     private static readonly IBrush LyricsBackdrop = new SolidColorBrush(Color.FromArgb(0x8C, 0, 0, 0));
     private static readonly IBrush LyricsText = Brushes.White;
     private static readonly IBrush LyricsNext = new SolidColorBrush(Color.FromArgb(0x99, 0xFF, 0xFF, 0xFF));
@@ -236,7 +237,10 @@ public sealed class GameOverlayControl : Control
     {
         LaneState state = scene.Lanes[player.Id];
         double extend = BeatMath.MsToBeats(scene.Session.Song.Bpm, 250); // keep the phrase while late mic data arrives
-        LyricLine? line = NoteLaneGeometry.ActiveLine(state.Track, beat, extend);
+        // A phrase appears 3 s before it is sung (like the lyrics' lead-in bar); a voice with nothing to sing for
+        // longer has an empty lane — in a duet the other voice's turn, in a solo song a long instrumental.
+        double leadIn = BeatMath.MsToBeats(scene.Session.Song.Bpm, LaneLeadInMs);
+        LyricLine? line = NoteLaneGeometry.ActiveLine(state.Track, beat, extend, leadIn);
         if (line is null)
         {
             return;

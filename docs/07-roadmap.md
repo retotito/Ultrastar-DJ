@@ -491,6 +491,23 @@ Drawn directly (meter rate, allocation-free), not a templated Slider.
 
 ---
 
+## Sprint 18 — Duets  *(in progress)*
+
+UltraStar duets have two voices (`P1` / `P2` in the notes; `#P1:` / `#P2:` or `#DUETSINGERP1/2` name the singers;
+USDB marks them "[DUET]" in the title). The format has no third voice.
+
+- [x] Lanes: a phrase appears 3 s before it is sung; a voice with nothing to sing for longer has an empty lane (in
+      "Shallow" the second lane showed Lady Gaga's first phrase — same melody — while Bradley Cooper sang).
+      `NoteLaneGeometry.ActiveLine` lead-in, tested. Also in solo songs: empty lane during long instrumentals.
+- [x] Voices by the order of the singing players (1st → voice 1, 2nd → voice 2, 3rd → voice 1 …), not by player number (`Core.Game.DuetVoices.Assign`, tested)
+- [x] A single singer gets both voices merged into one track (where both sing at once, voice 1) (`DuetVoices.Merge`, tested)
+- [ ] Lyrics line per display: the voice singing now, swept in its colour; two lines while both sing
+- [ ] Game Player: who sings which voice ("Duet: P1 → Bradley Cooper · P2 → Lady Gaga" / "sung solo: both voices")
+- [ ] Verified live
+- Next: duet marker in the library (filter) and on the songbook; swapping voices
+
+---
+
 ## Later / ideas
 
 - Flaky test: `SqliteLoadFailureStoreTests.Save_RoundTrips_UpdatesAndRemoves` failed once in a full `dotnet test` run, passes alone —

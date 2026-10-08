@@ -23,7 +23,7 @@ static double MsToBeats(double bpm, double ms) => (ms / 1000.0) * (bpm / 60.0) *
 ```
 
 Note types: `:` normal, `*` golden, `F` freestyle, `R` rap, `G` rap-golden. `-` ends a phrase (line break),
-`P1`/`P2` switch voice (duet → separate `NoteTrack`). `#RELATIVE:yes` is legacy — detect and warn, don't crash.
+`P1`/`P2` switch voice (duet → separate `NoteTrack`). Singers get voices by their order (`Core.Game.DuetVoices`): 1st voice 1, 2nd voice 2, 3rd voice 1 …; a single singer of a duet sings both voices merged (where both sing at once, voice 1). A lane shows a phrase from 3 s before it is sung (`NoteLaneGeometry.ActiveLine` lead-in) — a silent voice has an empty lane. `#RELATIVE:yes` is legacy — detect and warn, don't crash.
 Syllable spacing: trailing/leading spaces in the note text are word boundaries — the parser **must not trim** them.
 
 ---

@@ -166,4 +166,44 @@ public class NoteLaneGeometryTests
         Assert.Same(l1, NoteLaneGeometry.ActiveLine(t, 5.9, extendBeats: 10));
         Assert.Same(l2, NoteLaneGeometry.ActiveLine(t, 6.1, extendBeats: 10));
     }
+
+    // Duets: a voice that is silent for a long stretch must not show its next phrase the whole time (in "Shallow" the
+    // second voice showed Lady Gaga's first phrase — same melody as Bradley Cooper's — while he sang).
+    private static NoteTrack TwoPhrases(out LyricLine l1, out LyricLine l2)
+    {
+        l1 = new(0, [new Note(NoteType.Normal, 0, 4, 0, "a")]);
+        l2 = new(100, [new Note(NoteType.Normal, 100, 4, 0, "b")]);
+        return new(0, [l1, l2]);
+    }
+
+    [Fact]
+    public void ActiveLine_LeadIn_NextPhraseFarAway_ShowsNothing()
+        => Assert.Null(NoteLaneGeometry.ActiveLine(TwoPhrases(out _, out _), 30, leadInBeats: 20));
+
+    [Fact]
+    public void ActiveLine_LeadIn_NextPhraseClose_ShowsIt()
+    {
+        NoteTrack t = TwoPhrases(out _, out LyricLine l2);
+        Assert.Same(l2, NoteLaneGeometry.ActiveLine(t, 85, leadInBeats: 20));
+    }
+
+    [Fact]
+    public void ActiveLine_LeadIn_BeforeTheFirstPhrase_ShowsNothingUntilClose()
+    {
+        LyricLine late = new(200, [new Note(NoteType.Normal, 200, 4, 0, "x")]);
+        NoteTrack t = new(1, [late]);
+        Assert.Null(NoteLaneGeometry.ActiveLine(t, 0, leadInBeats: 20));
+        Assert.Same(late, NoteLaneGeometry.ActiveLine(t, 185, leadInBeats: 20));
+    }
+
+    [Fact]
+    public void ActiveLine_LeadIn_DuringAPhrase_ShowsIt()
+    {
+        NoteTrack t = TwoPhrases(out LyricLine l1, out _);
+        Assert.Same(l1, NoteLaneGeometry.ActiveLine(t, 2, leadInBeats: 20));
+    }
+
+    [Fact]
+    public void ActiveLine_LeadIn_AfterTheLastPhrase_ShowsNothing()
+        => Assert.Null(NoteLaneGeometry.ActiveLine(TwoPhrases(out _, out _), 150, leadInBeats: 20));
 }
