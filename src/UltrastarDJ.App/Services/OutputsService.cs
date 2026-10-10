@@ -1,6 +1,8 @@
+using Avalonia.Threading;
 using Microsoft.Extensions.Logging;
 using UltrastarDJ.Audio;
 using UltrastarDJ.Core.Abstractions;
+using UltrastarDJ.Core.Playback;
 using UltrastarDJ.Media;
 
 namespace UltrastarDJ.App.Services;
@@ -16,9 +18,12 @@ public sealed record OutputOption(string MpvDeviceId, string Name, int DeviceCha
 /// <summary>
 /// Output routing and gain for the game and preview channels, persisted. Device names come from mpv (which
 /// does the playing) and channel counts from PortAudio (which knows the hardware); they are joined by name.
+/// Outputs are checked every 3 s: a chosen one that is unplugged plays on the system default meanwhile (the choice is
+/// kept — <see cref="OutputPresence"/>), and the channel goes back when it returns.
 /// </summary>
-public sealed class OutputsService
+public sealed class OutputsService : IDisposable
 {
+    private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(3);
     private const string SettingsName = "outputs";
     private static readonly string[] HiddenPatterns = ["blackhole", "loopback", "audio recorder", "screen recorder"];
 
@@ -26,15 +31,23 @@ public sealed class OutputsService
     private readonly MediaService _media;
     private readonly IAudioBackend _backend;
     private readonly ILogger<OutputsService> _log;
+    private readonly NotificationService _notifications;
+    private readonly CancellationTokenSource _pollCts = new();
+    // Outputs present at the last check (mpv ids); null until the first check — until then the choices are used as is.
+    private IReadOnlySet<string>? _present;
+    // Every output name seen (mpv id → name): a chosen output keeps its name while unplugged.
+    private readonly Dictionary<string, string> _names = [];
     private OutputsDocument _doc;
     // Read by the game ticker and the beamers' render loop every frame: no key string building there.
     private double _gameLatencyMs;
 
-    public OutputsService(ISettingsStore settings, MediaService media, IAudioBackend backend, AppSettingsService app, ILogger<OutputsService> log)
+    public OutputsService(ISettingsStore settings, MediaService media, IAudioBackend backend, AppSettingsService app, NotificationService notifications,
+        ILogger<OutputsService> log)
     {
         _settings = settings;
         _media = media;
         _backend = backend;
+        _notifications = notifications;
         _log = log;
         _doc = settings.Load(SettingsName, OutputsDocument.Default());
         Apply(_media.Game, _doc.Game);
@@ -47,6 +60,118 @@ public sealed class OutputsService
             SetGameLatencyMs(-app.LyricsOffsetMs);
             app.ClearLyricsOffset();
         }
+
+        _ = Task.Run(() => PollAsync(_pollCts.Token));
+    }
+
+    /// <summary>The game output was unplugged: a running song has to stop (it would go on from the default speakers, out of sync).</summary>
+    public event Action<string>? GameOutputLost;
+
+    /// <summary>Outputs appeared or disappeared: the Audio Output popup refreshes its list.</summary>
+    public event Action? DevicesChanged;
+
+    /// <summary>The channel's chosen output is unplugged (it plays on the system default meanwhile).</summary>
+    public bool IsMissing(MediaChannelKind kind) => _present is { } p && OutputPresence.IsMissing(Of(kind).MpvDeviceId, p);
+
+    private ChannelOutput Of(MediaChannelKind kind) => kind == MediaChannelKind.Game ? _doc.Game : _doc.Preview;
+
+    /// <summary>"ARZOPA" — the device's name as stored or last seen (never the technical id when we know better).</summary>
+    public string NameOf(ChannelOutput cfg) => cfg.Name ?? (_names.TryGetValue(cfg.MpvDeviceId, out string? n) ? n : cfg.MpvDeviceId);
+    private static string Label(MediaChannelKind kind) => kind == MediaChannelKind.Game ? "Game" : "Preview";
+
+    // mpv's list works while a song plays (PortAudio's refresh is refused while a stream is open).
+    private async Task PollAsync(CancellationToken ct)
+    {
+        using PeriodicTimer timer = new(PollInterval);
+        do
+        {
+            IReadOnlyList<AudioOutputDevice> devices;
+            try
+            {
+                devices = await _media.Game.ListAudioDevicesAsync().ConfigureAwait(false);
+            }
+            catch (MediaException)
+            {
+                continue;
+            }
+
+            Dictionary<string, string> now = devices.Where(d => d.Id != AudioOutputDevice.Auto.Id && !d.Id.StartsWith("avfoundation/", StringComparison.Ordinal) && !IsHidden(d.Name))
+                .GroupBy(d => d.Id).ToDictionary(g => g.Key, g => g.First().Name);
+            Dispatcher.UIThread.Post(() => OnDevices(now));
+        }
+        while (await timer.WaitForNextTickAsync(ct).ConfigureAwait(false));
+    }
+
+    private void OnDevices(IReadOnlyDictionary<string, string> devices)
+    {
+        HashSet<string> now = [.. devices.Keys];
+        foreach ((string id, string n) in devices)
+        {
+            _names[id] = n;
+        }
+
+        // Choices made before names were stored get theirs once the device is seen.
+        foreach (MediaChannelKind kind in (ReadOnlySpan<MediaChannelKind>)[MediaChannelKind.Game, MediaChannelKind.Preview])
+        {
+            if (Of(kind) is { Name: null } c && devices.TryGetValue(c.MpvDeviceId, out string? seen))
+            {
+                Store(kind, c with { Name = seen });
+            }
+        }
+
+        IReadOnlySet<string>? before = _present;
+        if (before is not null && before.SetEquals(now))
+        {
+            return;
+        }
+
+        bool[] wasMissing = [IsMissing(MediaChannelKind.Game), IsMissing(MediaChannelKind.Preview)];
+        _present = now;
+        foreach (MediaChannelKind kind in (ReadOnlySpan<MediaChannelKind>)[MediaChannelKind.Game, MediaChannelKind.Preview])
+        {
+            ChannelOutput cfg = Of(kind);
+            bool missing = IsMissing(kind);
+            bool was = wasMissing[kind == MediaChannelKind.Game ? 0 : 1];
+            string name = NameOf(cfg);
+            if (missing && (!was || before is null))
+            {
+                Apply(kind == MediaChannelKind.Game ? _media.Game : _media.Preview, cfg);
+                _log.LogWarning("{Channel} output {Device} is not connected — on the system default meanwhile", kind, cfg.MpvDeviceId);
+                _notifications.Warn($"{Label(kind)} output not connected", $"{name} — playing on the system default until it is back.");
+                if (kind == MediaChannelKind.Game && before is not null)
+                {
+                    GameOutputLost?.Invoke(name);
+                }
+            }
+            else if (!missing && was && before is not null)
+            {
+                Apply(kind == MediaChannelKind.Game ? _media.Game : _media.Preview, cfg);
+                _log.LogInformation("{Channel} output {Device} is back", kind, cfg.MpvDeviceId);
+                _notifications.Success($"{name} connected", $"{Label(kind)} plays there again.");
+            }
+        }
+
+        // Outputs nobody uses, plugged in or out: a hint either way (not at start-up). Used ones got their toast above.
+        if (before is not null)
+        {
+            foreach (string id in now.Except(before).Where(id => id != _doc.Game.MpvDeviceId && id != _doc.Preview.MpvDeviceId))
+            {
+                _notifications.Info("Audio output connected", $"{devices[id]} — choose it under Audio Output.");
+            }
+
+            foreach (string id in before.Except(now).Where(id => id != _doc.Game.MpvDeviceId && id != _doc.Preview.MpvDeviceId))
+            {
+                _notifications.Info("Audio output disconnected", _names.GetValueOrDefault(id, id));
+            }
+        }
+
+        DevicesChanged?.Invoke();
+    }
+
+    public void Dispose()
+    {
+        _pollCts.Cancel();
+        _pollCts.Dispose();
     }
 
     /// <summary>Latencies are kept per output (device + stereo pair): Bluetooth keeps its 250 ms, the cable its 15 ms.</summary>
@@ -146,23 +271,9 @@ public sealed class OutputsService
     public void SetGameGain(double gain) => SetGain(MediaChannelKind.Game, gain);
     public void SetPreviewGain(double gain) => SetGain(MediaChannelKind.Preview, gain);
 
-    /// <summary>Call after a device refresh: falls back to default when a stored device vanished.</summary>
-    public void ResetIfGone(IReadOnlyList<OutputOption> available)
-    {
-        foreach (MediaChannelKind kind in (ReadOnlySpan<MediaChannelKind>)[MediaChannelKind.Game, MediaChannelKind.Preview])
-        {
-            ChannelOutput cfg = kind == MediaChannelKind.Game ? _doc.Game : _doc.Preview;
-            if (cfg.MpvDeviceId != AudioOutputDevice.Auto.Id && !available.Any(a => a.MpvDeviceId == cfg.MpvDeviceId))
-            {
-                _log.LogWarning("{Channel} output {Device} is gone — back to system default", kind, cfg.MpvDeviceId);
-                Set(kind, available[0]);
-            }
-        }
-    }
-
     private void Set(MediaChannelKind kind, OutputOption o)
     {
-        ChannelOutput cfg = (kind == MediaChannelKind.Game ? _doc.Game : _doc.Preview) with { MpvDeviceId = o.MpvDeviceId, DeviceChannels = o.DeviceChannels, ChannelOffset = o.ChannelOffset };
+        ChannelOutput cfg = (kind == MediaChannelKind.Game ? _doc.Game : _doc.Preview) with { MpvDeviceId = o.MpvDeviceId, DeviceChannels = o.DeviceChannels, ChannelOffset = o.ChannelOffset, Name = o.Name };
         Store(kind, cfg);
         Apply(kind == MediaChannelKind.Game ? _media.Game : _media.Preview, cfg);
     }
@@ -182,9 +293,18 @@ public sealed class OutputsService
         Changed?.Invoke();
     }
 
-    private static void Apply(MediaChannel channel, ChannelOutput cfg)
+    // What the channel really plays on: the choice, or the system default while it is unplugged.
+    private void Apply(MediaChannel channel, ChannelOutput cfg)
     {
-        channel.SetRouting(cfg.MpvDeviceId, cfg.DeviceChannels, cfg.ChannelOffset);
+        if (_present is { } present && OutputPresence.IsMissing(cfg.MpvDeviceId, present))
+        {
+            channel.SetRouting(AudioOutputDevice.Auto.Id, 2, 0);
+        }
+        else
+        {
+            channel.SetRouting(cfg.MpvDeviceId, cfg.DeviceChannels, cfg.ChannelOffset);
+        }
+
         channel.Gain = cfg.Gain;
     }
 
@@ -192,6 +312,9 @@ public sealed class OutputsService
 
     public sealed record ChannelOutput(string MpvDeviceId, int DeviceChannels, int ChannelOffset, double Gain)
     {
+        /// <summary>The device's name when it was chosen — for "LG TV (not connected)" and toasts while it is unplugged.</summary>
+        public string? Name { get; init; }
+
         public static ChannelOutput Default() => new(AudioOutputDevice.Auto.Id, 2, 0, 1.0);
     }
 

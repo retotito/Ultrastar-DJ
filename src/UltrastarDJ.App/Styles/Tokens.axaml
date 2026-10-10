@@ -317,6 +317,8 @@
   <x:Double x:Key="PopoverWidth">432</x:Double>
   <!-- Text width inside a popover of PopoverWidth (minus PadPanel): hints in a wider popover keep it. -->
   <x:Double x:Key="PopoverTextWidth">396</x:Double>
+  <!-- Toasts in the centre of the DJ window: wide enough for a device name and its sentence on two lines. -->
+  <x:Double x:Key="ToastWidth">460</x:Double>
   <!-- Picture box of the preview player and the Game Player: same width, so the same height keeps the same shape -->
   <x:Double x:Key="PlayerPictureHeight">170</x:Double>
   <!-- The Game Player's box, scaled with its extra width so the picture keeps the same shape -->

@@ -65,7 +65,9 @@ public sealed class PlaybackService : IDisposable
         _media.Game.EndReached += () => Dispatcher.UIThread.Post(() => { if (State is PlaybackState.Playing or PlaybackState.Paused) { Stop(); } });
         _media.Game.ErrorOccurred += e => Dispatcher.UIThread.Post(() => OnPlaybackError(e));
         _audio.GameMicLost += OnGameMicLost;
+        _outputs.GameOutputLost += OnGameOutputLost;
         _displays.OpenStateChanged += OnDisplayOpenStateChanged;
+        _displays.ScreenLost += OnDisplayScreenLost;
     }
 
     /// <summary>The game media failed (stream dropped, YouTube refused): stop and tell the DJ why.</summary>
@@ -471,6 +473,40 @@ public sealed class PlaybackService : IDisposable
 
         Stop();
         _notifications.Warn($"Display {(int)id} closed — song stopped", "Open it again under Game Displays and press Play to sing the song again.");
+    }
+
+    /// <summary>
+    /// A display's screen was unplugged. With singers on it the song stops and rewinds (they no longer see their
+    /// notes); without, it plays on. The display stays open, parked next to the DJ window until the screen is back.
+    /// </summary>
+    private void OnDisplayScreenLost(DisplayId id, string screen)
+    {
+        string title = $"Display {(int)id}: {screen} disconnected";
+        if (CanStop && _displays.GetConfig(id).PlayerIds.Count > 0)
+        {
+            Stop();
+            _ = HomeAsync();
+            _notifications.Warn($"{title} — song stopped", "Plug the screen back in and press Play, or move the singers to the other display.");
+            return;
+        }
+
+        _notifications.Warn(title, "The display waits next to the DJ window and goes back when the screen is plugged in again.");
+    }
+
+    /// <summary>
+    /// The game output was unplugged mid-song: stop and rewind (as when a mic is lost). Playing on from the default
+    /// speakers would be out of sync — the latency belongs to the unplugged output. The displays stay open.
+    /// </summary>
+    private void OnGameOutputLost(string name)
+    {
+        if (State is not (PlaybackState.Countdown or PlaybackState.Playing or PlaybackState.Paused))
+        {
+            return;
+        }
+
+        Stop();
+        _ = HomeAsync();
+        _notifications.Warn("Game output disconnected — song stopped", $"{name}. Plug it back in and press Play, or choose another output under Audio Output.");
     }
 
     /// <summary>

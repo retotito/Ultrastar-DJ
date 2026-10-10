@@ -547,6 +547,27 @@ USDB marks them "[DUET]" in the title). The format has no third voice.
 
 ---
 
+## Sprint 19 — Audio output and screen hot-plug  *(done)*
+
+Outputs had no listener: the list was read when the Audio Output popup opened, and a chosen output that was gone was
+replaced by "System default" for good. Found unplugging a display with speakers used as the preview output.
+
+- [x] Check the outputs every 3 s (mpv's device list — works while a song plays, unlike PortAudio's refresh)
+- [x] An output in use disappears → that channel plays on the system default; the choice is kept, not overwritten;
+      toast. Game output during a song → the song stops (rewound, still loaded — as when a mic is lost; the displays
+      stay open)
+- [x] It comes back → the channel returns to it; toast. A new output → toast "choose it under Audio Output"
+- [x] Audio Output popup: the list updates live; a chosen output that is missing shows System default (the choice is kept and returns with the device)
+- [x] Toasts in the centre of the DJ window, larger (460 px, 30 px padding, bigger text)
+- [x] Screens: a display whose screen is unplugged leaves fullscreen and parks next to the DJ window (macOS put it
+      fullscreen over the DJ window); toast. Singers on it during a song → the song stops (rewound, still loaded).
+      Screen back → the display returns there, fullscreen again; toast. A screen without a display plugged in or out → info toast (likewise an unused audio output).
+      Closed while parked → it still opens on its own screen next time (`WindowPlacement.IsConnected`, tested)
+- [x] Verified live (macOS: ARZOPA monitor with speakers, JBL Bluetooth speaker). Wireless TVs (AirPlay / Miracast)
+      not tested — extended mode should behave like a cable; AirPlay audio (~2 s late) is unfit as the game output
+
+---
+
 ## Later / ideas
 
 - Flaky test: `SqliteLoadFailureStoreTests.Save_RoundTrips_UpdatesAndRemoves` failed once in a full `dotnet test` run, passes alone —

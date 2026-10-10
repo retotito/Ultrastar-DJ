@@ -31,10 +31,14 @@ public sealed partial class AudioOutputPanelViewModel : ViewModelBase, IDisposab
         _state = new DispatcherTimer(TimeSpan.FromMilliseconds(250), DispatcherPriority.Background, (_, _) => { Game.Poll(); Preview.Poll(); });
         _state.Start();
         _outputs.Changed += OnOutputsChanged;
+        // Plugged in / unplugged while the popup is open: the lists follow.
+        _outputs.DevicesChanged += OnDevicesChanged;
         _ = RefreshAsync();
     }
 
     private void OnOutputsChanged() => Game.Latency?.SyncLatency();
+
+    private void OnDevicesChanged() => _ = RefreshAsync();
 
     /// <summary>The panel closed: the clicks end with it (like the mic tests of Audio Input).</summary>
     public void StopSyncTest() => Game.Latency?.Stop();
@@ -53,16 +57,30 @@ public sealed partial class AudioOutputPanelViewModel : ViewModelBase, IDisposab
             Options.Add(o);
         }
 
-        _outputs.ResetIfGone(list);
-        Game.Sync(Options, _outputs.Game.MpvDeviceId, _outputs.Game.ChannelOffset);
-        Preview.Sync(Options, _outputs.Preview.MpvDeviceId, _outputs.Preview.ChannelOffset);
+        // An unplugged choice shows what really plays: System default. The choice itself stays stored, so the device
+        // takes over again by itself when it is plugged back in.
+        Sync(Game, MediaChannelKind.Game, _outputs.Game);
+        Sync(Preview, MediaChannelKind.Preview, _outputs.Preview);
         Status = list.Count <= 1 ? "Only the system output was found — connect a USB or Bluetooth device and refresh" : "";
+    }
+
+    private void Sync(OutputChannelViewModel card, MediaChannelKind kind, OutputsService.ChannelOutput chosen)
+    {
+        if (_outputs.IsMissing(kind))
+        {
+            card.Sync(Options, AudioOutputDevice.Auto.Id, 0);
+        }
+        else
+        {
+            card.Sync(Options, chosen.MpvDeviceId, chosen.ChannelOffset);
+        }
     }
 
     public void Dispose()
     {
         _state.Stop();
         _outputs.Changed -= OnOutputsChanged;
+        _outputs.DevicesChanged -= OnDevicesChanged;
         Game.Latency?.Dispose();
     }
 }

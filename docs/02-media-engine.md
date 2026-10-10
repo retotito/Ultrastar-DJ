@@ -211,6 +211,12 @@ This gives YouTube a real readiness signal — the prototype had none.
 - Multichannel devices are offered as pairs ("Device — Ch 1–2", "Ch 3–4", …). Selection stores `(deviceId, channelOffset)`.
 - Hidden device name patterns: `blackhole`, `loopback`, `speaker audio recorder`, `screen recorder`.
 - Hot-plug: poll `audio-device-list` every 3 s while a routing view is open; if the selected device vanishes → reset to default and notify.
+- **Output hot-plug** (`OutputsService`): mpv's device list is checked every 3 s (it works while a song plays; PortAudio's
+  refresh does not). A chosen output that is unplugged plays on the system default meanwhile — the choice is kept
+  (`Core.Playback.OutputPresence`, tested) and the channel returns when the device does; toasts both ways, and one for
+  a newly plugged-in output. The game output lost mid-song stops the song (rewound, still loaded; displays stay open) —
+  the default speakers would be out of sync. The Audio Output popup updates live; a missing choice shows
+  System default (what really plays) while the choice stays stored for its return.
 - Mic monitoring uses a **separate PortAudio output stream** on the game device (see `03-game-engine.md`). Two streams on one device are mixed by the OS; that is acceptable and much simpler than routing mpv PCM through our own mixer.
 
 ### Known fallback

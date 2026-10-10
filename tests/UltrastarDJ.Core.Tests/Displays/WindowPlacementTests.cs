@@ -25,6 +25,16 @@ public class WindowPlacementTests
     }
 
     [Fact]
+    public void IsConnected_FollowsItsScreen()
+    {
+        // A display on the external monitor: unplugged → lost; plugged back in (even moved to the left) → back.
+        WindowPlacement home = new(3500, 50, 1200, 800, WindowMode.FullScreen, "ARZOPA", 3420, 0);
+        Assert.True(home.IsConnected([Laptop, Monitor with { Name = "ARZOPA" }]));
+        Assert.False(home.IsConnected([Laptop]));
+        Assert.True(home.IsConnected([Laptop, new ScreenArea(-1920, 0, 1920, 1080, 1, "ARZOPA")]));
+    }
+
+    [Fact]
     public void ScreenGone_ReturnsNull_SoTheWindowIsCentred()
     {
         // Saved on the external monitor, which is not connected today.

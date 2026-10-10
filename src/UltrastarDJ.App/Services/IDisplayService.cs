@@ -20,6 +20,12 @@ public interface IDisplayService
     /// <summary>Fullscreen on whatever screen the window is on now.</summary>
     void ToggleFullScreen(DisplayId id);
 
+    /// <summary>
+    /// Raised on the UI thread when an open display's screen was unplugged (with the screen's name). The display is
+    /// parked next to the DJ window and returns by itself when the screen is back.
+    /// </summary>
+    event Action<DisplayId, string>? ScreenLost;
+
     /// <summary>Raised on the UI thread when a display opens or closes (also when the DJ closes it from its title bar).</summary>
     event Action<DisplayId, bool>? OpenStateChanged;
 

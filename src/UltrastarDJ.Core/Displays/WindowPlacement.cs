@@ -18,6 +18,9 @@ public readonly record struct ScreenArea(int X, int Y, int Width, int Height, do
 public sealed record WindowPlacement(int X, int Y, double Width, double Height, WindowMode Mode,
     string? Screen = null, int ScreenX = 0, int ScreenY = 0)
 {
+    /// <summary>Its screen is plugged in (found by name, or at its spot) — a display whose screen is unplugged is lost.</summary>
+    public bool IsConnected(IReadOnlyList<ScreenArea> screens) => Fit(this, screens, 0, 0) is not null;
+
     /// <summary>
     /// The placement adjusted to the screens connected now: on the screen that holds its top-left corner, shrunk to
     /// fit that screen (never below the minimum) and moved fully onto it. Null when that screen is gone (an external

@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Platform;
+using Avalonia.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using UltrastarDJ.App.ViewModels;
@@ -19,18 +20,29 @@ public sealed class DisplayService : IDisplayService
     private const double InitialHeight = 540;
     // Beamer 2 opens this far down-right of beamer 1 so both title bars stay reachable.
     private const int CascadePx = 48;
+    // macOS animates leaving fullscreen; a move during the animation is undone by it.
+    private static readonly TimeSpan AfterFullScreenExit = TimeSpan.FromMilliseconds(800);
 
     private readonly ISettingsStore _settings;
     private readonly MediaService _media;
     private readonly PlayersService _players;
     private readonly IServiceProvider _services;
     private readonly ILogger<DisplayService> _log;
+    private readonly NotificationService _notifications;
     private readonly Dictionary<DisplayId, BeamerWindow> _open = [];
+    // Where each open display belongs (its screen, normal bounds, mode) — kept while the screens stay the same, so
+    // the OS moving a window off an unplugged screen does not overwrite it.
+    private readonly Dictionary<DisplayId, WindowPlacement> _home = [];
+    // Displays whose screen is unplugged: parked next to the DJ window until it is back.
+    private readonly HashSet<DisplayId> _lost = [];
+    private HashSet<ScreenArea> _screens = [];
     private Window? _owner;
     private DisplaysDocument _doc;
 
-    public DisplayService(ISettingsStore settings, MediaService media, PlayersService players, IServiceProvider services, ILogger<DisplayService> log)
+    public DisplayService(ISettingsStore settings, MediaService media, PlayersService players, IServiceProvider services, ILogger<DisplayService> log,
+        NotificationService notifications)
     {
+        _notifications = notifications;
         _settings = settings;
         _media = media;
         _players = players;
@@ -59,6 +71,7 @@ public sealed class DisplayService : IDisplayService
     }
 
     public event Action<DisplayId, bool>? OpenStateChanged;
+    public event Action<DisplayId, string>? ScreenLost;
     public event Action<DisplayId, bool>? FullScreenChanged;
     public event Action<DisplayId>? PlacementChanged;
 
@@ -69,6 +82,8 @@ public sealed class DisplayService : IDisplayService
     public void AttachOwner(Window owner)
     {
         _owner = owner;
+        _screens = [.. Areas(owner)];
+        owner.Screens.Changed += (_, _) => OnScreensChanged();
         owner.Closing += (_, _) =>
         {
             foreach (BeamerWindow window in _open.Values.ToList())
@@ -123,6 +138,12 @@ public sealed class DisplayService : IDisplayService
 
         WindowMemory.Track(window, p =>
         {
+            // Closed while its screen is unplugged: next time it opens on its screen again, not next to the DJ window.
+            if (_lost.Contains(id) && _home.TryGetValue(id, out WindowPlacement? home))
+            {
+                p = home;
+            }
+
             _doc = _doc.With(_doc.Get(id) with { Placement = p });
             _settings.Save(SettingsName, _doc);
         });
@@ -131,16 +152,25 @@ public sealed class DisplayService : IDisplayService
         {
             if (e.Property == Window.WindowStateProperty)
             {
+                RememberHome(id, window);
                 FullScreenChanged?.Invoke(id, window.WindowState == WindowState.FullScreen);
                 PlacementChanged?.Invoke(id);
             }
         };
         // Dragged to the projector: the panel shows the screen it is on now.
-        window.PositionChanged += (_, _) => PlacementChanged?.Invoke(id);
+        window.PositionChanged += (_, _) =>
+        {
+            RememberHome(id, window);
+            PlacementChanged?.Invoke(id);
+        };
+        window.Resized += (_, _) => RememberHome(id, window);
+        window.Opened += (_, _) => RememberHome(id, window);
         window.Closed += (_, _) =>
         {
             vm.Dispose();
             _open.Remove(id);
+            _home.Remove(id);
+            _lost.Remove(id);
             _log.LogInformation("Display {Display} closed", (int)id);
             OpenStateChanged?.Invoke(id, false);
         };
@@ -149,6 +179,133 @@ public sealed class DisplayService : IDisplayService
         window.Show();
         _log.LogInformation("Display {Display} opened", (int)id);
         OpenStateChanged?.Invoke(id, true);
+    }
+
+    private static List<ScreenArea> Areas(Window window)
+        => [.. window.Screens.All.Select(s => new ScreenArea(s.WorkingArea.X, s.WorkingArea.Y, s.WorkingArea.Width, s.WorkingArea.Height, s.Scaling, s.DisplayName))];
+
+    private static string NameOf(Screen? screen) => screen is null || string.IsNullOrWhiteSpace(screen.DisplayName) ? "Screen" : screen.DisplayName;
+
+    private void RememberHome(DisplayId id, BeamerWindow window)
+    {
+        // Not while parked, and not while a screen change is still unhandled (the OS already moved the window).
+        if (_lost.Contains(id) || !window.IsVisible || !_screens.SetEquals(Areas(window)))
+        {
+            return;
+        }
+
+        WindowMode mode = window.WindowState switch
+        {
+            WindowState.FullScreen => WindowMode.FullScreen,
+            WindowState.Maximized => WindowMode.Maximized,
+            _ => WindowMode.Normal,
+        };
+        // Normal bounds only: fullscreen bounds are not what it returns to (as in WindowMemory).
+        WindowPlacement? before = _home.GetValueOrDefault(id);
+        PixelPoint pos = window.WindowState == WindowState.Normal || before is null ? window.Position : new PixelPoint(before.X, before.Y);
+        Size size = window.WindowState == WindowState.Normal || before is null ? window.ClientSize : new Size(before.Width, before.Height);
+        Screen? screen = window.Screens.ScreenFromPoint(new PixelPoint(pos.X + 20, pos.Y + 10)) ?? window.Screens.ScreenFromWindow(window);
+        _home[id] = new WindowPlacement(pos.X, pos.Y, Math.Round(size.Width), Math.Round(size.Height), mode,
+            screen?.DisplayName, screen?.WorkingArea.X ?? 0, screen?.WorkingArea.Y ?? 0);
+    }
+
+    /// <summary>
+    /// A screen was plugged in or out. A display whose screen is gone leaves fullscreen and parks next to the DJ window
+    /// (macOS would put it fullscreen over the DJ window); when its screen is back it returns there, fullscreen again.
+    /// </summary>
+    private void OnScreensChanged()
+    {
+        if (_owner is null)
+        {
+            return;
+        }
+
+        List<ScreenArea> now = Areas(_owner);
+        HashSet<ScreenArea> before = _screens;
+        _screens = [.. now];
+        HashSet<string> returned = [];
+        foreach ((DisplayId id, BeamerWindow window) in _open.ToList())
+        {
+            if (!_home.TryGetValue(id, out WindowPlacement? home))
+            {
+                continue;
+            }
+
+            string screen = home.Screen ?? "Screen";
+            bool connected = home.IsConnected(now);
+            if (!connected && _lost.Add(id))
+            {
+                _log.LogWarning("Display {Display}: screen {Screen} disconnected — parked next to the DJ window", (int)id, screen);
+                Park(id, window);
+                ScreenLost?.Invoke(id, screen);
+            }
+            else if (connected && _lost.Remove(id))
+            {
+                _log.LogInformation("Display {Display}: screen {Screen} is back", (int)id, screen);
+                returned.Add(screen);
+                GoHome(window, WindowPlacement.Fit(home, now, window.MinWidth, window.MinHeight)!);
+                _notifications.Success($"Display {(int)id}: {screen} connected", "The display is back on its screen.");
+            }
+        }
+
+        // Screens no display belongs to, plugged in or out: a hint either way (displays got their toast above).
+        static bool Kept(ScreenArea s, IEnumerable<ScreenArea> other) => other.Any(o => o == s || o.Name is not null && o.Name == s.Name);
+        foreach (ScreenArea added in now.Where(s => !Kept(s, before)))
+        {
+            string name = added.Name ?? "Screen";
+            if (!returned.Contains(name) && !_home.Values.Any(h => h.Screen == name))
+            {
+                _notifications.Info($"Screen connected: {name}", "Open a display under Game Displays and drag it there.");
+            }
+        }
+
+        foreach (ScreenArea removed in before.Where(s => !Kept(s, now)))
+        {
+            string name = removed.Name ?? "Screen";
+            if (!_home.Values.Any(h => h.Screen == name))
+            {
+                _notifications.Info($"Screen disconnected: {name}");
+            }
+        }
+    }
+
+    // Out of fullscreen first; then next to the DJ window, at its first-open size.
+    private void Park(DisplayId id, BeamerWindow window)
+    {
+        bool wasFull = window.WindowState != WindowState.Normal;
+        window.WindowState = WindowState.Normal;
+        void Move()
+        {
+            if (_open.ContainsKey(id) && _lost.Contains(id))
+            {
+                window.Width = InitialWidth;
+                window.Height = InitialHeight;
+                PlaceOnOwnerScreen(window, id);
+            }
+        }
+
+        if (wasFull)
+        {
+            DispatcherTimer.RunOnce(Move, AfterFullScreenExit);
+        }
+        else
+        {
+            Move();
+        }
+    }
+
+    private static void GoHome(BeamerWindow window, WindowPlacement p)
+    {
+        window.WindowState = WindowState.Normal;
+        window.Position = new PixelPoint(p.X, p.Y);
+        window.Width = p.Width;
+        window.Height = p.Height;
+        if (p.Mode != WindowMode.Normal)
+        {
+            // Once it sits on its screen: fullscreen goes to the screen the window is on.
+            DispatcherTimer.RunOnce(() => window.WindowState = p.Mode == WindowMode.FullScreen ? WindowState.FullScreen : WindowState.Maximized,
+                AfterFullScreenExit);
+        }
     }
 
     public string? ScreenText(DisplayId id)
