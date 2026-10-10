@@ -46,6 +46,8 @@ jobs:
           global-json-file: global.json
       - name: Native parts (libmpv, yt-dlp, ffmpeg, cloudflared)
         shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: ./scripts/fetch-natives.ps1
       - name: Tests
         run: dotnet test --nologo -v q

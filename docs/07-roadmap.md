@@ -633,6 +633,23 @@ songs would stay singable.
 
 ---
 
+## Sprint 24 — Release pipeline  *(in progress)*
+
+Goal: installable apps built on GitHub, published as Releases, updating themselves. Not signed by Apple or
+Microsoft (no yearly fee): users confirm once — macOS "Open Anyway", Windows "More info → Run anyway".
+
+- [x] macOS `.app` that signs and runs: tools in `Contents/Resources/natives`, every file signed on its own
+      (`--deep` failed on yt-dlp's folder build); libmpv's 48 dylibs self-contained (checked with otool)
+- [x] `.github/workflows/build.yml`: macOS Apple Silicon + Intel (dmg), Windows (Velopack Setup.exe), tests first
+- [x] Velopack SDK in the app (`VelopackApp.Build().Run()`)
+- [ ] First green run on GitHub; packages tested on a Mac and a Windows PC without developer tools
+- [ ] Releases: a `v*` tag publishes the packages as a GitHub Release (Velopack for all systems)
+- [ ] In-app update notice ("Update available — Install now / Later", never during a song)
+- [ ] Linux (AppImage)
+- [ ] README: download, the one-time "Open Anyway" / "Run anyway" steps; first beta release
+
+---
+
 ## Later / ideas
 
 - Flaky test: `SqliteLoadFailureStoreTests.Save_RoundTrips_UpdatesAndRemoves` failed once in a full `dotnet test` run, passes alone —

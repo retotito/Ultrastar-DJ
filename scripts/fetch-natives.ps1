@@ -54,16 +54,28 @@ else {
   Write-Host "✓ cloudflared"
 }
 
-# ── libmpv-2.dll (shinchiro mpv-dev builds, published on SourceForge) ──────
+# ── libmpv-2.dll (mpv-dev builds: zhongfly on GitHub, shinchiro on SourceForge as fallback) ──
 $libmpv = Join-Path $Dest 'libmpv-2.dll'
 if (Test-Path $libmpv) { Write-Host "✓ libmpv present" }
 else {
   Write-Host "→ downloading libmpv…"
   $tmp = Join-Path ([IO.Path]::GetTempPath()) "mpv-$(Get-Random)"
   New-Item -ItemType Directory -Force -Path $tmp | Out-Null
-  # "latest" redirects to the newest mpv-dev-x86_64-*.7z; 7z is required to extract it.
-  $url = 'https://sourceforge.net/projects/mpv-player-windows/files/libmpv/latest/download'
-  Invoke-WebRequest $url -OutFile "$tmp\mpv-dev.7z" -UserAgent 'Mozilla/5.0'
+  # GitHub first: SourceForge's mirrors often refuse GitHub Actions machines. The plain x86_64 build (not "-v3",
+  # which needs AVX2) runs on every 64-bit PC. A token (CI) avoids GitHub's rate limit for anonymous calls.
+  $headers = @{ 'User-Agent' = 'UltrastarDJ-fetch-natives' }
+  if ($env:GITHUB_TOKEN) { $headers['Authorization'] = "Bearer $env:GITHUB_TOKEN" }
+  $url = $null
+  try {
+    $release = Invoke-RestMethod 'https://api.github.com/repos/zhongfly/mpv-winbuild/releases/latest' -Headers $headers
+    $url = ($release.assets | Where-Object { $_.name -match '^mpv-dev-x86_64-\d{8}-git-.+\.7z$' } | Select-Object -First 1).browser_download_url
+  } catch { Write-Host "  GitHub not reachable: $($_.Exception.Message)" }
+  if ($url) { Invoke-WebRequest $url -OutFile "$tmp\mpv-dev.7z" }
+  else {
+    # "latest" redirects to the newest mpv-dev-x86_64-*.7z.
+    Invoke-WebRequest 'https://sourceforge.net/projects/mpv-player-windows/files/libmpv/latest/download' -OutFile "$tmp\mpv-dev.7z" -UserAgent 'Mozilla/5.0'
+  }
+  # 7z is required to extract it.
   $sevenZip = Get-Command 7z -ErrorAction SilentlyContinue
   if (-not $sevenZip) { throw "7z not found. Install 7-Zip (winget install 7zip.7zip) and re-run." }
   & $sevenZip.Source x "$tmp\mpv-dev.7z" "-o$tmp\mpv" -y | Out-Null

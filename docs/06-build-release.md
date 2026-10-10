@@ -6,7 +6,7 @@ Targets: **macOS (arm64 + x64)** and **Windows (x64)**. Linux is architecturally
 
 ## Prerequisites per machine
 
-1. **.NET SDK 8** (version pinned in `global.json`). Nothing else is compiled natively, so no Xcode / Visual
+1. **.NET SDK 10** (version pinned in `global.json`). Nothing else is compiled natively, so no Xcode / Visual
    Studio Build Tools are required.
 2. `git clone https://github.com/retotito/Ultrastar-DJ.git`
 3. Fetch native binaries for *this* machine (never committed):
@@ -69,8 +69,13 @@ scripts/bundle-macos.sh out/osx-arm64 "Ultrastar DJ" 0.2.0     # creates out/Ult
 3. Writes `Info.plist` (bundle id `com.retokupfer.ultrastardj`, version, `NSMicrophoneUsageDescription`,
    `LSMinimumSystemVersion`, `NSHighResolutionCapable`).
 4. Fixes dylib load paths if needed (`install_name_tool` → `@executable_path`).
-5. **Ad-hoc signs** everything: `codesign --force --deep -s - "Ultrastar DJ.app"` — required on Apple
-   Silicon; no certificate, no Apple account.
+5. **Ad-hoc signs** without a certificate or Apple account (required on Apple Silicon). Not `--deep`: it takes
+   yt-dlp's `*.dist-info` folders for bundles. codesign treats every file in `Contents/MacOS` as code, so the
+   tools (yt-dlp's folder build, ffmpeg, cloudflared) move to `Contents/Resources/natives/` (`SidecarLocator`
+   looks there too); libmpv and its dylibs stay in `Contents/MacOS/natives/`. Each file in `Contents/MacOS` is
+   signed on its own (.NET's `.dll` too — the signature goes into extended attributes), then ffmpeg and
+   cloudflared, then the bundle; yt-dlp keeps the signature it ships with (its flattened `Python.framework`
+   cannot be re-signed).
 6. Builds the dmg with `hdiutil` (or `create-dmg`).
 
 Repeat with `-r osx-x64` on (or for) Intel. No universal binary — two dmgs, as the prototype shipped.
@@ -95,11 +100,13 @@ Single source: `<Version>` in `Directory.Build.props`. Scripts read it; tags are
 
 ---
 
-## CI (optional, recommended once Sprint 1 passes)
+## CI (`.github/workflows/build.yml`)
 
-GitHub Actions matrix: `macos-14` (arm64), `macos-13` (x64), `windows-latest`. Steps: setup-dotnet →
-fetch-natives → `dotnet test` → publish → bundle → upload artifacts; on tag, create a GitHub Release with the
-dmg/Setup files. Native downloads are cached by hash.
+GitHub Actions (free for this public repository): `macos-14` (Apple Silicon), `macos-15-intel` (Intel),
+`windows-latest`. Each job: setup-dotnet (from `global.json`) → fetch-natives → `dotnet test` → publish +
+package → upload the dmg / `Setup.exe` as an artifact. Runs by hand (Actions → Build → Run workflow, or
+`gh workflow run build.yml`) and on a `v*` tag. Velopack (`vpk`, pinned to the SDK's version) packs Windows;
+`VelopackApp.Build().Run()` is the first line of `Main` (install / update hooks). Linux is not built yet.
 
 ---
 
