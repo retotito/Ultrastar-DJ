@@ -625,6 +625,8 @@ songs would stay singable.
 - [x] Settings → Language with the globe icon
 - [x] Songbook page: 🌐 language picker in the header (remembered on the phone)
 - [x] QR code: whole device pixels per module, 240 px, error correction L (long public links read better)
+- [x] Details popup: as wide as its footer buttons need (at least 876, at most the window); field labels take
+      the widest label's width — longer languages no longer overlap
 - [ ] Later: Filipino, Vietnamese, Indonesian, Turkish, Dutch; Arabic needs right-to-left mirroring (own sprint)
 - [ ] Later: real number / date formats per language (needs `InvariantGlobalization` off — check every number written
       for mpv, ffmpeg and the files)

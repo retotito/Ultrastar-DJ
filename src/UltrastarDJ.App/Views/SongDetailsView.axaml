@@ -8,15 +8,21 @@
 
   <UserControl.Resources>
     <DataTemplate x:Key="FieldRow" x:DataType="vm:DetailField">
-      <Grid ColumnDefinitions="120,*" Margin="0,2">
-        <TextBlock Classes="muted" Text="{Binding Label}" FontSize="{StaticResource TextSm}" />
+      <!-- The label column takes the widest label of its card (at least 120): longer languages must not run into the values. -->
+      <Grid Margin="0,2">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="Auto" MinWidth="120" SharedSizeGroup="FieldLabel" />
+          <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <TextBlock Classes="muted" Text="{Binding Label}" FontSize="{StaticResource TextSm}" Margin="0,0,12,0" />
         <SelectableTextBlock Grid.Column="1" Text="{Binding Value}" FontSize="{StaticResource TextSm}" TextWrapping="Wrap" />
       </Grid>
     </DataTemplate>
   </UserControl.Resources>
 
-  <!-- 860 + 16: room between the scrolling content and Fluent's floating scrollbar (as in the sidebar popovers) -->
-  <Border Classes="card floating" Width="876" Padding="{StaticResource Pad6}">
+  <!-- 860 + 16: room between the scrolling content and Fluent's floating scrollbar (as in the sidebar popovers).
+       Wider when the footer's buttons need it (longer languages) — set in code-behind, never wider than the window. -->
+  <Border x:Name="Card" Classes="card floating" Width="876" Padding="{StaticResource Pad6}">
     <DockPanel>
       <!-- Header: picture, title, artist, source; close -->
       <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,16">
@@ -66,8 +72,8 @@
       </Grid>
 
       <!-- Footer: open elsewhere (left), song actions (right) -->
-      <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto" Margin="0,16,0,0">
-        <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space2}">
+      <Grid x:Name="Footer" DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto" Margin="0,16,0,0">
+        <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space2}" Margin="0,0,16,0">
           <Button Classes="text" Click="OnShowInFolder" IsVisible="{Binding Folder, Converter={x:Static ObjectConverters.IsNotNull}}"
                   ToolTip.Tip="{l:T details.show_song_s_txt}">
             <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
@@ -119,13 +125,13 @@
             <Border Classes="card">
               <StackPanel Spacing="{StaticResource Space2}">
                 <TextBlock Classes="label" Text="{l:T details.song}" />
-                <ItemsControl ItemsSource="{Binding Fields}" ItemTemplate="{StaticResource FieldRow}" />
+                <ItemsControl ItemsSource="{Binding Fields}" ItemTemplate="{StaticResource FieldRow}" Grid.IsSharedSizeScope="True" />
               </StackPanel>
             </Border>
             <Border Grid.Column="2" Classes="card">
               <StackPanel Spacing="{StaticResource Space2}">
                 <TextBlock Classes="label" Text="{l:T details.notes}" />
-                <ItemsControl ItemsSource="{Binding Summary}" ItemTemplate="{StaticResource FieldRow}" />
+                <ItemsControl ItemsSource="{Binding Summary}" ItemTemplate="{StaticResource FieldRow}" Grid.IsSharedSizeScope="True" />
                 <TextBlock Classes="muted" Text="{l:T details.loading}" FontSize="{StaticResource TextSm}" IsVisible="{Binding Loading}" />
               </StackPanel>
             </Border>
