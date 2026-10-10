@@ -25,7 +25,7 @@ public sealed partial class DjWindow : Window
     {
         if (e.Key == Key.Escape && DataContext is DjWindowViewModel { DuetSingers: not null } duet)
         {
-            duet.DuetSingers = null;
+            duet.CloseDuetSingers(ok: false);
             e.Handled = true;
         }
         else if (e.Key == Key.Escape && DataContext is DjWindowViewModel { SongDetails: not null } vm)
@@ -40,7 +40,7 @@ public sealed partial class DjWindow : Window
     {
         if (ReferenceEquals(e.Source, DuetLayer) && DataContext is DjWindowViewModel vm)
         {
-            vm.DuetSingers = null;
+            vm.CloseDuetSingers(ok: false);
         }
     }
 

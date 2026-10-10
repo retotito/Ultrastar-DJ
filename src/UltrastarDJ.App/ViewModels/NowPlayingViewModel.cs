@@ -83,6 +83,7 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
 
         _playback.StateChanged += OnStateChanged;
         _playback.DuetChoiceChanged += () => OnPropertyChanged(nameof(DuetText));
+        _displays.PlayersChanged += () => OnPropertyChanged(nameof(DuetText));
         _countdown = new DispatcherTimer(TimeSpan.FromSeconds(1), DispatcherPriority.Normal, (_, _) => CountdownTick());
         _playback.PicturesChanged += RefreshBox;
         _displays.OpenStateChanged += (_, _) => Refresh();
@@ -402,6 +403,29 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
                 _playback.Resume();
                 break;
             default:
+                // A duet whose singers changed since the DJ confirmed them (a player added / removed, a mic gone):
+                // ask first; the DJ window starts the song once they are confirmed.
+                if (!_playback.SingersConfirmed && _playback.ActivePlayers().Count > 0)
+                {
+                    SingersToConfirmBeforePlay?.Invoke(PlayAfterConfirmAsync);
+                    return;
+                }
+
+                await PlayAfterConfirmAsync();
+                break;
+        }
+    }
+
+    /// <summary>Play pressed on a duet with unconfirmed singers: the DJ window asks, then calls the given action to start.</summary>
+    public event Action<Func<Task>>? SingersToConfirmBeforePlay;
+
+    private async Task PlayAfterConfirmAsync()
+    {
+        switch (PlaybackRules.PlayButtonFor(_playback.State))
+        {
+            case PlayButton.Pause or PlayButton.Resume:
+                return;
+            default:
                 Loading = true;
                 try
                 {
@@ -448,13 +472,15 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
                 return "Duet";
             }
 
+            // ⚠ until the DJ confirmed these singers (players changed on a display or in Audio Input since).
+            string check = _playback.SingersConfirmed ? "" : "⚠ ";
             if (singers is [(int only, DuetVoices.BothVoices)])
             {
-                return $"Duet — {_players.Get(only).Name} sings both voices";
+                return $"{check}Duet — {_players.Get(only).Name} sings both voices";
             }
 
             string VoiceName(int voice) => (voice == 0 ? song.Voice1 : song.Voice2) is { Length: > 0 } n ? n : $"voice {voice + 1}";
-            return "Duet: " + string.Join(" · ", singers.OrderBy(s => s.Voice).Select(s => $"{_players.Get(s.PlayerId).Name} → {VoiceName(s.Voice)}"));
+            return check + "Duet: " + string.Join(" · ", singers.OrderBy(s => s.Voice).Select(s => $"{_players.Get(s.PlayerId).Name} → {VoiceName(s.Voice)}"));
         }
     }
 

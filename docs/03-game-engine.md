@@ -94,10 +94,13 @@ song starts, stops on `Score`/`Stop`. In the mic test it is on whenever at least
 
 Mic and output are separate devices: the mic writes in bursts (its block size, 256–1024 frames on USB), the
 output reads in its own, and the two clocks drift apart slightly. Each mic's reader therefore keeps a lead behind
-the writer covering both blocks (largest mic block, max 2048 + 1.5 output blocks + 128) and nudges its read speed
-by at most ±0.3 % to hold it; about to starve or far behind → jump back to the lead. A fixed 512-sample lead ran
+the writer covering both blocks (largest mic block, max 2048 + 1.5 × the largest output block so far + 128) and
+nudges its read speed by at most ±0.3 % to hold it; each time it runs dry the lead grows by ~10 ms (up to ~50 ms) —
+GC pauses hold the mic's callback up and the output asks first (live: one jump per gen1 GC until it learned); about to starve or far behind → jump back to the lead. A fixed 512-sample lead ran
 dry — the reader overtook the writer and played gaps, heard as a metallic, robotic voice (tests drive both
-callbacks interleaved in time, with drift).
+callbacks interleaved in time, with drift). Crackling evidence in the log when a stream stops: each mic's jumps (ran dry /
+fell behind, largest mic block) and the drop-outs PortAudio reported per device (input/output under- and overflows) —
+counted in the callbacks, logged once.
 
 ### Latency and sync
 

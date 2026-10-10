@@ -153,6 +153,103 @@ public class MonitorMixerTests
         return count;
     }
 
+    /// <summary>
+    /// Like <see cref="RunLive"/>, but as a real Mac does it: the mic in 64-frame blocks, the output asking for varying
+    /// amounts (cycling through <paramref name="outBlocks"/>), and now and then an output callback late (a GC pause or a
+    /// busy system) followed by the next one right away. Returns the left channel from second 2 on.
+    /// </summary>
+    private static List<float> RunJittery(int[] outBlocks, double seconds, int lateEvery = 0, double lateSec = 0, int micPauseEvery = 0, double micPauseSec = 0)
+    {
+        FakeBackend backend = new(48000);
+        MicPipeline mic = new(1, MicChannelSide.Left, 48000) { Threshold = 0 };
+        using MonitorMixer mixer = new(backend, NullLogger<MonitorMixer>.Instance);
+        mixer.Start("out", 0, [mic]);
+
+        const int micBlock = 64;
+        List<float> heard = [];
+        float[] inBuf = new float[micBlock * 2];
+        float[] scratch = new float[micBlock];
+        long micFrames = 0;
+        double tIn = 0, tOut = 0;
+        int calls = 0;
+        double micPausedUntil = 0;
+        while (Math.Min(tIn, tOut) < seconds)
+        {
+            // A GC pause: the mic's callback is held up; afterwards its blocks arrive in one burst.
+            if (tIn <= tOut && tOut >= micPausedUntil)
+            {
+                for (int i = 0; i < micBlock; i++)
+                {
+                    inBuf[2 * i] = (float)(0.5 * Math.Sin(2 * Math.PI * 440 * (micFrames + i) / 48000.0));
+                }
+
+                micFrames += micBlock;
+                mic.Process(inBuf, micBlock, 2, scratch);
+                tIn += micBlock / 48000.0;
+            }
+            else
+            {
+                int block = outBlocks[calls % outBlocks.Length];
+                float[] outBuf = new float[block * 2];
+                backend.Output!(outBuf, block, 2);
+                if (tOut >= 2)
+                {
+                    for (int i = 0; i < block; i++)
+                    {
+                        heard.Add(outBuf[2 * i]);
+                    }
+                }
+
+                calls++;
+                if (micPauseEvery > 0 && calls % micPauseEvery == 0)
+                {
+                    micPausedUntil = tOut + micPauseSec;
+                }
+
+                // A late callback: the output's time moves on as usual, but this call happened late — the mic kept
+                // writing meanwhile (modelled by letting the mic run ahead of the output clock for a moment).
+                tOut += block / 48000.0;
+                if (lateEvery > 0 && calls % lateEvery == 0)
+                {
+                    tIn -= lateSec;
+                }
+            }
+        }
+
+        return heard;
+    }
+
+    // A 440 Hz tone at 0.5 moves at most ~0.03 between two samples: a bigger step is a jump in the stream — a click.
+    private static int Clicks(List<float> s)
+    {
+        int count = 0;
+        for (int i = 1; i < s.Count; i++)
+        {
+            if (Math.Abs(s[i] - s[i - 1]) > 0.1)
+            {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    [Fact]
+    public void Mixer_OutputAsksForVaryingAmounts_AtMostOneClickWhileItLearns()
+        // Found live: 43 jumps ("ran dry") in a two-minute song with 64-frame mic blocks — each one a click while singing.
+        // The first unusually large block may still catch it out; after that the lead covers it.
+        => Assert.InRange(Clicks(RunJittery([512, 512, 1024, 256, 512, 2048, 512], 30)), 0, 1);
+
+    [Fact]
+    public void Mixer_MicHeldUpByGcPauses_ClicksOnlyWhileItLearns()
+        // Found live: one jump per gen1 GC (6/6, 28/33, 43/53). A pause holds the mic's callback up, the output asks
+        // first, the mixer runs dry and jumps. It must learn the pause and keep enough lead: at most the first few.
+        => Assert.InRange(Clicks(RunJittery([512], 60, micPauseEvery: 300, micPauseSec: 0.015)), 0, 3);
+
+    [Fact]
+    public void Mixer_LateCallbacks_NoClicks()
+        => Assert.Equal(0, Clicks(RunJittery([512], 30, lateEvery: 200, lateSec: 0.02)));
+
     [Theory]
     [InlineData(512, 256)]    // USB mics often deliver 512+ frame blocks: the old fixed 512-sample lead was used up
     [InlineData(1024, 256)]

@@ -73,7 +73,8 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
         _countdown = new DispatcherTimer(TimeSpan.FromSeconds(1), DispatcherPriority.Normal, (_, _) => CountdownTick());
         _scoreAnim = new DispatcherTimer(TimeSpan.FromMilliseconds(33), DispatcherPriority.Render, (_, _) => AnimateScores());
         OnSongbookChanged();
-        OnPlaybackStateChanged(_playback.State);
+        // Opened on the score screen: this display did not take part in that song — it shows the start view.
+        OnPlaybackStateChanged(_playback.State == PlaybackState.Score ? PlaybackState.Loaded : _playback.State);
         RefreshAssignedPlayers();
     }
 

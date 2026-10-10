@@ -104,6 +104,20 @@ public sealed class MonitorMixer : IDisposable
     {
         _line?.Dispose();
         _line = null;
+        // A jump back to the lead is a small click — audible only while that mic carries a voice (crackling evidence).
+        foreach (Source s in _sources)
+        {
+            if (s.Starved + s.FarBehind > 0)
+            {
+                _log.LogWarning("Monitor: player {Player} jumped {Starved}× (ran dry) and {Behind}× (fell behind); largest mic block {Block}",
+                    s.Pipeline.PlayerId, s.Starved, s.FarBehind, s.Pipeline.Monitor.LargestWrite);
+            }
+            else
+            {
+                _log.LogDebug("Monitor: player {Player} played without jumps; largest mic block {Block}", s.Pipeline.PlayerId, s.Pipeline.Monitor.LargestWrite);
+            }
+        }
+
         lock (_gate)
         {
             _sources = [];
@@ -122,16 +136,24 @@ public sealed class MonitorMixer : IDisposable
     private sealed class Source(MicPipeline pipeline, double ratio)
     {
         private const int Margin = 128;
+        // Learned on top of the lead each time the reader ran dry (GC pauses hold the mic's callback up), up to ~50 ms.
+        private const int LearnStep = 480;
+        private const int MaxLearned = 2400;
         // Bursts up to this many samples are covered (USB mics deliver 256–1024); bigger ones are stalls, not blocks.
         private const int MaxBurst = 2048;
         private const double MaxNudge = 0.003;
         private readonly float[] _buf = new float[8192];
         private double _pos = -1;    // absolute (input-rate) read position
         private double _fill;        // smoothed lead (written − read position), input samples
+        private double _maxPerCallback;   // the largest output block seen, input samples
+        private double _learned;          // extra lead after running dry
         private long _bufStart;
         private int _bufLen;
 
         public MicPipeline Pipeline { get; } = pipeline;
+        /// <summary>Jumps back to the lead: about to run dry / fell far behind (each one a small click).</summary>
+        public int Starved { get; private set; }
+        public int FarBehind { get; private set; }
         public float Gain { get; set; } = 1f;
         public bool Muted { get; set; }
         private readonly double _ratio = ratio;   // nominal input samples per output sample
@@ -143,7 +165,9 @@ public sealed class MonitorMixer : IDisposable
             SampleRing ring = Pipeline.Monitor;
             long written = ring.TotalWritten;
             double perCallback = outFrames * _ratio;
-            double target = Math.Min(ring.LargestWrite, MaxBurst) + 1.5 * perCallback + Margin;
+            // Sized for the largest output block so far (macOS asks for varying amounts), plus what running dry taught.
+            _maxPerCallback = Math.Max(_maxPerCallback, perCallback);
+            double target = Math.Min(ring.LargestWrite, MaxBurst) + 1.5 * _maxPerCallback + Margin + _learned;
             if (_pos < 0)
             {
                 // Wait for the lead to exist: started right after the mics (song replay) the ring is still nearly
@@ -160,6 +184,17 @@ public sealed class MonitorMixer : IDisposable
             if (fill < perCallback + 2 || fill > ring.Capacity / 2.0)
             {
                 // About to starve, or far behind (a stall): jump back to the lead instead of playing gaps or lag.
+                if (fill < perCallback + 2)
+                {
+                    Starved++;
+                    _learned = Math.Min(_learned + LearnStep, MaxLearned);
+                    target += LearnStep;
+                }
+                else
+                {
+                    FarBehind++;
+                }
+
                 Resync(written, target);
                 return;
             }

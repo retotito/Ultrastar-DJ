@@ -188,39 +188,90 @@
        Esc keeps the current pick. -->
   <Border x:Name="DuetLayer" Background="#99000000" IsVisible="{Binding DuetSingers, Converter={x:Static ObjectConverters.IsNotNull}}"
           PointerPressed="OnDuetBackdropPressed">
-    <Border Classes="card floating" Width="440" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="{StaticResource Pad6}"
+    <Border Classes="card floating" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="{StaticResource Pad6}" MinWidth="460"
             DataContext="{Binding DuetSingers}" x:DataType="vm:DuetSingersViewModel">
       <StackPanel Spacing="{StaticResource Space3}">
         <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space2}">
           <c:Icon Glyph="group" />
-          <TextBlock Classes="title" Text="{Binding Title, StringFormat='Duet: {0}'}" TextTrimming="CharacterEllipsis" MaxWidth="340" VerticalAlignment="Center" />
+          <TextBlock Classes="title" Text="{Binding Title, StringFormat='Duet: {0}'}" TextTrimming="CharacterEllipsis" MaxWidth="460" VerticalAlignment="Center" />
         </StackPanel>
-        <TextBlock Classes="muted" FontSize="{StaticResource TextSm}" Text="Who sings which voice?" />
-        <Grid ColumnDefinitions="*,170" RowDefinitions="Auto,Auto" RowSpacing="{StaticResource Space2}">
-          <Grid.Resources>
-            <DataTemplate x:Key="Singer" x:DataType="vm:SingerOption">
-              <StackPanel Orientation="Horizontal" Spacing="8">
-                <Border Width="10" Height="10" CornerRadius="5" VerticalAlignment="Center"
-                        Background="{Binding ColorKey, Converter={x:Static vm:PlayerConverters.BrushByKey}}" />
-                <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
-              </StackPanel>
-            </DataTemplate>
-          </Grid.Resources>
-          <TextBlock Text="{Binding Voice1Label}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-          <ComboBox Grid.Column="1" ItemsSource="{Binding Options}" SelectedItem="{Binding Voice1}" ItemTemplate="{StaticResource Singer}" HorizontalAlignment="Stretch" />
-          <TextBlock Grid.Row="1" Text="{Binding Voice2Label}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-          <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding Options}" SelectedItem="{Binding Voice2}" ItemTemplate="{StaticResource Singer}" HorizontalAlignment="Stretch" />
-        </Grid>
-        <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="{Binding SittingOut}"
-                   IsVisible="{Binding SittingOut, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        <TextBlock Classes="muted" FontSize="{StaticResource TextSm}" Text="Who sings which voice? One singer per voice — the others sit out this song."
+                   IsVisible="{Binding ShowTable}" />
+        <TextBlock Text="{Binding OnlyOneText}" TextWrapping="Wrap" MaxWidth="480" HorizontalAlignment="Left" IsVisible="{Binding OnlyOnePlayer}" />
+
+        <!-- Two voice columns, each on its own tint with a divider between them; one radio group per player. A player
+             with neither voice checked sits out. Each display is a block under a line. -->
+        <StackPanel IsVisible="{Binding ShowTable}">
+          <StackPanel.Styles>
+            <Style Selector="Border.voice1">
+              <Setter Property="Background" Value="{DynamicResource BrushSurfaceContainerHigh}" />
+              <Setter Property="BorderBrush" Value="{DynamicResource BrushOutlineVariant}" />
+              <Setter Property="BorderThickness" Value="0,0,1,0" />
+            </Style>
+            <Style Selector="Border.voice2">
+              <Setter Property="Background" Value="{DynamicResource BrushSurfaceContainerHighest}" />
+            </Style>
+          </StackPanel.Styles>
+          <Grid ColumnDefinitions="160,170,170">
+            <Border Grid.Column="1" Classes="voice1" CornerRadius="8,0,0,0" Padding="8,6">
+              <TextBlock Classes="label" Text="{Binding Voice1Label}" TextWrapping="Wrap" HorizontalAlignment="Center" TextAlignment="Center" />
+            </Border>
+            <Border Grid.Column="2" Classes="voice2" CornerRadius="0,8,0,0" Padding="8,6">
+              <TextBlock Classes="label" Text="{Binding Voice2Label}" TextWrapping="Wrap" HorizontalAlignment="Center" TextAlignment="Center" />
+            </Border>
+          </Grid>
+          <ItemsControl ItemsSource="{Binding Sections}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:DuetDisplaySection">
+                <StackPanel>
+                  <Grid ColumnDefinitions="160,170,170">
+                    <Border Grid.Column="1" Classes="voice1" />
+                    <Border Grid.Column="2" Classes="voice2" />
+                    <!-- The line between displays runs across the voice columns too. -->
+                    <Border Grid.ColumnSpan="3" BorderBrush="{DynamicResource BrushOutlineVariant}" BorderThickness="0,1,0,0" Padding="0,8,0,4">
+                      <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" FontWeight="{StaticResource WeightSemibold}" Text="{Binding Title}" />
+                    </Border>
+                  </Grid>
+                  <ItemsControl ItemsSource="{Binding Rows}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:DuetSingerRow">
+                        <Grid ColumnDefinitions="160,170,170" Height="36">
+                          <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                            <Border Width="10" Height="10" CornerRadius="5" VerticalAlignment="Center"
+                                    Background="{Binding ColorKey, Converter={x:Static vm:PlayerConverters.BrushByKey}}" />
+                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="130" />
+                          </StackPanel>
+                          <Border Grid.Column="1" Classes="voice1">
+                            <c:ToggleRadioButton IsChecked="{Binding IsVoice1}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                          </Border>
+                          <Border Grid.Column="2" Classes="voice2">
+                            <c:ToggleRadioButton IsChecked="{Binding IsVoice2}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                          </Border>
+                        </Grid>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <Grid ColumnDefinitions="160,170,170" Height="8">
+            <Border Grid.Column="1" Classes="voice1" CornerRadius="0,0,0,8" />
+            <Border Grid.Column="2" Classes="voice2" CornerRadius="0,0,8,0" />
+          </Grid>
+        </StackPanel>
+
+        <TextBlock Text="{Binding BothVoicesHint}" FontWeight="{StaticResource WeightSemibold}" IsVisible="{Binding ShowTable}" />
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="{StaticResource Space2}">
-          <Button Classes="tonal" Command="{Binding SwapCommand}" ToolTip.Tip="Swap the two voices">
+          <Button Classes="tonal" Command="{Binding SwapCommand}" ToolTip.Tip="Swap the two voices" IsVisible="{Binding ShowTable}">
             <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
               <c:Icon Glyph="swap_vert" FontSize="{StaticResource IconMd}" />
               <TextBlock Text="Swap" />
             </StackPanel>
           </Button>
-          <Button Classes="tonal go" Content="OK" Command="{Binding OkCommand}" IsDefault="True" />
+          <Button Classes="tonal go" Command="{Binding OkCommand}" IsDefault="True" ToolTip.Tip="Pick at least one singer" ToolTip.ShowOnDisabled="True">
+            <TextBlock Text="OK" />
+          </Button>
         </StackPanel>
       </StackPanel>
     </Border>

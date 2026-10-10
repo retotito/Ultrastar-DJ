@@ -116,9 +116,10 @@ public sealed partial class DjWindowViewModel : ViewModelBase
         playback.StateChanged += _ =>
         {
             UpdateLock();
-            AskForDuetSingers();
+            AskForDuetSingersOnLoad();
         };
-        nowPlaying.DuetSingersRequested += () => DuetSingers = new DuetSingersViewModel(playback, () => DuetSingers = null);
+        nowPlaying.DuetSingersRequested += () => OpenDuetSingers(thenPlay: null);
+        nowPlaying.SingersToConfirmBeforePlay += play => AskForDuetSingers(play);
         nowPlaying.DisplaysRequested += () =>
         {
             if (ActivePanel != SidebarPanel.Displays)
@@ -151,11 +152,11 @@ public sealed partial class DjWindowViewModel : ViewModelBase
     [ObservableProperty] private DuetSingersViewModel? _duetSingers;
     private Core.Songs.Song? _askedFor;
 
-    /// <summary>
-    /// A duet was just loaded: 2+ players set up → the popup to pick the two singers; one player → a note that they
-    /// sing both voices. Once per load (Home, Stop, Play again keep the pick).
-    /// </summary>
-    private void AskForDuetSingers()
+    // Play waiting for the duet popup: started on OK.
+    private Func<Task>? _playAfterDuet;
+
+    /// <summary>A duet was just loaded: ask who sings (once per load — Home, Stop, Play again keep the pick).</summary>
+    private void AskForDuetSingersOnLoad()
     {
         if (_playback.State != PlaybackState.Loaded || _playback.Song is not { } song || ReferenceEquals(song, _askedFor))
         {
@@ -163,19 +164,54 @@ public sealed partial class DjWindowViewModel : ViewModelBase
         }
 
         _askedFor = song;
-        if (!_playback.IsDuet)
+        AskForDuetSingers(thenPlay: null);
+    }
+
+    /// <summary>
+    /// The loaded duet's singers are not confirmed (just loaded, or players changed since): the popup — who sings which
+    /// voice, or (one player set up) that they sing both. <paramref name="thenPlay"/>: Play was pressed — the song
+    /// starts once confirmed.
+    /// </summary>
+    private void AskForDuetSingers(Func<Task>? thenPlay)
+    {
+        if (!_playback.IsDuet || _playback.SingersConfirmed || DuetSingers is not null)
         {
             return;
         }
 
-        IReadOnlyList<Core.Players.PlayerConfig> available = _playback.ActivePlayers();
-        if (available.Count >= 2)
+        // One player set up: the same popup, saying they sing both voices (a toast was easy to miss).
+        if (_playback.ActivePlayers().Count >= 1)
         {
-            DuetSingers = new DuetSingersViewModel(_playback, () => DuetSingers = null);
+            OpenDuetSingers(thenPlay);
         }
-        else if (available.Count == 1)
+    }
+
+    private void OpenDuetSingers(Func<Task>? thenPlay)
+    {
+        _playAfterDuet = thenPlay;
+        DuetSingers = new DuetSingersViewModel(_playback, _services.GetRequiredService<IDisplayService>(),
+            _services.GetRequiredService<PlayersService>(), ok => CloseDuetSingers(ok));
+    }
+
+    /// <summary>The popup closed — OK, or Esc / the dimmed area (keeps the pick shown). Either way the DJ saw who sings.</summary>
+    public void CloseDuetSingers(bool ok)
+    {
+        _playback.ConfirmSingers();
+        DuetSingers = null;
+        Func<Task>? play = _playAfterDuet;
+        _playAfterDuet = null;
+        if (ok && play is not null)
         {
-            Notifications.Info($"{song.Title} is a duet", $"{available[0].Name} sings both voices.");
+            _ = play();
+        }
+    }
+
+    // Players added / removed on a display or a mic changed: ask again once the DJ is done there (panel closed).
+    partial void OnActivePanelChanged(SidebarPanel oldValue, SidebarPanel newValue)
+    {
+        if (oldValue is SidebarPanel.Displays or SidebarPanel.AudioInput && newValue != oldValue)
+        {
+            AskForDuetSingers(thenPlay: null);
         }
     }
 

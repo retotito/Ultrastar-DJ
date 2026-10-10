@@ -43,6 +43,15 @@ public class DuetVoicesTests
     [Fact]
     public void NobodySetUp_NobodySings() => Assert.Empty(Sing(2, null));
 
+    [Fact]
+    public void Duet_TheDjPicksOneSinger_TheySingBothVoices()
+        // Several players set up, but the DJ wants one person to sing the whole duet.
+        => Assert.Equal([(4, DuetVoices.BothVoices)], Sing(2, DuetChoice.Solo(4), 1, 2, 4));
+
+    [Fact]
+    public void Duet_SoloPickNoLongerSetUp_FallsBackToTheFirstTwo()
+        => Assert.Equal([(1, 0), (2, 1)], Sing(2, DuetChoice.Solo(4), 1, 2));
+
     private static LyricLine Line(int start, int length, string text) => new(start, [new Note(NoteType.Normal, start, length, 0, text)]);
 
     [Fact]

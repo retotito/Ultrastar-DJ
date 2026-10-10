@@ -128,6 +128,31 @@ public sealed class PlaybackService : IDisposable
         DuetChoiceChanged?.Invoke();
     }
 
+    // The setup the DJ last saw and confirmed (popup closed, or the one-singer note shown): who is on which display,
+    // and who sings which voice.
+    private string? _confirmedSetup;
+
+    /// <summary>
+    /// The duet's setup is still the one the DJ confirmed. False after a player was added, removed or moved between
+    /// displays, or a singer lost their mic: the DJ is asked again (on closing that panel, at the latest at Play).
+    /// </summary>
+    public bool SingersConfirmed => !IsDuet || _confirmedSetup == SetupKey();
+
+    public void ConfirmSingers()
+    {
+        _confirmedSetup = SetupKey();
+        DuetChoiceChanged?.Invoke();
+    }
+
+    // "1@Beamer1 4@Beamer2 | 1:0 4:1" — players set up per open display, then the singers and their voices.
+    private string SetupKey()
+    {
+        IEnumerable<string> placed = new[] { DisplayId.Beamer1, DisplayId.Beamer2 }
+            .Where(_displays.IsOpen)
+            .SelectMany(d => _displays.GetConfig(d).PlayerIds.Where(id => _players.Get(id).Mic is not null).Order().Select(id => $"{id}@{d}"));
+        return $"{string.Join(' ', placed)} | {string.Join(' ', Singers().Select(s => $"{s.PlayerId}:{s.Voice}"))}";
+    }
+
     /// <summary>Who sings the loaded song and which voice, as it stands now (players set up, the DJ's duet pick).</summary>
     public IReadOnlyList<(int PlayerId, int Voice)> Singers()
         => Song?.Notes is { } notes ? DuetVoices.Singers([.. ActivePlayers().Select(p => p.Id)], notes.Count, DuetChoice) : [];
@@ -214,6 +239,7 @@ public sealed class PlaybackService : IDisposable
             await _media.Game.LoadAsync(plan, ct);
             Song = loaded;
             DuetChoice = null;   // a new song: the DJ picks its duet singers again
+            _confirmedSetup = null;
             Plan = plan;
             State = PlaybackState.Loaded;
             _ = LoadPicturesAsync(loaded);

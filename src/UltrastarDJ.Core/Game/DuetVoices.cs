@@ -2,8 +2,15 @@ using UltrastarDJ.Core.Songs;
 
 namespace UltrastarDJ.Core.Game;
 
-/// <summary>The DJ's pick for a duet: which player sings voice 1 and which voice 2.</summary>
-public sealed record DuetChoice(int Voice1PlayerId, int Voice2PlayerId);
+/// <summary>
+/// The DJ's pick for a duet: which player sings voice 1 and which voice 2 — or, with no second player, one player
+/// who sings both voices (<see cref="Solo"/>).
+/// </summary>
+public sealed record DuetChoice(int Voice1PlayerId, int? Voice2PlayerId)
+{
+    /// <summary>One player sings both voices, merged.</summary>
+    public static DuetChoice Solo(int playerId) => new(playerId, null);
+}
 
 /// <summary>
 /// Who sings a song, and which voice (note track). Solo: everyone set up, voice 1. Duet: exactly two — the DJ's
@@ -30,9 +37,14 @@ public static class DuetVoices
             return [(available[0], BothVoices)];
         }
 
-        if (chosen is { } c && c.Voice1PlayerId != c.Voice2PlayerId && available.Contains(c.Voice1PlayerId) && available.Contains(c.Voice2PlayerId))
+        if (chosen is { Voice2PlayerId: null } solo && available.Contains(solo.Voice1PlayerId))
         {
-            return [(c.Voice1PlayerId, 0), (c.Voice2PlayerId, 1)];
+            return [(solo.Voice1PlayerId, BothVoices)];
+        }
+
+        if (chosen is { Voice2PlayerId: int v2 } c && c.Voice1PlayerId != v2 && available.Contains(c.Voice1PlayerId) && available.Contains(v2))
+        {
+            return [(c.Voice1PlayerId, 0), (v2, 1)];
         }
 
         return [.. available.Take(2).Select((id, i) => (id, i))];

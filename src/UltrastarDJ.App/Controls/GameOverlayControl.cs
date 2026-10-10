@@ -174,12 +174,8 @@ public sealed class GameOverlayControl : Control
 
             AdvanceMeterClock();
 
-            // Lyrics follow the first player's track (duets share a lyric line per track; keep it simple for now).
-            // No player on this beamer: karaoke without scoring — lyrics of the song's first track, no lanes.
-            NoteTrack lyricsTrack = n > 0 ? scene.Lanes[scene.Players[0].Id].Track : scene.Session.Song.Notes![0];
-            IBrush sweep = n > 0 ? scene.Players[0].Brush : LeadIn;
             ctx.FillRectangle(LyricsBackdrop, new Rect(0, lyricsArea.Y, bounds.Width, lyricsH + ProgressBarH));
-            DrawLyrics(ctx, lyricsArea, lyricsTrack, scene.Session.Song, sweep, beat, pos, mainSize, nextSize);
+            IBrush sweep = DrawVoices(ctx, lyricsArea, scene, beat, pos, mainSize, nextSize);
             DrawTimes(ctx, lyricsArea, bar, scene, sweep, timeSize);
         }
     }
@@ -673,9 +669,91 @@ public sealed class GameOverlayControl : Control
     // pauses, and a GC pause stalls the audio callbacks on the same CoreAudio thread → crackling).
     private sealed record LyricsCache(LyricLine Line, double Size, IBrush Sweep, FormattedText[] Parts, FormattedText[] Swept, double Total, FormattedText? Next);
     private LyricsCache? _lyrics;
+    private LyricsCache? _lyricsA;
+    private LyricsCache? _lyricsB;
 
+    // The voices this display shows lyrics for, with the colour each sweeps in: its singers' voices (each in the colour
+    // of the first player singing it here), or — no singer on this display — every voice of the song, neutral.
+    // Reused per frame: no allocation.
+    private readonly List<(NoteTrack Track, IBrush Sweep)> _voices = new(2);
+
+    /// <summary>
+    /// The lyrics strip: one voice on (singing, or within the lead-in) → its line and the next, in its colour; both voices
+    /// of a duet on at once → two lines, voice 1 above voice 2, each in its colour; none on → the voice that comes next.
+    /// Returns the colour the progress bar uses.
+    /// </summary>
+    private IBrush DrawVoices(DrawingContext ctx, Rect area, GameScene scene, double beat, double pos, double mainSize, double nextSize)
+    {
+        _voices.Clear();
+        foreach (ScenePlayer p in scene.Players)
+        {
+            NoteTrack t = scene.Lanes[p.Id].Track;
+            bool known = false;
+            foreach ((NoteTrack Track, IBrush _) seen in _voices)
+            {
+                known |= ReferenceEquals(seen.Track, t);
+            }
+
+            if (!known)
+            {
+                _voices.Add((t, p.Brush));
+            }
+        }
+
+        if (_voices.Count == 0)
+        {
+            foreach (NoteTrack t in scene.Session.Song.Notes!)
+            {
+                _voices.Add((t, LeadIn));
+            }
+        }
+
+        Song song = scene.Session.Song;
+        if (_voices.Count == 1)
+        {
+            DrawLyrics(ctx, area, _voices[0].Track, song, _voices[0].Sweep, beat, pos, mainSize, nextSize, ref _lyrics);
+            return _voices[0].Sweep;
+        }
+
+        // Which voices are on: singing now, or due within the lead-in (as the lanes).
+        double leadIn = BeatMath.MsToBeats(song.Bpm, LaneLeadInMs);
+        (NoteTrack Track, IBrush Sweep) a = _voices[0], b = _voices[1];
+        LyricLine? lineA = NoteLaneGeometry.ActiveLine(a.Track, beat, 0, leadIn);
+        LyricLine? lineB = NoteLaneGeometry.ActiveLine(b.Track, beat, 0, leadIn);
+        if (lineA is not null && lineB is not null)
+        {
+            // Both sing: two lines in the same strip (it keeps its height), a bit smaller, no preview.
+            double size = mainSize * 0.75;
+            double bottom = area.Bottom - AboveBar;
+            DrawLyrics(ctx, area, a.Track, song, a.Sweep, beat, pos, size, nextSize, ref _lyricsA, bottom - size * 2.7);
+            DrawLyrics(ctx, area, b.Track, song, b.Sweep, beat, pos, size, nextSize, ref _lyricsB, bottom - size * 1.35);
+            return a.Sweep;
+        }
+
+        // One voice on — or none: the one whose next phrase comes first.
+        bool showA = lineA is not null || (lineB is null && FirstNoteAfter(a.Track, beat) <= FirstNoteAfter(b.Track, beat));
+        (NoteTrack Track, IBrush Sweep) v = showA ? a : b;
+        DrawLyrics(ctx, area, v.Track, song, v.Sweep, beat, pos, mainSize, nextSize, ref _lyrics);
+        return v.Sweep;
+    }
+
+    private static double FirstNoteAfter(NoteTrack track, double beat)
+    {
+        foreach (LyricLine l in track.Lines)
+        {
+            if (l.EndBeat > beat)
+            {
+                return l.FirstNoteBeat;
+            }
+        }
+
+        return double.MaxValue;
+    }
+
+    // cache: the slot this line is cached in (single voice, or voice 1 / voice 2 of a duet). top: where the line goes —
+    // null = the normal layout (line above its preview, anchored to the bar); set = a duet line, without preview.
     private void DrawLyrics(DrawingContext ctx, Rect area, NoteTrack track, Song song, IBrush sweep, double beat, double pos,
-        double mainSize, double nextSize)
+        double mainSize, double nextSize, ref LyricsCache? cache, double? top = null)
     {
         LyricLine? line = NoteLaneGeometry.ActiveLine(track, beat);
         if (line is null)
@@ -683,12 +761,12 @@ public sealed class GameOverlayControl : Control
             return;
         }
 
-        LyricsCache c = _lyrics is { } cached && ReferenceEquals(cached.Line, line) && cached.Size == mainSize && ReferenceEquals(cached.Sweep, sweep)
+        LyricsCache c = cache is { } cached && ReferenceEquals(cached.Line, line) && cached.Size == mainSize && ReferenceEquals(cached.Sweep, sweep)
             ? cached
-            : (_lyrics = BuildLyrics(track, line, mainSize, nextSize, sweep));
+            : (cache = BuildLyrics(track, line, mainSize, nextSize, sweep));
 
         // Anchored to the bottom: the next phrase ends just above the progress bar, the current line above it.
-        double y = area.Bottom - AboveBar - nextSize * 1.3 - mainSize * 1.35;
+        double y = top ?? area.Bottom - AboveBar - nextSize * 1.3 - mainSize * 1.35;
 
         // Current phrase centred, each syllable swept by its beat progress.
         double x = area.X + (area.Width - c.Total) / 2;
@@ -718,7 +796,7 @@ public sealed class GameOverlayControl : Control
             ctx.FillRectangle(LeadIn, new Rect(area.X + (area.Width - w) / 2, y - 10, w, 6));
         }
 
-        if (c.Next is { } next)
+        if (c.Next is { } next && top is null)
         {
             ctx.DrawText(next, new Point(area.X + (area.Width - next.Width) / 2, y + mainSize * 1.35));
         }

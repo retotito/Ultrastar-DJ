@@ -223,9 +223,20 @@ public sealed class PortAudioBackend : IAudioBackend
         // Set once if our callback threw; from then on the stream plays silence. Logged on Dispose (no logging here).
         private volatile Exception? _failure;
 
+        // Drop-outs the OS reported (crackling evidence): counted in the callback, logged once on Dispose.
+        private int _inputUnderflows, _inputOverflows, _outputUnderflows, _outputOverflows;
+
         private StreamCallbackResult OnCallback(nint input, nint output, uint frameCount, ref StreamCallbackTimeInfo timeInfo, StreamCallbackFlags flags, nint userData)
         {
             int frames = (int)frameCount;
+            if (flags != 0)
+            {
+                if ((flags & StreamCallbackFlags.InputUnderflow) != 0) { _inputUnderflows++; }
+                if ((flags & StreamCallbackFlags.InputOverflow) != 0) { _inputOverflows++; }
+                if ((flags & StreamCallbackFlags.OutputUnderflow) != 0) { _outputUnderflows++; }
+                if ((flags & StreamCallbackFlags.OutputOverflow) != 0) { _outputOverflows++; }
+            }
+
             Span<float> outSpan = output != 0 ? new((void*)output, frames * channels) : default;
             outSpan.Clear();
             if (_failure is not null)
@@ -281,6 +292,13 @@ public sealed class PortAudioBackend : IAudioBackend
             if (_failure is { } failure)
             {
                 owner._log.LogError(failure, "Audio callback failed on {Device}; the stream played silence from then on", deviceId);
+            }
+
+            // Each of these is an audible drop-out: the OS had no data in time (underflow) or had to drop some (overflow).
+            if (_inputUnderflows + _inputOverflows + _outputUnderflows + _outputOverflows > 0)
+            {
+                owner._log.LogWarning("{Device}: drop-outs — input underflow {InU}, input overflow {InO}, output underflow {OutU}, output overflow {OutO}",
+                    deviceId, _inputUnderflows, _inputOverflows, _outputUnderflows, _outputOverflows);
             }
         }
     }

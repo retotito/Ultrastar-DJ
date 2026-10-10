@@ -502,13 +502,36 @@ USDB marks them "[DUET]" in the title). The format has no third voice.
 - [x] Who sings a duet (`Core.Game.DuetVoices.Singers`, tested): exactly two — the DJ's pick, else the first two set up
       (players 1 and 3 → 1 voice 1, 3 voice 2); the others sit out (no lane, no score, no mic in the mix)
 - [x] A single singer gets both voices merged into one track (where both sing at once, voice 1) (`DuetVoices.Merge`, tested)
-- [ ] Lyrics line per display: the voice singing now, swept in its colour; two lines while both sing
-- [x] Loading a duet with 2+ players set up opens "Duet: <title> — who sings which voice?" (two drop-downs with the
-      singers' names from `#P1`/`#P2`, `#DUETSINGERP1/2` or USDB's `p1=`/`p2=` in `#VIDEO`; Swap; picking the other
-      voice's singer swaps; Esc / backdrop keeps the pick). One player: a note "… is a duet — <name> sings both voices"
+- [x] Lyrics line per display (its singers' voices; no singer → every voice, neutral): one voice on (singing or within the
+      3 s lead-in) → its line and preview in its singer's colour; both on → two lines, voice 1 above voice 2, each in its
+      colour, a bit smaller, no preview (the strip keeps its height); none → the voice that comes next. Separate displays
+      already showed their own voice. Allocation-free per frame
+- [x] Popup: a selected voice can be clicked off again (`Controls.ToggleRadioButton`) — one voice left → that player sings both
+- [x] Loading a duet with 2+ players set up opens "Duet: <title> — who sings which voice?": per open display with players,
+      its players (with a mic), each Voice 1 / Voice 2 / sits out (radio buttons; column heads with the singers' names
+      from `#P1`/`#P2`, `#DUETSINGERP1/2` or USDB's `p1=`/`p2=` in `#VIDEO`). Each voice has one singer — giving it to
+      someone takes it from whoever had it; OK needs both voices; Swap; nobody is moved between displays; Esc / backdrop
+      keeps the pick. No open display with players → no popup. One player: a note "… is a duet — <name> sings both voices"
+- [x] Popup look: no "sits out" column (neither voice = sits out); the two voice columns on their own tints with a divider,
+      each display a block under a full-width line (checked with screenshots)
+- [x] Fix: moving players between displays (same singers) or adding one did not ask again — the confirmed setup now is
+      players per display + singers, not only the singers
+- [x] Fix: a display opened on the score screen showed the last song's scores — it did not take part; it shows the start view
+- [x] Popup: OK with only one voice picked — that player sings both voices (`DuetChoice.Solo`, tested); the popup says so
+      ("Player 1 sings both voices."). Only one player set up: the same popup in the middle ("Only one player is set up —
+      … sings both voices. To sing it as a duet, assign a second player in Game Displays.") instead of an easy-to-miss toast
+- [x] Crackling once in a duet (two mics on two devices, two displays) — not reproduced; no memory leak (heap flat at
+      ~101 MB). Diagnostics added: monitor jumps per mic and PortAudio drop-outs per device, logged when a stream stops
+- [x] Fix (found with those diagnostics): the monitor mixer ran dry 6–43× per song — almost one jump per gen1 GC (6/6,
+      28/33, 43/53): a pause holds the mic's callback up, the output asks first. Each jump is a click while singing. The
+      lead now covers the largest output block seen and grows ~10 ms each time it runs dry (≤ 50 ms). Tests first:
+      varying output blocks 1 → 0 clicks, GC-like mic pauses 4 → 1 click in 60 s
 - [x] Game Player: "Duet: Reto → Bradley Cooper · Anna → Lady Gaga" under the artist, "change" reopens the pick (not while it runs)
+- [x] Singers changed after the pick (a player added / removed on a display, a mic set to none or unplugged): the Game
+      Player line shows ⚠, and the popup comes back when Game Displays / Audio Input closes — at the latest at Play, where
+      OK then starts the song. Same singers as confirmed (e.g. only the mic device swapped) → no popup
 - [x] Verified live: duet with players 1 + 2 (popup, lanes, Game Player line)
-- [ ] Bug: players 1 + 4 picked for a duet — player 4 gets no note bars (found live, not yet investigated)
+- [x] ~~Bug: players 1 + 4 — player 4 gets no note bars~~ — not a bug: sung into the wrong mic
 - [ ] Verified live
 - Next: duet marker in the library (filter) and on the songbook; swapping voices
 
