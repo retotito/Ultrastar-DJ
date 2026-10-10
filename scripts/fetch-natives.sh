@@ -1,19 +1,18 @@
 #!/usr/bin/env zsh
 # Download native dependencies for THIS machine into natives/<rid>/.
-# Idempotent: existing files are skipped. Run once after cloning, and again after `brew upgrade mpv`.
+# Idempotent: existing files are skipped. Run once after cloning.
 #
 #   zsh scripts/fetch-natives.sh
 #
-# In-process libraries (libmpv + its dependencies) must match the CPU architecture and are
-# collected from Homebrew's mpv with dylibbundler. Sidecar processes (yt-dlp, ffmpeg) are
-# downloaded as prebuilt binaries.
+# In-process libraries (libmpv + its dependencies) come from IINA's app (universal, macOS 11+).
+# Sidecar processes (yt-dlp, ffmpeg, cloudflared) are downloaded as prebuilt binaries.
 set -euo pipefail
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 ARCH=$(uname -m)
 case "$ARCH" in
-  arm64)  RID=osx-arm64; BREW_PREFIX=/opt/homebrew ;;
-  x86_64) RID=osx-x64;   BREW_PREFIX=/usr/local ;;
+  arm64)  RID=osx-arm64 ;;
+  x86_64) RID=osx-x64 ;;
   *) echo "Unsupported architecture: $ARCH"; exit 1 ;;
 esac
 DEST="$ROOT/natives/$RID"
@@ -68,37 +67,40 @@ else
   echo "✓ cloudflared $("$DEST/cloudflared" --version | head -1)"
 fi
 
-# ── libmpv + dependency dylibs ───────────────────────────────────────────────
+# ── libmpv + dependency dylibs (from IINA) ──────────────────────────────────
+# Homebrew builds for the macOS it runs on (15 on GitHub's Intel runner), so its dylibs refuse to load on older
+# Macs. IINA ships a universal libmpv (x86_64 + arm64, macOS 11+) with LuaJIT, which mpv's YouTube support
+# (ytdl_hook) needs. Its dylibs name each other via @rpath; IINA's executable supplies that rpath, ours does not,
+# so every dylib gets @loader_path as rpath.
+IINA_VERSION=1.5.0
 if [[ -f "$DEST/libmpv.2.dylib" ]]; then
   echo "✓ libmpv present"
 else
-  if ! command -v brew >/dev/null; then
-    echo "✗ Homebrew not found — install it, then: brew install mpv dylibbundler"; exit 1
-  fi
-  for f in mpv dylibbundler; do
-    brew list --versions "$f" >/dev/null 2>&1 || { echo "→ brew install $f"; brew install "$f"; }
+  echo "→ downloading IINA $IINA_VERSION for its libmpv…"
+  TMP=$(mktemp -d)
+  curl -fsSL "https://github.com/iina/iina/releases/download/v$IINA_VERSION/IINA.v$IINA_VERSION.dmg" -o "$TMP/iina.dmg"
+  hdiutil attach -quiet -nobrowse -readonly -mountpoint "$TMP/mnt" "$TMP/iina.dmg"
+  FW="$TMP/mnt/IINA.app/Contents/Frameworks"
+  # libmpv and everything it loads, nothing else (IINA's Swift libraries are not needed).
+  typeset -A seen
+  queue=(libmpv.2.dylib)
+  while (( ${#queue} )); do
+    lib=${queue[1]}; queue=(${queue[2,-1]})
+    [[ -n ${seen[$lib]:-} ]] && continue
+    seen[$lib]=1
+    cp "$FW/$lib" "$DEST/$lib"
+    for dep in $(otool -L "$FW/$lib" | awk 'NR>1 && $1 ~ /^@rpath\// { sub("@rpath/", "", $1); print $1 }'); do
+      [[ -z ${seen[$dep]:-} ]] && queue+=($dep)
+    done
   done
-  SRC=$(brew --prefix mpv)/lib/libmpv.2.dylib
-  [[ -f "$SRC" ]] || { echo "✗ $SRC not found"; exit 1; }
-  echo "→ collecting libmpv and dependencies with dylibbundler…"
-  # dylibbundler -od deletes the dest folder, so work in a staging dir and merge afterwards.
-  STAGE=$(mktemp -d)
-  cp "$SRC" "$STAGE/libmpv.2.dylib"
-  chmod u+w "$STAGE/libmpv.2.dylib"
-  # -x: binary to fix; -d: where deps go; -p: new install-name prefix; -b: bundle deps; -cd: create dest
-  dylibbundler -cd -b -x "$STAGE/libmpv.2.dylib" -d "$STAGE/libs" -p "@loader_path/" 2>&1 | grep -v "install_name_tool: warning" >/dev/null
-  mv "$STAGE/libs"/*.dylib "$DEST/"
-  mv "$STAGE/libmpv.2.dylib" "$DEST/"
-  rm -rf "$STAGE"
-  # dylibbundler can emit a duplicate LC_RPATH, which dyld refuses to load ("duplicate LC_RPATH"). Dedupe.
+  hdiutil detach -quiet "$TMP/mnt"
+  rm -rf "$TMP"
   for lib in "$DEST"/*.dylib; do
     chmod u+w "$lib"
-    n=$(otool -l "$lib" | grep -A2 LC_RPATH | grep -c "path @loader_path/" || true)
-    while (( n > 1 )); do install_name_tool -delete_rpath "@loader_path/" "$lib" 2>/dev/null; n=$((n-1)); done
+    install_name_tool -add_rpath @loader_path "$lib" 2>/dev/null
+    codesign --force -s - "$lib" 2>/dev/null   # IINA's signature breaks with the new rpath
   done
-  # Homebrew dylibs are ad-hoc signed; rewriting load commands invalidates that → re-sign.
-  for lib in "$DEST"/*.dylib; do codesign --force -s - "$lib" 2>/dev/null; done
-  echo "✓ libmpv + $(ls "$DEST"/*.dylib | wc -l | tr -d ' ') dylibs"
+  echo "✓ libmpv + $(ls "$DEST"/*.dylib | wc -l | tr -d ' ') dylibs (IINA $IINA_VERSION, macOS 11+)"
 fi
 
 echo "✓ done — $(du -sh "$DEST" | cut -f1) in natives/$RID"

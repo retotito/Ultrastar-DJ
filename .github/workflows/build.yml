@@ -25,7 +25,7 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           global-json-file: global.json
-      - name: Native parts (Homebrew mpv + dylibbundler, yt-dlp, ffmpeg, cloudflared)
+      - name: Native parts (libmpv from IINA, yt-dlp, ffmpeg, cloudflared)
         run: zsh scripts/fetch-natives.sh
       - name: Tests
         run: dotnet test --nologo -v q

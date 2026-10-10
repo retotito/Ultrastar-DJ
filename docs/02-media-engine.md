@@ -200,7 +200,7 @@ This gives YouTube a real readiness signal — the prototype had none.
   thread to see `MPV_EVENT_SHUTDOWN` → `mpv_terminate_destroy`. Calling terminate while another thread is in
   `mpv_wait_event` deadlocks.
 - `af-metadata/<label>` does not reliably notify via `mpv_observe_property`; poll it (50 ms) from the event loop.
-- `dylibbundler` may write a duplicate `LC_RPATH`, which dyld refuses ("duplicate LC_RPATH"); `fetch-natives.sh` dedupes.
+- The macOS libmpv comes from IINA (universal, macOS 11+). Its dylibs use `@rpath`, which IINA's executable supplies; `fetch-natives.sh` adds `@loader_path` as rpath to each and re-signs.
 
 ---
 
