@@ -348,12 +348,21 @@
       </Grid>
     </ScrollViewer>
 
-    <!-- Footer: shown / total -->
+    <!-- Footer: shown / total; USDB song texts downloading for offline use (click → Song Sources) -->
     <Border Grid.Row="3" Padding="{StaticResource Pad2}"
             BorderBrush="{DynamicResource BrushOutlineVariant}" BorderThickness="0,1,0,0">
-      <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Margin="4,0,0,0">
-        <Run Text="{Binding ShownCount}" /><Run Text=" / " /><Run Text="{Binding TotalCount}" /><Run Text=" songs" />
-      </TextBlock>
+      <Grid ColumnDefinitions="Auto,Auto,*">
+        <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Margin="4,0,0,0" VerticalAlignment="Center">
+          <Run Text="{Binding ShownCount}" /><Run Text=" / " /><Run Text="{Binding TotalCount}" /><Run Text=" songs" />
+        </TextBlock>
+        <Button Grid.Column="1" Classes="text" Padding="8,2" Margin="12,0,0,0" IsVisible="{Binding TextsVisible}" ToolTip.Tip="{Binding TextsTip}"
+                Command="{Binding $parent[Window].((vm:DjWindowViewModel)DataContext).TogglePanelCommand}" CommandParameter="{x:Static vm:SidebarPanel.Sources}">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <c:Spinner Width="14" Height="14" Stroke="{DynamicResource BrushPrimary}" IsVisible="{Binding TextsActive}" />
+            <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="{Binding TextsText}" VerticalAlignment="Center" />
+          </StackPanel>
+        </Button>
+      </Grid>
     </Border>
 
     <StackPanel Grid.Row="2" VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="{StaticResource Space2}"

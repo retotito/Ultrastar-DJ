@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Collections.ObjectModel;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -106,8 +107,12 @@ public sealed partial class LibraryViewModel : ViewModelBase
     [ObservableProperty] private SongFacets? _facets;
 
     public LibraryViewModel(LibraryService library, PreviewViewModel preview, QueueViewModel queue, NowPlayingViewModel nowPlaying, AppSettingsService settings,
-        LoadFailureService failures, SongMarksService marks)
+        LoadFailureService failures, SongMarksService marks, UsdbTextDownloader texts, UsdbTextStore textStore)
     {
+        _texts = texts;
+        _textStore = textStore;
+        texts.Changed += () => Dispatcher.UIThread.Post(OnTextsChanged);
+        textStore.Changed += () => Dispatcher.UIThread.Post(OnTextsChanged);
         _failures = failures;
         _marks = marks;
         _settings = settings;
@@ -129,6 +134,31 @@ public sealed partial class LibraryViewModel : ViewModelBase
         Refresh();
         _library.Changed += () => Dispatcher.UIThread.Post(Refresh);
         _library.AvailabilityChanged += () => Dispatcher.UIThread.Post(Refresh);
+    }
+
+    private readonly UsdbTextDownloader _texts;
+    private readonly UsdbTextStore _textStore;
+
+    // ── Footer: USDB song texts downloading for offline use (Song Sources → USDB) ──
+
+    /// <summary>Shown while texts are still missing for the chosen mode (downloading, paused or waiting).</summary>
+    public bool TextsVisible => _texts.Target > 0 && !_texts.IsComplete;
+    public bool TextsActive => _texts.IsActive;
+    public string TextsText => string.Create(CultureInfo.CurrentCulture,
+        $"Song texts {_texts.PercentText} ({_texts.Done:N0} / {_texts.Target:N0})") + (_texts.IsActive ? "" : _textStore.Paused ? " · paused" : " · waiting");
+    public string TextsTip => _texts.IsActive
+        ? string.Create(CultureInfo.CurrentCulture, $"Downloading USDB song texts for offline use — about {Hours(_texts.Remaining)} left. Click for Song Sources.")
+        : _textStore.Paused ? "Song text download paused — resume it under Song Sources"
+        : "Song text download waits for USDB (offline, not logged in or syncing)";
+
+    private static string Hours(TimeSpan t) => t.TotalHours >= 1 ? $"{t.TotalHours:0.#} h" : $"{Math.Max(1, Math.Ceiling(t.TotalMinutes)):0} min";
+
+    private void OnTextsChanged()
+    {
+        OnPropertyChanged(nameof(TextsVisible));
+        OnPropertyChanged(nameof(TextsActive));
+        OnPropertyChanged(nameof(TextsText));
+        OnPropertyChanged(nameof(TextsTip));
     }
 
     /// <summary>Replaced wholesale on every refresh: 27k USDB rows through ObservableCollection.Add would stall the UI.</summary>

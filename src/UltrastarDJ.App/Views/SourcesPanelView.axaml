@@ -90,6 +90,45 @@
 
         <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap" Text="{Binding UsdbStatus}"
                    IsVisible="{Binding UsdbStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+        <!-- Song texts kept on this computer: songs stay singable if USDB is down or gone. -->
+        <StackPanel Spacing="{StaticResource Space1}" IsVisible="{Binding UsdbConnected}" Margin="0,8,0,0">
+          <TextBlock Classes="label" Text="KEEP SONG TEXTS ON THIS COMPUTER" />
+          <RadioButton GroupName="UsdbTexts" IsChecked="{Binding TextsLoaded}" Content="Only songs I load"
+                       ToolTip.Tip="Each song's text is kept once it was loaded (as before)" />
+          <RadioButton GroupName="UsdbTexts" IsChecked="{Binding TextsFavourites}" Content="Also all favourites"
+                       ToolTip.Tip="Downloads the texts of your favourite USDB songs in the background" />
+          <RadioButton GroupName="UsdbTexts" IsChecked="{Binding TextsAll}"
+                       ToolTip.Tip="Downloads every song text slowly (one every 1.5 s, to spare USDB's server) while the app is open — it continues where it stopped after a restart. After a sync only new and changed songs are fetched.">
+            <StackPanel>
+              <TextBlock Text="All USDB songs" />
+              <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="~200 MB · about 12 h in the background" />
+            </StackPanel>
+          </RadioButton>
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap" Text="{Binding TextsProgress}" VerticalAlignment="Center" />
+            <Button Grid.Column="1" Classes="sidebar" Command="{Binding ToggleTextsPausedCommand}" IsVisible="{Binding TextsCanPause}"
+                    ToolTip.Tip="{Binding TextsPaused, Converter={x:Static vm:BoolConverters.Text}, ConverterParameter='Resume the download|Pause the download'}">
+              <c:Icon Glyph="{Binding TextsPaused, Converter={x:Static vm:BoolConverters.Glyph}, ConverterParameter='play_arrow|pause'}" FontSize="{StaticResource IconMd}" />
+            </Button>
+          </Grid>
+          <!-- Where they are: readable "Artist - Title [id].txt" files, usable by other karaoke programs too. -->
+          <Grid ColumnDefinitions="*,Auto,Auto,Auto" Margin="0,4,0,0">
+            <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="{Binding TextsFolder}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
+                       ToolTip.Tip="{Binding TextsFolder}" />
+            <Button Grid.Column="1" Classes="sidebar" Command="{Binding ShowTextsFolderCommand}" ToolTip.Tip="Show in Finder">
+              <c:Icon Glyph="folder_open" FontSize="{StaticResource IconMd}" />
+            </Button>
+            <Button Grid.Column="2" Classes="sidebar" Command="{Binding ChangeTextsFolderCommand}" IsEnabled="{Binding !TextsMoving}"
+                    ToolTip.Tip="Choose another folder — the song texts already downloaded move along (an external drive or a cloud folder works too)">
+              <c:Icon Glyph="drive_file_move" FontSize="{StaticResource IconMd}" />
+            </Button>
+            <Button Grid.Column="3" Classes="sidebar" Command="{Binding DefaultTextsFolderCommand}" IsVisible="{Binding TextsCustomFolder}" IsEnabled="{Binding !TextsMoving}"
+                    ToolTip.Tip="Back to the app's own folder (the texts move back)">
+              <c:Icon Glyph="settings_backup_restore" FontSize="{StaticResource IconMd}" />
+            </Button>
+          </Grid>
+        </StackPanel>
       </StackPanel>
     </Border>
   </StackPanel>

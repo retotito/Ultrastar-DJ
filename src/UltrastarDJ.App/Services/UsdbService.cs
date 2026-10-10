@@ -9,7 +9,7 @@ namespace UltrastarDJ.App.Services;
 /// <summary>
 /// USDB account, catalog sync and on-demand song text. Credentials are persisted so the app reconnects at
 /// startup; the catalog lives in SQLite and is merged into the library by <see cref="LibraryService"/>.
-/// Song texts are cached on disk (one file per id) so a song plays offline once it has been loaded.
+/// Song texts are kept on disk (<see cref="UsdbTextStore"/>) so a song plays offline once it has been loaded.
 /// </summary>
 public sealed class UsdbService : IDisposable
 {
@@ -19,7 +19,7 @@ public sealed class UsdbService : IDisposable
     private readonly IUsdbCatalog _catalog;
     private readonly LibraryService _library;
     private readonly ISettingsStore _settings;
-    private readonly string _txtCacheDir;
+    private readonly UsdbTextStore _texts;
     private readonly NotificationService _notifications;
     private readonly ConnectivityService _connectivity;
     private readonly ILogger<UsdbService> _log;
@@ -27,7 +27,7 @@ public sealed class UsdbService : IDisposable
     private UsdbDocument _doc;
     private CancellationTokenSource? _syncCts;
 
-    public UsdbService(IUsdbClient client, IUsdbCatalog catalog, LibraryService library, ISettingsStore settings, AppPaths paths,
+    public UsdbService(IUsdbClient client, IUsdbCatalog catalog, LibraryService library, ISettingsStore settings, UsdbTextStore texts,
         NotificationService notifications, ConnectivityService connectivity, ILogger<UsdbService> log)
     {
         _notifications = notifications;
@@ -39,8 +39,7 @@ public sealed class UsdbService : IDisposable
         _settings = settings;
         _log = log;
         _doc = settings.Load(SettingsName, new UsdbDocument(null, null, false));
-        _txtCacheDir = Path.Combine(paths.Cache, "usdb");
-        Directory.CreateDirectory(_txtCacheDir);
+        _texts = texts;
         CatalogCount = catalog.Count;
     }
 
@@ -182,6 +181,7 @@ public sealed class UsdbService : IDisposable
         {
             _syncCts = null;
             cts.Dispose();
+            _texts.RefreshNames();
             _library.RefreshUsdb();
             Changed?.Invoke();
         }
@@ -211,19 +211,17 @@ public sealed class UsdbService : IDisposable
     /// </summary>
     public async Task<string> GetSongTxtAsync(int songId, long? usdbMtime = null, CancellationToken ct = default)
     {
-        string path = Path.Combine(_txtCacheDir, songId.ToString(CultureInfo.InvariantCulture) + ".txt");
-        bool cached = File.Exists(path);
-        bool stale = cached && usdbMtime is > 0 && File.GetLastWriteTimeUtc(path) < DateTimeOffset.FromUnixTimeSeconds(usdbMtime.Value).UtcDateTime;
+        string? path = _texts.PathOf(songId);
+        bool cached = path is not null && File.Exists(path);
+        bool stale = cached && usdbMtime is > 0 && File.GetLastWriteTimeUtc(path!) < DateTimeOffset.FromUnixTimeSeconds(usdbMtime.Value).UtcDateTime;
         if (cached && !stale)
         {
-            return await File.ReadAllTextAsync(path, ct).ConfigureAwait(false);
+            return await File.ReadAllTextAsync(path!, ct).ConfigureAwait(false);
         }
 
         try
         {
-            await EnsureLoggedInAsync(ct).ConfigureAwait(false);
-            string txt = await _client.GetSongTxtAsync(songId, ct).ConfigureAwait(false);
-            await File.WriteAllTextAsync(path, txt, ct).ConfigureAwait(false);
+            string txt = await DownloadTxtAsync(songId, ct).ConfigureAwait(false);
             if (stale)
             {
                 _log.LogInformation("USDB song {Id} changed on USDB — song text refreshed", songId);
@@ -234,8 +232,17 @@ public sealed class UsdbService : IDisposable
         catch (Exception ex) when (stale && ex is UsdbException or HttpRequestException)
         {
             _log.LogWarning("USDB song {Id} changed on USDB but could not be refreshed ({Error}) — using the cached text", songId, ex.Message);
-            return await File.ReadAllTextAsync(path, ct).ConfigureAwait(false);
+            return await File.ReadAllTextAsync(path!, ct).ConfigureAwait(false);
         }
+    }
+
+    /// <summary>Fetches a song text from USDB and keeps it on disk (logging in with saved credentials if needed).</summary>
+    public async Task<string> DownloadTxtAsync(int songId, CancellationToken ct = default)
+    {
+        await EnsureLoggedInAsync(ct).ConfigureAwait(false);
+        string txt = await _client.GetSongTxtAsync(songId, ct).ConfigureAwait(false);
+        await _texts.WriteAsync(songId, txt, ct).ConfigureAwait(false);
+        return txt;
     }
 
     private async Task EnsureLoggedInAsync(CancellationToken ct)

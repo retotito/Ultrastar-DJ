@@ -63,6 +63,8 @@ public sealed partial class App : Application
         // First connectivity probe, then USDB auto-login (skipped while offline; it reconnects when back online).
         _ = StartNetworkAsync(_services);
         _ = _services.GetRequiredService<SongbookService>().AutoStartAsync();
+        // Song texts kept offline: downloads in the background while the app is open (Song Sources → USDB).
+        _services.GetRequiredService<UsdbTextDownloader>();
 
         _services.GetRequiredService<ILogger<App>>().LogInformation(
             "Ultrastar DJ {Version} started", typeof(App).Assembly.GetName().Version?.ToString(3));
@@ -140,7 +142,9 @@ public sealed partial class App : Application
         services.AddSingleton<PlayersService>();
         services.AddSingleton<AudioInputService>();
         services.AddSingleton<LibraryService>();
+        services.AddSingleton<UsdbTextStore>();
         services.AddSingleton<UsdbService>();
+        services.AddSingleton<UsdbTextDownloader>();
         services.AddSingleton<SongResolver>();
         services.AddSingleton<LoadFailureService>();
         services.AddSingleton<SongMarksService>();

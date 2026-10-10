@@ -587,6 +587,24 @@ replaced by "System default" for good. Found unplugging a display with speakers 
 
 ---
 
+## Sprint 22 — USDB song texts offline  *(done)*
+
+A sync only brings the catalog; each song text was fetched on its first load. If USDB went away, only those few
+songs would stay singable.
+
+- [x] Song Sources → USDB: keep song texts of loaded songs only / also all favourites / all USDB songs (~200 MB)
+- [x] Background download while the app is open: one song every 1.5 s (all ≈ 12 h), resumes after a restart, only
+      missing or changed songs (so a sync brings just the new and changed), favourites first; waits while offline,
+      logged out, paused or syncing (`UsdbTextFiles.ToFetch`, tested)
+- [x] Readable files "Artist - Title [id].txt" (old "id.txt" renamed), usable by other karaoke programs
+      (`UsdbTextFiles`, tested)
+- [x] Folder shown in the card: Show in Finder, choose another (texts move along), back to the app folder
+- [x] Progress in the card (time left, pause / resume) and in the library footer with a spinner and the percentage
+- [ ] Verified live — closed without the DJ's check; tried against USDB during development (107 old files renamed,
+      favourites and "all songs" downloading at one song per 1.5 s, panel and footer screenshots)
+
+---
+
 ## Later / ideas
 
 - Flaky test: `SqliteLoadFailureStoreTests.Save_RoundTrips_UpdatesAndRemoves` failed once in a full `dotnet test` run, passes alone —

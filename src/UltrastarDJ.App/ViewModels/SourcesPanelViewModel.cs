@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using UltrastarDJ.App.Services;
 using UltrastarDJ.Core.Abstractions;
+using UltrastarDJ.Core.Songs;
 using UltrastarDJ.Infrastructure.Library;
 
 namespace UltrastarDJ.App.ViewModels;
@@ -32,8 +33,14 @@ public sealed partial class SourcesPanelViewModel : ViewModelBase, IDisposable
     /// <summary>The USDB switch (same idea as a folder's): off hides its songs, the login stays.</summary>
     [ObservableProperty] private bool _usdbEnabled;
 
-    public SourcesPanelViewModel(LibraryService library, UsdbService usdb, NotificationService notifications, ILogger<SourcesPanelViewModel> log)
+    public SourcesPanelViewModel(LibraryService library, UsdbService usdb, UsdbTextStore texts, UsdbTextDownloader downloader,
+        NotificationService notifications, ILogger<SourcesPanelViewModel> log)
     {
+        _texts = texts;
+        _downloader = downloader;
+        _textsMode = texts.Mode;
+        texts.Changed += OnTextsChanged;
+        downloader.Changed += OnTextsChanged;
         _library = library;
         _usdb = usdb;
         _notifications = notifications;
@@ -46,6 +53,118 @@ public sealed partial class SourcesPanelViewModel : ViewModelBase, IDisposable
         // A drive plugged in or pulled: the row's "Not connected" follows within the 5 s poll.
         _library.AvailabilityChanged += OnLibraryChanged;
         _usdb.Changed += OnUsdbChanged;
+    }
+
+    private readonly UsdbTextStore _texts;
+    private readonly UsdbTextDownloader _downloader;
+
+    // ── Song texts kept on this computer (UsdbTextStore / UsdbTextDownloader) ──
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(TextsLoaded), nameof(TextsFavourites), nameof(TextsAll))]
+    private UsdbTextsMode _textsMode;
+    [ObservableProperty] private bool _textsMoving;
+
+    public bool TextsLoaded { get => TextsMode == UsdbTextsMode.Loaded; set { if (value) TextsMode = UsdbTextsMode.Loaded; } }
+    public bool TextsFavourites { get => TextsMode == UsdbTextsMode.Favourites; set { if (value) TextsMode = UsdbTextsMode.Favourites; } }
+    public bool TextsAll { get => TextsMode == UsdbTextsMode.All; set { if (value) TextsMode = UsdbTextsMode.All; } }
+
+    partial void OnTextsModeChanged(UsdbTextsMode value)
+    {
+        if (value != _texts.Mode)
+        {
+            _texts.SetMode(value);
+        }
+    }
+
+    public string TextsFolder => _texts.Folder;
+    public bool TextsPaused => _texts.Paused;
+    public bool TextsCanPause => TextsMode != UsdbTextsMode.Loaded && !_downloader.IsComplete;
+    public string TextsProgress
+    {
+        get
+        {
+            int onDisk = _texts.Count;
+            if (TextsMode == UsdbTextsMode.Loaded || _downloader.Target == 0)
+            {
+                return $"{onDisk:N0} song texts on this computer";
+            }
+
+            if (_downloader.IsComplete)
+            {
+                return $"All {_downloader.Target:N0} {(TextsMode == UsdbTextsMode.All ? "song texts" : "favourites")} on this computer ✓";
+            }
+
+            string state = _downloader.IsActive ? $"about {Hours(_downloader.Remaining)} left" : _texts.Paused ? "paused" : "waiting for USDB";
+            return $"{_downloader.Done:N0} of {_downloader.Target:N0} downloaded ({_downloader.PercentText}) · {state}";
+        }
+    }
+
+    private static string Hours(TimeSpan t) => t.TotalHours >= 1 ? $"{t.TotalHours:0.#} h" : $"{Math.Max(1, Math.Ceiling(t.TotalMinutes)):0} min";
+
+    private void OnTextsChanged() => Dispatcher.UIThread.Post(() =>
+    {
+        TextsMode = _texts.Mode;
+        OnPropertyChanged(nameof(TextsFolder));
+        OnPropertyChanged(nameof(TextsPaused));
+        OnPropertyChanged(nameof(TextsCanPause));
+        OnPropertyChanged(nameof(TextsProgress));
+    });
+
+    [RelayCommand] private void ToggleTextsPaused() => _texts.SetPaused(!_texts.Paused);
+
+    [RelayCommand]
+    private void ShowTextsFolder()
+    {
+        try
+        {
+            Directory.CreateDirectory(_texts.Folder);
+            FileReveal.OpenFolder(_texts.Folder);
+        }
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or IOException)
+        {
+            UsdbStatus = $"Could not open it: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task ChangeTextsFolderAsync()
+    {
+        if (Owner is null)
+        {
+            return;
+        }
+
+        IReadOnlyList<IStorageFolder> picked = await Owner.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions { Title = "Folder for the USDB song texts", AllowMultiple = false });
+        if (picked.Count > 0 && picked[0].TryGetLocalPath() is { } path)
+        {
+            await MoveTextsAsync(path);
+        }
+    }
+
+    [RelayCommand] private Task DefaultTextsFolderAsync() => MoveTextsAsync(null);
+
+    public bool TextsCustomFolder => !_texts.IsDefaultFolder;
+
+    private async Task MoveTextsAsync(string? folder)
+    {
+        TextsMoving = true;
+        try
+        {
+            int moved = await Task.Run(() => _texts.MoveTo(folder));
+            _notifications.Success("Song texts moved", $"{moved:N0} files → {_texts.Folder}");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _log.LogError(ex, "Moving the song texts failed");
+            _notifications.ShowError("Could not move the song texts", ex.Message);
+        }
+        finally
+        {
+            TextsMoving = false;
+            OnPropertyChanged(nameof(TextsCustomFolder));
+            OnTextsChanged();
+        }
     }
 
     private void OnLibraryChanged() => Dispatcher.UIThread.Post(Refresh);
@@ -125,6 +244,8 @@ public sealed partial class SourcesPanelViewModel : ViewModelBase, IDisposable
         _library.Changed -= OnLibraryChanged;
         _library.AvailabilityChanged -= OnLibraryChanged;
         _usdb.Changed -= OnUsdbChanged;
+        _texts.Changed -= OnTextsChanged;
+        _downloader.Changed -= OnTextsChanged;
     }
 
     [RelayCommand]
