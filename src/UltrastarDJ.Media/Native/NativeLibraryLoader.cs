@@ -20,20 +20,37 @@ public static class NativeLibraryLoader
             return 0;
         }
 
+        string? failure = null;
         foreach (string dir in SearchDirs.Value)
         {
             foreach (string candidate in CandidateFileNames())
             {
                 string path = Path.Combine(dir, candidate);
-                if (File.Exists(path) && NativeLibrary.TryLoad(path, out nint handle))
+                if (!File.Exists(path))
                 {
-                    return handle;
+                    continue;
+                }
+
+                try
+                {
+                    return NativeLibrary.Load(path);
+                }
+                catch (Exception e) when (e is DllNotFoundException or BadImageFormatException)
+                {
+                    // The OS's reason (a dependency missing, built for a newer macOS …) — kept for the error below.
+                    failure ??= e.Message;
                 }
             }
         }
 
         // Last resort: whatever the OS finds (e.g. Homebrew's libmpv on a dev machine).
-        return NativeLibrary.TryLoad(OperatingSystem.IsWindows() ? "libmpv-2.dll" : "libmpv.2.dylib", out nint sys) ? sys : 0;
+        if (NativeLibrary.TryLoad(OperatingSystem.IsWindows() ? "libmpv-2.dll" : "libmpv.2.dylib", out nint sys))
+        {
+            return sys;
+        }
+
+        // The shipped library is there but would not load: say why, not .NET's generic list of names it tried.
+        return failure is null ? 0 : throw new DllNotFoundException(failure);
     }
 
     private static IEnumerable<string> CandidateFileNames()
