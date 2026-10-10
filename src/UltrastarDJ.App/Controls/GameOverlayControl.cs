@@ -262,10 +262,11 @@ public sealed class GameOverlayControl : Control
             _labels[player.Id] = lab;
         }
 
+        // The mic meter first, then "Name   score": after the label it moved whenever the score got a digit wider.
         FormattedText label = lab.Text;
-        ctx.DrawText(label, new Point(lane.X, lane.Y - 4));
-        DrawMicMeter(ctx, new Point(lane.X + label.WidthIncludingTrailingWhitespace + labelSize * 0.6, lane.Y - 4 + label.Baseline),
-            labelSize, player, scene.MicActivity(player.Id));
+        double meterW = MicMeterWidth(labelSize);
+        DrawMicMeter(ctx, new Point(lane.X, lane.Y - 4 + label.Baseline), labelSize, player, scene.MicActivity(player.Id));
+        ctx.DrawText(label, new Point(lane.X + meterW + labelSize * 0.5, lane.Y - 4));
 
         // A stave, as in UltraStar Deluxe (a semitone = half a line spacing): a line through the middle of every second
         // semitone row, so notes sit alternately on a line and in the space between two — never "just above / below".
@@ -363,6 +364,12 @@ public sealed class GameOverlayControl : Control
     private double _meterLastSec;
 
     /// <summary>Bars as tall as the name's capitals, standing on its baseline; dots when the mic is silent.</summary>
+    private static double MicMeterWidth(double fontSize)
+    {
+        double w = Math.Max(2, fontSize * 0.13);
+        return MeterBars * w + (MeterBars - 1) * w * 0.7;
+    }
+
     private void DrawMicMeter(DrawingContext ctx, Point baseline, double fontSize, ScenePlayer player, double activity)
     {
         if (!_meter.TryGetValue(player.Id, out double[]? bars))

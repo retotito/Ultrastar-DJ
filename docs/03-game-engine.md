@@ -177,7 +177,7 @@ possible — the whole song (`MaxScore`), or after an early stop what was possib
 
 ## Mic meter (beamer)
 
-Five bars in the player's colour after the name and score, as tall as the name's capitals: shows the singer their mic
+Five bars in the player's colour before the name and score (after them they moved with every wider score), as tall as the name's capitals: shows the singer their mic
 works. Loudness above the player's noise gate (`Core.Players.MicActivity`: 0 at the gate, 1 at +30 dB, logarithmic)
 read per frame from the mic pipeline; each bar follows it with its own slow wobble (not a real spectrum — no FFT on
 the audio thread), rises at once and falls at 2.5 heights per second. Silent or gated: dots.
