@@ -1,3 +1,4 @@
+using UltrastarDJ.App.Localization;
 using System.Globalization;
 using System.Collections.ObjectModel;
 using Avalonia.Threading;
@@ -17,13 +18,13 @@ public sealed record LibraryRow(Song Song, string Source, bool IsAvailable, Load
     public bool IsDuet => Song.IsDuet;
     /// <summary>Marked broken by the DJ (bad notes / timing) — still playable, never offered on the songbook.</summary>
     public bool IsBroken => Mark?.Broken == true;
-    public string? BrokenTip => IsBroken ? $"Marked as broken{(Mark!.Note is { } n ? $": {n}" : "")}" : null;
-    public string FavouriteMenuText => IsFavourite ? "Remove from favourites" : "Favourite";
-    public string BrokenMenuText => IsBroken ? "Not broken" : "Mark as broken";
+    public string? BrokenTip => IsBroken ? (Mark!.Note is { } n ? L.F("library.marked_broken_note", n) : L.T("library.marked_broken")) : null;
+    public string FavouriteMenuText => IsFavourite ? L.T("library.remove_favourite") : L.T("library.favourite_menu");
+    public string BrokenMenuText => IsBroken ? L.T("library.not_broken") : L.T("library.mark_broken");
     /// <summary>The last load failed for a reason of the song's own (<see cref="LoadFailureService"/>).</summary>
     public bool HasFailure => Failure is not null;
     public string? FailureTip => Failure is { } f
-        ? $"Could not be loaded on {f.AtUtc.ToLocalTime():d MMM, HH:mm}: {f.Reason}\nThe mark goes away once it loads again or the song changes."
+        ? L.F("library.load_failed_tip", f.AtUtc.ToLocalTime(), f.Reason)
         : null;
     public string Title => Song.Title;
     public string Artist => Song.Artist;
@@ -42,7 +43,7 @@ public sealed record LibraryRow(Song Song, string Source, bool IsAvailable, Load
     public double Opacity => IsAvailable ? 1.0 : 0.4;
     /// <summary>Why a greyed row's Preview / queue / load are disabled.</summary>
     public string? UnavailableTip => IsAvailable ? null
-        : IsUsdb ? "Offline — USDB songs need the internet" : SourceAvailability.NotConnected(Source);
+        : IsUsdb ? L.T("library.usdb_offline") : SourceAvailability.NotConnected(Source);
     /// <summary>USDB popularity; "—" for local songs, empty for USDB songs under 100 views.</summary>
     public string Stars => Song.Stars is { } n ? new string('★', n) : "—";
 }
@@ -50,23 +51,28 @@ public sealed record LibraryRow(Song Song, string Source, bool IsAvailable, Load
 /// <summary>An entry of the rating filter: exactly <see cref="Stars"/> stars, the DJ's favourites or broken songs, or no filter.</summary>
 public sealed record RatingOption(int? Stars, string Label, bool Favourites = false, bool Broken = false, bool Duets = false)
 {
+    /// <summary>Stars stay stars; the named entries ("Rating", "Favourites", …) are language-file keys.</summary>
+    public string Text => Stars is null ? L.T(Label) : Label;
+
     /// <summary>The coloured icon of a special entry (favourites, duets, broken) — emoji could not take a colour.</summary>
     public string? Glyph => Favourites ? "favorite" : Duets ? "group" : Broken ? "report" : null;
     public string GlyphBrushKey => Favourites ? "BrushFavourite" : Duets ? "BrushDuet" : "BrushError";
     public bool HasGlyph => Glyph is not null;
 
     // An em space stands in for the icon where only the text is measured (FitWidestItem sizes the box by ToString).
-    public override string ToString() => HasGlyph ? "\u2003 " + Label : Label;
+    public override string ToString() => HasGlyph ? "\u2003 " + Text : Text;
 }
 
 /// <summary>An entry of the source filter. <see cref="Key"/> is a source id, or <see cref="AllKey"/>/<see cref="LocalKey"/>.</summary>
 // IsAvailable false: an unplugged folder — greyed, still selectable (to see what is on the drive).
 public sealed record SourceOption(string Key, string Label, bool IsAvailable = true)
 {
+    /// <summary>"All sources" / "All local folders" come from the language file; folder names and USDB as they are.</summary>
+    public string Text => Key is AllKey or LocalKey ? L.T(Label) : Label;
     public double Opacity => IsAvailable ? 1.0 : 0.45;
     public const string AllKey = "*";
     public const string LocalKey = "*local";
-    public override string ToString() => IsAvailable ? Label : $"{Label} (not connected)";
+    public override string ToString() => IsAvailable ? Text : L.F("library.source_not_connected", Text);
 }
 
 /// <summary>Centre panel: the song library with search, filters and sort. Row actions hand songs to preview, queue or game.</summary>
@@ -75,8 +81,8 @@ public sealed partial class LibraryViewModel : ViewModelBase
     // The first entry of each filter is "no filter" and is labelled with the filter's name.
     public const string AnyLanguage = "Language";
     public const string AnyGenre = "Genre";
-    private static readonly RatingOption AnyRating = new(null, "Rating");
-    private static readonly SourceOption AllSources = new(SourceOption.AllKey, "All sources");
+    private static readonly RatingOption AnyRating = new(null, "library.filter_rating");
+    private static readonly SourceOption AllSources = new(SourceOption.AllKey, "library.filter_all_sources");
 
     // Clearing Sources makes the ComboBox write null back into Source; that must not re-enter Refresh.
     private bool _rebuildingSources;
@@ -144,14 +150,14 @@ public sealed partial class LibraryViewModel : ViewModelBase
     /// <summary>Shown while texts are still missing for the chosen mode (downloading, paused or waiting).</summary>
     public bool TextsVisible => _texts.Target > 0 && !_texts.IsComplete;
     public bool TextsActive => _texts.IsActive;
-    public string TextsText => string.Create(CultureInfo.CurrentCulture,
-        $"Song texts {_texts.PercentText} ({_texts.Done:N0} / {_texts.Target:N0})") + (_texts.IsActive ? "" : _textStore.Paused ? " · paused" : " · waiting");
+    public string TextsText => L.F("library.texts_progress", _texts.PercentText, _texts.Done, _texts.Target)
+        + (_texts.IsActive ? "" : _textStore.Paused ? L.T("library.texts_paused_suffix") : L.T("library.texts_waiting_suffix"));
     public string TextsTip => _texts.IsActive
-        ? string.Create(CultureInfo.CurrentCulture, $"Downloading USDB song texts for offline use — about {Hours(_texts.Remaining)} left. Click for Song Sources.")
-        : _textStore.Paused ? "Song text download paused — resume it under Song Sources"
-        : "Song text download waits for USDB (offline, not logged in or syncing)";
+        ? L.F("library.texts_tip_active", Hours(_texts.Remaining))
+        : _textStore.Paused ? L.T("library.texts_tip_paused")
+        : L.T("library.texts_tip_waiting");
 
-    private static string Hours(TimeSpan t) => t.TotalHours >= 1 ? $"{t.TotalHours:0.#} h" : $"{Math.Max(1, Math.Ceiling(t.TotalMinutes)):0} min";
+    public static string Hours(TimeSpan t) => t.TotalHours >= 1 ? L.F("time.hours", t.TotalHours) : L.F("time.minutes", Math.Max(1, Math.Ceiling(t.TotalMinutes)));
 
     private void OnTextsChanged()
     {
@@ -182,8 +188,8 @@ public sealed partial class LibraryViewModel : ViewModelBase
         Source = AllSources;
     }
 
-    private static readonly RatingOption[] BaseRatings = [AnyRating, new(null, "Favourites", Favourites: true), new(null, "Duets", Duets: true), new(1, "★"), new(2, "★★"), new(3, "★★★"), new(4, "★★★★")];
-    private static readonly RatingOption BrokenRating = new(null, "Broken", Broken: true);
+    private static readonly RatingOption[] BaseRatings = [AnyRating, new(null, "library.filter_favourites", Favourites: true), new(null, "library.filter_duets", Duets: true), new(1, "★"), new(2, "★★"), new(3, "★★★"), new(4, "★★★★")];
+    private static readonly RatingOption BrokenRating = new(null, "library.filter_broken", Broken: true);
 
     /// <summary>"Broken" only while broken songs are shown (Layout): hidden songs cannot be filtered on.</summary>
     public IReadOnlyList<RatingOption> Ratings => _showBroken ? [.. BaseRatings, BrokenRating] : BaseRatings;
@@ -206,16 +212,16 @@ public sealed partial class LibraryViewModel : ViewModelBase
     public ObservableCollection<SourceOption> Sources { get; } = [AllSources];
 
     public string SortIndicator(SongSort column) => Sort == column ? (Descending ? " ▼" : " ▲") : "";
-    public string ArtistHeader => "ARTIST" + SortIndicator(SongSort.Artist);
-    public string TitleHeader => "TITLE" + SortIndicator(SongSort.Title);
-    public string YearHeader => "YEAR" + SortIndicator(SongSort.Year);
-    public string LanguageHeader => "LANGUAGE" + SortIndicator(SongSort.Language);
-    public string SourceHeader => "SOURCE" + SortIndicator(SongSort.Source);
-    public string RatingHeader => "RATING" + SortIndicator(SongSort.Rating);
-    public string GenreHeader => "GENRE" + SortIndicator(SongSort.Genre);
-    public string EditionHeader => "EDITION" + SortIndicator(SongSort.Edition);
-    public string CreatorHeader => "CREATOR" + SortIndicator(SongSort.Creator);
-    public string BpmHeader => "BPM" + SortIndicator(SongSort.Bpm);
+    public string ArtistHeader => L.T("column.artist") + SortIndicator(SongSort.Artist);
+    public string TitleHeader => L.T("column.title") + SortIndicator(SongSort.Title);
+    public string YearHeader => L.T("column.year") + SortIndicator(SongSort.Year);
+    public string LanguageHeader => L.T("column.language") + SortIndicator(SongSort.Language);
+    public string SourceHeader => L.T("column.source") + SortIndicator(SongSort.Source);
+    public string RatingHeader => L.T("column.rating") + SortIndicator(SongSort.Rating);
+    public string GenreHeader => L.T("column.genre") + SortIndicator(SongSort.Genre);
+    public string EditionHeader => L.T("column.edition") + SortIndicator(SongSort.Edition);
+    public string CreatorHeader => L.T("column.creator") + SortIndicator(SongSort.Creator);
+    public string BpmHeader => L.T("column.bpm") + SortIndicator(SongSort.Bpm);
 
     /// <summary>Column widths and visibility (Layout panel).</summary>
     public LibraryTableLayout Table { get; }
@@ -388,7 +394,7 @@ public sealed partial class LibraryViewModel : ViewModelBase
         int folders = _library.Sources.Count(s => s.Enabled);
         if (folders > 1 || (folders > 0 && _library.UsdbCount > 0))
         {
-            sources.Add(new SourceOption(SourceOption.LocalKey, "All local folders"));
+            sources.Add(new SourceOption(SourceOption.LocalKey, "library.filter_local_folders"));
         }
 
         // Switched-off folders are not in the library, so not in the filter either.

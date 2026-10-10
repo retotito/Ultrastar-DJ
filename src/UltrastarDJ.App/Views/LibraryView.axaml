@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="using:UltrastarDJ.App.Localization"
              xmlns:vm="using:UltrastarDJ.App.ViewModels"
              xmlns:core="using:UltrastarDJ.Core.Songs"
              xmlns:c="using:UltrastarDJ.App.Controls"
@@ -32,11 +33,11 @@
         <!-- The clear X floats over the search box (same cell, drawn after it): visible whenever there is text — Fluent's
              own X shows only while the box has focus — and it cannot change the box's size. -->
         <Panel Grid.Column="0" Margin="0,0,16,0">
-          <TextBox PlaceholderText="Search title or artist" Text="{Binding Search}" />
+          <TextBox PlaceholderText="{l:T library.search_title_artist}" Text="{Binding Search}" />
           <!-- Opaque in the box's own colour (Fluent's focused text box background): a long search runs under it, not through it. -->
           <Button Classes="sidebar" Width="26" Height="26" Margin="0,0,4,0" HorizontalAlignment="Right" VerticalAlignment="Center"
                   Background="{DynamicResource TextControlBackgroundFocused}"
-                  Command="{Binding ClearSearchCommand}" ToolTip.Tip="Clear the search"
+                  Command="{Binding ClearSearchCommand}" ToolTip.Tip="{l:T library.clear_search}"
                   IsVisible="{Binding Search, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
             <!-- Hover stays opaque: the usual 10 % tint would let the text under it show through. -->
             <Button.Styles>
@@ -47,14 +48,14 @@
             <c:Icon Glyph="close" FontSize="{StaticResource IconSm}" />
           </Button>
         </Panel>
-        <ComboBox Grid.Column="1" ItemsSource="{Binding Ratings}" c:FitWidestItem.IsEnabled="True" c:FitWidestItem.Suffix=" (88,888)" SelectedItem="{Binding Rating}" MinWidth="110" Margin="0,0,8,0" ToolTip.Tip="Popularity on USDB (★ 100–499, ★★ 500–999, ★★★ 1000–1999, ★★★★ 2000+ views) — hides local songs">
+        <ComboBox Grid.Column="1" ItemsSource="{Binding Ratings}" c:FitWidestItem.IsEnabled="True" c:FitWidestItem.Suffix=" (88,888)" SelectedItem="{Binding Rating}" MinWidth="110" Margin="0,0,8,0" ToolTip.Tip="{l:T library.popularity_usdb_100_499}">
           <!-- Closed box: just the name; the counts are for choosing, in the open list. -->
           <ComboBox.SelectionBoxItemTemplate>
             <DataTemplate x:DataType="vm:RatingOption">
               <StackPanel Orientation="Horizontal" Spacing="6">
                 <c:Icon Glyph="{Binding Glyph}" IsVisible="{Binding HasGlyph}" FontSize="{StaticResource IconSm}"
                         Foreground="{Binding GlyphBrushKey, Converter={x:Static vm:PlayerConverters.BrushByKey}}" />
-                <TextBlock Text="{Binding Label}" VerticalAlignment="Center" />
+                <TextBlock Text="{Binding Text}" VerticalAlignment="Center" />
               </StackPanel>
             </DataTemplate>
           </ComboBox.SelectionBoxItemTemplate>
@@ -81,11 +82,18 @@
             </DataTemplate>
           </ComboBox.ItemTemplate>
         </ComboBox>
-        <ComboBox Grid.Column="2" ItemsSource="{Binding Languages}" c:FitWidestItem.IsEnabled="True" c:FitWidestItem.Suffix=" (88,888)" SelectedItem="{Binding Language}" MinWidth="120" Margin="0,0,8,0" ToolTip.Tip="Language">
+        <ComboBox Grid.Column="2" ItemsSource="{Binding Languages}" c:FitWidestItem.IsEnabled="True" c:FitWidestItem.Suffix=" (88,888)" SelectedItem="{Binding Language}" MinWidth="120" Margin="0,0,8,0" ToolTip.Tip="{l:T library.language}">
           <!-- Closed box: just the name; the counts are for choosing, in the open list. -->
           <ComboBox.SelectionBoxItemTemplate>
             <DataTemplate x:DataType="x:String">
-              <TextBlock Text="{Binding}" />
+              <TextBlock>
+                <TextBlock.Text>
+                  <MultiBinding Converter="{x:Static vm:FacetConverters.Name}">
+                    <Binding />
+                    <Binding Path="Code" Source="{x:Static l:Translations.Instance}" />
+                  </MultiBinding>
+                </TextBlock.Text>
+              </TextBlock>
             </DataTemplate>
           </ComboBox.SelectionBoxItemTemplate>
           <ComboBox.ItemTemplate>
@@ -107,11 +115,18 @@
             </DataTemplate>
           </ComboBox.ItemTemplate>
         </ComboBox>
-        <ComboBox Grid.Column="3" ItemsSource="{Binding Genres}" c:FitWidestItem.IsEnabled="True" c:FitWidestItem.Suffix=" (88,888)" SelectedItem="{Binding Genre}" MinWidth="120" Margin="0,0,8,0" ToolTip.Tip="Genre">
+        <ComboBox Grid.Column="3" ItemsSource="{Binding Genres}" c:FitWidestItem.IsEnabled="True" c:FitWidestItem.Suffix=" (88,888)" SelectedItem="{Binding Genre}" MinWidth="120" Margin="0,0,8,0" ToolTip.Tip="{l:T library.genre}">
           <!-- Closed box: just the name; the counts are for choosing, in the open list. -->
           <ComboBox.SelectionBoxItemTemplate>
             <DataTemplate x:DataType="x:String">
-              <TextBlock Text="{Binding}" />
+              <TextBlock>
+                <TextBlock.Text>
+                  <MultiBinding Converter="{x:Static vm:FacetConverters.Name}">
+                    <Binding />
+                    <Binding Path="Code" Source="{x:Static l:Translations.Instance}" />
+                  </MultiBinding>
+                </TextBlock.Text>
+              </TextBlock>
             </DataTemplate>
           </ComboBox.SelectionBoxItemTemplate>
           <ComboBox.ItemTemplate>
@@ -133,11 +148,18 @@
             </DataTemplate>
           </ComboBox.ItemTemplate>
         </ComboBox>
-        <ComboBox Grid.Column="4" ItemsSource="{Binding Sources}" c:FitWidestItem.IsEnabled="True" c:FitWidestItem.Suffix=" (88,888)" SelectedItem="{Binding Source}" MinWidth="140" ToolTip.Tip="Song source">
+        <ComboBox Grid.Column="4" ItemsSource="{Binding Sources}" c:FitWidestItem.IsEnabled="True" c:FitWidestItem.Suffix=" (88,888)" SelectedItem="{Binding Source}" MinWidth="140" ToolTip.Tip="{l:T library.song_source}">
           <!-- Closed box: just the name; the counts are for choosing, in the open list. -->
           <ComboBox.SelectionBoxItemTemplate>
             <DataTemplate x:DataType="vm:SourceOption">
-              <TextBlock Text="{Binding}" Opacity="{Binding Opacity}" />
+              <TextBlock Opacity="{Binding Opacity}">
+                <TextBlock.Text>
+                  <MultiBinding Converter="{x:Static vm:FacetConverters.Name}">
+                    <Binding />
+                    <Binding Path="Code" Source="{x:Static l:Translations.Instance}" />
+                  </MultiBinding>
+                </TextBlock.Text>
+              </TextBlock>
             </DataTemplate>
           </ComboBox.SelectionBoxItemTemplate>
           <ComboBox.ItemTemplate>
@@ -161,7 +183,7 @@
         </ComboBox>
         <!-- Always in place (nothing shifts when a filter is set); dimmed while there is nothing to clear. -->
         <Button Grid.Column="5" Classes="text" Margin="8,0,0,0" Command="{Binding ClearFiltersCommand}"
-                ToolTip.Tip="Clear the search and the filters (rating, language, genre, source)">
+                ToolTip.Tip="{l:T library.clear_search_filters_rating}">
           <c:Icon Glyph="filter_list_off" FontSize="{StaticResource IconSm}" VerticalAlignment="Center" />
         </Button>
       </Grid>
@@ -197,7 +219,7 @@
           <Button Grid.Column="7" Classes="header" IsVisible="{Binding Table.ShowBpm}" Command="{Binding SortByCommand}" CommandParameter="{x:Static core:SongSort.Bpm}"><TextBlock Classes="label" Text="{Binding BpmHeader}" TextTrimming="CharacterEllipsis" /></Button>
           <Button Grid.Column="8" Classes="header" IsVisible="{Binding Table.ShowRating}" Command="{Binding SortByCommand}" CommandParameter="{x:Static core:SongSort.Rating}"><TextBlock Classes="label" Text="{Binding RatingHeader}" TextTrimming="CharacterEllipsis" /></Button>
           <Button Grid.Column="9" Classes="header" IsVisible="{Binding Table.ShowSource}" Command="{Binding SortByCommand}" CommandParameter="{x:Static core:SongSort.Source}"><TextBlock Classes="label" Text="{Binding SourceHeader}" TextTrimming="CharacterEllipsis" /></Button>
-          <TextBlock Grid.Column="10" Classes="label" Text="MEDIA" IsVisible="{Binding Table.ShowMedia}" />
+          <TextBlock Grid.Column="10" Classes="label" Text="{l:T library.media}" IsVisible="{Binding Table.ShowMedia}" />
         </Grid>
 
         <ListBox Grid.Row="1" x:Name="SongList" ItemsSource="{Binding Rows}" SelectedItem="{Binding Selected}"
@@ -227,13 +249,13 @@
                 </Grid.ColumnDefinitions>
                 <Grid.ContextMenu>
                   <ContextMenu>
-                    <MenuItem Header="Preview" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).PreviewCommand}" CommandParameter="{Binding}" ToolTip.Tip="{Binding UnavailableTip}" ToolTip.ShowOnDisabled="True">
+                    <MenuItem Header="{l:T library.preview}" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).PreviewCommand}" CommandParameter="{Binding}" ToolTip.Tip="{Binding UnavailableTip}" ToolTip.ShowOnDisabled="True">
                       <MenuItem.Icon><c:Icon Glyph="play_arrow" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
                     </MenuItem>
-                    <MenuItem Header="Add to queue" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).AddToQueueCommand}" CommandParameter="{Binding}" ToolTip.Tip="{Binding UnavailableTip}" ToolTip.ShowOnDisabled="True">
+                    <MenuItem Header="{l:T library.add_queue}" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).AddToQueueCommand}" CommandParameter="{Binding}" ToolTip.Tip="{Binding UnavailableTip}" ToolTip.ShowOnDisabled="True">
                       <MenuItem.Icon><c:Icon Glyph="queue_music" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
                     </MenuItem>
-                    <MenuItem Header="Load into game" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).LoadIntoGameCommand}" CommandParameter="{Binding}"
+                    <MenuItem Header="{l:T library.load_into_game}" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).LoadIntoGameCommand}" CommandParameter="{Binding}"
                               ToolTip.ShowOnDisabled="True">
                     <ToolTip.Tip>
                       <MultiBinding Converter="{x:Static vm:PlayerConverters.FirstText}">
@@ -248,11 +270,11 @@
                       <MenuItem.Icon><c:Icon Glyph="favorite" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="{Binding BrokenMenuText}" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).ToggleBrokenCommand}" CommandParameter="{Binding}"
-                              ToolTip.Tip="Bad notes or timing: still playable, but never offered on the songbook. Add a note in Details.">
+                              ToolTip.Tip="{l:T library.bad_notes_timing_still}">
                       <MenuItem.Icon><c:Icon Glyph="report" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
                     </MenuItem>
                     <Separator />
-                    <MenuItem Header="Details" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).ShowDetailsCommand}" CommandParameter="{Binding}">
+                    <MenuItem Header="{l:T library.details}" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).ShowDetailsCommand}" CommandParameter="{Binding}">
                       <MenuItem.Icon><c:Icon Glyph="info" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
                     </MenuItem>
                   </ContextMenu>
@@ -265,9 +287,9 @@
                   <c:Icon Grid.Column="1" Glyph="report" FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushError}" VerticalAlignment="Center" Margin="0,0,6,0"
                           IsVisible="{Binding IsBroken}" ToolTip.Tip="{Binding BrokenTip}" Background="Transparent" />
                   <c:Icon Grid.Column="2" Glyph="favorite" FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushFavourite}" VerticalAlignment="Center" Margin="0,0,6,0"
-                          IsVisible="{Binding IsFavourite}" ToolTip.Tip="Favourite" Background="Transparent" />
+                          IsVisible="{Binding IsFavourite}" ToolTip.Tip="{l:T library.favourite}" Background="Transparent" />
                   <c:Icon Grid.Column="3" Glyph="group" FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushDuet}" VerticalAlignment="Center" Margin="0,0,6,0"
-                          IsVisible="{Binding IsDuet}" ToolTip.Tip="Duet — two voices" Background="Transparent" />
+                          IsVisible="{Binding IsDuet}" ToolTip.Tip="{l:T library.duet_two_voices}" Background="Transparent" />
                   <TextBlock Grid.Column="4" Text="{Binding Title}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                 </Grid>
                 <TextBlock Grid.Column="1" Text="{Binding Artist}" Classes="muted" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,8,0"
@@ -302,20 +324,20 @@
                   <TextBlock Text="{Binding Source}" FontSize="{StaticResource TextXs}" TextTrimming="CharacterEllipsis" MaxWidth="70" />
                 </Border>
                 <StackPanel Grid.Column="10" IsVisible="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).Table.ShowMedia}" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
-                  <c:Icon Glyph="music_note" FontSize="{StaticResource IconSm}" IsVisible="{Binding HasLocalAudio}" ToolTip.Tip="Local audio" />
-                  <c:Icon Glyph="movie" FontSize="{StaticResource IconSm}" IsVisible="{Binding HasLocalVideo}" ToolTip.Tip="Local video" />
+                  <c:Icon Glyph="music_note" FontSize="{StaticResource IconSm}" IsVisible="{Binding HasLocalAudio}" ToolTip.Tip="{l:T library.local_audio}" />
+                  <c:Icon Glyph="movie" FontSize="{StaticResource IconSm}" IsVisible="{Binding HasLocalVideo}" ToolTip.Tip="{l:T library.local_video}" />
                   <c:Icon Glyph="smart_display" FontSize="{StaticResource IconSm}" IsVisible="{Binding HasYouTube}" ToolTip.Tip="YouTube" />
                 </StackPanel>
-                <Button Grid.Column="11" Classes="sidebar" Width="28" Height="28" ToolTip.Tip="Actions">
+                <Button Grid.Column="11" Classes="sidebar" Width="28" Height="28" ToolTip.Tip="{l:T library.actions}">
                   <Button.Flyout>
                     <MenuFlyout>
-                      <MenuItem Header="Preview" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).PreviewCommand}" CommandParameter="{Binding}" ToolTip.Tip="{Binding UnavailableTip}" ToolTip.ShowOnDisabled="True">
+                      <MenuItem Header="{l:T library.preview}" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).PreviewCommand}" CommandParameter="{Binding}" ToolTip.Tip="{Binding UnavailableTip}" ToolTip.ShowOnDisabled="True">
                         <MenuItem.Icon><c:Icon Glyph="play_arrow" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
                       </MenuItem>
-                      <MenuItem Header="Add to queue" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).AddToQueueCommand}" CommandParameter="{Binding}" ToolTip.Tip="{Binding UnavailableTip}" ToolTip.ShowOnDisabled="True">
+                      <MenuItem Header="{l:T library.add_queue}" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).AddToQueueCommand}" CommandParameter="{Binding}" ToolTip.Tip="{Binding UnavailableTip}" ToolTip.ShowOnDisabled="True">
                         <MenuItem.Icon><c:Icon Glyph="queue_music" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
                       </MenuItem>
-                      <MenuItem Header="Load into game" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).LoadIntoGameCommand}" CommandParameter="{Binding}"
+                      <MenuItem Header="{l:T library.load_into_game}" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).LoadIntoGameCommand}" CommandParameter="{Binding}"
                               ToolTip.ShowOnDisabled="True">
                     <ToolTip.Tip>
                       <MultiBinding Converter="{x:Static vm:PlayerConverters.FirstText}">
@@ -330,11 +352,11 @@
                         <MenuItem.Icon><c:Icon Glyph="favorite" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
                       </MenuItem>
                       <MenuItem Header="{Binding BrokenMenuText}" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).ToggleBrokenCommand}" CommandParameter="{Binding}"
-                                ToolTip.Tip="Bad notes or timing: still playable, but never offered on the songbook. Add a note in Details.">
+                                ToolTip.Tip="{l:T library.bad_notes_timing_still}">
                         <MenuItem.Icon><c:Icon Glyph="report" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
                       </MenuItem>
                       <Separator />
-                      <MenuItem Header="Details" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).ShowDetailsCommand}" CommandParameter="{Binding}">
+                      <MenuItem Header="{l:T library.details}" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).ShowDetailsCommand}" CommandParameter="{Binding}">
                         <MenuItem.Icon><c:Icon Glyph="info" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
                       </MenuItem>
                     </MenuFlyout>
@@ -353,7 +375,7 @@
             BorderBrush="{DynamicResource BrushOutlineVariant}" BorderThickness="0,1,0,0">
       <Grid ColumnDefinitions="Auto,Auto,*">
         <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Margin="4,0,0,0" VerticalAlignment="Center">
-          <Run Text="{Binding ShownCount}" /><Run Text=" / " /><Run Text="{Binding TotalCount}" /><Run Text=" songs" />
+          <Run Text="{Binding ShownCount}" /><Run Text=" / " /><Run Text="{Binding TotalCount}" /><Run Text="{l:T library.songs}" />
         </TextBlock>
         <Button Grid.Column="1" Classes="text" Padding="8,2" Margin="12,0,0,0" IsVisible="{Binding TextsVisible}" ToolTip.Tip="{Binding TextsTip}"
                 Command="{Binding $parent[Window].((vm:DjWindowViewModel)DataContext).TogglePanelCommand}" CommandParameter="{x:Static vm:SidebarPanel.Sources}">
@@ -368,7 +390,7 @@
     <StackPanel Grid.Row="2" VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="{StaticResource Space2}"
                 IsVisible="{Binding !TotalCount}">
       <c:Icon Glyph="library_music" FontSize="{StaticResource IconXl}" />
-      <TextBlock Classes="muted" Text="No songs yet — add a folder under Song Sources" HorizontalAlignment="Center" />
+      <TextBlock Classes="muted" Text="{l:T library.no_songs_yet_add}" HorizontalAlignment="Center" />
     </StackPanel>
   </Grid>
 </UserControl>

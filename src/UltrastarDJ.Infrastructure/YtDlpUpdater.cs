@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.IO.Compression;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
+using UltrastarDJ.Core.Localization;
 
 namespace UltrastarDJ.Infrastructure;
 
@@ -36,7 +37,7 @@ public sealed class YtDlpUpdater(HttpClient http, AppPaths paths)
     {
         (string asset, string inside) = OperatingSystem.IsWindows() ? ("yt-dlp_win.zip", "yt-dlp.exe")
             : OperatingSystem.IsMacOS() ? ("yt-dlp_macos.zip", "yt-dlp_macos")
-            : throw new PlatformNotSupportedException("yt-dlp updates are supported on macOS and Windows.");
+            : throw new PlatformNotSupportedException(Text.T("ytdlp.platform", "yt-dlp updates are supported on macOS and Windows."));
         string exeName = OperatingSystem.IsWindows() ? "yt-dlp.exe" : "yt-dlp";
 
         // Staged next to the target (same volume), so the final swap is a rename.
@@ -70,7 +71,7 @@ public sealed class YtDlpUpdater(HttpClient http, AppPaths paths)
 
         // Proves the download runs, and pays macOS's first-run scan (~9 s) here instead of on the next song.
         string version = await VersionOfAsync(exe, ct).ConfigureAwait(false)
-            ?? throw new IOException("The downloaded yt-dlp does not start.");
+            ?? throw new IOException(Text.T("ytdlp.does_not_start", "The downloaded yt-dlp does not start."));
 
         if (Directory.Exists(target))
         {

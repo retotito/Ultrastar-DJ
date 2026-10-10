@@ -1,3 +1,5 @@
+using UltrastarDJ.Core.Localization;
+
 namespace UltrastarDJ.Media;
 
 /// <summary>
@@ -132,6 +134,6 @@ public static class MediaSourceResolver
             };
         }
 
-        throw new MediaException("Song has no playable media (no #MP3, #VIDEO or YouTube id).");
+        throw new MediaException(Text.T("media.nothing_to_play", "Song has no playable media (no #MP3, #VIDEO or YouTube id)."));
     }
 }

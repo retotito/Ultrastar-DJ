@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="using:UltrastarDJ.App.Localization"
              xmlns:vm="using:UltrastarDJ.App.ViewModels"
              xmlns:svc="using:UltrastarDJ.App.Services"
              xmlns:c="using:UltrastarDJ.App.Controls"
@@ -10,7 +11,7 @@
     <!-- Guest requests from the songbook -->
     <Border Grid.Row="0" IsVisible="{Binding HasRequests}" Background="{DynamicResource BrushRequest}" BorderBrush="{DynamicResource BrushOutlineVariant}" BorderThickness="0,1,0,0">
       <StackPanel>
-        <TextBlock Classes="label" Margin="{StaticResource Pad3}" Text="{Binding Requests.Count, StringFormat='REQUESTS ({0})'}" />
+        <TextBlock Classes="label" Margin="{StaticResource Pad3}" Text="{l:Format Requests.Count, queue.requests_title}" />
         <ScrollViewer MaxHeight="180">
           <ItemsControl ItemsSource="{Binding Requests}" Margin="4,0,4,4">
           <ItemsControl.ItemTemplate>
@@ -22,11 +23,11 @@
                     <Run Text="{Binding Song.Artist}" /><Run Text="  ·  " /><Run Text="{Binding Guest}" FontWeight="{StaticResource WeightSemibold}" />
                   </TextBlock>
                 </StackPanel>
-                <Button Grid.Column="1" Classes="sidebar" Width="26" Height="26" ToolTip.Tip="Add to queue"
+                <Button Grid.Column="1" Classes="sidebar" Width="26" Height="26" ToolTip.Tip="{l:T queue.add_queue}"
                         Command="{Binding $parent[UserControl].((vm:QueueViewModel)DataContext).AcceptRequestCommand}" CommandParameter="{Binding}">
                   <c:Icon Glyph="playlist_add" FontSize="{StaticResource IconSm}" />
                 </Button>
-                <Button Grid.Column="2" Classes="sidebar" Width="26" Height="26" ToolTip.Tip="Dismiss"
+                <Button Grid.Column="2" Classes="sidebar" Width="26" Height="26" ToolTip.Tip="{l:T queue.dismiss}"
                         Command="{Binding $parent[UserControl].((vm:QueueViewModel)DataContext).DismissRequestCommand}" CommandParameter="{Binding}">
                   <c:Icon Glyph="close" FontSize="{StaticResource IconSm}" />
                 </Button>
@@ -40,17 +41,17 @@
 
     <Border Grid.Row="1" Padding="{StaticResource Pad3}" BorderBrush="{DynamicResource BrushOutlineVariant}" BorderThickness="0,1,0,1">
       <Grid ColumnDefinitions="*,Auto,Auto">
-        <TextBlock Classes="label" VerticalAlignment="Center" Text="{Binding Count, StringFormat='QUEUE ({0})'}" />
+        <TextBlock Classes="label" VerticalAlignment="Center" Text="{l:Format Count, queue.queue_title}" />
         <Button Grid.Column="1" Classes="sidebar" Width="28" Height="28" Command="{Binding LoadNextCommand}" ToolTip.Tip="{Binding LoadNextTip}">
           <c:Icon Glyph="skip_next" FontSize="{StaticResource IconMd}" />
         </Button>
-        <Button Grid.Column="2" Classes="sidebar" Width="28" Height="28" Command="{Binding ClearCommand}" ToolTip.Tip="Clear queue">
+        <Button Grid.Column="2" Classes="sidebar" Width="28" Height="28" Command="{Binding ClearCommand}" ToolTip.Tip="{l:T queue.clear_queue}">
           <c:Icon Glyph="delete_sweep" FontSize="{StaticResource IconMd}" />
         </Button>
       </Grid>
     </Border>
 
-    <TextBlock Grid.Row="2" Classes="muted" Text="Queue is empty — add songs from the library or the preview player" Margin="{StaticResource Pad3}"
+    <TextBlock Grid.Row="2" Classes="muted" Text="{l:T queue.queue_empty_add_songs}" Margin="{StaticResource Pad3}"
                TextWrapping="Wrap" IsVisible="{Binding IsEmpty}" />
 
     <ScrollViewer Grid.Row="2" IsVisible="{Binding !IsEmpty}">
@@ -76,16 +77,16 @@
                   <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
                   <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="{Binding Artist}" TextTrimming="CharacterEllipsis" />
                   <!-- Requested on the songbook: who to call to the mic -->
-                  <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsRequest}" ToolTip.Tip="Requested on the songbook">
+                  <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsRequest}" ToolTip.Tip="{l:T queue.requested_songbook}">
                     <c:Icon Glyph="mic" FontSize="{StaticResource IconSm}" Foreground="{DynamicResource BrushPrimary}" VerticalAlignment="Center" />
                     <TextBlock Text="{Binding RequestedBy}" FontSize="{StaticResource TextXs}" FontWeight="{StaticResource WeightSemibold}"
                                Foreground="{DynamicResource BrushPrimary}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
                   </StackPanel>
                 </StackPanel>
-                <Button Grid.Column="2" Classes="sidebar" Width="26" Height="26" Command="{Binding MoveUpCommand}" ToolTip.Tip="Move up"><c:Icon Glyph="arrow_upward" FontSize="{StaticResource IconSm}" /></Button>
-                <Button Grid.Column="3" Classes="sidebar" Width="26" Height="26" Command="{Binding MoveDownCommand}" ToolTip.Tip="Move down"><c:Icon Glyph="arrow_downward" FontSize="{StaticResource IconSm}" /></Button>
+                <Button Grid.Column="2" Classes="sidebar" Width="26" Height="26" Command="{Binding MoveUpCommand}" ToolTip.Tip="{l:T queue.move_up}"><c:Icon Glyph="arrow_upward" FontSize="{StaticResource IconSm}" /></Button>
+                <Button Grid.Column="3" Classes="sidebar" Width="26" Height="26" Command="{Binding MoveDownCommand}" ToolTip.Tip="{l:T queue.move_down}"><c:Icon Glyph="arrow_downward" FontSize="{StaticResource IconSm}" /></Button>
                 <Button Grid.Column="4" Classes="sidebar" Width="26" Height="26" Command="{Binding LoadCommand}" ToolTip.Tip="{Binding $parent[UserControl].((vm:QueueViewModel)DataContext).LoadSongTip}"><c:Icon Glyph="play_circle" FontSize="{StaticResource IconSm}" /></Button>
-                <Button Grid.Column="5" Classes="sidebar" Width="26" Height="26" Command="{Binding RemoveCommand}" ToolTip.Tip="Remove"><c:Icon Glyph="close" FontSize="{StaticResource IconSm}" /></Button>
+                <Button Grid.Column="5" Classes="sidebar" Width="26" Height="26" Command="{Binding RemoveCommand}" ToolTip.Tip="{l:T queue.remove}"><c:Icon Glyph="close" FontSize="{StaticResource IconSm}" /></Button>
               </Grid>
             </Border>
           </DataTemplate>

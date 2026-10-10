@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using UltrastarDJ.Audio.Mics;
 using UltrastarDJ.Core.Players;
+using UltrastarDJ.Core.Localization;
 
 namespace UltrastarDJ.Audio.Monitor;
 
@@ -35,8 +36,8 @@ public sealed class LatencyTest(IAudioBackend backend, ILogger<LatencyTest> log)
     /// <param name="ct">Cancels between trials.</param>
     public async Task<Result> RunAsync(string outputDeviceId, MicBinding mic, double inputGain = 1, int trials = 5, IProgress<double>? progress = null, CancellationToken ct = default)
     {
-        AudioDeviceInfo inInfo = backend.Find(mic.DeviceId) ?? throw new AudioBackendException($"Mic device not found: {mic.DeviceId}");
-        AudioDeviceInfo outInfo = backend.Find(outputDeviceId) ?? throw new AudioBackendException($"Output device not found: {outputDeviceId}");
+        AudioDeviceInfo inInfo = backend.Find(mic.DeviceId) ?? throw new AudioBackendException(Text.F("calibration.mic_missing", "Mic device not found: {0}", mic.DeviceId));
+        AudioDeviceInfo outInfo = backend.Find(outputDeviceId) ?? throw new AudioBackendException(Text.F("calibration.output_missing", "Output device not found: {0}", outputDeviceId));
 
         // No gate: a quiet room must not hide the tone. Gain as in the game.
         MicPipeline pipe = new(0, mic.Channel, inInfo.DefaultSampleRateHz) { InputGain = inputGain, Threshold = 0 };
@@ -79,7 +80,7 @@ public sealed class LatencyTest(IAudioBackend backend, ILogger<LatencyTest> log)
 
         if (results.Count == 0)
         {
-            throw new AudioBackendException("The calibration tone was not recognised by the microphone. Raise the speaker volume or the mic gain, or move the mic closer.");
+            throw new AudioBackendException(Text.T("calibration.not_heard", "The calibration tone was not recognised by the microphone. Raise the speaker volume or the mic gain, or move the mic closer."));
         }
 
         double[] sorted = [.. results.Order()];

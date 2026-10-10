@@ -12,6 +12,7 @@ using UltrastarDJ.Core.Songs;
 using UltrastarDJ.Core.Timing;
 using UltrastarDJ.Infrastructure.Library;
 using UltrastarDJ.Media;
+using UltrastarDJ.App.Localization;
 
 namespace UltrastarDJ.App.Services;
 
@@ -80,13 +81,13 @@ public sealed class PlaybackService : IDisposable
             // A pulled USB drive shows up as an mpv read error; tell the DJ what actually happened.
             if (Song is { UsdbId: null } song && !_library.IsReachableNow(song.SourceId))
             {
-                _notifications.ShowError("Playback stopped", $"The drive with this song was removed ({_library.SourceLabel(song.SourceId)}).", error);
+                _notifications.ShowError(L.T("playback.stopped"), L.F("playback.drive_removed", _library.SourceLabel(song.SourceId)), error);
                 return;
             }
 
             PlaybackError explained = PlaybackError.Explain(error);
             bool youTube = Plan?.Audio.Source is MediaSource.YouTube;
-            _notifications.ShowError("Playback stopped", _ytDlp.WithHint([explained.Reason], explained.YtDlpMayHelp || youTube && explained.Reason == PlaybackError.Explain("").Reason), explained.Details);
+            _notifications.ShowError(L.T("playback.stopped"), _ytDlp.WithHint([explained.Reason], explained.YtDlpMayHelp || youTube && explained.Reason == PlaybackError.Explain("").Reason), explained.Details);
         }
     }
 
@@ -355,7 +356,7 @@ public sealed class PlaybackService : IDisposable
         catch (MediaException ex)
         {
             SongLoadException explained = Explain(ex, plan);
-            _notifications.ShowError("Song cannot be played again", _ytDlp.WithHint(explained.Reasons, explained.YtDlpMayHelp), explained.Details);
+            _notifications.ShowError(L.T("playback.cannot_replay"), _ytDlp.WithHint(explained.Reasons, explained.YtDlpMayHelp), explained.Details);
             return false;
         }
         finally
@@ -472,7 +473,7 @@ public sealed class PlaybackService : IDisposable
         }
 
         Stop();
-        _notifications.Warn($"Display {(int)id} closed — song stopped", "Open it again under Game Displays and press Play to sing the song again.");
+        _notifications.Warn(L.F("playback.display_closed", (int)id), L.T("playback.display_closed_detail"));
     }
 
     /// <summary>
@@ -481,16 +482,16 @@ public sealed class PlaybackService : IDisposable
     /// </summary>
     private void OnDisplayScreenLost(DisplayId id, string screen)
     {
-        string title = $"Display {(int)id}: {screen} disconnected";
+        string title = L.F("playback.screen_lost", (int)id, screen);
         if (CanStop && _displays.GetConfig(id).PlayerIds.Count > 0)
         {
             Stop();
             _ = HomeAsync();
-            _notifications.Warn($"{title} — song stopped", "Plug the screen back in and press Play, or move the singers to the other display.");
+            _notifications.Warn(L.F("playback.screen_lost_stopped", title), L.T("playback.screen_lost_stopped_detail"));
             return;
         }
 
-        _notifications.Warn(title, "The display waits next to the DJ window and goes back when the screen is plugged in again.");
+        _notifications.Warn(title, L.T("playback.screen_lost_detail"));
     }
 
     /// <summary>
@@ -506,7 +507,7 @@ public sealed class PlaybackService : IDisposable
 
         Stop();
         _ = HomeAsync();
-        _notifications.Warn("Game output disconnected — song stopped", $"{name}. Plug it back in and press Play, or choose another output under Audio Output.");
+        _notifications.Warn(L.T("playback.output_lost"), L.F("playback.output_lost_detail", name));
     }
 
     /// <summary>
@@ -528,10 +529,10 @@ public sealed class PlaybackService : IDisposable
             _displays.Close(id);
         }
 
-        string who = players.Count > 0 ? string.Join(", ", players.Select(MicPresence.Describe)) : "A microphone";
+        string who = players.Count > 0 ? string.Join(", ", players.Select(MicPresence.Describe)) : L.T("playback.a_mic");
         _notifications.Warn(
-            "Microphone disconnected — song stopped",
-            $"{who}. The displays were closed; plug the mic in, assign it under Audio Input and start again.");
+            L.T("playback.mic_lost"),
+            L.F("playback.mic_lost_detail", who));
     }
 
     /// <summary>Ends the song: media paused, mics off, score screen. The song stays loaded.</summary>

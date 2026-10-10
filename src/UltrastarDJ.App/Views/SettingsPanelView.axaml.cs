@@ -17,4 +17,15 @@ public sealed partial class SettingsPanelView : UserControl
             }
         };
     }
+
+    // The Developer card is hidden in Release (BuildInfo.IsDeveloper) and the editor is not compiled in there.
+    private void OnEditTranslations(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+#if DEBUG
+        if (TopLevel.GetTopLevel(this) is Window owner)
+        {
+            Diagnostics.TranslationEditor.Open(owner);
+        }
+#endif
+    }
 }

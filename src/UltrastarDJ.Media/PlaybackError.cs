@@ -1,3 +1,5 @@
+using UltrastarDJ.Core.Localization;
+
 namespace UltrastarDJ.Media;
 
 /// <summary>
@@ -18,18 +20,18 @@ public sealed record PlaybackError(string Reason, string Details, bool SongProbl
 {
     private static readonly (string[] Patterns, string Reason, bool SongProblem, bool YtDlpMayHelp)[] Known =
     [
-        (["confirm your age"], "This video is age-restricted on YouTube and cannot be played without a YouTube login.", true, false),
-        (["not a bot"], "YouTube is blocking playback right now.", false, true),
-        (["private video", "this video is private"], "This video is private on YouTube.", true, false),
-        (["in your country", "geo restrict"], "This video is blocked in your country.", true, false),
+        (["confirm your age"], Text.T("error.age", "This video is age-restricted on YouTube and cannot be played without a YouTube login."), true, false),
+        (["not a bot"], Text.T("error.bot", "YouTube is blocking playback right now."), false, true),
+        (["private video", "this video is private"], Text.T("error.private", "This video is private on YouTube."), true, false),
+        (["in your country", "geo restrict"], Text.T("error.country", "This video is blocked in your country."), true, false),
         (["copyright"], "This video was blocked on YouTube for copyright reasons.", true, false),
         (["video unavailable", "this video is unavailable", "has been removed", "account associated with this video has been terminated"],
-            "This video is no longer available on YouTube.", true, false),
+            Text.T("error.unavailable", "This video is no longer available on YouTube."), true, false),
         (["unable to download webpage", "nodename nor servname", "failed to resolve", "getaddrinfo", "network is unreachable", "timed out"],
-            "No connection to YouTube — check the internet connection.", false, false),
-        (["requested format is not available", "http error 403"], "YouTube refused the stream.", false, true),
-        (["unable to extract", "nsig extraction failed", "signature extraction failed"], "yt-dlp could not read YouTube's page.", false, true),
-        (["youtube-dl failed: not found"], "yt-dlp is missing — run scripts/fetch-natives.", false, false),
+            Text.T("error.no_connection", "No connection to YouTube — check the internet connection."), false, false),
+        (["requested format is not available", "http error 403"], Text.T("error.refused", "YouTube refused the stream."), false, true),
+        (["unable to extract", "nsig extraction failed", "signature extraction failed"], Text.T("error.cannot_read", "yt-dlp could not read YouTube's page."), false, true),
+        (["youtube-dl failed: not found"], Text.T("error.ytdlp_missing", "yt-dlp is missing — run scripts/fetch-natives."), false, false),
     ];
 
     public static PlaybackError Explain(string raw)
@@ -42,6 +44,6 @@ public sealed record PlaybackError(string Reason, string Details, bool SongProbl
             }
         }
 
-        return new PlaybackError("The media could not be played.", raw);
+        return new PlaybackError(Text.T("error.generic", "The media could not be played."), raw);
     }
 }

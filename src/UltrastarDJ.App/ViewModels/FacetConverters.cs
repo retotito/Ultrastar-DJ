@@ -1,3 +1,4 @@
+using UltrastarDJ.App.Localization;
 using Avalonia.Data.Converters;
 using UltrastarDJ.Core.Songs;
 
@@ -11,6 +12,18 @@ namespace UltrastarDJ.App.ViewModels;
 public static class FacetConverters
 {
     public static readonly IMultiValueConverter Label = new FacetConverter(opacity: false);
+
+    /// <summary>
+    /// The closed filter box: just the entry's name ("Language" in the UI language for the no-filter entry). Values:
+    /// [entry, the language code — only there so the box follows a language switch].
+    /// </summary>
+    public static readonly IMultiValueConverter Name = new FuncMultiValueConverter<object?, string>(v => v.FirstOrDefault() switch
+    {
+        LibraryViewModel.AnyLanguage => L.T("library.filter_language"),
+        LibraryViewModel.AnyGenre => L.T("library.filter_genre"),
+        null => "",
+        var e => e.ToString() ?? "",
+    });
 
     /// <summary>Entries that would show nothing (and unplugged sources) are greyed, still selectable.</summary>
     public static readonly IMultiValueConverter Opacity = new FacetConverter(opacity: true);
@@ -30,7 +43,13 @@ public static class FacetConverters
             if (!opacity)
             {
                 // Rating entries with an icon draw it themselves: their text is just the label.
-                string label = entry is RatingOption r ? r.Label : entry.ToString() ?? "";
+                string label = entry switch
+                {
+                    RatingOption r => r.Text,
+                    LibraryViewModel.AnyLanguage => L.T("library.filter_language"),
+                    LibraryViewModel.AnyGenre => L.T("library.filter_genre"),
+                    _ => entry.ToString() ?? "",
+                };
                 return $"{label} ({count.ToString("N0", culture)})";
             }
 

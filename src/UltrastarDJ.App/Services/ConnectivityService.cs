@@ -1,5 +1,6 @@
 using System.Net.NetworkInformation;
 using Microsoft.Extensions.Logging;
+using UltrastarDJ.App.Localization;
 
 namespace UltrastarDJ.App.Services;
 
@@ -60,11 +61,11 @@ public sealed class ConnectivityService : IDisposable
             _log.LogInformation("Connectivity: {State}", online ? "online" : "offline");
             if (online && before is false)
             {
-                _notifications.Success("Back online", "YouTube and USDB songs can play again.");
+                _notifications.Success(L.T("net.back_online"), L.T("net.back_online_detail"));
             }
             else if (!online)
             {
-                _notifications.Warn("You're offline", "YouTube and USDB songs can't play until the connection is back. Local songs work.");
+                _notifications.Warn(L.T("net.offline"), L.T("net.offline_detail"));
             }
 
             if (before is not null)

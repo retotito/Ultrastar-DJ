@@ -2,22 +2,39 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:UltrastarDJ.App.ViewModels"
              xmlns:c="using:UltrastarDJ.App.Controls"
+             xmlns:l="using:UltrastarDJ.App.Localization"
              x:Class="UltrastarDJ.App.Views.SettingsPanelView"
              x:DataType="vm:SettingsPanelViewModel">
 
   <StackPanel Spacing="{StaticResource Space2}">
+    <!-- Language: the whole app follows at once. Each language in its own name, so everyone finds theirs. -->
+    <Border Classes="card">
+      <StackPanel Spacing="{StaticResource Space2}">
+        <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space2}">
+          <c:Icon Glyph="language" FontSize="{StaticResource IconMd}" VerticalAlignment="Center" />
+          <TextBlock Text="{l:T settings.language}" VerticalAlignment="Center" />
+        </StackPanel>
+        <ComboBox ItemsSource="{Binding UiLanguages}" SelectedItem="{Binding UiLanguage}" HorizontalAlignment="Stretch" />
+      </StackPanel>
+    </Border>
     <Border Classes="card">
       <StackPanel Spacing="{StaticResource Space3}">
         <!-- Title, drop-down, description — like Difficulty and Note bar style. -->
         <StackPanel Spacing="{StaticResource Space2}">
-          <TextBlock Text="Theme" />
-          <ComboBox ItemsSource="{Binding Themes}" SelectedItem="{Binding Theme}" HorizontalAlignment="Stretch" />
-          <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="Dark is easier on the eyes in a dim room" TextWrapping="Wrap" />
+          <TextBlock Text="{l:T settings.theme}" />
+          <ComboBox ItemsSource="{Binding Themes}" SelectedItem="{Binding Theme}" HorizontalAlignment="Stretch">
+            <ComboBox.ItemTemplate>
+              <DataTemplate>
+                <TextBlock Text="{l:TOf ., Prefix=theme.}" />
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+          <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="{l:T settings.dark_easier_eyes_dim}" TextWrapping="Wrap" />
         </StackPanel>
         <Grid ColumnDefinitions="*,Auto">
           <StackPanel>
-            <TextBlock Text="Show tooltips" />
-            <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="Explanations when hovering buttons and settings" />
+            <TextBlock Text="{l:T settings.show_tooltips}" />
+            <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="{l:T settings.explanations_when_hovering_buttons}" TextWrapping="Wrap" />
           </StackPanel>
           <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowTooltips}" OnContent="" OffContent="" />
         </Grid>
@@ -26,19 +43,31 @@
 
     <Border Classes="card">
       <StackPanel Spacing="{StaticResource Space2}">
-        <TextBlock Text="Difficulty" />
+        <TextBlock Text="{l:T settings.difficulty}" />
         <ComboBox ItemsSource="{Binding Difficulties}" SelectedItem="{Binding Difficulty}" HorizontalAlignment="Stretch"
                   IsEnabled="{Binding !DifficultyLocked}" ToolTip.ShowOnDisabled="True"
-                  ToolTip.Tip="{Binding DifficultyLocked, Converter={x:Static vm:BoolConverters.Text}, ConverterParameter='Locked while a song runs — applies from the next song|How exactly the pitch must match'}" />
+                  ToolTip.Tip="{l:Pick DifficultyLocked, True=settings.difficulty_locked, False=settings.difficulty_tip}">
+          <ComboBox.ItemTemplate>
+            <DataTemplate>
+              <TextBlock Text="{l:TOf ., Prefix=difficulty.}" />
+            </DataTemplate>
+          </ComboBox.ItemTemplate>
+        </ComboBox>
         <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="{Binding DifficultyHint}" />
-        <TextBlock Text="Note bar style" Margin="0,8,0,0" />
-        <ComboBox ItemsSource="{Binding NoteBarStyles}" SelectedItem="{Binding NoteBarStyle}" HorizontalAlignment="Stretch" />
-        <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="Background of the note bars on the displays — White for dark videos, Black for bright ones" TextWrapping="Wrap" />
+        <TextBlock Text="{l:T settings.note_bar_style}" Margin="0,8,0,0" />
+        <ComboBox ItemsSource="{Binding NoteBarStyles}" SelectedItem="{Binding NoteBarStyle}" HorizontalAlignment="Stretch">
+            <ComboBox.ItemTemplate>
+              <DataTemplate>
+                <TextBlock Text="{l:TOf ., Prefix=note_bar.}" />
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+        <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="{l:T settings.background_note_bars_displays}" TextWrapping="Wrap" />
         <Grid ColumnDefinitions="*,Auto" Margin="0,8,0,0">
           <StackPanel>
-            <TextBlock Text="Grid lines" />
+            <TextBlock Text="{l:T settings.grid_lines}" />
             <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap"
-                       Text="Faint lines behind the notes, every two semitones — notes sit on a line or between two, like sheet music" />
+                       Text="{l:T settings.faint_lines_behind_notes}" />
           </StackPanel>
           <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowGridLines}" OnContent="" OffContent="" VerticalAlignment="Center" />
         </Grid>
@@ -56,7 +85,7 @@
                        IsVisible="{Binding YtDlpStatusText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
           </StackPanel>
           <Button Grid.Column="1" Classes="tonal" Command="{Binding UpdateYtDlpCommand}" IsEnabled="{Binding YtDlpIdle}" VerticalAlignment="Center"
-                  ToolTip.Tip="Downloads the newest yt-dlp from its official GitHub releases — used from the next YouTube song on">
+                  ToolTip.Tip="{l:T settings.downloads_newest_yt_dlp}">
             <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
               <c:Icon Glyph="system_update_alt" FontSize="{StaticResource IconMd}" VerticalAlignment="Center" />
               <TextBlock Text="{Binding YtDlpButtonText}" VerticalAlignment="Center" />
@@ -64,42 +93,42 @@
           </Button>
         </Grid>
         <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap"
-                   Text="yt-dlp fetches every YouTube song. When YouTube changes something, songs fail until yt-dlp is updated — usually within days." />
+                   Text="{l:T settings.yt_dlp_fetches_every}" />
       </StackPanel>
     </Border>
 
     <Border Classes="card">
       <StackPanel Spacing="{StaticResource Space2}">
-        <TextBlock Text="Logs &amp; data" />
+        <TextBlock Text="{l:T settings.logs_data}" />
         <WrapPanel ItemSpacing="8" LineSpacing="8">
-          <Button Classes="tonal" Command="{Binding ShowLogFolderCommand}" ToolTip.Tip="Finder with today's log selected — the file to send when asking for help">
+          <Button Classes="tonal" Command="{Binding ShowLogFolderCommand}" ToolTip.Tip="{l:T settings.finder_today_s_log}">
             <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
               <c:Icon Glyph="folder_open" FontSize="{StaticResource IconMd}" VerticalAlignment="Center" />
-              <TextBlock Text="Log folder" VerticalAlignment="Center" />
+              <TextBlock Text="{l:T settings.log_folder}" VerticalAlignment="Center" />
             </StackPanel>
           </Button>
-          <Button Classes="tonal" Command="{Binding OpenLogCommand}" ToolTip.Tip="Today's log in Console: search it and watch new lines arrive">
+          <Button Classes="tonal" Command="{Binding OpenLogCommand}" ToolTip.Tip="{l:T settings.today_s_log_console}">
             <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
               <c:Icon Glyph="description" FontSize="{StaticResource IconMd}" VerticalAlignment="Center" />
-              <TextBlock Text="Today's log" VerticalAlignment="Center" />
+              <TextBlock Text="{l:T settings.today_s_log}" VerticalAlignment="Center" />
             </StackPanel>
           </Button>
           <Button Classes="tonal" Command="{Binding ShowCrashReportsCommand}" IsVisible="{Binding HasCrashReports}"
-                  ToolTip.Tip="macOS wrote these when the app crashed; the newest is selected in Finder">
+                  ToolTip.Tip="{l:T settings.macos_wrote_these_when}">
             <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
               <c:Icon Glyph="bug_report" FontSize="{StaticResource IconMd}" VerticalAlignment="Center" />
               <TextBlock Text="{Binding CrashReportsText}" VerticalAlignment="Center" />
             </StackPanel>
           </Button>
-          <Button Classes="tonal" Command="{Binding ShowDataFolderCommand}" ToolTip.Tip="Settings, song library and cache — for backups or a clean start">
+          <Button Classes="tonal" Command="{Binding ShowDataFolderCommand}" ToolTip.Tip="{l:T settings.settings_song_library_cache}">
             <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
               <c:Icon Glyph="inventory_2" FontSize="{StaticResource IconMd}" VerticalAlignment="Center" />
-              <TextBlock Text="App data" VerticalAlignment="Center" />
+              <TextBlock Text="{l:T settings.app_data}" VerticalAlignment="Center" />
             </StackPanel>
           </Button>
         </WrapPanel>
         <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap"
-                   Text="The log records what the app did (songs, playback, mics, errors) — one file per day, the last 7 are kept. Send it along when something went wrong." />
+                   Text="{l:T settings.log_records_what_app}" />
         <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap" Text="{Binding FilesStatus}"
                    IsVisible="{Binding FilesStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
       </StackPanel>
@@ -107,31 +136,48 @@
 
     <Border Classes="card">
       <StackPanel Spacing="{StaticResource Space2}">
-        <TextBlock Text="Backup" />
+        <TextBlock Text="{l:T settings.backup}" />
         <WrapPanel ItemSpacing="8" LineSpacing="8">
-          <Button Classes="tonal" Command="{Binding BackUpCommand}" ToolTip.Tip="Save your settings and song marks as one zip — on a stick, a drive, a cloud folder">
+          <Button Classes="tonal" Command="{Binding BackUpCommand}" ToolTip.Tip="{l:T settings.save_your_settings_song}">
             <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
               <c:Icon Glyph="save" FontSize="{StaticResource IconMd}" />
-              <TextBlock Text="Back up…" />
+              <TextBlock Text="{l:T settings.back_up}" />
             </StackPanel>
           </Button>
-          <Button Classes="tonal" Command="{Binding RestoreCommand}" ToolTip.Tip="Pick a backup zip: it replaces the current settings and marks at the next start">
+          <Button Classes="tonal" Command="{Binding RestoreCommand}" ToolTip.Tip="{l:T settings.pick_backup_zip_replaces}">
             <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
               <c:Icon Glyph="settings_backup_restore" FontSize="{StaticResource IconMd}" />
-              <TextBlock Text="Restore…" />
+              <TextBlock Text="{l:T settings.restore}" />
             </StackPanel>
           </Button>
           <Button Classes="tonal stop" Command="{Binding QuitCommand}" IsVisible="{Binding RestorePending}">
             <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
               <c:Icon Glyph="power_settings_new" FontSize="{StaticResource IconMd}" />
-              <TextBlock Text="Quit now" />
+              <TextBlock Text="{l:T settings.quit_now}" />
             </StackPanel>
           </Button>
         </WrapPanel>
         <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap"
-                   Text="Settings, players and mics, outputs and latency, song sources, songbook, and your song marks (favourites, broken). Not included: the song list (a scan rebuilds it) and your USDB password (log in again after a restore)." />
+                   Text="{l:T settings.settings_players_mics_outputs}" />
         <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap" Text="{Binding BackupStatus}"
                    IsVisible="{Binding BackupStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      </StackPanel>
+    </Border>
+
+    <!-- Developer builds only (not translated — a tool for whoever maintains the languages). -->
+    <Border Classes="card" IsVisible="{x:Static l:BuildInfo.IsDeveloper}">
+      <StackPanel Spacing="{StaticResource Space2}">
+        <TextBlock Text="Developer" />
+        <WrapPanel ItemSpacing="8" LineSpacing="8">
+          <Button Classes="tonal" Click="OnEditTranslations" ToolTip.Tip="Correct a translation, see what is missing, find texts that do not fit">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <c:Icon Glyph="translate" FontSize="{StaticResource IconMd}" VerticalAlignment="Center" />
+              <TextBlock Text="Edit translations" VerticalAlignment="Center" />
+            </StackPanel>
+          </Button>
+        </WrapPanel>
+        <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap"
+                   Text="Pseudo (in the language list) makes every text longer and bracketed: a cut-off ] shows a place that is too small, a text without brackets was never moved to the language files." />
       </StackPanel>
     </Border>
 

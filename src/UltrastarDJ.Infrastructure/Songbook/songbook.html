@@ -12,6 +12,9 @@
   header { position:sticky; top:0; z-index:5; background:var(--bg); padding:calc(env(safe-area-inset-top) + 12px) 16px 10px; border-bottom:1px solid #2a2a3a; }
   h1 { margin:0 0 8px; font-size:18px; letter-spacing:.4px; display:flex; align-items:center; gap:8px; }
   h1 small { color:var(--muted); font-weight:400; font-size:13px; }
+  /* The language picker: a globe on the right of the title; the native select opens the phone's own list. */
+  .lang { margin-left:auto; position:relative; display:flex; align-items:center; gap:4px; color:var(--muted); font-size:13px; font-weight:400; }
+  .lang select { position:absolute; inset:0; opacity:0; font-size:16px; }
   .search { display:flex; gap:8px; }
   .search input { flex:1; background:var(--card2); border:1px solid #33334a; color:var(--text); border-radius:12px; padding:12px 14px; font-size:16px; outline:none; }
   .search input:focus { border-color:var(--accent); }
@@ -91,44 +94,45 @@
 </head>
 <body>
 <header>
-  <h1>🎤 Songbook <small id="count"></small></h1>
-  <div class="search"><input id="q" type="search" placeholder="Search title or artist" autocomplete="off" autocorrect="off"></div>
+  <h1>🎤 <span data-t="title">Songbook</span> <small id="count"></small>
+    <label class="lang" aria-label="Language">🌐 <span id="langName"></span><select id="langPick" onchange="pickLanguage(this.value)"></select></label></h1>
+  <div class="search"><input id="q" type="search" data-tp="search" placeholder="Search title or artist" autocomplete="off" autocorrect="off"></div>
   <!-- One filter at a time: pick what to filter by, then the value (with how many songs it would show). -->
   <div class="filters">
     <select id="fk" onchange="kindChanged()">
-      <option value="">Filter…</option>
-      <option value="language">Language</option>
-      <option value="genre">Genre</option>
-      <option value="decade">Decade</option>
-      <option value="popularity">Popularity</option>
-      <option value="voices">Duet / solo</option>
+      <option value="" data-t="filter">Filter…</option>
+      <option value="language" data-t="kind_language">Language</option>
+      <option value="genre" data-t="kind_genre">Genre</option>
+      <option value="decade" data-t="kind_decade">Decade</option>
+      <option value="popularity" data-t="kind_popularity">Popularity</option>
+      <option value="voices" data-t="kind_voices">Duet / solo</option>
     </select>
     <select id="fv" onchange="valueChanged()" disabled><option value="">—</option></select>
   </div>
-  <button class="handle" id="handle" hidden onclick="openDrop()" aria-label="My requests"></button>
-  <div class="drop" id="drop" hidden><div class="mine"><div class="title" id="dropTitle">My requests</div><div id="dropList"></div></div></div>
+  <button class="handle" id="handle" hidden onclick="openDrop()" data-ta="my_requests" aria-label="My requests"></button>
+  <div class="drop" id="drop" hidden><div class="mine"><div class="title" id="dropTitle" data-t="my_requests">My requests</div><div id="dropList"></div></div></div>
 </header>
 <main>
   <!-- This phone's requests and where they stand; cancel while the DJ has not decided. -->
   <details class="mine" id="mine" open hidden>
-    <summary id="mineTitle">My requests</summary>
+    <summary id="mineTitle" data-t="my_requests">My requests</summary>
     <div id="mineList"></div>
   </details>
   <div class="count" id="matches"></div>
   <div id="list"></div>
   <button class="btn more" id="more" hidden onclick="showMore()"></button>
-  <div class="hint" id="hint">Loading the songbook…</div>
+  <div class="hint" id="hint" data-t="loading">Loading the songbook…</div>
 </main>
 <div class="toast" id="toast"></div>
 <!-- Back to the search after scrolling down a long list. -->
-<button class="top" id="top" aria-label="Back to top" onclick="toTop()">↑</button>
+<button class="top" id="top" data-ta="back_top" aria-label="Back to top" onclick="toTop()">↑</button>
 
 <div class="overlay" id="pinOverlay">
   <div class="card">
-    <h2>🎉 Party PIN</h2>
-    <p>Ask the DJ for the 4-digit PIN.</p>
+    <h2>🎉 <span data-t="pin_title">Party PIN</span></h2>
+    <p data-t="pin_ask">Ask the DJ for the 4-digit PIN.</p>
     <input class="pin" id="pinInput" type="tel" inputmode="numeric" maxlength="4" pattern="[0-9]*" autocomplete="one-time-code">
-    <button class="btn" onclick="submitPin()">Join the party</button>
+    <button class="btn" onclick="submitPin()" data-t="pin_join">Join the party</button>
     <div class="err" id="pinError"></div>
   </div>
 </div>
@@ -140,10 +144,10 @@
     <div class="sa" id="mArtist"></div>
     <dl id="mInfo"></dl>
     <a class="btn secondary" id="mYouTube" target="_blank" rel="noopener">Watch on YouTube</a>
-    <label for="mName">Your name</label>
-    <input id="mName" type="text" maxlength="40" autocomplete="given-name" placeholder="So the DJ can call you">
-    <button class="btn" id="mRequest" onclick="requestOpen()">Request song</button>
-    <button class="btn secondary" onclick="closeSong()">Close</button>
+    <label for="mName" data-t="your_name">Your name</label>
+    <input id="mName" type="text" maxlength="40" autocomplete="given-name" data-tp="name_placeholder" placeholder="So the DJ can call you">
+    <button class="btn" id="mRequest" onclick="requestOpen()" data-t="request">Request song</button>
+    <button class="btn secondary" onclick="closeSong()" data-t="close">Close</button>
   </div>
 </div>
 
@@ -159,6 +163,40 @@
   var mine = [], taken = {}, requestsOpen = true;
   var lib = null, libVersion = 0, matches = [], shown = PAGE, timer = null;
   var STARS = ['Not rated', '★', '★★', '★★★', '★★★★'];
+
+  // ── Words in the phone's language (/api/texts: the first language the phone lists that the app has, else English).
+  // Statuses and refusals arrive as codes ("queue|3") and are worded here. ──
+  var T = {};
+  function t(key) {
+    var s = T[key] || key;
+    for (var i = 1; i < arguments.length; i++) s = s.split('{' + (i - 1) + '}').join(arguments[i]);
+    return s;
+  }
+  function coded(prefix, code) { if (!code) return ''; var p = String(code).split('|'); return t(prefix + p[0], p[1]); }
+  // A language picked on this phone wins over the phone's own languages; it is remembered.
+  async function loadTexts() {
+    var wanted = localStorage.getItem('sb_lang') || (navigator.languages || [navigator.language]).join(',');
+    try {
+      var res = await fetch('/api/texts?lang=' + encodeURIComponent(wanted));
+      if (res.ok) {
+        var d = await res.json(); T = d.texts || {}; document.documentElement.lang = d.lang || 'en';
+        var pick = document.getElementById('langPick');
+        pick.innerHTML = (d.languages || []).map(function (l) { return '<option value="' + esc(l.code) + '"' + (l.code === d.lang ? ' selected' : '') + '>' + esc(l.name) + '</option>'; }).join('');
+        document.getElementById('langName').textContent = ((d.languages || []).filter(function (l) { return l.code === d.lang; })[0] || {}).name || '';
+      }
+    } catch (e) { /* offline: the page's English stays */ }
+    document.querySelectorAll('[data-t]').forEach(function (el) { if (T[el.dataset.t]) el.textContent = T[el.dataset.t]; });
+    document.querySelectorAll('[data-tp]').forEach(function (el) { if (T[el.dataset.tp]) el.placeholder = T[el.dataset.tp]; });
+    document.querySelectorAll('[data-ta]').forEach(function (el) { if (T[el.dataset.ta]) el.setAttribute('aria-label', T[el.dataset.ta]); });
+    STARS[0] = t('not_rated');
+  }
+
+  async function pickLanguage(code) {
+    localStorage.setItem('sb_lang', code);
+    await loadTexts();
+    if (lib) { lib.songs.forEach(function (s) { if (!s[3]) s.decade = t('unknown_year'); }); fillValues(); render(); }
+    refreshState();
+  }
 
   function api(path) { return fetch(path + (path.indexOf('?') < 0 ? '?' : '&') + 'pin=' + encodeURIComponent(pin)); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
@@ -180,7 +218,7 @@
   async function submitPin() {
     pin = document.getElementById('pinInput').value.trim();
     var res = await api('/api/verify-pin');
-    if (res.status === 401) { document.getElementById('pinError').textContent = 'Wrong PIN'; return; }
+    if (res.status === 401) { document.getElementById('pinError').textContent = t('pin_wrong'); return; }
     sessionStorage.setItem('sb_pin', pin);
     document.getElementById('pinOverlay').classList.remove('visible');
     refreshState();
@@ -194,7 +232,7 @@
     d.songs.forEach(function (s, i) {
       s.i = i;
       s.key = (s[2] + ' ' + s[1]).toLowerCase();
-      s.decade = s[3] ? Math.floor(s[3] / 10) * 10 + 's' : 'Unknown year';
+      s.decade = s[3] ? Math.floor(s[3] / 10) * 10 + 's' : t('unknown_year');
     });
     lib = d; libVersion = d.v;
     fillValues(); render();
@@ -206,7 +244,7 @@
     if (kind === 'genre') return s[5].map(function (i) { return lib.genres[i]; });
     if (kind === 'decade') return [s.decade];
     if (kind === 'popularity') return [STARS[s[6]]];
-    if (kind === 'voices') return [s[9] ? 'Duet (two singers)' : 'Solo'];
+    if (kind === 'voices') return [s[9] ? t('duet_two') : t('solo')];
     return [];
   }
   function searchMatches() {
@@ -226,7 +264,7 @@
     else if (kind === 'decade') values.sort().reverse();
     else values.sort(function (a, b) { return a.localeCompare(b); });
     if (keep && values.indexOf(keep) < 0) values.unshift(keep);
-    sel.innerHTML = '<option value="">All</option>' + values.map(function (v) {
+    sel.innerHTML = '<option value="">' + esc(t('all')) + '</option>' + values.map(function (v) {
       return '<option value="' + esc(v) + '"' + (v === keep ? ' selected' : '') + '>' + esc(v) + ' (' + (counts[v] || 0).toLocaleString() + ')</option>';
     }).join('');
   }
@@ -238,13 +276,13 @@
     var kind = document.getElementById('fk').value, value = document.getElementById('fv').value;
     matches = searchMatches();
     if (kind && value) matches = matches.filter(function (s) { return valuesOf(s, kind).indexOf(value) >= 0; });
-    document.getElementById('matches').textContent = matches.length.toLocaleString() + (matches.length === 1 ? ' song' : ' songs');
+    document.getElementById('matches').textContent = t(matches.length === 1 ? 'n_song' : 'n_songs', matches.length.toLocaleString());
     var hint = document.getElementById('hint');
-    hint.hidden = matches.length > 0; hint.textContent = 'No songs found.';
+    hint.hidden = matches.length > 0; hint.textContent = t('no_songs');
     document.getElementById('list').innerHTML = matches.slice(0, shown).map(row).join('');
     var more = document.getElementById('more'), rest = matches.length - shown;
     more.hidden = rest <= 0;
-    more.textContent = 'Show more (' + rest.toLocaleString() + ' more)';
+    more.textContent = t('show_more', rest.toLocaleString());
   }
   function showMore() {
     var list = document.getElementById('list');
@@ -252,7 +290,7 @@
     shown += PAGE;
     var more = document.getElementById('more'), rest = matches.length - shown;
     more.hidden = rest <= 0;
-    more.textContent = 'Show more (' + rest.toLocaleString() + ' more)';
+    more.textContent = t('show_more', rest.toLocaleString());
   }
   function row(s) {
     var i = s.i;
@@ -260,9 +298,9 @@
     var meta = [esc(s[2]), s[3] ? s[3] : '', esc(langs)].filter(Boolean).join(' · ');
     // Title and artist get the whole width; the details, YouTube and Request are in the song's dialog.
     // Duets: two singers needed — a small sign before the title.
-    var duet = s[9] ? '<span class="duet" title="Duet — two singers">👥</span> ' : '';
+    var duet = s[9] ? '<span class="duet" title="' + esc(t('duet_tip')) + '">👥</span> ' : '';
     return '<div class="song" data-id="' + esc(s[0]) + '" onclick="openSong(' + i + ')"><div class="meta"><div class="t">' + duet + esc(s[1]) + '</div><div class="a">' + meta + '</div></div>'
-      + '<span class="mark">' + esc(taken[s[0]] || '') + '</span><button class="dots" aria-label="More">⋯</button></div>';
+      + '<span class="mark">' + esc(coded('status_', taken[s[0]])) + '</span><button class="dots" aria-label="' + esc(t('more')) + '">⋯</button></div>';
   }
 
   // ── Song dialog: details, a direct YouTube link (embedded players are often refused: uploaders disable embedding,
@@ -273,10 +311,10 @@
     var s = lib.songs[i];
     document.getElementById('mTitle').textContent = s[1];
     document.getElementById('mArtist').textContent = s[2];
-    var info = [['Year', s[3] || ''], ['Language', s[4].map(function (x) { return lib.languages[x]; }).join(', ')],
-      ['Genre', s[5].map(function (x) { return lib.genres[x]; }).join(', ')], ['Popularity', s[6] ? STARS[s[6]] : ''], ['Voices', s[9] ? 'Duet — two singers' : ''], ['Source', s[7] ? 'USDB' : '']];
+    var info = [[t('f_year'), s[3] || ''], [t('f_language'), s[4].map(function (x) { return lib.languages[x]; }).join(', ')],
+      [t('f_genre'), s[5].map(function (x) { return lib.genres[x]; }).join(', ')], [t('f_popularity'), s[6] ? STARS[s[6]] : ''], [t('f_voices'), s[9] ? t('duet_tip') : ''], [t('f_source'), s[7] ? 'USDB' : '']];
     document.getElementById('mInfo').innerHTML = info.filter(function (r) { return r[1]; })
-      .map(function (r) { return '<dt>' + r[0] + '</dt><dd>' + esc(r[1]) + '</dd>'; }).join('');
+      .map(function (r) { return '<dt>' + esc(r[0]) + '</dt><dd>' + esc(r[1]) + '</dd>'; }).join('');
     document.getElementById('mName').value = guest;
     updateRequestButton();
     document.getElementById('songModal').classList.add('visible');
@@ -284,7 +322,7 @@
     setYouTube(link, s[8]);
     // USDB songs: the Mac looks the id up in the song text (once, then cached on both sides).
     if (!s[8] && s[7]) {
-      link.textContent = 'Looking up YouTube…';
+      link.textContent = t('youtube_looking');
       var res = await api('/api/youtube?id=' + encodeURIComponent(s[0]));
       if (res.ok) s[8] = (await res.json()).id;
       if (openIndex === i) setYouTube(link, s[8]);
@@ -292,8 +330,8 @@
   }
   function setYouTube(link, id) {
     link.hidden = false;
-    if (id) { link.href = 'https://www.youtube.com/watch?v=' + encodeURIComponent(id); link.textContent = 'Watch on YouTube'; link.removeAttribute('aria-disabled'); }
-    else { link.removeAttribute('href'); link.textContent = 'No YouTube video'; link.setAttribute('aria-disabled', 'true'); }
+    if (id) { link.href = 'https://www.youtube.com/watch?v=' + encodeURIComponent(id); link.textContent = t('youtube_watch'); link.removeAttribute('aria-disabled'); }
+    else { link.removeAttribute('href'); link.textContent = t('youtube_none'); link.setAttribute('aria-disabled', 'true'); }
   }
   function closeSong() { document.getElementById('songModal').classList.remove('visible'); openIndex = -1; }
 
@@ -302,19 +340,19 @@
     if (openIndex < 0) return;
     var id = lib.songs[openIndex][0], btn = document.getElementById('mRequest');
     var own = mine.filter(function (m) { return m.songId === id && m.canCancel; })[0];
-    if (own) { btn.disabled = false; btn.textContent = 'Cancel my request'; btn.dataset.cancel = own.id; return; }
+    if (own) { btn.disabled = false; btn.textContent = t('cancel_mine'); btn.dataset.cancel = own.id; return; }
     delete btn.dataset.cancel;
     // The DJ switched requests off: the songbook is for browsing (the name field goes too).
     document.getElementById('mName').hidden = !requestsOpen;
     document.querySelector('label[for="mName"]').hidden = !requestsOpen;
     btn.disabled = !requestsOpen || !!taken[id];
-    btn.textContent = !requestsOpen ? 'The DJ isn\'t taking requests right now' : taken[id] ? taken[id] : 'Request song';
+    btn.textContent = !requestsOpen ? t('refusal_closed') : taken[id] ? coded('status_', taken[id]) : t('request');
   }
   async function requestOpen() {
     var btn = document.getElementById('mRequest');
     if (btn.dataset.cancel) { await cancel(btn.dataset.cancel); closeSong(); return; }
     var name = document.getElementById('mName').value.trim();
-    if (!name) { document.getElementById('mName').focus(); toast('Please enter your name'); return; }
+    if (!name) { document.getElementById('mName').focus(); toast(t('enter_name')); return; }
     guest = name; localStorage.setItem('sb_name', name);
     var id = lib.songs[openIndex][0];
     closeSong();
@@ -329,33 +367,33 @@
     if (s.libraryVersion !== libVersion) loadLibrary(s.libraryVersion);
     mine = s.mine || []; taken = s.taken || {}; requestsOpen = s.requestsOpen !== false;
     renderMine(); updateMarks(); updateRequestButton(); updateHandle();
-    document.getElementById('count').textContent = s.songCount.toLocaleString() + ' songs';
+    document.getElementById('count').textContent = t('n_songs', s.songCount.toLocaleString());
   }
 
   // ── Requests ──
   async function send(songId) {
     var res = await fetch('/api/request?pin=' + encodeURIComponent(pin), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ songId: songId, guest: guest, client: client }) });
-    if (res.ok) toast('Requested — the DJ has been told 🎶', true);
+    if (res.ok) toast(t('requested_ok'), true);
     else if (res.status === 401) verify();
-    else if (res.status === 404) toast('This song is no longer available');
-    else if (res.status === 409) toast((await res.json()).message);
-    else toast('Could not send the request');
+    else if (res.status === 404) toast(t('gone'));
+    else if (res.status === 409) toast(coded('refusal_', (await res.json()).message));
+    else toast(t('send_failed'));
     refreshState();
   }
   async function cancel(id) {
     var res = await fetch('/api/cancel?pin=' + encodeURIComponent(pin), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id, client: client }) });
-    toast(res.ok ? 'Request cancelled' : 'Too late — the DJ already decided', res.ok);
+    toast(res.ok ? t('cancelled') : t('too_late'), res.ok);
     refreshState();
   }
 
   function renderMine() {
     var box = document.getElementById('mine');
     box.hidden = mine.length === 0;
-    document.getElementById('mineTitle').textContent = document.getElementById('dropTitle').textContent = 'My requests (' + mine.length + ')';
+    document.getElementById('mineTitle').textContent = document.getElementById('dropTitle').textContent = t('my_requests_n', mine.length);
     document.getElementById('handle').textContent = mine.length;
     document.getElementById('mineList').innerHTML = document.getElementById('dropList').innerHTML = mine.map(function (m) {
-      return '<div class="r"><div class="meta"><div class="t">' + esc(m.title) + '</div><div class="st">' + esc(m.status) + '</div></div>'
-        + (m.canCancel ? '<button class="cancel" onclick="cancel(\'' + esc(m.id) + '\')">Cancel</button>' : '') + '</div>';
+      return '<div class="r"><div class="meta"><div class="t">' + esc(m.title) + '</div><div class="st">' + esc(coded('status_', m.status)) + '</div></div>'
+        + (m.canCancel ? '<button class="cancel" onclick="cancel(\'' + esc(m.id) + '\')">' + esc(t('cancel')) + '</button>' : '') + '</div>';
     }).join('');
   }
   // The handle shows while the card is scrolled away under the header; an open drop closes on the next scroll.
@@ -372,7 +410,7 @@
   // Markers on the rows already shown ("Requested", "In the queue #3") — updated in place, the list keeps its place.
   function updateMarks() {
     document.querySelectorAll('#list .song').forEach(function (el) {
-      el.querySelector('.mark').textContent = taken[el.dataset.id] || '';
+      el.querySelector('.mark').textContent = coded('status_', taken[el.dataset.id]);
     });
   }
 
@@ -393,7 +431,7 @@
     if (dropAt >= 0 && Math.abs(window.scrollY - dropAt) > 24) closeDrop();
     updateHandle();
   }, { passive: true });
-  verify().then(function (ok) { if (ok) refreshState(); });
+  loadTexts().then(verify).then(function (ok) { if (ok) refreshState(); });
   setInterval(refreshState, 5000);
 </script>
 </body>

@@ -61,6 +61,12 @@ public sealed class SongbookServer : IAsyncDisposable
 
         WebApplication app = builder.Build();
         app.MapGet("/", () => Results.Content(Page, "text/html; charset=utf-8"));
+        // The page's words in the phone's language — before the PIN (the PIN screen needs them too); nothing private.
+        app.MapGet("/api/texts", (string? lang) =>
+        {
+            (string language, IReadOnlyDictionary<string, string> texts) = _backend.GuestTexts(lang);
+            return Results.Json(new { lang = language, texts, languages = _backend.GuestLanguages().Select(l => new { code = l.Code, name = l.Name }) });
+        });
         app.MapGet("/api/verify-pin", (HttpRequest req) => PinOk(req) ? Results.Ok() : Results.Unauthorized());
         app.MapGet("/api/library", (HttpRequest req, HttpResponse res) =>
         {

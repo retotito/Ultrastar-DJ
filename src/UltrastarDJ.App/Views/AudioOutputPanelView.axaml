@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="using:UltrastarDJ.App.Localization"
              xmlns:vm="using:UltrastarDJ.App.ViewModels"
              xmlns:c="using:UltrastarDJ.App.Controls"
              xmlns:svc="using:UltrastarDJ.App.Services"
@@ -19,7 +20,7 @@
             <TextBlock Grid.Column="2" Classes="muted" FontSize="{StaticResource TextXs}" Text="{Binding StateText}" VerticalAlignment="Center" />
           </Grid>
 
-          <TextBlock Classes="label" Text="OUTPUT DEVICE" />
+          <TextBlock Classes="label" Text="{l:T audio_output.output_device}" />
           <ComboBox ItemsSource="{Binding Options}"
                     SelectedItem="{Binding Selected}" HorizontalAlignment="Stretch">
             <ComboBox.ItemTemplate>
@@ -33,8 +34,8 @@
           <!-- Game only: how much later the audience hears this output; lyrics, notes and scoring follow it. -->
           <Panel IsVisible="{Binding Latency, Converter={x:Static ObjectConverters.IsNotNull}}">
             <StackPanel Spacing="{StaticResource Space2}" DataContext="{Binding Latency}" x:DataType="vm:GameSyncViewModel">
-              <TextBlock Classes="label" Text="LATENCY" Margin="0,4,0,0"
-                         ToolTip.Tip="How much later the speakers play than the app sends the sound (cable ~15 ms, TV/HDMI 50–150 ms, Bluetooth 150–300 ms). Lyrics and notes are shown this much later. Saved per output device." />
+              <TextBlock Classes="label" Text="{l:T audio_output.latency}" Margin="0,4,0,0"
+                         ToolTip.Tip="{l:T audio_output.how_much_later_speakers}" />
               <Grid ColumnDefinitions="*,60">
                 <c:Fader Minimum="{Binding MinLatencyMs}" Maximum="{Binding MaxLatencyMs}" ResetValue="0" TickFrequency="5" IsSnapToTickEnabled="True" Value="{Binding LatencyMs}" />
                 <TextBlock Grid.Column="1" Classes="muted" Text="{Binding LatencyMs, StringFormat='{}{0:F0} ms'}" VerticalAlignment="Center" TextAlignment="Right" />
@@ -43,8 +44,8 @@
                       ToolTip.Tip="{Binding ToggleTip}" ToolTip.ShowOnDisabled="True">
                 <StackPanel Orientation="Horizontal" Spacing="4">
                   <c:Icon Glyph="graphic_eq" FontSize="{StaticResource IconSm}" />
-                  <TextBlock Text="Test sync" FontSize="{StaticResource TextSm}" IsVisible="{Binding !IsRunning}" />
-                  <TextBlock Text="Stop test" FontSize="{StaticResource TextSm}" IsVisible="{Binding IsRunning}" />
+                  <TextBlock Text="{l:T audio_output.test_sync}" FontSize="{StaticResource TextSm}" IsVisible="{Binding !IsRunning}" />
+                  <TextBlock Text="{l:T audio_output.stop_test}" FontSize="{StaticResource TextSm}" IsVisible="{Binding IsRunning}" />
                 </StackPanel>
               </Button>
             </StackPanel>
@@ -56,7 +57,7 @@
 
   <StackPanel Spacing="{StaticResource Space2}">
     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="{StaticResource Space1}">
-      <Button Classes="sidebar" Command="{Binding RefreshCommand}" ToolTip.Tip="Refresh device list — connect USB or Bluetooth first">
+      <Button Classes="sidebar" Command="{Binding RefreshCommand}" ToolTip.Tip="{l:T audio_output.refresh_device_list_connect}">
         <c:Icon Glyph="refresh" FontSize="{StaticResource IconMd}" />
       </Button>
     </StackPanel>
@@ -67,6 +68,6 @@
     <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap" Text="{Binding Status}"
                IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
     <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap"
-               Text="Multichannel interfaces are listed once per stereo pair. Mic monitoring follows the game output. Set the game latency before calibrating the mics." />
+               Text="{l:T audio_output.multichannel_interfaces_are_listed}" />
   </StackPanel>
 </UserControl>

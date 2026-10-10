@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using PortAudioSharp;
 using PaNativeStream = PortAudioSharp.Stream;
+using UltrastarDJ.Core.Localization;
 
 namespace UltrastarDJ.Audio.PortAudio;
 
@@ -147,7 +148,7 @@ public sealed class PortAudioBackend : IAudioBackend
     {
         if (!_indexById.TryGetValue(deviceId, out int index))
         {
-            throw new AudioBackendException($"Audio device not found: {deviceId}");
+            throw new AudioBackendException(Text.F("audio.device_missing", "Audio device not found: {0}", deviceId));
         }
 
         return (index, PortAudioSharp.PortAudio.GetDeviceInfo(index));

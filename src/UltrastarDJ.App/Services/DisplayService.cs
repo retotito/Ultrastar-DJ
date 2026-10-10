@@ -9,6 +9,7 @@ using UltrastarDJ.App.Views;
 using UltrastarDJ.Core.Abstractions;
 using UltrastarDJ.Core.Displays;
 using UltrastarDJ.Core.Players;
+using UltrastarDJ.App.Localization;
 
 namespace UltrastarDJ.App.Services;
 
@@ -125,7 +126,7 @@ public sealed class DisplayService : IDisplayService
         BeamerWindow window = new()
         {
             DataContext = vm,
-            Title = $"Ultrastar DJ — Display {(int)id}",
+            Title = L.F("display.window_title", (int)id),
             Width = InitialWidth,
             Height = InitialHeight,
         };
@@ -184,7 +185,7 @@ public sealed class DisplayService : IDisplayService
     private static List<ScreenArea> Areas(Window window)
         => [.. window.Screens.All.Select(s => new ScreenArea(s.WorkingArea.X, s.WorkingArea.Y, s.WorkingArea.Width, s.WorkingArea.Height, s.Scaling, s.DisplayName))];
 
-    private static string NameOf(Screen? screen) => screen is null || string.IsNullOrWhiteSpace(screen.DisplayName) ? "Screen" : screen.DisplayName;
+    private static string NameOf(Screen? screen) => screen is null || string.IsNullOrWhiteSpace(screen.DisplayName) ? L.T("screen.unnamed") : screen.DisplayName;
 
     private void RememberHome(DisplayId id, BeamerWindow window)
     {
@@ -231,7 +232,7 @@ public sealed class DisplayService : IDisplayService
                 continue;
             }
 
-            string screen = home.Screen ?? "Screen";
+            string screen = home.Screen ?? L.T("screen.unnamed");
             bool connected = home.IsConnected(now);
             if (!connected && _lost.Add(id))
             {
@@ -244,7 +245,7 @@ public sealed class DisplayService : IDisplayService
                 _log.LogInformation("Display {Display}: screen {Screen} is back", (int)id, screen);
                 returned.Add(screen);
                 GoHome(window, WindowPlacement.Fit(home, now, window.MinWidth, window.MinHeight)!);
-                _notifications.Success($"Display {(int)id}: {screen} connected", "The display is back on its screen.");
+                _notifications.Success(L.F("screen.display_back", (int)id, screen), L.T("screen.display_back_detail"));
             }
         }
 
@@ -252,19 +253,19 @@ public sealed class DisplayService : IDisplayService
         static bool Kept(ScreenArea s, IEnumerable<ScreenArea> other) => other.Any(o => o == s || o.Name is not null && o.Name == s.Name);
         foreach (ScreenArea added in now.Where(s => !Kept(s, before)))
         {
-            string name = added.Name ?? "Screen";
+            string name = added.Name ?? L.T("screen.unnamed");
             if (!returned.Contains(name) && !_home.Values.Any(h => h.Screen == name))
             {
-                _notifications.Info($"Screen connected: {name}", "Open a display under Game Displays and drag it there.");
+                _notifications.Info(L.F("screen.connected", name), L.T("screen.connected_detail"));
             }
         }
 
         foreach (ScreenArea removed in before.Where(s => !Kept(s, now)))
         {
-            string name = removed.Name ?? "Screen";
+            string name = removed.Name ?? L.T("screen.unnamed");
             if (!_home.Values.Any(h => h.Screen == name))
             {
-                _notifications.Info($"Screen disconnected: {name}");
+                _notifications.Info(L.F("screen.disconnected", name));
             }
         }
     }
@@ -315,10 +316,10 @@ public sealed class DisplayService : IDisplayService
             return null;
         }
 
-        string name = string.IsNullOrWhiteSpace(screen.DisplayName) ? (screen.IsPrimary ? "Main screen" : "Other screen") : screen.DisplayName;
+        string name = string.IsNullOrWhiteSpace(screen.DisplayName) ? (screen.IsPrimary ? L.T("screen.main") : L.T("screen.other")) : screen.DisplayName;
         string text = $"{name} · {screen.Bounds.Width}×{screen.Bounds.Height}";
         bool withDj = _owner is not null && _owner.Screens.ScreenFromWindow(_owner) is { } djScreen && djScreen.Bounds == screen.Bounds;
-        return withDj ? $"{text} — same screen as Ultrastar DJ" : text;
+        return withDj ? L.F("screen.same_as_dj", text) : text;
     }
 
     public bool IsFullScreen(DisplayId id) => _open.TryGetValue(id, out BeamerWindow? w) && w.WindowState == WindowState.FullScreen;

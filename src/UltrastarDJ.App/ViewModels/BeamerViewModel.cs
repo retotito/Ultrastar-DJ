@@ -12,6 +12,7 @@ using UltrastarDJ.Core.Game;
 using UltrastarDJ.Core.Playback;
 using UltrastarDJ.Core.Players;
 using UltrastarDJ.Media;
+using UltrastarDJ.App.Localization;
 
 namespace UltrastarDJ.App.ViewModels;
 
@@ -87,7 +88,7 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
     });
 
     public DisplayId Id { get; }
-    public string Label => $"Display {(int)Id}";
+    public string Label => L.F("display.label", (int)Id);
     public FrameBus GameFrames { get; }
     public ObservableCollection<ScenePlayer> AssignedPlayers { get; } = [];
     public bool HasAssignedPlayers => AssignedPlayers.Count > 0;
@@ -260,7 +261,7 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
         bool finished = standings.All(s => session.PossibleScoreAt(stoppedAt, s.PlayerId) >= s.MaxScore);
         ScoreNote = finished || _playback.Timeline is not { } timeline
             ? ""
-            : $"Stopped at {TimeSpan.FromSeconds(timeline.Elapsed(_playback.Clock?.PositionSec ?? 0)):m\\:ss} — percentages of the points possible until then";
+            : L.F("display.stopped_at", TimeSpan.FromSeconds(timeline.Elapsed(_playback.Clock?.PositionSec ?? 0)));
         WinnerId = standings.Count > 0 && standings[0].Score > 0 ? standings[0].PlayerId : -1;
         WinnerBrush = WinnerId > 0 ? PlayerBrush(WinnerId) : null;
         List<(int PlayerId, int Score, int MaxScore)> rows = [.. standings.OrderBy(s => s.PlayerId)];

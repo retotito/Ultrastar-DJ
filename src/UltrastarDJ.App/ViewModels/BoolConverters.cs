@@ -1,12 +1,13 @@
 using System.Globalization;
 using Avalonia.Data.Converters;
+using UltrastarDJ.App.Localization;
 
 namespace UltrastarDJ.App.ViewModels;
 
 public static class BoolConverters
 {
     public static readonly IValueConverter OpenClosed =
-        new FuncValueConverter<bool, string>(open => open ? "Open" : "Closed");
+        new FuncValueConverter<bool, string>(open => open ? L.T("state.open") : L.T("state.closed"));
 
     /// <summary>ConverterParameter <c>"whenTrue|whenFalse"</c>.</summary>
     public static readonly IValueConverter Text = new PickConverter();

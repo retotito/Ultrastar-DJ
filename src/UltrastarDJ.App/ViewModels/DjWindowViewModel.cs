@@ -1,3 +1,4 @@
+using UltrastarDJ.App.Localization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
@@ -31,14 +32,7 @@ public sealed partial class DjWindowViewModel : ViewModelBase
     private SidebarPanel _activePanel = SidebarPanel.None;
 
     /// <summary>Shown in the popover header, next to its close button.</summary>
-    public string PanelTitle => ActivePanel switch
-    {
-        SidebarPanel.Sources => "Song Sources",
-        SidebarPanel.AudioInput => "Audio Input",
-        SidebarPanel.AudioOutput => "Audio Output",
-        SidebarPanel.Displays => "Game Displays",
-        _ => ActivePanel.ToString(),
-    };
+    public string PanelTitle => L.T("panel." + ActivePanel);
 
     /// <summary>Panels opened from the bottom of the sidebar (Settings) anchor to the window's bottom edge.</summary>
     public bool PanelAtBottom => ActivePanel == SidebarPanel.Settings;
@@ -128,6 +122,34 @@ public sealed partial class DjWindowViewModel : ViewModelBase
             }
         };
         UpdateLock();
+        ChooseLanguage = services.GetRequiredService<AppSettingsService>().Language is null;
+    }
+
+    // ── First start: which language? ──
+
+    /// <summary>No language chosen yet (first start): the language screen covers the window.</summary>
+    [ObservableProperty] private bool _chooseLanguage;
+
+    public IReadOnlyList<UiLanguage> UiLanguages => Translations.Choices;
+
+    /// <summary>Picking one switches the app at once, so the screen behind already speaks it; OK keeps it.</summary>
+    public UiLanguage? LanguageChoice
+    {
+        get => Translations.Instance.Current;
+        set
+        {
+            if (value is not null && value.Code != Translations.Instance.Code)
+            {
+                Translations.Instance.SetLanguage(value.Code);
+            }
+        }
+    }
+
+    [RelayCommand]
+    private void ConfirmLanguage()
+    {
+        _services.GetRequiredService<AppSettingsService>().SetLanguage(Translations.Instance.Code);
+        ChooseLanguage = false;
     }
 
     public LibraryViewModel Library { get; }

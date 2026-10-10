@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="using:UltrastarDJ.App.Localization"
              xmlns:vm="using:UltrastarDJ.App.ViewModels"
              xmlns:c="using:UltrastarDJ.App.Controls"
              x:Class="UltrastarDJ.App.Views.NowPlayingView"
@@ -18,14 +19,14 @@
     <!-- Shared-size scope: the song row and the mic rows share their name column. -->
     <StackPanel Spacing="{StaticResource Space2}" Grid.IsSharedSizeScope="True">
       <!-- Header like the sidebar popovers (DjWindow), and the drag handle of the card -->
-      <Border x:Name="DragHandle" Background="Transparent" ToolTip.Tip="Drag to move"
+      <Border x:Name="DragHandle" Background="Transparent" ToolTip.Tip="{l:T game_player.drag_move}"
               BorderBrush="{DynamicResource BrushOutlineVariant}" BorderThickness="0,0,0,1"
               Padding="0,0,0,8" Margin="0,0,0,4">
         <Grid ColumnDefinitions="Auto,*,Auto,Auto">
           <c:Icon Grid.Column="0" Glyph="play_circle" Margin="0,0,8,0" VerticalAlignment="Center" />
-          <TextBlock Grid.Column="1" Classes="title" Text="Game Player" VerticalAlignment="Center" />
+          <TextBlock Grid.Column="1" Classes="title" Text="{l:T game_player.game_player}" VerticalAlignment="Center" />
           <c:Icon Grid.Column="2" Glyph="drag_indicator" Classes="muted" FontSize="{StaticResource IconMd}" VerticalAlignment="Center" Margin="0,0,4,0" />
-          <Button Grid.Column="3" Classes="sidebar" Width="28" Height="28" Command="{Binding HideCommand}" ToolTip.Tip="Close (reopen from the sidebar)">
+          <Button Grid.Column="3" Classes="sidebar" Width="28" Height="28" Command="{Binding HideCommand}" ToolTip.Tip="{l:T game_player.close_reopen_sidebar}">
             <c:Icon Glyph="close" FontSize="{StaticResource IconMd}" />
           </Button>
         </Grid>
@@ -42,7 +43,7 @@
           <TextBlock Classes="beamer" Text="{Binding CountdownValue}" FontSize="110" FontWeight="{StaticResource WeightBold}"
                      HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsCountdown}" />
           <Border Background="#88000000" IsVisible="{Binding IsPaused}">
-            <TextBlock Classes="beamer" Text="PAUSED" FontSize="40" FontWeight="{StaticResource WeightBold}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            <TextBlock Classes="beamer" Text="{l:T game_player.paused}" FontSize="40" FontWeight="{StaticResource WeightBold}" HorizontalAlignment="Center" VerticalAlignment="Center" />
           </Border>
           <!-- Elapsed / remaining and the progress line, as at the bottom of the beamer. -->
           <Grid RowDefinitions="Auto,Auto" VerticalAlignment="Bottom" IsVisible="{Binding HasTimes}">
@@ -68,14 +69,14 @@
                ⚠ while the players changed since the voices were assigned. -->
           <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space2}" IsVisible="{Binding IsDuet}" Margin="0,16,0,0">
             <c:Icon Glyph="group" FontSize="{StaticResource IconMd}" VerticalAlignment="Center" />
-            <TextBlock Text="Duet" FontSize="{StaticResource TextBase}" FontWeight="{StaticResource WeightBold}" VerticalAlignment="Center" />
+            <TextBlock Text="{l:T game_player.duet}" FontSize="{StaticResource TextBase}" FontWeight="{StaticResource WeightBold}" VerticalAlignment="Center" />
             <c:Icon Glyph="warning" FontSize="{StaticResource IconSm}" Foreground="{DynamicResource BrushError}" VerticalAlignment="Center"
-                    IsVisible="{Binding VoicesUnconfirmed}" ToolTip.Tip="The players changed — assign the voices again" Background="Transparent" />
+                    IsVisible="{Binding VoicesUnconfirmed}" ToolTip.Tip="{l:T game_player.players_changed_assign_voices}" Background="Transparent" />
             <Button Classes="tonal" Padding="12,4" Command="{Binding ChangeDuetSingersCommand}" VerticalAlignment="Center"
-                    ToolTip.Tip="Choose who sings which voice">
+                    ToolTip.Tip="{l:T game_player.choose_who_sings_which}">
               <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
                 <c:Icon Glyph="record_voice_over" FontSize="{StaticResource IconSm}" />
-                <TextBlock Text="Assign voices" FontSize="{StaticResource TextSm}" />
+                <TextBlock Text="{l:T game_player.assign_voices}" FontSize="{StaticResource TextSm}" />
               </StackPanel>
             </Button>
           </StackPanel>
@@ -90,18 +91,18 @@
             </Style>
           </StackPanel.Styles>
           <Button Classes="sidebar small" Width="32" Height="32" Command="{Binding ToggleFavouriteCommand}"
-                  ToolTip.Tip="{Binding IsFavourite, Converter={x:Static vm:BoolConverters.Text}, ConverterParameter='Remove from favourites|Favourite'}">
+                  ToolTip.Tip="{l:Pick IsFavourite, True=game_player.remove_favourite, False=game_player.favourite}">
             <c:Icon Glyph="favorite" FontSize="{StaticResource IconMd}" Classes.favourite="{Binding IsFavourite}" />
           </Button>
           <Button Classes="sidebar small" Width="32" Height="32" Command="{Binding ToggleBrokenCommand}"
-                  ToolTip.Tip="{Binding IsBroken, Converter={x:Static vm:BoolConverters.Text}, ConverterParameter='Not broken|Mark as broken (bad notes or timing) — never offered on the songbook; add a note in Details'}">
+                  ToolTip.Tip="{l:Pick IsBroken, True=game_player.not_broken, False=game_player.mark_broken}">
             <c:Icon Glyph="report" FontSize="{StaticResource IconMd}" Classes.broken="{Binding IsBroken}" />
           </Button>
         </StackPanel>
       </Grid>
       <!-- Requested on the songbook: who to call to the mic (same look as in the queue) -->
       <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,-4,0,0"
-                  IsVisible="{Binding RequestedBy, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" ToolTip.Tip="Requested on the songbook">
+                  IsVisible="{Binding RequestedBy, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" ToolTip.Tip="{l:T game_player.requested_songbook}">
         <c:Icon Glyph="mic" FontSize="{StaticResource IconSm}" Foreground="{DynamicResource BrushPrimary}" VerticalAlignment="Center" />
         <TextBlock Text="{Binding RequestedBy}" FontSize="{StaticResource TextXs}" FontWeight="{StaticResource WeightSemibold}"
                    Foreground="{DynamicResource BrushPrimary}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
@@ -115,24 +116,24 @@
 
       <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}" HorizontalAlignment="Center" Margin="0,0,0,8">
         <!-- Four buttons (prototype): rules in Core.Playback.PlaybackRules. Hidden while no beamer is open. -->
-        <Button Classes="sidebar" Command="{Binding HomeCommand}" ToolTip.Tip="Displays to the start view (the song stays loaded)"
+        <Button Classes="sidebar" Command="{Binding HomeCommand}" ToolTip.Tip="{l:T game_player.displays_start_view_song}"
                 IsVisible="{Binding !NoBeamerOpen}" VerticalAlignment="Center"><c:Icon Glyph="home" /></Button>
-        <Button Classes="sidebar" Command="{Binding PreviewCommand}" ToolTip.Tip="Show the get-ready screen"
+        <Button Classes="sidebar" Command="{Binding PreviewCommand}" ToolTip.Tip="{l:T game_player.show_get_ready_screen}"
                 IsVisible="{Binding !NoBeamerOpen}" VerticalAlignment="Center"><c:Icon Glyph="tv" /></Button>
         <Button Classes="transport" Classes.go="{Binding !IsPauseButton}" Classes.pause="{Binding IsPauseButton}"
                 Command="{Binding PlayPauseCommand}" ToolTip.Tip="{Binding PlayTip}" IsVisible="{Binding !NoBeamerOpen}">
           <c:Icon Glyph="{Binding PlayGlyph}" FontSize="{StaticResource IconXl}" />
         </Button>
-        <Button Classes="transport stop" Command="{Binding StopCommand}" ToolTip.Tip="Stop — show the scores" IsVisible="{Binding !NoBeamerOpen}">
+        <Button Classes="transport stop" Command="{Binding StopCommand}" ToolTip.Tip="{l:T game_player.stop_show_scores}" IsVisible="{Binding !NoBeamerOpen}">
           <c:Icon Glyph="stop" FontSize="{StaticResource IconLg}" />
         </Button>
 
         <!-- Nothing to play on yet: one clear action instead of four dead buttons -->
         <Button Classes="tonal" Command="{Binding SelectDisplaysCommand}" IsVisible="{Binding NoBeamerOpen}"
-                ToolTip.Tip="Opens Game Displays: open a display and choose which players sing on it">
+                ToolTip.Tip="{l:T game_player.opens_game_displays_open}">
           <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space2}">
             <c:Icon Glyph="tv" FontSize="{StaticResource IconMd}" />
-            <TextBlock Text="Select displays" />
+            <TextBlock Text="{l:T game_player.select_displays}" />
           </StackPanel>
         </Button>
       </StackPanel>
@@ -158,10 +159,10 @@
         </Grid.Styles>
         <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center" Margin="0,0,8,0">
           <c:Icon Glyph="volume_up" FontSize="{StaticResource IconMd}" Width="28" TextAlignment="Center" Margin="32,0,0,0" />
-          <TextBlock Classes="muted" FontSize="{StaticResource TextSm}" Text="Song" VerticalAlignment="Center" />
+          <TextBlock Classes="muted" FontSize="{StaticResource TextSm}" Text="{l:T game_player.song}" VerticalAlignment="Center" />
         </StackPanel>
         <c:MeterFader Grid.Column="1" Minimum="0" Maximum="1" Value="{Binding Gain}" Level="{Binding SongLevel}"
-                      MinDb="-40" MaxDb="0" WarnDb="-8" ClipDb="-4" VerticalAlignment="Center" ToolTip.Tip="Song knob" />
+                      MinDb="-40" MaxDb="0" WarnDb="-8" ClipDb="-4" VerticalAlignment="Center" ToolTip.Tip="{l:T game_player.song_knob}" />
         <TextBlock Grid.Column="2" Classes="muted" Text="{Binding Gain, StringFormat='{}{0:P0}'}" VerticalAlignment="Center" TextAlignment="Right" />
       </Grid>
 
@@ -177,19 +178,19 @@
               </Grid.ColumnDefinitions>
               <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center" Margin="0,0,8,0">
                 <!-- The display this player sings on: a screen with its number. -->
-                <Panel Width="28" Height="28" ToolTip.Tip="{Binding Display, StringFormat='Sings on Display {0}'}">
+                <Panel Width="28" Height="28" ToolTip.Tip="{l:Format Display, game_player.sings_on_display}">
                   <c:Icon Glyph="tv" FontSize="{StaticResource IconLg}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                   <TextBlock Text="{Binding Display}" FontSize="10" FontWeight="{StaticResource WeightBold}"
                              HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,2" />
                 </Panel>
-                <Button Classes="sidebar small" Command="{Binding ToggleMuteCommand}" ToolTip.Tip="Mute in the speakers">
+                <Button Classes="sidebar small" Command="{Binding ToggleMuteCommand}" ToolTip.Tip="{l:T game_player.mute_speakers}">
                   <c:Icon Glyph="{Binding MuteGlyph}" FontSize="{StaticResource IconMd}"
                           Foreground="{Binding ColorKey, Converter={x:Static vm:PlayerConverters.BrushByKey}}" />
                 </Button>
                 <TextBlock Classes="muted" FontSize="{StaticResource TextSm}" Text="{Binding Name}" VerticalAlignment="Center" />
               </StackPanel>
               <c:MeterFader Grid.Column="1" Minimum="0" Maximum="1" ResetValue="1" Value="{Binding MixGain}" Level="{Binding MixLevel}"
-                            MinDb="-70" MaxDb="0" WarnDb="-14" ClipDb="-7" VerticalAlignment="Center" IsEnabled="{Binding !Muted}" ToolTip.Tip="Mix knob" />
+                            MinDb="-70" MaxDb="0" WarnDb="-14" ClipDb="-7" VerticalAlignment="Center" IsEnabled="{Binding !Muted}" ToolTip.Tip="{l:T game_player.mix_knob}" />
               <!-- Duet: the voice this player sings, under their name (lined up with it, past the screen and mic icons),
                    in their colour. Spans the row so a long singer name does not widen the name column. -->
               <TextBlock Grid.Row="1" Grid.ColumnSpan="3" Text="{Binding VoiceText}" FontSize="{StaticResource TextXs}" FontWeight="{StaticResource WeightBold}"

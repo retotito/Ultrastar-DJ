@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using UltrastarDJ.App.Services;
 using UltrastarDJ.Media;
+using UltrastarDJ.App.Localization;
 
 namespace UltrastarDJ.App.ViewModels;
 
@@ -23,11 +24,11 @@ public sealed partial class AudioOutputPanelViewModel : ViewModelBase, IDisposab
     {
         _outputs = outputs;
         _media = media;
-        Game = new OutputChannelViewModel("Game", "Main speakers", "music_note", media.Game, Options, o => outputs.SetGameOutput(o))
+        Game = new OutputChannelViewModel("audio_output.game", "audio_output.game_sub", "music_note", media.Game, Options, o => outputs.SetGameOutput(o))
         {
             Latency = new GameSyncViewModel(outputs, sync),
         };
-        Preview = new OutputChannelViewModel("Preview", "DJ headphones / monitor", "headphones", media.Preview, Options, o => outputs.SetPreviewOutput(o));
+        Preview = new OutputChannelViewModel("audio_output.preview", "audio_output.preview_sub", "headphones", media.Preview, Options, o => outputs.SetPreviewOutput(o));
         _state = new DispatcherTimer(TimeSpan.FromMilliseconds(250), DispatcherPriority.Background, (_, _) => { Game.Poll(); Preview.Poll(); });
         _state.Start();
         _outputs.Changed += OnOutputsChanged;
@@ -61,7 +62,7 @@ public sealed partial class AudioOutputPanelViewModel : ViewModelBase, IDisposab
         // takes over again by itself when it is plugged back in.
         Sync(Game, MediaChannelKind.Game, _outputs.Game);
         Sync(Preview, MediaChannelKind.Preview, _outputs.Preview);
-        Status = list.Count <= 1 ? "Only the system output was found — connect a USB or Bluetooth device and refresh" : "";
+        Status = list.Count <= 1 ? L.T("audio_output.only_system") : "";
     }
 
     private void Sync(OutputChannelViewModel card, MediaChannelKind kind, OutputsService.ChannelOutput chosen)
@@ -107,8 +108,8 @@ public sealed partial class GameSyncViewModel : ObservableObject, IDisposable
     public bool IsRunning => _sync.IsRunning;
     public bool CanToggle => _sync.IsRunning || _sync.CanRun;
     public string ToggleTip => _sync.Blocker ?? (_sync.IsRunning
-        ? "Stop the clicks"
-        : "Plays a click every second on the game speakers and flashes the displays when each click should be heard. Move LATENCY until flash and click happen together.");
+        ? L.T("audio_output.stop_clicks")
+        : L.T("audio_output.test_sync_tip"));
 
     [RelayCommand]
     private void Toggle()
@@ -162,22 +163,25 @@ public sealed partial class OutputChannelViewModel : ObservableObject
     public OutputChannelViewModel(string title, string subtitle, string glyph, MediaChannel channel, ObservableCollection<OutputOption> options,
         Action<OutputOption> setOutput)
     {
-        Title = title;
-        Subtitle = subtitle;
+        _titleKey = title;
+        _subtitleKey = subtitle;
         Glyph = glyph;
         _channel = channel;
         Options = options;
         _setOutput = setOutput;
     }
 
-    public string Title { get; }
-    public string Subtitle { get; }
+    private readonly string _titleKey;
+    private readonly string _subtitleKey;
+    // Read on every poll: a language switch shows within 250 ms.
+    public string Title => L.T(_titleKey);
+    public string Subtitle => L.T(_subtitleKey);
     /// <summary>Latency + Test sync; game card only.</summary>
     public GameSyncViewModel? Latency { get; init; }
     public string Glyph { get; }
     /// <summary>Shared with the panel; bound directly so ItemsSource resolves before SelectedItem when the view is recreated.</summary>
     public ObservableCollection<OutputOption> Options { get; }
-    public string StateText => _channel.State == MediaState.Idle ? "" : _channel.State.ToString();
+    public string StateText => _channel.State == MediaState.Idle ? "" : L.T("media_state." + _channel.State);
 
     public void Sync(IEnumerable<OutputOption> options, string mpvId, int offset)
     {
@@ -186,7 +190,12 @@ public sealed partial class OutputChannelViewModel : ObservableObject
         _loading = false;
     }
 
-    public void Poll() => OnPropertyChanged(nameof(StateText));
+    public void Poll()
+    {
+        OnPropertyChanged(nameof(StateText));
+        OnPropertyChanged(nameof(Title));
+        OnPropertyChanged(nameof(Subtitle));
+    }
 
     partial void OnSelectedChanged(OutputOption? value)
     {

@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using UltrastarDJ.App.Services;
 using UltrastarDJ.Core.Displays;
 using UltrastarDJ.Core.Game;
+using UltrastarDJ.App.Localization;
 
 namespace UltrastarDJ.App.ViewModels;
 
@@ -86,14 +87,14 @@ public sealed partial class DuetSingersViewModel : ObservableObject
                 .Select(p => new DuetSingerRow(p.Id, p.Name, VoiceOf(p.Id), this))];
             if (rows.Count > 0)
             {
-                sections.Add(new DuetDisplaySection($"DISPLAY {(int)id}", rows));
+                sections.Add(new DuetDisplaySection(L.F("duet.display_section", (int)id), rows));
             }
         }
 
         Sections = sections;
         Title = playback.Song?.Title ?? "";
-        Voice1Label = playback.Song?.Voice1 is { Length: > 0 } a ? $"VOICE 1 · {a}" : "VOICE 1";
-        Voice2Label = playback.Song?.Voice2 is { Length: > 0 } b ? $"VOICE 2 · {b}" : "VOICE 2";
+        Voice1Label = playback.Song?.Voice1 is { Length: > 0 } a ? L.F("duet.voice1_named", a) : L.T("duet.voice1");
+        Voice2Label = playback.Song?.Voice2 is { Length: > 0 } b ? L.F("duet.voice2_named", b) : L.T("duet.voice2");
     }
 
     public string Title { get; }
@@ -110,10 +111,10 @@ public sealed partial class DuetSingersViewModel : ObservableObject
     public bool ShowTable => !OnlyOnePlayer;
 
     /// <summary>"Player 1 sings both voices." while only one voice is picked; empty when both are.</summary>
-    public string BothVoicesHint => Rows.Where(r => r.Voice != DuetSingerRow.Out).ToList() is [var only] ? $"{only.Name} sings both voices." : "";
+    public string BothVoicesHint => Rows.Where(r => r.Voice != DuetSingerRow.Out).ToList() is [var only] ? L.F("duet.sings_both", only.Name) : "";
 
     public string OnlyOneText => Rows.FirstOrDefault() is { } r
-        ? $"Only one player is set up — {r.Name} sings both voices. To sing it as a duet, assign a second player in Game Displays."
+        ? L.F("duet.only_one_player", r.Name)
         : "";
 
     /// <summary>A voice goes to one player only: whoever had it sits out.</summary>

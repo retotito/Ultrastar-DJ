@@ -18,13 +18,6 @@ public sealed class PlayersService
         {
             _doc = PlayersDocument.Default();
         }
-
-        // Names are fixed ("Player 1" … — translated later), no longer editable: older files may hold custom ones.
-        if (_doc.Players.Any(p => p.Name != PlayerConfig.Default(p.Id).Name))
-        {
-            _doc = new PlayersDocument([.. _doc.Players.Select(p => p with { Name = PlayerConfig.Default(p.Id).Name })]);
-            _settings.Save(SettingsName, _doc);
-        }
     }
 
     public event Action<PlayerConfig>? Changed;

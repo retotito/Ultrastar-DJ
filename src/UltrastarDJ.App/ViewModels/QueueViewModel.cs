@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using UltrastarDJ.App.Services;
 using UltrastarDJ.Core.Queue;
 using UltrastarDJ.Core.Songs;
+using UltrastarDJ.App.Localization;
 
 namespace UltrastarDJ.App.ViewModels;
 
@@ -89,7 +90,7 @@ public sealed partial class QueueViewModel : ViewModelBase
 
     public string LoadSongTip => _nowPlaying.LoadSongTip;
 
-    public string LoadNextTip => _nowPlaying.CanLoadSong ? "Load the next song into the Game Player" : _nowPlaying.LoadSongTip;
+    public string LoadNextTip => _nowPlaying.CanLoadSong ? L.T("queue.load_next_tip") : _nowPlaying.LoadSongTip;
 
     [RelayCommand(CanExecute = nameof(HasItems))]
     private void Clear() => _playlist.Clear();

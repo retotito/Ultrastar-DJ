@@ -11,6 +11,7 @@ using UltrastarDJ.Core.Game;
 using UltrastarDJ.Core.Playback;
 using UltrastarDJ.Infrastructure;
 using UltrastarDJ.Infrastructure.Settings;
+using UltrastarDJ.App.Localization;
 
 namespace UltrastarDJ.App.ViewModels;
 
@@ -22,11 +23,11 @@ public sealed partial class SettingsPanelViewModel : ViewModelBase
     private readonly YtDlpService _ytDlp;
 
     // ── YouTube (yt-dlp): version, newer one, update ──
-    public string YtDlpVersionText => _ytDlp.CurrentVersion is { } v ? $"yt-dlp {v}" : "yt-dlp not found";
+    public string YtDlpVersionText => _ytDlp.CurrentVersion is { } v ? $"yt-dlp {v}" : L.T("settings.ytdlp_not_found");
     public string YtDlpStatusText => _ytDlp.Status is { Length: > 0 } s ? s
-        : _ytDlp.UpdateAvailable ? $"Newer version {_ytDlp.LatestVersion} available"
-        : _ytDlp.LatestVersion is not null ? "Up to date" : "";
-    public string YtDlpButtonText => _ytDlp.UpdateAvailable ? $"Update to {_ytDlp.LatestVersion}" : "Check for update";
+        : _ytDlp.UpdateAvailable ? L.F("settings.ytdlp_newer", _ytDlp.LatestVersion)
+        : _ytDlp.LatestVersion is not null ? L.T("settings.ytdlp_up_to_date") : "";
+    public string YtDlpButtonText => _ytDlp.UpdateAvailable ? L.F("settings.ytdlp_update_to", _ytDlp.LatestVersion) : L.T("settings.ytdlp_check");
     public bool YtDlpIdle => !_ytDlp.Busy;
 
     [RelayCommand]
@@ -74,6 +75,19 @@ public sealed partial class SettingsPanelViewModel : ViewModelBase
     /// <summary>The file pickers need the owning window (set by the view).</summary>
     public TopLevel? Owner { get; set; }
 
+    public IReadOnlyList<UiLanguage> UiLanguages => Translations.Choices;
+
+    /// <summary>Settings → Language: switches the whole app at once (no restart).</summary>
+    [ObservableProperty] private UiLanguage? _uiLanguage;
+
+    partial void OnUiLanguageChanged(UiLanguage? value)
+    {
+        if (!_loading && value is not null && value.Code != Translations.Instance.Code)
+        {
+            _settings.SetLanguage(value.Code);
+        }
+    }
+
     public SettingsPanelViewModel(AppSettingsService settings, AppPaths paths, PlaybackService playback, YtDlpService ytDlp)
     {
         _ytDlp = ytDlp;
@@ -83,6 +97,7 @@ public sealed partial class SettingsPanelViewModel : ViewModelBase
         _playback = playback;
         playback.StateChanged += _ => OnPropertyChanged(nameof(DifficultyLocked));
         _loading = true;
+        UiLanguage = Translations.Instance.Current;
         Theme = settings.LightTheme ? LightName : DarkName;
         ShowTooltips = settings.ShowTooltips;
         NoteBarStyle = settings.NoteBarStyle;
@@ -106,7 +121,7 @@ public sealed partial class SettingsPanelViewModel : ViewModelBase
             ? [.. new DirectoryInfo(CrashReportFolder).EnumerateFiles($"{AppPaths.AppFolderName}*").Where(f => f.Extension is ".ips" or ".crash").OrderByDescending(f => f.LastWriteTimeUtc)]
             : [];
         _newestCrashReport = reports.Count > 0 ? reports[0].FullName : null;
-        CrashReportsText = reports.Count == 1 ? "1 crash report" : $"{reports.Count} crash reports";
+        CrashReportsText = reports.Count == 1 ? L.T("settings.crash_report_one") : L.F("settings.crash_reports", reports.Count);
         OnPropertyChanged(nameof(HasCrashReports));
     }
 
@@ -135,7 +150,7 @@ public sealed partial class SettingsPanelViewModel : ViewModelBase
         }
         else
         {
-            FilesStatus = "No log yet.";
+            FilesStatus = L.T("settings.no_log");
         }
     });
 
@@ -158,7 +173,7 @@ public sealed partial class SettingsPanelViewModel : ViewModelBase
 
         IStorageFile? file = await Owner.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
-            Title = "Back up Ultrastar DJ",
+            Title = L.T("settings.backup_title"),
             SuggestedFileName = $"UltrastarDJ-backup-{DateTime.Now:yyyy-MM-dd}.zip",
             DefaultExtension = "zip",
             FileTypeChoices = [new FilePickerFileType("Zip") { Patterns = ["*.zip"] }],
@@ -171,11 +186,11 @@ public sealed partial class SettingsPanelViewModel : ViewModelBase
         try
         {
             int n = SettingsBackup.Create(_paths.Settings, path);
-            BackupStatus = $"Saved {n} settings files to {Path.GetFileName(path)}.";
+            BackupStatus = L.F("settings.backup_saved", n, Path.GetFileName(path));
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            BackupStatus = $"Could not save the backup: {ex.Message}";
+            BackupStatus = L.F("settings.backup_failed", ex.Message);
         }
     }
 
@@ -189,9 +204,9 @@ public sealed partial class SettingsPanelViewModel : ViewModelBase
 
         IReadOnlyList<IStorageFile> files = await Owner.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
-            Title = "Restore a backup",
+            Title = L.T("settings.restore_title"),
             AllowMultiple = false,
-            FileTypeFilter = [new FilePickerFileType("Ultrastar DJ backup") { Patterns = ["*.zip"] }],
+            FileTypeFilter = [new FilePickerFileType(L.T("settings.restore_file_type")) { Patterns = ["*.zip"] }],
         });
         if (files.Count == 0 || files[0].TryGetLocalPath() is not { } path)
         {
@@ -202,7 +217,7 @@ public sealed partial class SettingsPanelViewModel : ViewModelBase
         {
             SettingsBackup.Stage(path, _paths.Settings);
             RestorePending = true;
-            BackupStatus = "Restored when Ultrastar DJ starts again — quit now and start it again.";
+            BackupStatus = L.T("settings.restore_pending");
         }
         catch (InvalidDataException ex)
         {
@@ -232,7 +247,7 @@ public sealed partial class SettingsPanelViewModel : ViewModelBase
         }
         catch (Win32Exception ex)
         {
-            FilesStatus = $"Could not open it: {ex.Message}";
+            FilesStatus = L.F("settings.open_failed", ex.Message);
         }
     }
 
@@ -240,9 +255,9 @@ public sealed partial class SettingsPanelViewModel : ViewModelBase
     public IReadOnlyList<Difficulty> Difficulties { get; } = [Difficulty.Easy, Difficulty.Medium, Difficulty.Hard];
     public string DifficultyHint => Difficulty switch
     {
-        Difficulty.Easy => "±2 semitones — party mode",
-        Difficulty.Hard => "exact semitone — for show-offs",
-        _ => "±1 semitone — the usual",
+        Difficulty.Easy => L.T("settings.difficulty_easy_hint"),
+        Difficulty.Hard => L.T("settings.difficulty_hard_hint"),
+        _ => L.T("settings.difficulty_medium_hint"),
     };
 
     public IReadOnlyList<NoteBarStyle> NoteBarStyles { get; } = [NoteBarStyle.White, NoteBarStyle.Black];

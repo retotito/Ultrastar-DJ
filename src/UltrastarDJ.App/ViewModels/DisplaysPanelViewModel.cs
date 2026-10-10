@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using UltrastarDJ.App.Services;
 using UltrastarDJ.Core.Displays;
 using UltrastarDJ.Core.Players;
+using UltrastarDJ.App.Localization;
 
 namespace UltrastarDJ.App.ViewModels;
 
@@ -71,9 +72,14 @@ public sealed partial class DisplayRowViewModel : ObservableObject
     [ObservableProperty] private string? _screen;
 
     /// <summary>The status pill: Closed (grey) / Open (green) / Fullscreen (blue).</summary>
-    public string StateText => !IsOpen ? "Closed" : IsFullScreen ? "Fullscreen" : "Open";
+    public string StateText => !IsOpen ? L.T("state.closed") : IsFullScreen ? L.T("state.fullscreen") : L.T("state.open");
 
     internal void RefreshScreen() => Screen = _displays.ScreenText(Id);
+
+    /// <summary>The screen it is on, or where a closed one will open.</summary>
+    public string ScreenText => Screen ?? L.T("displays.opens_next");
+
+    partial void OnScreenChanged(string? value) => OnPropertyChanged(nameof(ScreenText));
 
     partial void OnIsOpenChanged(bool value) => OnPropertyChanged(nameof(StateText));
 
@@ -95,7 +101,7 @@ public sealed partial class DisplayRowViewModel : ObservableObject
     }
 
     public DisplayId Id { get; }
-    public string Title => $"Display {(int)Id}";
+    public string Title => L.F("display.label", (int)Id);
     public ObservableCollection<PlayerToggleViewModel> Players { get; } = [];
 
     internal void LoadAssignments()

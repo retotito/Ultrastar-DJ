@@ -19,6 +19,8 @@ public sealed class AppSettingsService
     {
         _settings = settings;
         _doc = settings.Load(SettingsName, AppSettingsDocument.Default());
+        // Before any window is built; the system's language until one was chosen (first start asks).
+        Localization.Translations.Instance.SetLanguage(_doc.Language ?? Localization.Translations.SystemLanguage());
         Apply();
     }
 
@@ -53,6 +55,15 @@ public sealed class AppSettingsService
     /// <summary>Where the DJ window was when the app last closed (null: first start → centred).</summary>
     public WindowPlacement? DjWindowPlacement => _doc.DjWindow;
     public void SetDjWindowPlacement(WindowPlacement placement) => Update(_doc with { DjWindow = placement });
+
+    /// <summary>The UI language's code ("de"); null until it was chosen on the first start.</summary>
+    public string? Language => _doc.Language;
+
+    public void SetLanguage(string code)
+    {
+        Localization.Translations.Instance.SetLanguage(code);
+        Update(_doc with { Language = code });
+    }
 
     public void SetLightTheme(bool light) => Update(_doc with { LightTheme = light });
     public void SetShowTooltips(bool show) => Update(_doc with { HideTooltips = !show });
@@ -98,6 +109,7 @@ public sealed class AppSettingsService
         public IReadOnlyList<LibraryColumn>? VisibleColumns { get; init; }
         public bool ShowBrokenSongs { get; init; }
         public WindowPlacement? DjWindow { get; init; }
+        public string? Language { get; init; }
 
         /// <summary>A first start is light; a saved choice (light or dark) is kept.</summary>
         public static AppSettingsDocument Default() => new(true, Difficulty.Medium, 0);

@@ -31,7 +31,7 @@ public sealed class GuestRequest(string id, string songId, string guest, string 
 }
 
 /// <param name="Request">The new request, or null when refused.</param>
-/// <param name="Refusal">Why not, in words for the guest.</param>
+/// <param name="Refusal">Why not, as a code the guest page shows in the phone's language ("queued|2", "requested_by|Anna").</param>
 public sealed record RequestOutcome(GuestRequest? Request, string? Refusal);
 
 /// <summary>
@@ -51,25 +51,25 @@ public sealed class GuestRequests
     {
         if (songId == loadedSongId)
         {
-            return new(null, "This song is on stage right now.");
+            return new(null, "onstage");
         }
 
         int at = IndexAfter(queue, songId, activeIndex);
 
         if (at > activeIndex)
         {
-            return new(null, $"Already in the queue (#{at - activeIndex}).");
+            return new(null, $"queued|{at - activeIndex}");
         }
 
         if (Waiting.FirstOrDefault(r => r.SongId == songId) is { } pending)
         {
-            return new(null, pending.ClientId == clientId ? "You already requested this song." : $"Already requested by {pending.Guest}.");
+            return new(null, pending.ClientId == clientId ? "mine" : $"requested_by|{pending.Guest}");
         }
 
         int open = _all.Count(r => r.ClientId == clientId && StatusOf(r, queue, activeIndex, loadedSongId, out _) is GuestRequestStatus.Waiting or GuestRequestStatus.Queued or GuestRequestStatus.OnStage);
         if (open >= MaxOpenPerGuest)
         {
-            return new(null, $"You have {MaxOpenPerGuest} open requests — wait until one has been sung.");
+            return new(null, $"limit|{MaxOpenPerGuest}");
         }
 
         GuestRequest request = new(Guid.NewGuid().ToString("N")[..12], songId, guest, clientId, now);

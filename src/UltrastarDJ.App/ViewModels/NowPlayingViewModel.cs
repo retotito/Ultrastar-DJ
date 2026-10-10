@@ -11,6 +11,7 @@ using UltrastarDJ.Core.Game;
 using UltrastarDJ.Core.Playback;
 using UltrastarDJ.Core.Players;
 using UltrastarDJ.Core.Songs;
+using UltrastarDJ.App.Localization;
 
 namespace UltrastarDJ.App.ViewModels;
 
@@ -33,7 +34,7 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
     private readonly ILogger<NowPlayingViewModel> _log;
     private readonly DispatcherTimer _poll;
 
-    [ObservableProperty] private string _title = "No song loaded";
+    [ObservableProperty] private string _title = L.T("game_player.no_song");
     [ObservableProperty] private string _artist = "";
     [ObservableProperty] private string _status = "";
     // Time strip at the bottom of the box, as at the bottom of the beamer (Core.Timing.SongTimeline).
@@ -51,6 +52,8 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
         PlayersService players, AppSettingsService settings, OutputsService outputs, NotificationService notifications,
         SongbookService songbook, YtDlpService ytDlp, SongMarksService marks, ILogger<NowPlayingViewModel> log)
     {
+        // Title / status / mix rows are texts kept, not computed: built again in the new language.
+        Translations.Instance.Changed += Refresh;
         _marks = marks;
         marks.Changed += OnMarksChanged;
         _ytDlp = ytDlp;
@@ -252,25 +255,25 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
     }
 
     // "Bradley Cooper" (the file's singer name, else "Voice 1"), or "Both voices".
-    private string VoiceName(int voice) => voice == DuetVoices.BothVoices ? "Both voices"
-        : (voice == 0 ? _playback.Song?.Voice1 : _playback.Song?.Voice2) is { Length: > 0 } name ? name : $"Voice {voice + 1}";
+    private string VoiceName(int voice) => voice == DuetVoices.BothVoices ? L.T("game_player.both_voices")
+        : (voice == 0 ? _playback.Song?.Voice1 : _playback.Song?.Voice2) is { Length: > 0 } name ? name : L.F("game_player.voice_n", voice + 1);
 
     private void Refresh()
     {
         Song? song = _playback.Song;
         RefreshBox();
-        Title = song?.Title ?? "No song loaded";
+        Title = song?.Title ?? L.T("game_player.no_song");
         Artist = song?.Artist ?? "";
         SyncRows();
         Status = _playback.State switch
         {
-            PlaybackState.Idle => "Load a song from the library",
-            PlaybackState.Loaded => "Ready",
-            PlaybackState.Preview => "Get-ready screen on the displays",
+            PlaybackState.Idle => L.T("game_player.status_idle"),
+            PlaybackState.Loaded => L.T("game_player.status_ready"),
+            PlaybackState.Preview => L.T("game_player.status_preview"),
             PlaybackState.Countdown => "3 – 2 – 1 …",
-            PlaybackState.Playing => "Playing",
-            PlaybackState.Paused => "Paused",
-            PlaybackState.Score => "Score screen — Play to sing it again, Home for the start view",
+            PlaybackState.Playing => L.T("game_player.status_playing"),
+            PlaybackState.Paused => L.T("game_player.status_paused"),
+            PlaybackState.Score => L.T("game_player.status_score"),
             _ => "",
         };
         OnPropertyChanged(nameof(State));
@@ -333,7 +336,7 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
 
         Loading = true;
         IsVisible = true;
-        Status = $"Loading {song.Title}…";
+        Status = L.F("game_player.loading_song", song.Title);
         try
         {
             await _playback.LoadAsync(song);
@@ -341,7 +344,7 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
         catch (SongLoadException ex)
         {
             _log.LogWarning("Load failed: {Error}", ex.Message);
-            _notifications.ShowError("Song cannot be loaded", _ytDlp.WithHint(ex.Reasons, ex.YtDlpMayHelp), ex.Details);
+            _notifications.ShowError(L.T("game_player.cannot_load"), _ytDlp.WithHint(ex.Reasons, ex.YtDlpMayHelp), ex.Details);
         }
         finally
         {
@@ -359,8 +362,8 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
     public bool CanLoadSong => _playback.CanLoad && !Loading;
 
     public string LoadSongTip => Loading
-        ? "A song is loading…"
-        : _playback.CanLoad ? "Load into the Game Player" : "A song is playing — stop it (⏹) to load another one";
+        ? L.T("game_player.song_loading")
+        : _playback.CanLoad ? L.T("game_player.load_tip") : L.T("game_player.load_blocked");
 
     /// <summary>Raised when <see cref="CanLoadSong"/> may have changed.</summary>
     public event Action? LoadAvailabilityChanged;
@@ -486,11 +489,11 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
     public string PlayGlyph => PlaybackRules.PlayButtonFor(_playback.State) == PlayButton.Pause ? "pause" : "play_arrow";
     public string PlayTip => _playback.State switch
     {
-        PlaybackState.Playing => "Pause",
-        PlaybackState.Paused => "Resume",
-        PlaybackState.Countdown => "Starting…",
-        PlaybackState.Score => "Play again from the start (countdown on the displays)",
-        _ => "Play (countdown on the displays)",
+        PlaybackState.Playing => L.T("game_player.pause"),
+        PlaybackState.Paused => L.T("game_player.resume"),
+        PlaybackState.Countdown => L.T("game_player.starting"),
+        PlaybackState.Score => L.T("game_player.play_again"),
+        _ => L.T("game_player.play"),
     };
 
     [RelayCommand(CanExecute = nameof(CanStop))] private void Stop() => _playback.Stop();

@@ -16,6 +16,7 @@ using UltrastarDJ.Infrastructure;
 using UltrastarDJ.Infrastructure.Library;
 using UltrastarDJ.Infrastructure.Settings;
 using UltrastarDJ.Infrastructure.Usdb;
+using UltrastarDJ.App.Localization;
 
 namespace UltrastarDJ.App;
 
@@ -49,9 +50,10 @@ public sealed partial class App : Application
         desktop.ShutdownRequested += OnShutdownRequested;
         desktop.Exit += (_, _) => Log.CloseAndFlush();
 
+        // First: the UI language (and theme) before any window or view model reads a text.
+        AppSettingsService appSettings = _services.GetRequiredService<AppSettingsService>();
         DjWindow window = new() { DataContext = _services.GetRequiredService<DjWindowViewModel>() };
         // Opens where it was when the app last closed (same screen, size, maximised / fullscreen).
-        AppSettingsService appSettings = _services.GetRequiredService<AppSettingsService>();
         WindowMemory.Restore(window, appSettings.DjWindowPlacement);
         WindowMemory.Track(window, appSettings.SetDjWindowPlacement);
         _services.GetRequiredService<DisplayService>().AttachOwner(window);
@@ -71,8 +73,8 @@ public sealed partial class App : Application
         if (restored > 0)
         {
             _services.GetRequiredService<ILogger<App>>().LogInformation("Backup restored: {Count} settings files", restored);
-            _services.GetRequiredService<NotificationService>().Success("Backup restored",
-                "Settings and song marks are back. On a new computer: rescan the song folders and log in to USDB.");
+            _services.GetRequiredService<NotificationService>().Success(L.T("backup.restored"),
+                L.T("backup.restored_detail"));
         }
 
         base.OnFrameworkInitializationCompleted();

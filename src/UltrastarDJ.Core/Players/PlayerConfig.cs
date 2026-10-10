@@ -26,7 +26,9 @@ public sealed record PlayerConfig
 
     public required int Id { get; init; }
     public bool Active { get; init; }
-    public required string Name { get; init; }
+    /// <summary>"Player 1" … in the UI language — fixed per slot, not stored.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string Name => Localization.Text.F("player.name", "Player {0}", Id);
     /// <summary>Colour key (blue/red/green/yellow); the UI maps it to <c>ColorPlayerN</c>.</summary>
     public required string Color { get; init; }
     public MicBinding? Mic { get; init; }
@@ -56,7 +58,6 @@ public sealed record PlayerConfig
     {
         Id = id,
         Active = id <= 2,
-        Name = $"Player {id}",
         Color = Colors[(id - 1) % Colors.Count],
     };
 }

@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
+using UltrastarDJ.Core.Localization;
 
 namespace UltrastarDJ.Infrastructure.Songbook;
 
@@ -58,7 +59,7 @@ public sealed partial class CloudflareTunnel(string executable, ILogger log) : I
         p.OutputDataReceived += OnLine;
         p.Exited += (_, _) =>
         {
-            announced.TrySetException(new InvalidOperationException("cloudflared stopped before the link was ready."));
+            announced.TrySetException(new InvalidOperationException(Text.T("tunnel.stopped", "cloudflared stopped before the link was ready.")));
             if (ReferenceEquals(_process, p))
             {
                 log.LogWarning("Public link: cloudflared exited (code {Code})", p.ExitCode);
@@ -81,7 +82,7 @@ public sealed partial class CloudflareTunnel(string executable, ILogger log) : I
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {
             await StopAsync().ConfigureAwait(false);
-            throw new InvalidOperationException("Cloudflare did not hand out a link in time — is this Mac online?");
+            throw new InvalidOperationException(Text.T("tunnel.timeout", "Cloudflare did not hand out a link in time — is this Mac online?"));
         }
 
         log.LogInformation("Public link: {Url}", Url);

@@ -1,5 +1,6 @@
 using System.IO.Compression;
 using System.Text.Json;
+using UltrastarDJ.Core.Localization;
 
 namespace UltrastarDJ.Infrastructure.Settings;
 
@@ -49,14 +50,14 @@ public static class SettingsBackup
             using ZipArchive zip = ZipFile.OpenRead(zipPath);
             if (zip.GetEntry(ManifestName) is null)
             {
-                throw new InvalidDataException("This zip is not an Ultrastar DJ backup.");
+                throw new InvalidDataException(Text.T("backup.not_a_backup", "This zip is not an Ultrastar DJ backup."));
             }
 
             List<ZipArchiveEntry> documents = [.. zip.Entries.Where(e => e.FullName != ManifestName)];
             // Plain file names only: nothing may land outside the settings folder.
             if (documents.Any(e => e.FullName != Path.GetFileName(e.FullName) || !e.FullName.EndsWith(".json", StringComparison.OrdinalIgnoreCase)))
             {
-                throw new InvalidDataException("This backup holds unexpected files.");
+                throw new InvalidDataException(Text.T("backup.unexpected_files", "This backup holds unexpected files."));
             }
 
             if (Directory.Exists(pending))
@@ -76,7 +77,7 @@ public static class SettingsBackup
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            throw new InvalidDataException($"The backup could not be read: {ex.Message}", ex);
+            throw new InvalidDataException(Text.F("backup.unreadable", "The backup could not be read: {0}", ex.Message), ex);
         }
     }
 

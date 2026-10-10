@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="using:UltrastarDJ.App.Localization"
              xmlns:vm="using:UltrastarDJ.App.ViewModels"
              xmlns:c="using:UltrastarDJ.App.Controls"
              x:Class="UltrastarDJ.App.Views.SongbookPanelView"
@@ -11,31 +12,37 @@
         <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
           <c:Icon Glyph="{Binding IsRunning, Converter={x:Static vm:BoolConverters.Glyph}, ConverterParameter='stop|play_arrow'}"
                   FontSize="{StaticResource IconMd}" />
-          <TextBlock Text="{Binding IsRunning, Converter={x:Static vm:BoolConverters.Text}, ConverterParameter='Stop|Start'}"
+          <TextBlock Text="{l:Pick IsRunning, True=songbook.stop, False=songbook.start}"
  />
         </StackPanel>
       </Button>
     </StackPanel>
     <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap"
-               Text="Guests scan the QR code on the display (or open the address), search the library and request songs. Requests appear above the queue." />
+               Text="{l:T songbook.guests_scan_qr_code}" />
 
     <!-- One way in at a time: switching while running stops the one and starts the other. -->
     <Border Classes="card">
       <StackPanel Spacing="{StaticResource Space2}">
-        <TextBlock Text="Guests connect via" />
-        <ComboBox ItemsSource="{Binding ConnectChoices}" SelectedItem="{Binding ConnectVia}" HorizontalAlignment="Stretch" IsEnabled="{Binding !Busy}" />
+        <TextBlock Text="{l:T songbook.guests_connect_via}" />
+        <ComboBox ItemsSource="{Binding ConnectChoices}" SelectedItem="{Binding ConnectVia}" HorizontalAlignment="Stretch" IsEnabled="{Binding !Busy}">
+            <ComboBox.ItemTemplate>
+              <DataTemplate>
+                <TextBlock Text="{l:TOf ., Prefix=songbook.connect.}" />
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
         <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap" IsVisible="{Binding IsWifi}"
-                   Text="Only phones on the same Wi-Fi as this Mac. Works without internet." />
+                   Text="{l:T songbook.only_phones_same_wi}" />
         <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap" IsVisible="{Binding IsPublic}"
-                   Text="A public https link (Cloudflare) — works on mobile data and any Wi-Fi. Needs internet on this Mac; the party PIN is switched on. The Wi-Fi address is closed meanwhile." />
+                   Text="{l:T songbook.public_https_link_cloudflare}" />
       </StackPanel>
     </Border>
 
     <Border Classes="card" IsVisible="{Binding IsRunning}">
       <StackPanel Spacing="{StaticResource Space1}">
-        <TextBlock Classes="label" Text="ADDRESS" />
+        <TextBlock Classes="label" Text="{l:T songbook.address}" />
         <SelectableTextBlock Text="{Binding Urls}" FontFamily="{StaticResource FontMono}" FontSize="{StaticResource TextLg}" IsVisible="{Binding IsWifi}" />
-        <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="Several addresses = several network interfaces; the Wi-Fi one usually starts with 192.168." TextWrapping="Wrap" IsVisible="{Binding IsWifi}" />
+        <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="{l:T songbook.several_addresses_several_network}" TextWrapping="Wrap" IsVisible="{Binding IsWifi}" />
         <SelectableTextBlock Text="{Binding PublicUrl}" FontFamily="{StaticResource FontMono}" FontSize="{StaticResource TextSm}" TextWrapping="Wrap"
                              IsVisible="{Binding IsPublic}" />
         <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="{Binding PublicStatus}" TextWrapping="Wrap"
@@ -48,22 +55,22 @@
       <StackPanel Spacing="{StaticResource Space3}">
         <Grid ColumnDefinitions="*,Auto">
           <StackPanel>
-            <TextBlock Text="Allow requests" />
+            <TextBlock Text="{l:T songbook.allow_requests}" />
             <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap"
-                       Text="Off: guests can browse the songbook, but not request songs from their phone" />
+                       Text="{l:T songbook.off_guests_can_browse}" />
           </StackPanel>
           <ToggleSwitch Grid.Column="1" IsChecked="{Binding RequestsOpen}" OnContent="" OffContent="" />
         </Grid>
         <Grid ColumnDefinitions="*,Auto">
           <StackPanel>
-            <TextBlock Text="Party PIN" />
-            <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="Guests must enter it before they see the library" />
+            <TextBlock Text="{l:T songbook.party_pin}" />
+            <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="{l:T songbook.guests_must_enter_before}" TextWrapping="Wrap" />
           </StackPanel>
           <ToggleSwitch Grid.Column="1" IsChecked="{Binding PinEnabled}" OnContent="" OffContent="" />
         </Grid>
         <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding PinEnabled}">
           <TextBlock Text="{Binding Pin}" FontFamily="{StaticResource FontMono}" FontSize="{StaticResource Text2Xl}" FontWeight="{StaticResource WeightBold}" VerticalAlignment="Center" />
-          <Button Grid.Column="1" Classes="sidebar" Command="{Binding RegeneratePinCommand}" ToolTip.Tip="New PIN">
+          <Button Grid.Column="1" Classes="sidebar" Command="{Binding RegeneratePinCommand}" ToolTip.Tip="{l:T songbook.new_pin}">
             <c:Icon Glyph="casino" FontSize="{StaticResource IconMd}" />
           </Button>
         </Grid>
@@ -74,14 +81,14 @@
       <StackPanel Spacing="{StaticResource Space3}">
         <Grid ColumnDefinitions="*,Auto">
           <StackPanel>
-            <TextBlock Text="Start with the app" />
+            <TextBlock Text="{l:T songbook.start_app}" />
           </StackPanel>
           <ToggleSwitch Grid.Column="1" IsChecked="{Binding AutoStart}" OnContent="" OffContent="" />
         </Grid>
         <Grid ColumnDefinitions="*,90">
           <StackPanel>
-            <TextBlock Text="Port" />
-            <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="Applies on the next start" />
+            <TextBlock Text="{l:T songbook.port}" />
+            <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="{l:T songbook.applies_next_start}" TextWrapping="Wrap" />
           </StackPanel>
           <TextBox Grid.Column="1" Text="{Binding Port}" IsEnabled="{Binding !IsRunning}" TextAlignment="Right" />
         </Grid>

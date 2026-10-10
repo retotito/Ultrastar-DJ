@@ -1,5 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="using:UltrastarDJ.App.Localization"
         xmlns:vm="using:UltrastarDJ.App.ViewModels"
         xmlns:c="using:UltrastarDJ.App.Controls"
         xmlns:svc="using:UltrastarDJ.App.Services"
@@ -29,7 +30,7 @@
         <StackPanel DockPanel.Dock="Bottom" Spacing="{StaticResource Space5}">
           <Button Classes="sidebar" Classes.active="{Binding ActivePanel, Converter={x:Static vm:SidebarPanelConverters.Is}, ConverterParameter=Settings}"
                   Command="{Binding TogglePanelCommand}" CommandParameter="{x:Static vm:SidebarPanel.Settings}"
-                  ToolTip.Tip="Settings">
+                  ToolTip.Tip="{l:T window.settings}">
             <c:Icon Glyph="settings" />
           </Button>
         </StackPanel>
@@ -37,40 +38,40 @@
         <StackPanel Spacing="{StaticResource Space5}">
           <Button Classes="sidebar" Classes.active="{Binding NowPlaying.IsVisible}"
                   Command="{Binding ToggleNowPlayingCommand}"
-                  ToolTip.Tip="Game Player (transport, song &amp; mic mix)">
+                  ToolTip.Tip="{l:T window.game_player_transport_song}">
             <c:Icon Glyph="play_circle" />
           </Button>
           <Button Classes="sidebar" Classes.active="{Binding ActivePanel, Converter={x:Static vm:SidebarPanelConverters.Is}, ConverterParameter=Layout}"
                   Command="{Binding TogglePanelCommand}" CommandParameter="{x:Static vm:SidebarPanel.Layout}"
-                  ToolTip.Tip="Layout">
+                  ToolTip.Tip="{l:T window.layout}">
             <c:Icon Glyph="table_chart" />
           </Button>
           <Button Classes="sidebar" Classes.active="{Binding ActivePanel, Converter={x:Static vm:SidebarPanelConverters.Is}, ConverterParameter=Sources}"
                   Command="{Binding TogglePanelCommand}" CommandParameter="{x:Static vm:SidebarPanel.Sources}"
-                  ToolTip.Tip="Song Sources">
+                  ToolTip.Tip="{l:T window.song_sources}">
             <c:Icon Glyph="library_music" />
           </Button>
           <Button Classes="sidebar" Classes.active="{Binding ActivePanel, Converter={x:Static vm:SidebarPanelConverters.Is}, ConverterParameter=AudioInput}"
                   IsEnabled="{Binding !AudioLocked}"
                   Command="{Binding TogglePanelCommand}" CommandParameter="{x:Static vm:SidebarPanel.AudioInput}"
-                  ToolTip.Tip="Audio Input (players &amp; microphones)">
+                  ToolTip.Tip="{l:T window.audio_input_players_microphones}">
             <c:Icon Glyph="mic_external_on" />
           </Button>
           <Button Classes="sidebar" Classes.active="{Binding ActivePanel, Converter={x:Static vm:SidebarPanelConverters.Is}, ConverterParameter=AudioOutput}"
                   IsEnabled="{Binding !AudioLocked}"
                   Command="{Binding TogglePanelCommand}" CommandParameter="{x:Static vm:SidebarPanel.AudioOutput}"
-                  ToolTip.Tip="Audio Output">
+                  ToolTip.Tip="{l:T window.audio_output}">
             <c:Icon Glyph="speaker" />
           </Button>
           <Button Classes="sidebar" Classes.active="{Binding ActivePanel, Converter={x:Static vm:SidebarPanelConverters.Is}, ConverterParameter=Displays}"
                   IsEnabled="{Binding !AudioLocked}"
                   Command="{Binding TogglePanelCommand}" CommandParameter="{x:Static vm:SidebarPanel.Displays}"
-                  ToolTip.Tip="Game Displays">
+                  ToolTip.Tip="{l:T window.game_displays}">
             <c:Icon Glyph="tv" />
           </Button>
           <Button Classes="sidebar" Classes.active="{Binding ActivePanel, Converter={x:Static vm:SidebarPanelConverters.Is}, ConverterParameter=Songbook}"
                   Command="{Binding TogglePanelCommand}" CommandParameter="{x:Static vm:SidebarPanel.Songbook}"
-                  ToolTip.Tip="Songbook for guests (phone)">
+                  ToolTip.Tip="{l:T window.songbook_guests_phone}">
             <c:Icon Glyph="phone_iphone" />
           </Button>
         </StackPanel>
@@ -123,7 +124,7 @@
           <Grid ColumnDefinitions="Auto,*,Auto">
             <c:Icon Grid.Column="0" Glyph="{Binding PanelGlyph}" Margin="0,0,8,0" VerticalAlignment="Center" />
             <TextBlock Grid.Column="1" Classes="title" Text="{Binding PanelTitle}" VerticalAlignment="Center" />
-            <Button Grid.Column="2" Classes="sidebar" Width="28" Height="28" Command="{Binding ClosePanelCommand}" ToolTip.Tip="Close">
+            <Button Grid.Column="2" Classes="sidebar" Width="28" Height="28" Command="{Binding ClosePanelCommand}" ToolTip.Tip="{l:T window.close}">
               <c:Icon Glyph="close" FontSize="{StaticResource IconMd}" />
             </Button>
           </Grid>
@@ -168,7 +169,7 @@
               <TextBlock Text="{Binding Title}" FontSize="{StaticResource TextLg}" FontWeight="{StaticResource WeightSemibold}" TextWrapping="Wrap" />
               <TextBlock Classes="muted" FontSize="{StaticResource TextBase}" Text="{Binding Detail}" TextWrapping="Wrap" IsVisible="{Binding HasDetail}" />
             </StackPanel>
-            <Button Grid.Column="2" Classes="sidebar small" VerticalAlignment="Top" Margin="8,-4,-4,0" ToolTip.Tip="Dismiss"
+            <Button Grid.Column="2" Classes="sidebar small" VerticalAlignment="Top" Margin="8,-4,-4,0" ToolTip.Tip="{l:T window.dismiss}"
                     Command="{Binding $parent[Window].((vm:DjWindowViewModel)DataContext).DismissToastCommand}" CommandParameter="{Binding}">
               <c:Icon Glyph="close" FontSize="{StaticResource IconMd}" />
             </Button>
@@ -186,6 +187,27 @@
 
   <!-- A duet was loaded: who sings voice 1 and who voice 2 (DuetSingersViewModel). A press on the dimmed area or
        Esc keeps the current pick. -->
+  <!-- First start: which language? Picking one switches the app at once (the window behind follows); OK keeps it. -->
+  <Border Background="#99000000" IsVisible="{Binding ChooseLanguage}" ZIndex="10">
+    <Border Classes="card floating" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="{StaticResource Pad6}" Width="380">
+      <StackPanel Spacing="{StaticResource Space3}">
+        <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space2}">
+          <c:Icon Glyph="translate" />
+          <TextBlock Classes="title" Text="{l:T language.title}" VerticalAlignment="Center" TextWrapping="Wrap" />
+        </StackPanel>
+        <TextBlock Classes="muted" FontSize="{StaticResource TextSm}" Text="{l:T language.hint}" TextWrapping="Wrap" />
+        <ListBox ItemsSource="{Binding UiLanguages}" SelectedItem="{Binding LanguageChoice}" Background="Transparent">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="l:UiLanguage">
+              <TextBlock Text="{Binding NativeName}" FontSize="{StaticResource TextLg}" Margin="4,2" />
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+        <Button Classes="tonal go" HorizontalAlignment="Right" Padding="20,8" Command="{Binding ConfirmLanguageCommand}" Content="{l:T language.ok}" />
+      </StackPanel>
+    </Border>
+  </Border>
+
   <Border x:Name="DuetLayer" Background="#99000000" IsVisible="{Binding DuetSingers, Converter={x:Static ObjectConverters.IsNotNull}}"
           PointerPressed="OnDuetBackdropPressed">
     <Border Classes="card floating" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="{StaticResource Pad6}" MinWidth="460"
@@ -193,9 +215,9 @@
       <StackPanel Spacing="{StaticResource Space3}">
         <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space2}">
           <c:Icon Glyph="group" />
-          <TextBlock Classes="title" Text="{Binding Title, StringFormat='Duet: {0}'}" TextTrimming="CharacterEllipsis" MaxWidth="460" VerticalAlignment="Center" />
+          <TextBlock Classes="title" Text="{l:Format Title, window.duet_title}" TextTrimming="CharacterEllipsis" MaxWidth="460" VerticalAlignment="Center" />
         </StackPanel>
-        <TextBlock Classes="muted" FontSize="{StaticResource TextSm}" Text="Who sings which voice? One singer per voice — the others sit out this song."
+        <TextBlock Classes="muted" FontSize="{StaticResource TextSm}" Text="{l:T window.who_sings_which_voice}"
                    IsVisible="{Binding ShowTable}" />
         <TextBlock Text="{Binding OnlyOneText}" TextWrapping="Wrap" MaxWidth="480" HorizontalAlignment="Left" IsVisible="{Binding OnlyOnePlayer}" />
 
@@ -263,13 +285,13 @@
 
         <TextBlock Text="{Binding BothVoicesHint}" FontWeight="{StaticResource WeightSemibold}" IsVisible="{Binding ShowTable}" />
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="{StaticResource Space2}">
-          <Button Classes="tonal" Command="{Binding SwapCommand}" ToolTip.Tip="Swap the two voices" IsVisible="{Binding ShowTable}">
+          <Button Classes="tonal" Command="{Binding SwapCommand}" ToolTip.Tip="{l:T window.swap_two_voices}" IsVisible="{Binding ShowTable}">
             <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
               <c:Icon Glyph="swap_vert" FontSize="{StaticResource IconMd}" />
-              <TextBlock Text="Swap" />
+              <TextBlock Text="{l:T window.swap}" />
             </StackPanel>
           </Button>
-          <Button Classes="tonal go" Command="{Binding OkCommand}" IsDefault="True" ToolTip.Tip="Pick at least one singer" ToolTip.ShowOnDisabled="True">
+          <Button Classes="tonal go" Command="{Binding OkCommand}" IsDefault="True" ToolTip.Tip="{l:T window.pick_least_one_singer}" ToolTip.ShowOnDisabled="True">
             <TextBlock Text="OK" />
           </Button>
         </StackPanel>
@@ -288,9 +310,9 @@
         </StackPanel>
 
         <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="{StaticResource Space2}" Margin="0,16,0,0">
-          <Button Classes="text" Content="Show details" Command="{Binding ToggleDialogDetailsCommand}" IsVisible="{Binding Dialog.HasDetails}" />
-          <Button Classes="text" Content="Copy details" Click="OnCopyDialogDetails" IsVisible="{Binding Dialog.IsBug}" />
-          <Button Classes="text" Content="Open log folder" Click="OnOpenLogFolder" IsVisible="{Binding Dialog.IsBug}" />
+          <Button Classes="text" Content="{l:T window.show_details}" Command="{Binding ToggleDialogDetailsCommand}" IsVisible="{Binding Dialog.HasDetails}" />
+          <Button Classes="text" Content="{l:T window.copy_details}" Click="OnCopyDialogDetails" IsVisible="{Binding Dialog.IsBug}" />
+          <Button Classes="text" Content="{l:T window.open_log_folder}" Click="OnOpenLogFolder" IsVisible="{Binding Dialog.IsBug}" />
           <Button Classes="tonal" Content="OK" Command="{Binding DismissDialogCommand}" IsDefault="True" />
         </StackPanel>
 

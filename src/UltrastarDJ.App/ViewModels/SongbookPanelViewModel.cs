@@ -2,6 +2,7 @@ using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using UltrastarDJ.App.Services;
+using UltrastarDJ.App.Localization;
 
 namespace UltrastarDJ.App.ViewModels;
 
@@ -65,7 +66,7 @@ public sealed partial class SongbookPanelViewModel : ViewModelBase, IDisposable
                 await _songbook.StartAsync();
                 if (_songbook.LastError is { } error)
                 {
-                    _notifications.ShowError("Songbook could not start", error);
+                    _notifications.ShowError(L.T("songbook.could_not_start"), error);
                 }
             }
         }

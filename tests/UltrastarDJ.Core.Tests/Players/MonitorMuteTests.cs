@@ -4,7 +4,7 @@ namespace UltrastarDJ.Core.Tests.Players;
 
 public class MonitorMuteTests
 {
-    private static PlayerConfig Player(bool mixMuted) => new() { Id = 1, Name = "P1", Color = "blue", MixMuted = mixMuted };
+    private static PlayerConfig Player(bool mixMuted) => new() { Id = 1, Color = "blue", MixMuted = mixMuted };
 
     [Fact]
     public void MutedInTheGamePlayer_IsSilentDuringASong() => Assert.True(Player(mixMuted: true).MutedInMonitor(duringSong: true));

@@ -4,6 +4,7 @@ using UltrastarDJ.Audio;
 using UltrastarDJ.Audio.Mics;
 using UltrastarDJ.Audio.Monitor;
 using UltrastarDJ.Core.Players;
+using UltrastarDJ.App.Localization;
 
 namespace UltrastarDJ.App.Services;
 
@@ -61,7 +62,7 @@ public sealed class AudioInputService : IDisposable
         }
 
         _notifications.Warn(
-            missing.Count == 1 ? "Microphone not found" : $"{missing.Count} microphones not found",
+            missing.Count == 1 ? L.T("mic.not_found") : L.F("mic.n_not_found", missing.Count),
             Unassigned(missing));
         Unassign(missing);
     }
@@ -160,13 +161,13 @@ public sealed class AudioInputService : IDisposable
         IReadOnlyList<PlayerConfig> gone = MicPresence.On(_players.All, change.Removed);
         if (gone.Count > 0)
         {
-            _notifications.Warn("Microphone disconnected", Unassigned(gone));
+            _notifications.Warn(L.T("mic.disconnected"), Unassigned(gone));
             Unassign(gone);
         }
 
         foreach (string id in change.Added)
         {
-            _notifications.Info("Microphone connected", $"{id} — assign it to a player under Audio Input.");
+            _notifications.Info(L.T("mic.connected"), L.F("mic.connected_detail", id));
         }
 
         MicsChanged?.Invoke();
@@ -182,7 +183,7 @@ public sealed class AudioInputService : IDisposable
         }
         else
         {
-            _notifications.Warn("Microphone disconnected", affected.Count > 0 ? Unassigned(affected) : deviceId);
+            _notifications.Warn(L.T("mic.disconnected"), affected.Count > 0 ? Unassigned(affected) : deviceId);
         }
 
         Unassign(affected);
@@ -190,7 +191,7 @@ public sealed class AudioInputService : IDisposable
     }
 
     private static string Unassigned(IReadOnlyList<PlayerConfig> players)
-        => string.Join(", ", players.Select(MicPresence.Describe)) + " — unassigned. Plug it in and assign it under Audio Input.";
+        => string.Join(", ", players.Select(MicPresence.Describe)) + L.T("mic.unassigned_detail");
 
     private void Unassign(IEnumerable<PlayerConfig> players)
     {

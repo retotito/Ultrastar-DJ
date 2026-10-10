@@ -1,5 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="using:UltrastarDJ.App.Localization"
         xmlns:vm="using:UltrastarDJ.App.ViewModels"
         xmlns:c="using:UltrastarDJ.App.Controls"
         xmlns:game="using:UltrastarDJ.App.Game"
@@ -40,7 +41,7 @@
 
     <!-- Preview: get ready -->
     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="{StaticResource Space3}" IsVisible="{Binding IsPreview}">
-      <TextBlock Classes="beamer" Text="GET READY" FontSize="{StaticResource Text2Xl}" Opacity="0.7" HorizontalAlignment="Center" />
+      <TextBlock Classes="beamer" Text="{l:T display.get_ready}" FontSize="{StaticResource Text2Xl}" Opacity="0.7" HorizontalAlignment="Center" />
       <TextBlock Classes="beamer" Text="{Binding Title}" FontSize="72" FontWeight="{StaticResource WeightBold}" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" />
       <TextBlock Classes="beamer" Text="{Binding Artist}" FontSize="40" Opacity="0.8" HorizontalAlignment="Center" />
       <ItemsControl ItemsSource="{Binding AssignedPlayers}" ItemsPanel="{StaticResource ChipRow}" ItemTemplate="{StaticResource PlayerChip}"
@@ -54,7 +55,7 @@
     <!-- Game -->
     <c:GameOverlayControl Scene="{Binding Scene}" IsRunning="{Binding IsGame}" IsVisible="{Binding IsGame}" NoteBarStyle="{Binding NoteBarStyle}" ShowPianoRollLines="{Binding ShowGridLines}" />
     <Border IsVisible="{Binding IsPaused}" Background="#88000000">
-      <TextBlock Classes="beamer" Text="PAUSED" FontSize="96" FontWeight="{StaticResource WeightBold}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+      <TextBlock Classes="beamer" Text="{l:T display.paused}" FontSize="96" FontWeight="{StaticResource WeightBold}" HorizontalAlignment="Center" VerticalAlignment="Center" />
     </Border>
 
     <!-- Score -->
@@ -102,7 +103,7 @@
     <Border Background="{DynamicResource BrushBeamerBackground}" IsVisible="{Binding SyncTestRunning}">
       <Panel>
         <c:SyncFlash Source="{Binding SyncTest}" IsRunning="{Binding SyncTestRunning}" FlashBrush="{DynamicResource BrushBeamerText}" />
-        <TextBlock Classes="beamer" Text="Test sync — move LATENCY until flash and click happen together" FontSize="{StaticResource Text2Xl}"
+        <TextBlock Classes="beamer" Text="{l:T display.test_sync_move_latency}" FontSize="{StaticResource Text2Xl}"
                    HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,64" TextWrapping="Wrap" TextAlignment="Center" />
       </Panel>
     </Border>
@@ -113,15 +114,15 @@
             Background="#CC000000" CornerRadius="{StaticResource RadiusXl}" Padding="{StaticResource Pad4}">
       <StackPanel Spacing="{StaticResource Space2}" HorizontalAlignment="Center">
         <Border CornerRadius="{StaticResource RadiusMd}" ClipToBounds="True" HorizontalAlignment="Center">
-          <c:QrCode Text="{Binding SongbookUrl}" Width="200" Height="200" />
+          <c:QrCode Text="{Binding SongbookUrl}" Width="240" Height="240" />
         </Border>
-        <TextBlock Classes="beamer" Text="Songbook" FontSize="{StaticResource TextXl}" FontWeight="{StaticResource WeightSemibold}" HorizontalAlignment="Center" />
-        <TextBlock Classes="beamer" Text="{Binding SongbookPin, StringFormat='PIN {0}'}" IsVisible="{Binding HasSongbookPin}"
+        <TextBlock Classes="beamer" Text="{l:T display.songbook}" FontSize="{StaticResource TextXl}" FontWeight="{StaticResource WeightSemibold}" HorizontalAlignment="Center" />
+        <TextBlock Classes="beamer" Text="{l:Format SongbookPin, display.pin}" IsVisible="{Binding HasSongbookPin}"
                    FontSize="{StaticResource TextXl}" FontWeight="{StaticResource WeightBold}" HorizontalAlignment="Center" />
       </StackPanel>
     </Border>
 
-    <TextBlock Classes="beamer" Text="Double-click or F: fullscreen · Esc: leave fullscreen" FontSize="{StaticResource TextSm}" Opacity="0.5"
+    <TextBlock Classes="beamer" Text="{l:T display.double_click_f_fullscreen}" FontSize="{StaticResource TextSm}" Opacity="0.5"
                HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="{StaticResource Pad4}" IsVisible="{Binding IsIdle}" />
   </Panel>
 </Window>

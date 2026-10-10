@@ -1,3 +1,4 @@
+using UltrastarDJ.App.Localization;
 using Avalonia.Controls;
 using UltrastarDJ.Core.Songs;
 
@@ -54,11 +55,7 @@ public static class LibraryColumns
         _ => new GridLength(100),
     };
 
-    public static string Label(LibraryColumn c) => c switch
-    {
-        LibraryColumn.Bpm => "BPM",
-        _ => c.ToString(),
-    };
+    public static string Label(LibraryColumn c) => L.T("column_name." + c);
 
     /// <summary>The sort a header click applies; null = not sortable (media icons).</summary>
     public static SongSort? Sort(LibraryColumn c) => c switch

@@ -8,6 +8,7 @@ using UltrastarDJ.Core.Playback;
 using UltrastarDJ.Core.Songs;
 using UltrastarDJ.Infrastructure.Library;
 using UltrastarDJ.Media;
+using UltrastarDJ.App.Localization;
 
 namespace UltrastarDJ.App.ViewModels;
 
@@ -76,8 +77,8 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
     /// <summary>The still picture lies under the video, which stays transparent until its first frame.</summary>
     public bool ShowCover => HasSong && Cover is not null;
     partial void OnCoverChanged(Bitmap? value) => OnPropertyChanged(nameof(ShowCover));
-    public string Title => Song?.Title ?? "No song loaded";
-    public string Artist => Song?.Artist ?? "Double-click a song in the library";
+    public string Title => Song?.Title ?? L.T("game_player.no_song");
+    public string Artist => Song?.Artist ?? L.T("preview.double_click");
 
     partial void OnSongChanged(Song? value)
     {
@@ -144,7 +145,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
                 _failures.Failed(song, ex.Reasons[0]);
             }
 
-            _notifications.ShowError("Song cannot be previewed", _ytDlp.WithHint(ex.Reasons, ex.YtDlpMayHelp), ex.Details);
+            _notifications.ShowError(L.T("preview.cannot_preview"), _ytDlp.WithHint(ex.Reasons, ex.YtDlpMayHelp), ex.Details);
         }
         catch (MediaException ex)
         {
@@ -155,7 +156,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
                 _failures.Failed(song, explained.Reasons[0]);
             }
 
-            _notifications.ShowError("Song cannot be previewed", _ytDlp.WithHint(explained.Reasons, explained.YtDlpMayHelp), explained.Details);
+            _notifications.ShowError(L.T("preview.cannot_preview"), _ytDlp.WithHint(explained.Reasons, explained.YtDlpMayHelp), explained.Details);
         }
         finally
         {

@@ -3,6 +3,7 @@ using Avalonia.Threading;
 using Microsoft.Extensions.Logging;
 using UltrastarDJ.Core.Sidecars;
 using UltrastarDJ.Infrastructure;
+using UltrastarDJ.App.Localization;
 
 namespace UltrastarDJ.App.Services;
 
@@ -61,14 +62,14 @@ public sealed class YtDlpService : IDisposable
         Notify();
         if (_connectivity.IsOnline != false && await CheckAsync(quiet: true).ConfigureAwait(false) && UpdateAvailable)
         {
-            _notifications.Info("A newer yt-dlp is available", $"{LatestVersion} — update it in Settings → YouTube. It keeps YouTube songs playing.");
+            _notifications.Info(L.T("ytdlp.newer_available"), L.F("ytdlp.newer_available_detail", LatestVersion));
         }
     }
 
     /// <returns>Whether the check worked.</returns>
     public async Task<bool> CheckAsync(bool quiet = false)
     {
-        SetBusy(true, quiet ? "" : "Checking…");
+        SetBusy(true, quiet ? "" : L.T("ytdlp.checking"));
         try
         {
             LatestVersion = await _updater.LatestVersionAsync().ConfigureAwait(false);
@@ -79,14 +80,14 @@ public sealed class YtDlpService : IDisposable
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or System.Text.Json.JsonException)
         {
             _log.LogInformation("yt-dlp: update check failed ({Error})", ex.Message);
-            SetBusy(false, quiet ? "" : "Could not reach GitHub — are you online?");
+            SetBusy(false, quiet ? "" : L.T("ytdlp.github_unreachable"));
             return false;
         }
     }
 
     public async Task UpdateAsync()
     {
-        SetBusy(true, "Updating… (about 10 seconds)");
+        SetBusy(true, L.T("ytdlp.updating"));
         try
         {
             (string path, string version) = await _updater.InstallLatestAsync().ConfigureAwait(false);
@@ -95,12 +96,12 @@ public sealed class YtDlpService : IDisposable
             CurrentVersion = version;
             LatestVersion ??= version;
             SetBusy(false, "");
-            _notifications.Success("yt-dlp updated", $"Version {version} — used from the next YouTube song on.");
+            _notifications.Success(L.T("ytdlp.updated"), L.F("ytdlp.updated_detail", version));
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or IOException or UnauthorizedAccessException or InvalidDataException or PlatformNotSupportedException)
         {
             _log.LogWarning(ex, "yt-dlp update failed");
-            SetBusy(false, $"Update failed: {ex.Message}");
+            SetBusy(false, L.F("ytdlp.update_failed", ex.Message));
         }
     }
 
@@ -116,10 +117,10 @@ public sealed class YtDlpService : IDisposable
         }
 
         string hint = UpdateAvailable
-            ? $"A newer yt-dlp is available ({LatestVersion}) — update it in Settings → YouTube."
+            ? L.F("ytdlp.hint_newer", LatestVersion)
             : YtDlpVersion.AgeInDays(CurrentVersion, DateOnly.FromDateTime(DateTime.Now)) is > 30 and var days
-                ? $"Your yt-dlp is {days} days old — check for an update in Settings → YouTube."
-                : "If this keeps happening, check for a yt-dlp update in Settings → YouTube.";
+                ? L.F("ytdlp.hint_old", days)
+                : L.T("ytdlp.hint_check");
         return [.. reasons, hint];
     }
 

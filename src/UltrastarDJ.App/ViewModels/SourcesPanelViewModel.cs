@@ -9,6 +9,7 @@ using UltrastarDJ.App.Services;
 using UltrastarDJ.Core.Abstractions;
 using UltrastarDJ.Core.Songs;
 using UltrastarDJ.Infrastructure.Library;
+using UltrastarDJ.App.Localization;
 
 namespace UltrastarDJ.App.ViewModels;
 
@@ -87,7 +88,7 @@ public sealed partial class SourcesPanelViewModel : ViewModelBase, IDisposable
             int onDisk = _texts.Count;
             if (TextsMode == UsdbTextsMode.Loaded || _downloader.Target == 0)
             {
-                return $"{onDisk:N0} song texts on this computer";
+                return L.F("sources.texts_on_disk", onDisk);
             }
 
             if (_downloader.IsComplete)
@@ -95,12 +96,12 @@ public sealed partial class SourcesPanelViewModel : ViewModelBase, IDisposable
                 return $"All {_downloader.Target:N0} {(TextsMode == UsdbTextsMode.All ? "song texts" : "favourites")} on this computer ✓";
             }
 
-            string state = _downloader.IsActive ? $"about {Hours(_downloader.Remaining)} left" : _texts.Paused ? "paused" : "waiting for USDB";
-            return $"{_downloader.Done:N0} of {_downloader.Target:N0} downloaded ({_downloader.PercentText}) · {state}";
+            string state = _downloader.IsActive ? L.F("sources.time_left", Hours(_downloader.Remaining)) : _texts.Paused ? L.T("sources.paused") : L.T("sources.waiting_usdb");
+            return L.F("sources.texts_progress", _downloader.Done, _downloader.Target, _downloader.PercentText, state);
         }
     }
 
-    private static string Hours(TimeSpan t) => t.TotalHours >= 1 ? $"{t.TotalHours:0.#} h" : $"{Math.Max(1, Math.Ceiling(t.TotalMinutes)):0} min";
+    private static string Hours(TimeSpan t) => LibraryViewModel.Hours(t);
 
     private void OnTextsChanged() => Dispatcher.UIThread.Post(() =>
     {
@@ -123,7 +124,7 @@ public sealed partial class SourcesPanelViewModel : ViewModelBase, IDisposable
         }
         catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or IOException)
         {
-            UsdbStatus = $"Could not open it: {ex.Message}";
+            UsdbStatus = L.F("sources.open_failed", ex.Message);
         }
     }
 
@@ -135,7 +136,7 @@ public sealed partial class SourcesPanelViewModel : ViewModelBase, IDisposable
             return;
         }
 
-        IReadOnlyList<IStorageFolder> picked = await Owner.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions { Title = "Folder for the USDB song texts", AllowMultiple = false });
+        IReadOnlyList<IStorageFolder> picked = await Owner.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions { Title = L.T("sources.texts_folder_title"), AllowMultiple = false });
         if (picked.Count > 0 && picked[0].TryGetLocalPath() is { } path)
         {
             await MoveTextsAsync(path);
@@ -152,12 +153,12 @@ public sealed partial class SourcesPanelViewModel : ViewModelBase, IDisposable
         try
         {
             int moved = await Task.Run(() => _texts.MoveTo(folder));
-            _notifications.Success("Song texts moved", $"{moved:N0} files → {_texts.Folder}");
+            _notifications.Success(L.T("sources.texts_moved"), L.F("sources.texts_moved_detail", moved, _texts.Folder));
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             _log.LogError(ex, "Moving the song texts failed");
-            _notifications.ShowError("Could not move the song texts", ex.Message);
+            _notifications.ShowError(L.T("sources.texts_move_failed"), ex.Message);
         }
         finally
         {
@@ -256,7 +257,7 @@ public sealed partial class SourcesPanelViewModel : ViewModelBase, IDisposable
             return;
         }
 
-        IReadOnlyList<IStorageFolder> picked = await Owner.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions { Title = "Add song folder", AllowMultiple = false });
+        IReadOnlyList<IStorageFolder> picked = await Owner.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions { Title = L.T("sources.add_folder_title"), AllowMultiple = false });
         string? path = picked.Count > 0 ? picked[0].TryGetLocalPath() : null;
         if (path is null)
         {
@@ -275,7 +276,7 @@ public sealed partial class SourcesPanelViewModel : ViewModelBase, IDisposable
     partial void OnUsdbEnabledChanged(bool value) => _library.SetUsdbEnabled(value);
 
     private Progress<LocalFolderScanner.Progress> Progress()
-        => new(p => Status = $"Scanning… {p.Parsed} songs ({p.Found} files)");
+        => new(p => Status = L.F("sources.scanning", p.Parsed, p.Found));
 
     private async Task RunScanAsync(Func<Task> scan)
     {
@@ -283,13 +284,13 @@ public sealed partial class SourcesPanelViewModel : ViewModelBase, IDisposable
         try
         {
             await scan();
-            Status = $"{_library.Songs.Count} songs in library";
+            Status = L.F("sources.songs_in_library", _library.Songs.Count);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             _log.LogError(ex, "Scan failed");
             Status = "";
-            _notifications.ShowError("Folder scan failed", ex.Message);
+            _notifications.ShowError(L.T("sources.scan_failed"), ex.Message);
         }
         finally
         {
@@ -307,7 +308,7 @@ public sealed partial class SourceRowViewModel(SongSource source, int count, boo
     public string Path => source.Path ?? "";
     /// <summary>Folder unreachable (USB drive pulled). Only for enabled sources — a switched-off one is not checked.</summary>
     public bool IsMissing => source.Enabled && !available;
-    public string CountText => IsMissing ? "Not connected" : $"{count} songs";
+    public string CountText => IsMissing ? L.T("sources.not_connected") : L.F("sources.n_songs", count);
     public double Opacity => IsMissing || !source.Enabled ? 0.5 : 1.0;
 
     partial void OnEnabledChanged(bool value) => owner.SetEnabled(source.Id, value);

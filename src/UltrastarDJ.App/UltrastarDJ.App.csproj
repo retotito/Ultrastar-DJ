@@ -37,6 +37,11 @@
     <AvaloniaResource Include="Assets/**" />
   </ItemGroup>
 
+  <!-- One file per UI language, read at run time (not compiled in): the translation editor rewrites them. -->
+  <ItemGroup>
+    <None Include="Languages/*.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <!-- Native sidecars/libraries fetched per machine by scripts/fetch-natives.* land next to the executable. -->
   <ItemGroup Condition="'$(RuntimeIdentifier)' != '' And Exists('$(MSBuildThisFileDirectory)../../natives/$(RuntimeIdentifier)')">
     <None Include="$(MSBuildThisFileDirectory)../../natives/$(RuntimeIdentifier)/**" LinkBase="natives" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />

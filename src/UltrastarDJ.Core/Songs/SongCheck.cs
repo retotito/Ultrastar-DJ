@@ -1,3 +1,5 @@
+using UltrastarDJ.Core.Localization;
+
 namespace UltrastarDJ.Core.Songs;
 
 /// <summary>
@@ -17,14 +19,14 @@ public static class SongCheck
         {
             if (!string.IsNullOrEmpty(path) && !IsRemote(path) && !files.Exists(path) && !problems.Any(p => p.Contains(path, StringComparison.Ordinal)))
             {
-                problems.Add($"{what} not found: {Path.GetFileName(path)}");
+                problems.Add(Text.F("check.not_found", "{0} not found: {1}", what, Path.GetFileName(path)));
             }
         }
 
-        Missing("Audio file", song.AudioPath);
-        Missing("Video file", song.VideoPath);
-        Missing("Cover", song.CoverPath);
-        Missing("Background", song.BackgroundPath);
+        Missing(Text.T("check.audio_file", "Audio file"), song.AudioPath);
+        Missing(Text.T("check.video_file", "Video file"), song.VideoPath);
+        Missing(Text.T("check.cover", "Cover"), song.CoverPath);
+        Missing(Text.T("check.background", "Background"), song.BackgroundPath);
 
         if (song.VideoGapSec is { } vg && vg != 0 && !song.HasLocalVideo && !song.HasYouTube)
         {
@@ -33,7 +35,7 @@ public static class SongCheck
 
         if (string.IsNullOrWhiteSpace(song.Language))
         {
-            problems.Add("No #LANGUAGE — the song cannot be found with the language filter");
+            problems.Add(Text.T("check.no_language", "No #LANGUAGE — the song cannot be found with the language filter"));
         }
 
         if (tracks is null)
@@ -68,13 +70,13 @@ public static class SongCheck
         if (overlaps.Count > 0)
         {
             string at = string.Join(", ", overlaps.Take(MaxOverlapsListed));
-            string more = overlaps.Count > MaxOverlapsListed ? $" and {overlaps.Count - MaxOverlapsListed} more" : "";
-            problems.Add($"Notes overlap at beat {at}{more}");
+            string more = overlaps.Count > MaxOverlapsListed ? Text.F("check.and_more", " and {0} more", overlaps.Count - MaxOverlapsListed) : "";
+            problems.Add(Text.F("check.overlap", "Notes overlap at beat {0}{1}", at, more));
         }
 
         if (zeroLength > 0)
         {
-            problems.Add(zeroLength == 1 ? "1 note has length 0" : $"{zeroLength} notes have length 0");
+            problems.Add(zeroLength == 1 ? Text.T("check.zero_one", "1 note has length 0") : Text.F("check.zero_n", "{0} notes have length 0", zeroLength));
         }
 
         if (song.Bpm > 0 && first != int.MaxValue)

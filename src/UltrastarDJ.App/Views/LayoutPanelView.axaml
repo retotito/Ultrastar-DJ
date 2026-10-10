@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="using:UltrastarDJ.App.Localization"
              xmlns:vm="using:UltrastarDJ.App.ViewModels"
              x:Class="UltrastarDJ.App.Views.LayoutPanelView"
              x:DataType="vm:LayoutPanelViewModel">
@@ -7,8 +8,14 @@
   <StackPanel Spacing="{StaticResource Space2}">
     <Border Classes="card">
       <StackPanel Spacing="{StaticResource Space2}">
-        <TextBlock Classes="label" Text="LIBRARY COLUMNS" />
+        <TextBlock Classes="label" Text="{l:T layout.library_columns}" />
         <ItemsControl ItemsSource="{Binding Columns}">
+          <!-- Air between the rows: the switches are 32 px tall (Material 3), rows would touch. -->
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Spacing="{StaticResource Space2}" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="vm:ColumnToggle">
               <Grid ColumnDefinitions="*,Auto">
@@ -19,16 +26,16 @@
           </ItemsControl.ItemTemplate>
         </ItemsControl>
         <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap"
-                   Text="Title is always shown. When the columns need more room than the window, the table scrolls sideways." />
+                   Text="{l:T layout.title_always_shown_when}" />
       </StackPanel>
     </Border>
 
     <Border Classes="card">
       <Grid ColumnDefinitions="*,Auto">
-        <StackPanel>
-          <TextBlock Text="Show broken songs" />
+        <StackPanel Margin="0,0,12,0">
+          <TextBlock Text="{l:T layout.show_broken_songs}" />
           <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap"
-                     Text="Songs you marked as broken (song menu or Details). Off: left out of the library and its filters. Guests never see them." />
+                     Text="{l:T layout.songs_you_marked_broken}" />
         </StackPanel>
         <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowBrokenSongs}" OnContent="" OffContent="" VerticalAlignment="Center" />
       </Grid>

@@ -22,8 +22,8 @@ public class GuestRequestsTests
         GuestRequests g = new();
         g.Add("song1", "Anna", "phoneB", Now, [], -1, Loaded([], -1));
 
-        Assert.Equal("Already requested by Anna.", g.Add("song1", "Reto", "phoneA", Now, [], -1, Loaded([], -1)).Refusal);
-        Assert.Equal("You already requested this song.", g.Add("song1", "Anna", "phoneB", Now, [], -1, Loaded([], -1)).Refusal);
+        Assert.Equal("requested_by|Anna", g.Add("song1", "Reto", "phoneA", Now, [], -1, Loaded([], -1)).Refusal);
+        Assert.Equal("mine", g.Add("song1", "Anna", "phoneB", Now, [], -1, Loaded([], -1)).Refusal);
     }
 
     [Fact]
@@ -32,8 +32,8 @@ public class GuestRequestsTests
         GuestRequests g = new();
         string[] queue = ["a", "b", "song1"];
 
-        Assert.Equal("Already in the queue (#2).", g.Add("song1", "Reto", "phoneA", Now, queue, 0, Loaded(queue, 0)).Refusal);
-        Assert.Equal("This song is on stage right now.", g.Add("a", "Reto", "phoneA", Now, queue, 0, Loaded(queue, 0)).Refusal);
+        Assert.Equal("queued|2", g.Add("song1", "Reto", "phoneA", Now, queue, 0, Loaded(queue, 0)).Refusal);
+        Assert.Equal("onstage", g.Add("a", "Reto", "phoneA", Now, queue, 0, Loaded(queue, 0)).Refusal);
         Assert.Null(g.Add("a", "Reto", "phoneA", Now, queue, 1, Loaded(queue, 1)).Refusal);   // already sung: may come again
     }
 
@@ -46,7 +46,7 @@ public class GuestRequestsTests
             g.Add(s, "Reto", "phoneA", Now, [], -1, null);
         }
 
-        Assert.StartsWith("You have 3 open requests", g.Add("4", "Reto", "phoneA", Now, [], -1, Loaded([], -1)).Refusal);
+        Assert.Equal("limit|3", g.Add("4", "Reto", "phoneA", Now, [], -1, Loaded([], -1)).Refusal);
         Assert.Null(g.Add("4", "Anna", "phoneB", Now, [], -1, Loaded([], -1)).Refusal);       // per guest, not per party
     }
 

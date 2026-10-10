@@ -4,6 +4,7 @@ using UltrastarDJ.Audio;
 using UltrastarDJ.Audio.Monitor;
 using UltrastarDJ.Core.Playback;
 using UltrastarDJ.Core.Timing;
+using UltrastarDJ.App.Localization;
 
 namespace UltrastarDJ.App.Services;
 
@@ -44,7 +45,7 @@ public sealed class SyncTestService : IDisposable
     public bool CanRun => _playback.AnyDisplayOpen && !IsSongRunning;
 
     /// <summary>Why <see cref="CanRun"/> is false, for the button's tooltip.</summary>
-    public string? Blocker => IsSongRunning ? "Not while a song is running" : !_playback.AnyDisplayOpen ? "Open a display first: the test flashes on it" : null;
+    public string? Blocker => IsSongRunning ? L.T("sync.not_while_song") : !_playback.AnyDisplayOpen ? L.T("sync.open_display_first") : null;
 
     private bool IsSongRunning => _playback.State is PlaybackState.Countdown or PlaybackState.Playing or PlaybackState.Paused;
 

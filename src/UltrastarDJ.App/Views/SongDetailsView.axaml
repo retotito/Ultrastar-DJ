@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="using:UltrastarDJ.App.Localization"
              xmlns:vm="using:UltrastarDJ.App.ViewModels"
              xmlns:c="using:UltrastarDJ.App.Controls"
              x:Class="UltrastarDJ.App.Views.SongDetailsView"
@@ -42,24 +43,24 @@
               <TextBlock Text="{Binding Source}" FontSize="{StaticResource TextXs}" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
             </Border>
             <ToggleButton IsChecked="{Binding IsFavourite}" Padding="10,2" CornerRadius="{StaticResource RadiusFull}" VerticalAlignment="Center"
-                          ToolTip.Tip="Favourite — find it with the rating filter's Favourites">
+                          ToolTip.Tip="{l:T details.favourite_find_rating_filter}">
               <StackPanel Orientation="Horizontal" Spacing="4">
                 <c:Icon Glyph="favorite" FontSize="{StaticResource IconSm}" Foreground="{DynamicResource BrushFavourite}" />
-                <TextBlock Text="Favourite" FontSize="{StaticResource TextXs}" />
+                <TextBlock Text="{l:T details.favourite}" FontSize="{StaticResource TextXs}" />
               </StackPanel>
             </ToggleButton>
             <ToggleButton IsChecked="{Binding IsBroken}" Padding="10,2" CornerRadius="{StaticResource RadiusFull}" VerticalAlignment="Center"
-                          ToolTip.Tip="Broken (bad notes or timing): still playable, but never offered on the songbook; hidden in the library unless Layout → Show broken songs">
+                          ToolTip.Tip="{l:T details.broken_bad_notes_timing}">
               <StackPanel Orientation="Horizontal" Spacing="4">
                 <c:Icon Glyph="report" FontSize="{StaticResource IconSm}" Foreground="{DynamicResource BrushError}" />
-                <TextBlock Text="Broken" FontSize="{StaticResource TextXs}" />
+                <TextBlock Text="{l:T details.broken}" FontSize="{StaticResource TextXs}" />
               </StackPanel>
             </ToggleButton>
           </StackPanel>
-          <TextBox Text="{Binding Note}" IsVisible="{Binding ShowNote}" PlaceholderText="What is wrong? (e.g. lyrics 1 s late, pitch off in the chorus)"
+          <TextBox Text="{Binding Note}" IsVisible="{Binding ShowNote}" PlaceholderText="{l:T details.what_wrong_e_g}"
                    FontSize="{StaticResource TextSm}" Margin="0,4,0,0" MaxWidth="520" HorizontalAlignment="Left" />
         </StackPanel>
-        <Button Grid.Column="2" Classes="sidebar" VerticalAlignment="Top" Command="{Binding CloseCommand}" ToolTip.Tip="Close (Esc)">
+        <Button Grid.Column="2" Classes="sidebar" VerticalAlignment="Top" Command="{Binding CloseCommand}" ToolTip.Tip="{l:T details.close_esc}">
           <c:Icon Glyph="close" FontSize="{StaticResource IconLg}" />
         </Button>
       </Grid>
@@ -68,22 +69,22 @@
       <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto" Margin="0,16,0,0">
         <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space2}">
           <Button Classes="text" Click="OnShowInFolder" IsVisible="{Binding Folder, Converter={x:Static ObjectConverters.IsNotNull}}"
-                  ToolTip.Tip="Show the song's .txt in Finder (Explorer on Windows)">
+                  ToolTip.Tip="{l:T details.show_song_s_txt}">
             <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
               <c:Icon Glyph="folder_open" FontSize="{StaticResource IconLg}" VerticalAlignment="Center" />
-              <TextBlock Text="Show in Finder" VerticalAlignment="Center" />
+              <TextBlock Text="{l:T details.show_finder}" VerticalAlignment="Center" />
             </StackPanel>
           </Button>
-          <Button Classes="text" Click="OnOpenUsdb" IsVisible="{Binding IsUsdb}" ToolTip.Tip="Open this song's page on usdb.animux.de">
+          <Button Classes="text" Click="OnOpenUsdb" IsVisible="{Binding IsUsdb}" ToolTip.Tip="{l:T details.open_song_s_page}">
             <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
               <c:Icon Glyph="open_in_new" FontSize="{StaticResource IconLg}" VerticalAlignment="Center" />
-              <TextBlock Text="Open on USDB" VerticalAlignment="Center" />
+              <TextBlock Text="{l:T details.open_usdb}" VerticalAlignment="Center" />
             </StackPanel>
           </Button>
-          <Button Classes="text" Click="OnOpenYouTube" IsVisible="{Binding HasYouTube}" ToolTip.Tip="Open the song's video on YouTube">
+          <Button Classes="text" Click="OnOpenYouTube" IsVisible="{Binding HasYouTube}" ToolTip.Tip="{l:T details.open_song_s_video}">
             <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
               <c:Icon Glyph="smart_display" FontSize="{StaticResource IconLg}" VerticalAlignment="Center" />
-              <TextBlock Text="Open on YouTube" VerticalAlignment="Center" />
+              <TextBlock Text="{l:T details.open_youtube}" VerticalAlignment="Center" />
             </StackPanel>
           </Button>
         </StackPanel>
@@ -91,19 +92,19 @@
           <Button Classes="text" Command="{Binding PreviewCommand}" ToolTip.Tip="{Binding UnavailableTip}" ToolTip.ShowOnDisabled="True">
             <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
               <c:Icon Glyph="play_arrow" FontSize="{StaticResource IconLg}" VerticalAlignment="Center" />
-              <TextBlock Text="Preview" VerticalAlignment="Center" />
+              <TextBlock Text="{l:T details.preview}" VerticalAlignment="Center" />
             </StackPanel>
           </Button>
           <Button Classes="text" Command="{Binding AddToQueueCommand}" ToolTip.Tip="{Binding UnavailableTip}" ToolTip.ShowOnDisabled="True">
             <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
               <c:Icon Glyph="queue_music" FontSize="{StaticResource IconLg}" VerticalAlignment="Center" />
-              <TextBlock Text="Add to queue" VerticalAlignment="Center" />
+              <TextBlock Text="{l:T details.add_queue}" VerticalAlignment="Center" />
             </StackPanel>
           </Button>
           <Button Classes="tonal" Command="{Binding LoadIntoGameCommand}" ToolTip.Tip="{Binding LoadTip}" ToolTip.ShowOnDisabled="True">
             <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
               <c:Icon Glyph="play_circle" FontSize="{StaticResource IconLg}" VerticalAlignment="Center" />
-              <TextBlock Text="Load into game" VerticalAlignment="Center" />
+              <TextBlock Text="{l:T details.load_into_game}" VerticalAlignment="Center" />
             </StackPanel>
           </Button>
         </StackPanel>
@@ -117,22 +118,22 @@
           <Grid ColumnDefinitions="*,16,*">
             <Border Classes="card">
               <StackPanel Spacing="{StaticResource Space2}">
-                <TextBlock Classes="label" Text="SONG" />
+                <TextBlock Classes="label" Text="{l:T details.song}" />
                 <ItemsControl ItemsSource="{Binding Fields}" ItemTemplate="{StaticResource FieldRow}" />
               </StackPanel>
             </Border>
             <Border Grid.Column="2" Classes="card">
               <StackPanel Spacing="{StaticResource Space2}">
-                <TextBlock Classes="label" Text="NOTES" />
+                <TextBlock Classes="label" Text="{l:T details.notes}" />
                 <ItemsControl ItemsSource="{Binding Summary}" ItemTemplate="{StaticResource FieldRow}" />
-                <TextBlock Classes="muted" Text="Loading…" FontSize="{StaticResource TextSm}" IsVisible="{Binding Loading}" />
+                <TextBlock Classes="muted" Text="{l:T details.loading}" FontSize="{StaticResource TextSm}" IsVisible="{Binding Loading}" />
               </StackPanel>
             </Border>
           </Grid>
 
           <Border Classes="card" IsVisible="{Binding HasFiles}">
             <StackPanel Spacing="{StaticResource Space2}">
-              <TextBlock Classes="label" Text="FILES" />
+              <TextBlock Classes="label" Text="{l:T details.files}" />
               <SelectableTextBlock Classes="muted" Text="{Binding Folder}" FontSize="{StaticResource TextXs}" FontFamily="{StaticResource FontMono}" TextWrapping="Wrap" />
               <ItemsControl ItemsSource="{Binding Files}">
                 <ItemsControl.ItemTemplate>
@@ -159,7 +160,7 @@
 
           <Border Classes="card" IsVisible="{Binding HasProblems}">
             <StackPanel Spacing="{StaticResource Space2}">
-              <TextBlock Classes="label" Text="PROBLEMS" />
+              <TextBlock Classes="label" Text="{l:T details.problems}" />
               <ItemsControl ItemsSource="{Binding Problems}">
                 <ItemsControl.ItemTemplate>
                   <DataTemplate x:DataType="x:String">
@@ -174,17 +175,17 @@
           </Border>
           <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space2}" IsVisible="{Binding NoProblems}" Margin="4,0">
             <c:Icon Glyph="check_circle" FontSize="{StaticResource IconLg}" Foreground="{DynamicResource BrushPrimary}" VerticalAlignment="Center" />
-            <TextBlock Classes="muted" Text="No problems found in the song file" FontSize="{StaticResource TextSm}" VerticalAlignment="Center" />
+            <TextBlock Classes="muted" Text="{l:T details.no_problems_found_song}" FontSize="{StaticResource TextSm}" VerticalAlignment="Center" />
           </StackPanel>
 
           <Border Classes="card" IsVisible="{Binding HasTxt}">
             <StackPanel Spacing="{StaticResource Space2}">
               <Grid ColumnDefinitions="*,Auto">
-                <TextBlock Classes="label" Text=".TXT FILE" VerticalAlignment="Center" />
-                <Button Grid.Column="1" Classes="text" Click="OnCopyTxt" ToolTip.Tip="Copy the whole song text">
+                <TextBlock Classes="label" Text="{l:T details.txt_file}" VerticalAlignment="Center" />
+                <Button Grid.Column="1" Classes="text" Click="OnCopyTxt" ToolTip.Tip="{l:T details.copy_whole_song_text}">
                   <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
                     <c:Icon Glyph="content_copy" FontSize="{StaticResource IconLg}" VerticalAlignment="Center" />
-                    <TextBlock Text="Copy" VerticalAlignment="Center" />
+                    <TextBlock Text="{l:T details.copy}" VerticalAlignment="Center" />
                   </StackPanel>
                 </Button>
               </Grid>

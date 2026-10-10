@@ -11,6 +11,7 @@ using UltrastarDJ.Core.Songbook;
 using UltrastarDJ.Core.Songs;
 using UltrastarDJ.Infrastructure;
 using UltrastarDJ.Infrastructure.Songbook;
+using UltrastarDJ.App.Localization;
 
 namespace UltrastarDJ.App.Services;
 
@@ -149,7 +150,7 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
         }
         catch (Exception ex) when (ex is IOException or SocketException or InvalidOperationException)
         {
-            LastError = $"Cannot listen on port {_doc.Port}: {ex.Message}";
+            LastError = L.F("songbook.cannot_listen", _doc.Port, ex.Message);
             _log.LogWarning(ex, "Songbook start failed");
         }
 
@@ -210,7 +211,7 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
     {
         if (_sidecars.Cloudflared is not { } exe)
         {
-            SetPublic(null, "cloudflared is missing — run scripts/fetch-natives");
+            SetPublic(null, L.T("songbook.cloudflared_missing"));
             return;
         }
 
@@ -220,7 +221,7 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
             SetPinEnabled(true);
         }
 
-        SetPublic(null, _tunnelRetries == 0 ? "Connecting…" : "Reconnecting…");
+        SetPublic(null, _tunnelRetries == 0 ? L.T("songbook.connecting") : L.T("songbook.reconnecting"));
         _tunnel ??= new CloudflareTunnel(exe, _log);
         _tunnel.Ended -= OnTunnelEnded;
         _tunnel.Ended += OnTunnelEnded;
@@ -248,12 +249,12 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
 
         if (_tunnelRetries++ >= TunnelRetries)
         {
-            SetPublic(null, "The public link was lost — stop and start the songbook, or switch to Wi-Fi.");
-            _notifications.Warn("Public songbook link lost", "Guests cannot reach the songbook — switch to Wi-Fi in the Songbook panel, or restart it.");
+            SetPublic(null, L.T("songbook.link_lost"));
+            _notifications.Warn(L.T("songbook.link_lost_toast"), L.T("songbook.link_lost_toast_detail"));
             return;
         }
 
-        SetPublic(null, "Reconnecting…");
+        SetPublic(null, L.T("songbook.reconnecting"));
         _ = Task.Delay(TunnelRetryDelay).ContinueWith(_ => StartTunnelAsync(), TaskScheduler.Default).Unwrap();
     }
 
@@ -412,17 +413,17 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
         Dictionary<string, string> taken = [];
         foreach (GuestRequest r in _requests.Waiting)
         {
-            taken[r.SongId] = "Requested";
+            taken[r.SongId] = "requested";
         }
 
         for (int i = active + 1; i < ids.Count; i++)
         {
-            taken[ids[i]] = i == active + 1 ? "Up next" : $"In the queue #{i - active}";
+            taken[ids[i]] = i == active + 1 ? "upnext" : $"queue|{i - active}";
         }
 
         if (LoadedId is { } loaded)
         {
-            taken[loaded] = "On stage";
+            taken[loaded] = "onstage";
         }
 
         List<SongbookMine> mine = [];
@@ -439,14 +440,32 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
         return new SongbookState(now is null ? null : ToGuestSong(now), queue, _library.Songs.Count, LibraryVersion, mine, taken, RequestsOpen);
     }
 
+    // Codes; the guest page words them in the phone's language ("status_queue": "In the queue #{0}").
     private static string StatusText(GuestRequestStatus status, int position) => status switch
     {
-        GuestRequestStatus.Waiting => "Waiting for the DJ",
-        GuestRequestStatus.Queued => position == 1 ? "Up next" : $"In the queue #{position}",
-        GuestRequestStatus.OnStage => "On stage now 🎤",
-        GuestRequestStatus.Sung => "Sung ✓",
-        _ => "Not this time",
+        GuestRequestStatus.Waiting => "waiting",
+        GuestRequestStatus.Queued => position == 1 ? "upnext" : $"queue|{position}",
+        GuestRequestStatus.OnStage => "onstage_now",
+        GuestRequestStatus.Sung => "sung",
+        _ => "declined",
     };
+
+    public IReadOnlyList<(string Code, string Name)> GuestLanguages() => [.. Translations.Languages.Select(l => (l.Code, l.NativeName))];
+
+    /// <summary>The "guest.*" texts (without the prefix) in the first language the phone asks for that the app has.</summary>
+    public (string Language, IReadOnlyDictionary<string, string> Texts) GuestTexts(string? acceptLanguages)
+    {
+        string code = (acceptLanguages ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(l => l.Split(';')[0].Split('-')[0].ToLowerInvariant())
+            .FirstOrDefault(l => Translations.Languages.Any(x => x.Code == l)) ?? Translations.English;
+        Dictionary<string, string> texts = [];
+        foreach ((string key, string english, string? text) in Translations.Instance.Entries(code).Where(e => e.Key.StartsWith("guest.", StringComparison.Ordinal)))
+        {
+            texts[key["guest.".Length..]] = string.IsNullOrWhiteSpace(text) ? english : text;
+        }
+
+        return (code, texts);
+    }
 
     public Task<SongbookRequestResult> RequestAsync(string songId, string guestName, string clientId) => Dispatcher.UIThread.InvokeAsync(() =>
     {
@@ -458,7 +477,7 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
 
         if (!RequestsOpen)
         {
-            return new SongbookRequestResult(false, false, "The DJ isn't taking requests right now.");
+            return new SongbookRequestResult(false, false, "closed");
         }
 
         RequestOutcome outcome = _requests.Add(songId, guestName, clientId, DateTime.Now, QueueIds(), _playlist.ActiveIndex, LoadedId);
@@ -468,7 +487,7 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
         }
 
         RefreshRequests();
-        _notifications.Request($"{guestName} wants to sing", $"{song.Artist} – {song.Title}");
+        _notifications.Request(L.F("songbook.wants_to_sing", guestName), $"{song.Artist} – {song.Title}");
         return new SongbookRequestResult(true, false, null);
     }).GetTask();
 

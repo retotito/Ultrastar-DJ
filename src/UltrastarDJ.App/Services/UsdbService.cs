@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using UltrastarDJ.Core.Abstractions;
 using UltrastarDJ.Core.Songs;
 using UltrastarDJ.Infrastructure;
+using UltrastarDJ.App.Localization;
 
 namespace UltrastarDJ.App.Services;
 
@@ -65,12 +66,12 @@ public sealed class UsdbService : IDisposable
         if (!online)
         {
             _library.SetUsdbOnline(false);
-            SetStatus("Offline — no internet connection");
+            SetStatus(L.T("usdb.offline_no_internet"));
         }
         else if (IsConnected)
         {
             _library.SetUsdbOnline(true);
-            SetStatus($"Connected as {_doc.Username}");
+            SetStatus(L.F("usdb.connected_as", _doc.Username));
         }
         else
         {
@@ -90,7 +91,7 @@ public sealed class UsdbService : IDisposable
         {
             // The connectivity toast already says so; reconnect happens when it comes back.
             _library.SetUsdbOnline(false);
-            SetStatus("Offline — no internet connection");
+            SetStatus(L.T("usdb.offline_no_internet"));
             return;
         }
 
@@ -101,11 +102,11 @@ public sealed class UsdbService : IDisposable
         catch (UsdbException ex)
         {
             _log.LogWarning("USDB auto-connect failed: {Error}", ex.Message);
-            SetStatus($"Offline — {ex.Message}");
+            SetStatus(L.F("usdb.offline_error", ex.Message));
             // Internet works but USDB does not (no internet is reported by ConnectivityService).
             if (_connectivity.IsOnline is true)
             {
-                _notifications.Warn("USDB is offline", "USDB songs are greyed out until it connects. " + ex.Message);
+                _notifications.Warn(L.T("usdb.offline_toast"), L.T("usdb.offline_toast_detail") + ex.Message);
             }
         }
     }
@@ -113,18 +114,18 @@ public sealed class UsdbService : IDisposable
     /// <summary>Logs in, stores the credentials and syncs (full when the catalog is incomplete). Throws <see cref="UsdbException"/> on network failure.</summary>
     public async Task<bool> ConnectAsync(string username, string password, CancellationToken ct = default)
     {
-        SetStatus("Connecting…");
+        SetStatus(L.T("usdb.connecting"));
         bool ok = await _client.LoginAsync(username, password, ct).ConfigureAwait(false);
         if (!ok)
         {
-            SetStatus("Login rejected — check username and password");
+            SetStatus(L.T("usdb.login_rejected"));
             return false;
         }
 
         _doc = _doc with { Username = username, Password = password };
         _settings.Save(SettingsName, _doc);
         _library.SetUsdbOnline(true);
-        SetStatus($"Connected as {username}");
+        SetStatus(L.F("usdb.connected_as_user", username));
         await SyncAsync(full: !_doc.FullSyncDone).ConfigureAwait(false);
         return true;
     }
@@ -140,7 +141,7 @@ public sealed class UsdbService : IDisposable
         CancellationTokenSource cts = new();
         _syncCts = cts;
         SyncFetched = 0;
-        SetStatus(full ? "Downloading catalog…" : "Checking for changes…");
+        SetStatus(full ? L.T("usdb.downloading_catalog") : L.T("usdb.checking_changes"));
         try
         {
             if (full)
@@ -149,7 +150,7 @@ public sealed class UsdbService : IDisposable
                 {
                     _catalog.Upsert(page);
                     SyncFetched += page.Count;
-                    SetStatus($"Downloading catalog… {SyncFetched:N0} songs");
+                    SetStatus(L.F("usdb.downloading_catalog_n", SyncFetched));
                 }
 
                 _doc = _doc with { FullSyncDone = true };
@@ -164,18 +165,18 @@ public sealed class UsdbService : IDisposable
             }
 
             CatalogCount = _catalog.Count;
-            SetStatus($"{CatalogCount:N0} USDB songs" + (full ? "" : $" ({SyncFetched:N0} updated)"));
+            SetStatus(L.F("usdb.n_songs", CatalogCount) + (full ? "" : L.F("usdb.n_updated", SyncFetched)));
         }
         catch (OperationCanceledException)
         {
             CatalogCount = _catalog.Count;
-            SetStatus($"Sync stopped — {CatalogCount:N0} songs so far" + (full ? ", resume with Sync" : ""));
+            SetStatus(L.F("usdb.sync_stopped", CatalogCount) + (full ? L.T("usdb.resume_with_sync") : ""));
         }
         catch (UsdbException ex)
         {
             _log.LogWarning("USDB sync failed: {Error}", ex.Message);
             CatalogCount = _catalog.Count;
-            SetStatus($"Sync failed — {ex.Message}");
+            SetStatus(L.F("usdb.sync_failed", ex.Message));
         }
         finally
         {
@@ -200,7 +201,7 @@ public sealed class UsdbService : IDisposable
         CatalogCount = 0;
         _library.SetUsdbOnline(false);
         _library.RefreshUsdb();
-        SetStatus("Disconnected");
+        SetStatus(L.T("usdb.disconnected"));
     }
 
     /// <summary>
@@ -254,7 +255,7 @@ public sealed class UsdbService : IDisposable
 
         if (!HasCredentials)
         {
-            throw new UsdbException("Not connected to USDB — connect under Song Sources");
+            throw new UsdbException(L.T("usdb.not_connected"));
         }
 
         await _loginGate.WaitAsync(ct).ConfigureAwait(false);
@@ -262,7 +263,7 @@ public sealed class UsdbService : IDisposable
         {
             if (!IsConnected && !await _client.LoginAsync(_doc.Username!, _doc.Password!, ct).ConfigureAwait(false))
             {
-                throw new UsdbException("USDB login rejected — check the credentials under Song Sources");
+                throw new UsdbException(L.T("usdb.login_rejected_sources"));
             }
 
             _library.SetUsdbOnline(true);

@@ -4,13 +4,14 @@ using UltrastarDJ.Audio;
 using UltrastarDJ.Core.Abstractions;
 using UltrastarDJ.Core.Playback;
 using UltrastarDJ.Media;
+using UltrastarDJ.App.Localization;
 
 namespace UltrastarDJ.App.Services;
 
 /// <summary>One selectable output: a device, or one stereo pair of a multichannel device.</summary>
 public sealed record OutputOption(string MpvDeviceId, string Name, int DeviceChannels, int ChannelOffset, bool IsDefault)
 {
-    public string Label => DeviceChannels > 2 ? $"{Name} — Ch {ChannelOffset + 1}–{ChannelOffset + 2}" : Name;
+    public string Label => DeviceChannels > 2 ? L.F("output.channels", Name, ChannelOffset + 1, ChannelOffset + 2) : Name;
     public string Key => $"{MpvDeviceId}|{ChannelOffset}";
     public override string ToString() => Label;
 }
@@ -77,7 +78,7 @@ public sealed class OutputsService : IDisposable
 
     /// <summary>"ARZOPA" — the device's name as stored or last seen (never the technical id when we know better).</summary>
     public string NameOf(ChannelOutput cfg) => cfg.Name ?? (_names.TryGetValue(cfg.MpvDeviceId, out string? n) ? n : cfg.MpvDeviceId);
-    private static string Label(MediaChannelKind kind) => kind == MediaChannelKind.Game ? "Game" : "Preview";
+    private static string Label(MediaChannelKind kind) => kind == MediaChannelKind.Game ? L.T("output.game") : L.T("output.preview");
 
     // mpv's list works while a song plays (PortAudio's refresh is refused while a stream is open).
     private async Task PollAsync(CancellationToken ct)
@@ -137,7 +138,7 @@ public sealed class OutputsService : IDisposable
             {
                 Apply(kind == MediaChannelKind.Game ? _media.Game : _media.Preview, cfg);
                 _log.LogWarning("{Channel} output {Device} is not connected — on the system default meanwhile", kind, cfg.MpvDeviceId);
-                _notifications.Warn($"{Label(kind)} output not connected", $"{name} — playing on the system default until it is back.");
+                _notifications.Warn(L.F("output.not_connected", Label(kind)), L.F("output.not_connected_detail", name));
                 if (kind == MediaChannelKind.Game && before is not null)
                 {
                     GameOutputLost?.Invoke(name);
@@ -147,7 +148,7 @@ public sealed class OutputsService : IDisposable
             {
                 Apply(kind == MediaChannelKind.Game ? _media.Game : _media.Preview, cfg);
                 _log.LogInformation("{Channel} output {Device} is back", kind, cfg.MpvDeviceId);
-                _notifications.Success($"{name} connected", $"{Label(kind)} plays there again.");
+                _notifications.Success(L.F("output.back", name), L.F("output.back_detail", Label(kind)));
             }
         }
 
@@ -156,12 +157,12 @@ public sealed class OutputsService : IDisposable
         {
             foreach (string id in now.Except(before).Where(id => id != _doc.Game.MpvDeviceId && id != _doc.Preview.MpvDeviceId))
             {
-                _notifications.Info("Audio output connected", $"{devices[id]} — choose it under Audio Output.");
+                _notifications.Info(L.T("output.new"), L.F("output.new_detail", devices[id]));
             }
 
             foreach (string id in before.Except(now).Where(id => id != _doc.Game.MpvDeviceId && id != _doc.Preview.MpvDeviceId))
             {
-                _notifications.Info("Audio output disconnected", _names.GetValueOrDefault(id, id));
+                _notifications.Info(L.T("output.gone"), _names.GetValueOrDefault(id, id));
             }
         }
 
@@ -229,7 +230,7 @@ public sealed class OutputsService : IDisposable
     /// <summary>All selectable outputs. The first entry is always the system default.</summary>
     public async Task<IReadOnlyList<OutputOption>> ListAsync()
     {
-        List<OutputOption> list = [new(AudioOutputDevice.Auto.Id, "System default", 2, 0, true)];
+        List<OutputOption> list = [new(AudioOutputDevice.Auto.Id, L.T("output.system_default"), 2, 0, true)];
         IReadOnlyList<AudioOutputDevice> mpv;
         try
         {

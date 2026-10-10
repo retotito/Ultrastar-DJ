@@ -74,6 +74,21 @@ public static class FitWidestItem
                 ApplyDropDownWidth(combo);
             };
             combo.DropDownOpened += (_, _) => ApplyDropDownWidth(combo);
+            // The entries' names change with the language ("All sources" → "Toutes les sources"): measure again.
+            WeakReference<ComboBox> weak = new(combo);
+            void OnLanguage()
+            {
+                if (weak.TryGetTarget(out ComboBox? c))
+                {
+                    Fit(c);
+                }
+                else
+                {
+                    Localization.Translations.Instance.Changed -= OnLanguage;
+                }
+            }
+
+            Localization.Translations.Instance.Changed += OnLanguage;
         }
 
         if (combo.ItemsSource is INotifyCollectionChanged incc)

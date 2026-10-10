@@ -7,6 +7,7 @@ using UltrastarDJ.Core.Abstractions;
 using UltrastarDJ.Core.Songs;
 using UltrastarDJ.Infrastructure.Library;
 using UltrastarDJ.Infrastructure.Usdb;
+using UltrastarDJ.App.Localization;
 
 namespace UltrastarDJ.App.ViewModels;
 
@@ -153,11 +154,11 @@ public sealed partial class SongDetailsViewModel : ViewModelBase
             {
                 if (_connectivity.IsOnline == false)
                 {
-                    Status = "Offline — the song text comes from USDB and could not be loaded.";
+                    Status = L.T("details.offline_text");
                 }
                 else
                 {
-                    Status = "Loading the song text from USDB…";
+                    Status = L.T("details.loading_text");
                     text = await _usdb.GetSongTxtAsync(id, song.UsdbMtime);
                     song = WithHeader(song, UltraStarParser.ParseHeader(text));
                 }
@@ -169,7 +170,7 @@ public sealed partial class SongDetailsViewModel : ViewModelBase
         }
         catch (Exception ex) when (ex is UsdbException or IOException or UnauthorizedAccessException or HttpRequestException)
         {
-            Status = $"The song text could not be loaded: {ex.Message}";
+            Status = L.F("details.text_failed", ex.Message);
         }
 
         IReadOnlyList<NoteTrack>? tracks = text is null ? null : UltraStarParser.ParseNotes(text);
@@ -181,7 +182,7 @@ public sealed partial class SongDetailsViewModel : ViewModelBase
         List<string> problems = text is null && Row.IsUsdb ? [] : [.. SongCheck.Problems(song, tracks, fs)];
         if (Row.Failure is { } failed)
         {
-            problems.Insert(0, $"Could not be loaded on {failed.AtUtc.ToLocalTime():d MMM, HH:mm}: {failed.Reason}");
+            problems.Insert(0, L.F("details.load_failed", failed.AtUtc.ToLocalTime(), failed.Reason));
         }
 
         Problems = problems;
@@ -224,42 +225,42 @@ public sealed partial class SongDetailsViewModel : ViewModelBase
         }
 
         CultureInfo inv = CultureInfo.InvariantCulture;
-        Add("Year", s.Year?.ToString(inv));
-        Add("Language", s.Language);
-        Add("Genre", s.Genre);
-        Add("Edition", s.Edition);
-        Add("Creator", s.Creator);
-        Add("Comment", s.Comment);
+        Add(L.T("details.field_year"), s.Year?.ToString(inv));
+        Add(L.T("details.field_language"), s.Language);
+        Add(L.T("details.field_genre"), s.Genre);
+        Add(L.T("details.field_edition"), s.Edition);
+        Add(L.T("details.field_creator"), s.Creator);
+        Add(L.T("details.field_comment"), s.Comment);
         Add("BPM", s.Bpm > 0 ? s.Bpm.ToString("0.##", inv) : null);
         Add("GAP", s.GapMs != 0 ? $"{s.GapMs.ToString("0", inv)} ms" : null);
         Add("VIDEOGAP", s.VideoGapSec is { } vg and not 0 ? $"{vg.ToString("0.###", inv)} s" : null);
         Add("START", s.StartSec is { } st ? $"{st.ToString("0.###", inv)} s" : null);
         Add("END", s.EndMs is { } end ? $"{end.ToString("0", inv)} ms" : null);
-        Add("USDB id", s.UsdbId?.ToString(inv));
-        Add("USDB views", s.UsdbViews is { } v ? $"{v.ToString("N0", inv)}{(s.Stars is { } n and > 0 ? "  " + new string('★', n) : "")}" : null);
+        Add(L.T("details.field_usdb_id"), s.UsdbId?.ToString(inv));
+        Add(L.T("details.field_usdb_views"), s.UsdbViews is { } v ? $"{v.ToString("N0", inv)}{(s.Stars is { } n and > 0 ? "  " + new string('★', n) : "")}" : null);
         return f;
     }
 
     private static IReadOnlyList<DetailField> SummaryOf(Song song, IReadOnlyList<NoteTrack> tracks, string text)
     {
         SongSummary s = SongSummary.Of(song, tracks);
-        List<DetailField> f = [new("Singing ends at", TimeSpan.FromSeconds(s.SingingEndsSec).ToString(s.SingingEndsSec >= 3600 ? @"h\:mm\:ss" : @"m\:ss", CultureInfo.InvariantCulture))];
-        f.Add(new("Voices", s.IsDuet ? DuetText(text) : "Solo"));
-        f.Add(new("Phrases / notes", $"{s.Phrases} / {s.Notes}"));
-        f.Add(new("Golden", s.GoldenShare.ToString("P0", CultureInfo.InvariantCulture)));
+        List<DetailField> f = [new(L.T("details.field_singing_ends"), TimeSpan.FromSeconds(s.SingingEndsSec).ToString(s.SingingEndsSec >= 3600 ? @"h\:mm\:ss" : @"m\:ss", CultureInfo.InvariantCulture))];
+        f.Add(new(L.T("details.field_voices"), s.IsDuet ? DuetText(text) : L.T("details.solo")));
+        f.Add(new(L.T("details.field_phrases_notes"), $"{s.Phrases} / {s.Notes}"));
+        f.Add(new(L.T("details.field_golden"), s.GoldenShare.ToString("P0", CultureInfo.InvariantCulture)));
         if (s.RapNotes > 0)
         {
-            f.Add(new("Rap notes", s.RapNotes.ToString(CultureInfo.InvariantCulture)));
+            f.Add(new(L.T("details.field_rap"), s.RapNotes.ToString(CultureInfo.InvariantCulture)));
         }
 
         if (s.FreestyleNotes > 0)
         {
-            f.Add(new("Freestyle notes", s.FreestyleNotes.ToString(CultureInfo.InvariantCulture)));
+            f.Add(new(L.T("details.field_freestyle"), s.FreestyleNotes.ToString(CultureInfo.InvariantCulture)));
         }
 
         if (s.LowestNote is { } low && s.HighestNote is { } high)
         {
-            f.Add(new("Pitch range", $"{low} – {high}"));
+            f.Add(new(L.T("details.field_pitch_range"), $"{low} – {high}"));
         }
 
         return f;
@@ -300,7 +301,7 @@ public sealed partial class SongDetailsViewModel : ViewModelBase
             }
         }
 
-        return p1 is not null && p2 is not null ? $"Duet — {p1} & {p2}" : "Duet";
+        return p1 is not null && p2 is not null ? L.F("details.duet_names", p1, p2) : L.T("details.duet");
     }
 
     private static IReadOnlyList<DetailFile> FilesOf(Song s, IFileExistence fs)
@@ -315,10 +316,10 @@ public sealed partial class SongDetailsViewModel : ViewModelBase
         }
 
         Add(".txt", s.TxtPath);
-        Add("Audio", s.AudioPath);
-        Add("Video", s.VideoPath);
-        Add("Cover", s.CoverPath);
-        Add("Background", s.BackgroundPath);
+        Add(L.T("details.field_audio"), s.AudioPath);
+        Add(L.T("details.field_video"), s.VideoPath);
+        Add(L.T("details.field_cover"), s.CoverPath);
+        Add(L.T("details.field_background"), s.BackgroundPath);
         return files;
     }
 }

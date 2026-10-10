@@ -1,3 +1,4 @@
+
 namespace UltrastarDJ.Core.Game;
 
 /// <summary>
@@ -15,9 +16,9 @@ public static class PhraseRating
     /// <summary>The popup text, or null for ratings that show nothing (below "great").</summary>
     public static string? Text(int rating) => rating switch
     {
-        8 => "PERFECT!",
-        7 => "AWESOME!",
-        6 => "GREAT!",
+        8 => Localization.Text.T("rating.perfect", "PERFECT!"),
+        7 => Localization.Text.T("rating.awesome", "AWESOME!"),
+        6 => Localization.Text.T("rating.great", "GREAT!"),
         _ => null,
     };
 }

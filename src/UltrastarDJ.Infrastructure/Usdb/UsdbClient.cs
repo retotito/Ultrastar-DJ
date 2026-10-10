@@ -2,6 +2,7 @@ using System.Net;
 using Microsoft.Extensions.Logging;
 using UltrastarDJ.Core.Abstractions;
 using UltrastarDJ.Core.Songs;
+using UltrastarDJ.Core.Localization;
 
 namespace UltrastarDJ.Infrastructure.Usdb;
 
@@ -92,7 +93,7 @@ public sealed class UsdbClient : IUsdbClient, IDisposable
     public async Task<string> GetSongTxtAsync(int songId, CancellationToken ct = default)
     {
         string body = await PostFormAsync(new Uri($"{UsdbHtml.BaseUrl}/index.php?link=gettxt&id={songId}"), new Dictionary<string, string> { ["wd"] = "1" }, ct).ConfigureAwait(false);
-        return UsdbHtml.ExtractSongTxt(body) ?? throw new UsdbException($"USDB returned no song text for #{songId} (deleted, or not logged in)");
+        return UsdbHtml.ExtractSongTxt(body) ?? throw new UsdbException(Text.F("usdb.no_text", "USDB returned no song text for #{0} (deleted, or not logged in)", songId));
     }
 
     private async Task<IReadOnlyList<UsdbCatalogEntry>> FetchPageAsync(string order, string direction, int start, CancellationToken ct)
@@ -119,11 +120,11 @@ public sealed class UsdbClient : IUsdbClient, IDisposable
         }
         catch (HttpRequestException ex)
         {
-            throw new UsdbException($"USDB request failed: {ex.Message}", ex);
+            throw new UsdbException(Text.F("usdb.request_failed", "USDB request failed: {0}", ex.Message), ex);
         }
         catch (TaskCanceledException ex) when (!ct.IsCancellationRequested)
         {
-            throw new UsdbException("USDB request timed out", ex);
+            throw new UsdbException(Text.T("usdb.timeout", "USDB request timed out"), ex);
         }
     }
 

@@ -39,6 +39,15 @@ public interface ISongbookBackend
     /// <summary>Withdraws the phone's own request while the DJ has not decided.</summary>
     Task<bool> CancelAsync(string requestId, string clientId);
 
+    /// <summary>
+    /// The guest page's texts in the phone's language: <paramref name="acceptLanguages"/> as the browser lists them
+    /// ("de-CH,de,en"), the first one the app has wins, else English. Returns that language's code and the texts.
+    /// </summary>
+    (string Language, IReadOnlyDictionary<string, string> Texts) GuestTexts(string? acceptLanguages);
+
+    /// <summary>The languages the guest page can switch to: code and name in itself ("de", "Deutsch").</summary>
+    IReadOnlyList<(string Code, string Name)> GuestLanguages();
+
     /// <summary>YouTube id for a guest's preview; USDB songs fetch their text for it (cached). Null if there is none.</summary>
     Task<string?> YouTubeIdAsync(string songId, CancellationToken ct);
 }

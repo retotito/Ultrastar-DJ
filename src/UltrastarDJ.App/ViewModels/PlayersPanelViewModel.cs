@@ -10,6 +10,7 @@ using UltrastarDJ.Audio.Monitor;
 using UltrastarDJ.Core.Game;
 using UltrastarDJ.Core.Players;
 using UltrastarDJ.Core.Timing;
+using UltrastarDJ.App.Localization;
 
 namespace UltrastarDJ.App.ViewModels;
 
@@ -17,7 +18,7 @@ namespace UltrastarDJ.App.ViewModels;
 public sealed record MicOption(string Label, MicBinding? Binding, string? UsedBy = null)
 {
     public bool IsAvailable => UsedBy is null;
-    public override string ToString() => UsedBy is null ? Label : $"{Label} — used by {UsedBy}";
+    public override string ToString() => UsedBy is null ? Label : L.F("audio_input.used_by", Label, UsedBy);
 }
 
 /// <summary>
@@ -68,7 +69,7 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
     {
         if (!_audio.RefreshDevices() && _baseOptions.Count > 0)
         {
-            Status = "Stop the mic test before refreshing devices";
+            Status = L.T("audio_input.stop_test_first");
             return;
         }
 
@@ -85,14 +86,14 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
     {
         // Labels use the device id: two devices with the same name get "(2)" there, so both stay tellable apart.
         _baseOptions.Clear();
-        _baseOptions.Add(new MicOption("— no microphone —", null));
+        _baseOptions.Add(new MicOption(L.T("audio_input.no_mic"), null));
         foreach (AudioDeviceInfo d in _audio.InputDevices)
         {
             if (d.MaxInputChannels >= 2)
             {
-                _baseOptions.Add(new MicOption($"{d.Id} — Left", new MicBinding(d.Id, MicChannelSide.Left)));
-                _baseOptions.Add(new MicOption($"{d.Id} — Right", new MicBinding(d.Id, MicChannelSide.Right)));
-                _baseOptions.Add(new MicOption($"{d.Id} — Mono (L+R)", new MicBinding(d.Id, MicChannelSide.Mono)));
+                _baseOptions.Add(new MicOption(L.F("audio_input.left", d.Id), new MicBinding(d.Id, MicChannelSide.Left)));
+                _baseOptions.Add(new MicOption(L.F("audio_input.right", d.Id), new MicBinding(d.Id, MicChannelSide.Right)));
+                _baseOptions.Add(new MicOption(L.F("audio_input.mono", d.Id), new MicBinding(d.Id, MicChannelSide.Mono)));
             }
             else
             {
@@ -163,7 +164,7 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
         {
             _audio.StartTest(_tested.Select(_players.Get));
             Testing = _audio.Mics.IsRunning;
-            Status = Testing ? "" : "Could not open the microphone (see log)";
+            Status = Testing ? "" : L.T("audio_input.cannot_open_mic");
             StartMonitor();
         }
 
@@ -189,7 +190,7 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
         _audio.StartMonitor(MonitorOutput.Id);
         if (!_audio.Monitor.IsRunning)
         {
-            Status = "Could not open the monitor output (see log)";
+            Status = L.T("audio_input.cannot_open_monitor");
         }
     }
 
@@ -221,7 +222,7 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
         string? output = _outputs.GamePortAudioDeviceId();
         if (card.Config.Mic is null || output is null)
         {
-            Status = card.Config.Mic is null ? "Bind a mic to calibrate" : "The game output was not found — check Audio Output";
+            Status = card.Config.Mic is null ? L.T("audio_input.bind_mic_first") : L.T("audio_input.output_missing");
             return;
         }
 
@@ -233,15 +234,15 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
         }
 
         card.Calibrating = true;
-        Status = $"Calibrating {card.Config.Name}: 5 tones on the game speakers — hold the mic in front of them";
+        Status = L.F("audio_input.calibrating", card.Config.Name);
         try
         {
             string outputKey = _outputs.GameOutputKey;
             LatencyTest.Result r = await _audio.Latency.RunAsync(output, card.Config.Mic, card.Config.InputGain, trials: 5,
-                progress: new Progress<double>(ms => Status = $"Calibrating {card.Config.Name}: {ms:F0} ms…"));
+                progress: new Progress<double>(ms => Status = L.F("audio_input.calibrating_ms", card.Config.Name, ms)));
             _players.Update(card.Config.Id, p => p with { CalibratedTotalMs = Math.Round(r.MedianMs), CalibrationOutputKey = outputKey });
             card.Reload();
-            Status = $"{card.Config.Name}: {r.MedianMs:F0} ms total, mic delay {card.MicDelayText} (trials {string.Join(", ", r.TrialsMs.Select(t => t.ToString("F0")))})";
+            Status = L.F("audio_input.calibrated", card.Config.Name, r.MedianMs, card.MicDelayText, string.Join(", ", r.TrialsMs.Select(t => t.ToString("F0"))));
         }
         catch (AudioBackendException ex)
         {
@@ -316,7 +317,8 @@ public sealed partial class PlayerCardViewModel : ObservableObject
 
     [ObservableProperty] private PlayerConfig _config;
     [ObservableProperty] private MicOption? _selectedMic;
-    [ObservableProperty] private string _name;
+    /// <summary>"Player 1" … — fixed, in the UI language.</summary>
+    public string Name => Config.Name;
     /// <summary>The gain knob, in dB (−40…+20); stored as a linear factor.</summary>
     [ObservableProperty] private double _inputGainDb;
     [ObservableProperty] private double _gateDb;
@@ -332,7 +334,6 @@ public sealed partial class PlayerCardViewModel : ObservableObject
     {
         _owner = owner;
         _config = config;
-        _name = config.Name;
         _inputGainDb = InputGainScale.ToDb(config.InputGain);
         _gateDb = ToDb(config.Threshold);
         _mixGain = Math.Min(1, config.MixGain);   // mix is 0–100 % (older settings went to 200 %)
@@ -363,14 +364,14 @@ public sealed partial class PlayerCardViewModel : ObservableObject
         _loading = false;
         SyncMicOption();
     }
-    public string MicDelayText => _owner.MicDelay(Config) is var (ms, calibrated) ? $"{ms:F0} ms{(calibrated ? "" : " (default)")}" : "";
+    public string MicDelayText => _owner.MicDelay(Config) is var (ms, calibrated) ? $"{ms:F0} ms{(calibrated ? "" : L.T("audio_input.default_suffix"))}" : "";
 
     public void RefreshDelay() => OnPropertyChanged(nameof(MicDelayText));
     public string GateText => $"{GateDb:F0} dB";
     public string GainText => $"{InputGainScale.Snap(InputGainDb):+0.#;-0.#;0} dB";
     /// <summary>What the speakers get from this mic: the monitor mixes the gated signal × mix (linear).</summary>
     public double MixLevel => IsGated ? 0 : Level * MixGain;
-    public string NoteText => IsGated ? "gated" : Note;
+    public string NoteText => IsGated ? L.T("audio_input.gated") : Note;
 
     partial void OnLevelChanged(double value) => OnPropertyChanged(nameof(MixLevel));
     partial void OnIsGatedChanged(bool value)
@@ -391,7 +392,7 @@ public sealed partial class PlayerCardViewModel : ObservableObject
         if (match is null && Config.Mic is { } mic)
         {
             // Keep the binding visible (and persisted) while the device is unplugged.
-            match = new MicOption($"{mic.DeviceId} — {mic.Channel} (not connected)", mic);
+            match = new MicOption(L.F("audio_input.not_connected", mic.DeviceId, mic.Channel), mic);
             MicOptions.Add(match);
         }
 
@@ -437,7 +438,6 @@ public sealed partial class PlayerCardViewModel : ObservableObject
         _owner.RestartIfTesting();
     }
 
-    partial void OnNameChanged(string value) => Save(p => p with { Name = value });
     partial void OnInputGainDbChanged(double value)
     {
         OnPropertyChanged(nameof(GainText));

@@ -1,3 +1,5 @@
+using UltrastarDJ.Core.Localization;
+
 namespace UltrastarDJ.Core.Songs;
 
 /// <summary>
@@ -11,5 +13,5 @@ public static class SourceAvailability
             [.. unavailableBefore.Where(id => !unavailableNow.Contains(id)).Order(StringComparer.Ordinal)]);
 
     /// <summary>The DJ-facing reason a song from an unreachable folder cannot be loaded.</summary>
-    public static string NotConnected(string sourceLabel) => $"{sourceLabel} is not connected — plug in the drive.";
+    public static string NotConnected(string sourceLabel) => Text.F("source.not_connected", "{0} is not connected — plug in the drive.", sourceLabel);
 }

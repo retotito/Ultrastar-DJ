@@ -605,6 +605,32 @@ songs would stay singable.
 
 ---
 
+## Sprint 23 — Languages  *(done)*
+
+- [x] Every UI text in language files (`App/Languages/*.json`, 612 texts incl. the guest page): screens, toasts, status lines, dialogs,
+      Core/Media/Infrastructure messages (`Core.Localization.Text`), player names; English fallback, ⟦key⟧ when unknown
+      (`TextTable`, tested)
+- [x] Language screen on the first start; Settings → Language; the switch is instant (no restart)
+- [x] Developer: translation editor (search, missing, placeholder check, save into the project, live reload, cut-off
+      texts) and the Pseudo layout language (`Pseudo`, `Placeholders`, tested)
+- [x] German (Swiss spelling: ss); screenshot round in Pseudo and German — switch descriptions wrap now, German rating
+      column "STERNE"
+- [x] Checked by the DJ (German, language switch, displays, songbook on the phone)
+- [x] French, Italian, Spanish, Chinese (Simplified), Japanese, Thai, Russian, Hindi (550 texts each, placeholders
+      checked); screenshot round: all scripts render (system font fallback), Russian "В игру" / "Проверить" shorter,
+      Spanish rating column "NOTA", filter boxes measure again after a language switch
+- [x] Songbook page for guests in the phone's language (`/api/texts`, status and refusal codes); checked in headless
+      Chrome as a Japanese and a Thai phone
+- [x] Portuguese (Brazil), Polish, Korean (612 texts each; 13 languages)
+- [x] Settings → Language with the globe icon
+- [x] Songbook page: 🌐 language picker in the header (remembered on the phone)
+- [x] QR code: whole device pixels per module, 240 px, error correction L (long public links read better)
+- [ ] Later: Filipino, Vietnamese, Indonesian, Turkish, Dutch; Arabic needs right-to-left mirroring (own sprint)
+- [ ] Later: real number / date formats per language (needs `InvariantGlobalization` off — check every number written
+      for mpv, ffmpeg and the files)
+
+---
+
 ## Later / ideas
 
 - Flaky test: `SqliteLoadFailureStoreTests.Save_RoundTrips_UpdatesAndRemoves` failed once in a full `dotnet test` run, passes alone —

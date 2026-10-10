@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
+using UltrastarDJ.App.Localization;
 
 namespace UltrastarDJ.App.Services;
 
@@ -84,8 +85,8 @@ public sealed class NotificationService
     public void ShowBug(Exception ex, string context)
     {
         DialogMessage msg = new(
-            "Something went wrong",
-            [$"{context}: {ex.Message}", "The app keeps running. If this happens again, copy the details and report it."],
+            L.T("bug.title"),
+            [$"{context}: {ex.Message}", L.T("bug.keeps_running")],
             ex.ToString(),
             IsBug: true);
         Dispatcher.UIThread.Post(() =>

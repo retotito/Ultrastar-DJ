@@ -6,9 +6,11 @@ using QRCoder;
 namespace UltrastarDJ.App.Controls;
 
 /// <summary>
-/// A QR code for <see cref="Text"/>, drawn as squares (sharp at any size, no image). QRCoder computes the modules;
-/// error correction M survives a projector's blur and a phone camera at a distance. Includes the white quiet zone
-/// scanners need around the code.
+/// A QR code for <see cref="Text"/>, drawn as squares (no image). QRCoder computes the modules. Error correction L:
+/// a screen does not get scratched or stained, and fewer, bigger modules are what a phone at a distance needs most —
+/// the public link (https://….trycloudflare.com) is long. Every module is a whole number of device pixels: on a
+/// projector at scaling 1, fractional modules blurred their edges and phones could not read the code. Includes the
+/// white quiet zone scanners need around the code.
 /// </summary>
 public sealed class QrCode : Control
 {
@@ -35,7 +37,7 @@ public sealed class QrCode : Control
         }
 
         using QRCodeGenerator generator = new();
-        using QRCodeData data = generator.CreateQrCode(Text, QRCodeGenerator.ECCLevel.M);
+        using QRCodeData data = generator.CreateQrCode(Text, QRCodeGenerator.ECCLevel.L);
         // ModuleMatrix already includes a 4-module quiet zone on every side.
         int n = data.ModuleMatrix.Count;
         bool[,] m = new bool[n, n];
@@ -59,8 +61,10 @@ public sealed class QrCode : Control
 
         int n = m.GetLength(0);
         double size = Math.Min(Bounds.Width, Bounds.Height);
-        double cell = Math.Floor(size / n * 4) / 4; // quarter pixels: crisp edges without visible seams
-        double origin = (size - cell * n) / 2;
+        double scale = TopLevel.GetTopLevel(this)?.RenderScaling ?? 1;
+        // Whole device pixels per module, centred on a whole pixel.
+        double cell = Math.Max(1, Math.Floor(size * scale / n)) / scale;
+        double origin = Math.Floor((size - cell * n) / 2 * scale) / scale;
         context.FillRectangle(Light, new Rect(0, 0, size, size));
         for (int y = 0; y < n; y++)
         {

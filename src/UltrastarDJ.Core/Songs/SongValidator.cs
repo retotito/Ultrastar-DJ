@@ -1,3 +1,5 @@
+using UltrastarDJ.Core.Localization;
+
 namespace UltrastarDJ.Core.Songs;
 
 /// <summary>File-system seam so the validator stays pure and testable.</summary>
@@ -52,7 +54,7 @@ public sealed class SongValidator(IFileExistence files)
             }
             else
             {
-                errors.Add(new("audioPath", $"Audio file not found: {audio}"));
+                errors.Add(new("audioPath", Text.F("check.audio_missing", "Audio file not found: {0}", audio)));
             }
         }
 
@@ -60,7 +62,7 @@ public sealed class SongValidator(IFileExistence files)
         {
             if (!song.HasLocalAudio && !song.HasYouTube)
             {
-                errors.Add(new("videoPath", $"Video file not found (sole audio source): {video}"));
+                errors.Add(new("videoPath", Text.F("check.video_missing", "Video file not found (sole audio source): {0}", video)));
             }
             else
             {

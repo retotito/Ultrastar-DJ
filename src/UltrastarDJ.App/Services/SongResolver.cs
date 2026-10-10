@@ -1,6 +1,7 @@
 using UltrastarDJ.Core.Abstractions;
 using UltrastarDJ.Core.Songs;
 using UltrastarDJ.Infrastructure.Library;
+using UltrastarDJ.App.Localization;
 
 namespace UltrastarDJ.App.Services;
 
@@ -36,7 +37,7 @@ public sealed class SongResolver(UsdbService usdb, LibraryService library)
             : v.Song;
         if (loaded.Notes is null || loaded.Notes.Count == 0)
         {
-            throw new SongLoadException("Song has no notes.", songProblem: true);
+            throw new SongLoadException(L.T("load.no_notes"), songProblem: true);
         }
 
         return loaded;
@@ -55,13 +56,13 @@ public sealed class SongResolver(UsdbService usdb, LibraryService library)
         }
         catch (IOException ex)
         {
-            throw new SongLoadException($"Cannot cache the USDB song text: {ex.Message}");
+            throw new SongLoadException(L.F("load.cannot_cache", ex.Message));
         }
 
         SongHeader h = UltraStarParser.ParseHeader(txt);
         if (h.YouTubeId is null)
         {
-            throw new SongLoadException("This USDB song has no YouTube link — nothing to play.", songProblem: true);
+            throw new SongLoadException(L.T("load.no_youtube"), songProblem: true);
         }
 
         return song with

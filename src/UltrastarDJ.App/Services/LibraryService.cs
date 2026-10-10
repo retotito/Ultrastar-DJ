@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using UltrastarDJ.Core.Abstractions;
 using UltrastarDJ.Core.Songs;
 using UltrastarDJ.Infrastructure.Library;
+using UltrastarDJ.App.Localization;
 
 namespace UltrastarDJ.App.Services;
 
@@ -161,11 +162,11 @@ public sealed class LibraryService : IDisposable
                 int count = CountFor(id);
                 if (atStart)
                 {
-                    _notifications.Warn($"Not connected: {label}", $"Its {count} songs are greyed out until the drive is connected.");
+                    _notifications.Warn(L.F("drive.not_connected", label), L.F("drive.not_connected_detail", count));
                 }
                 else
                 {
-                    _notifications.Warn($"Drive removed: {label}", $"Its {count} songs are greyed out until it is back.");
+                    _notifications.Warn(L.F("drive.removed", label), L.F("drive.removed_detail", count));
                 }
             }
 
@@ -186,12 +187,12 @@ public sealed class LibraryService : IDisposable
         try
         {
             await RescanAsync(sourceId).ConfigureAwait(false);
-            _notifications.Success($"Drive connected: {label}", $"{CountFor(sourceId)} songs available again.");
+            _notifications.Success(L.F("drive.connected", label), L.F("drive.connected_detail", CountFor(sourceId)));
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             _log.LogWarning(ex, "Rescan of returned source {Source} failed", label);
-            _notifications.Success($"Drive connected: {label}", "Its songs are available again (the rescan failed — use Rescan in Song Sources).");
+            _notifications.Success(L.F("drive.connected", label), L.T("drive.connected_rescan_failed"));
         }
     }
 

@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="using:UltrastarDJ.App.Localization"
              xmlns:vm="using:UltrastarDJ.App.ViewModels"
              xmlns:c="using:UltrastarDJ.App.Controls"
              x:Class="UltrastarDJ.App.Views.PreviewView"
@@ -8,7 +9,7 @@
   <StackPanel>
   <!-- Section title, same style as QUEUE below it -->
   <Border Padding="{StaticResource Pad3}" BorderBrush="{DynamicResource BrushOutlineVariant}" BorderThickness="0,0,0,1">
-    <TextBlock Classes="label" Text="PREVIEW PLAYER" />
+    <TextBlock Classes="label" Text="{l:T preview.preview_player}" />
   </Border>
 
   <StackPanel Spacing="{StaticResource Space2}" Margin="{StaticResource Pad3}">
@@ -29,7 +30,7 @@
             </Border>
           </Grid>
           <c:SeekStrip Grid.Row="1" Value="{Binding Fraction}" Track="{DynamicResource BrushStageTrack}" Fill="{DynamicResource BrushStageProgress}"
-                       Knob="{DynamicResource BrushBeamerText}" ToolTip.Tip="Click or drag to jump" />
+                       Knob="{DynamicResource BrushBeamerText}" ToolTip.Tip="{l:T preview.click_drag_jump}" />
         </Grid>
       </Panel>
     </Border>
@@ -42,19 +43,19 @@
     <!-- One row under the picture: play / pause, then Queue and Load (short labels, so it fits the panel width). -->
     <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space2}" HorizontalAlignment="Center">
       <Button Classes="transport" Classes.go="{Binding !IsPlaying}" Classes.pause="{Binding IsPlaying}" VerticalAlignment="Center"
-              Command="{Binding TogglePlayCommand}" IsEnabled="{Binding HasSong}" ToolTip.Tip="Play / pause">
+              Command="{Binding TogglePlayCommand}" IsEnabled="{Binding HasSong}" ToolTip.Tip="{l:T preview.play_pause}">
         <c:Icon Glyph="{Binding IsPlaying, Converter={x:Static vm:PlayerConverters.PlayPauseGlyph}}" FontSize="{StaticResource IconXl}" />
       </Button>
-      <Button Classes="tonal" Command="{Binding AddToQueueCommand}" VerticalAlignment="Center" ToolTip.Tip="Add this song to the end of the queue">
+      <Button Classes="tonal" Command="{Binding AddToQueueCommand}" VerticalAlignment="Center" ToolTip.Tip="{l:T preview.add_song_end_queue}">
         <StackPanel Orientation="Horizontal" Spacing="6">
           <c:Icon Glyph="queue_music" FontSize="{StaticResource IconMd}" />
-          <TextBlock Text="Queue" />
+          <TextBlock Text="{l:T preview.queue}" />
         </StackPanel>
       </Button>
       <Button Classes="tonal" Command="{Binding LoadIntoGameCommand}" VerticalAlignment="Center" ToolTip.Tip="{Binding LoadSongTip}">
         <StackPanel Orientation="Horizontal" Spacing="6">
           <c:Icon Glyph="play_circle" FontSize="{StaticResource IconMd}" />
-          <TextBlock Text="Load" />
+          <TextBlock Text="{l:T preview.load}" />
         </StackPanel>
       </Button>
     </StackPanel>

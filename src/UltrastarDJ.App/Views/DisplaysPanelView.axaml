@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="using:UltrastarDJ.App.Localization"
              xmlns:vm="using:UltrastarDJ.App.ViewModels"
              xmlns:c="using:UltrastarDJ.App.Controls"
              x:Class="UltrastarDJ.App.Views.DisplaysPanelView"
@@ -52,21 +53,21 @@
           </Border>
           <!-- Which screen it is on — always one line (also while closed), so opening does not shift the buttons. -->
           <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Classes="muted" FontSize="{StaticResource TextXs}" Margin="0,2,0,0"
-                     TextTrimming="CharacterEllipsis" Text="{Binding Screen, TargetNullValue='Opens next to this window'}" />
+                     TextTrimming="CharacterEllipsis" Text="{Binding ScreenText}" />
 
           <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="{StaticResource Space2}" Margin="0,12,0,0">
             <Button Classes="tonal" Classes.go="{Binding !IsOpen}" Classes.stop="{Binding IsOpen}" Command="{Binding ToggleOpenCommand}">
               <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
                 <c:Icon Glyph="{Binding IsOpen, Converter={x:Static vm:BoolConverters.Glyph}, ConverterParameter='close|open_in_new'}" FontSize="{StaticResource IconMd}" />
-                <TextBlock Text="{Binding IsOpen, Converter={x:Static vm:BoolConverters.Text}, ConverterParameter='Close|Open'}" />
+                <TextBlock Text="{l:Pick IsOpen, True=displays.close, False=displays.open}" />
               </StackPanel>
             </Button>
             <Button Classes="tonal" Command="{Binding ToggleFullScreenCommand}"
-                    ToolTip.Tip="Fullscreen on the screen the window is on — drag it to the projector first. Also: double-click or F in the window, Esc leaves.">
+                    ToolTip.Tip="{l:T displays.fullscreen_screen_window_drag}">
               <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
                 <c:Icon Glyph="{Binding IsFullScreen, Converter={x:Static vm:BoolConverters.Glyph}, ConverterParameter='fullscreen_exit|fullscreen'}"
                         FontSize="{StaticResource IconMd}" />
-                <TextBlock Text="{Binding IsFullScreen, Converter={x:Static vm:BoolConverters.Text}, ConverterParameter='Exit fullscreen|Fullscreen'}"
+                <TextBlock Text="{l:Pick IsFullScreen, True=displays.exit_fullscreen, False=displays.fullscreen}"
  />
               </StackPanel>
             </Button>
@@ -98,12 +99,12 @@
 
   <StackPanel Spacing="{StaticResource Space2}">
     <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap" MaxWidth="{StaticResource PopoverTextWidth}" HorizontalAlignment="Left"
-               Text="A display opens next to this window: drag it to the projector or TV, then go fullscreen (button, double-click or F)." />
+               Text="{l:T displays.display_opens_next_window}" />
 
     <ContentControl Content="{Binding Beamer1}" ContentTemplate="{StaticResource DisplayRow}" />
     <ContentControl Content="{Binding Beamer2}" ContentTemplate="{StaticResource DisplayRow}" />
 
     <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap" MaxWidth="{StaticResource PopoverTextWidth}" HorizontalAlignment="Left"
-               Text="Players need a microphone (Audio Input) before they can be put on a screen." />
+               Text="{l:T displays.players_need_microphone_audio}" />
   </StackPanel>
 </UserControl>

@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="using:UltrastarDJ.App.Localization"
              xmlns:vm="using:UltrastarDJ.App.ViewModels"
              xmlns:c="using:UltrastarDJ.App.Controls"
              xmlns:audio="using:UltrastarDJ.Audio"
@@ -7,7 +8,6 @@
              x:DataType="vm:PlayersPanelViewModel">
 
   <UserControl.Resources>
-    <x:String x:Key="GainGateTip">Gain knob · Gate knob (below)</x:String>
     <DataTemplate x:Key="PlayerCard" x:DataType="vm:PlayerCardViewModel">
       <Border Classes="card" Margin="0,0,0,8" Padding="12">
         <StackPanel Spacing="{StaticResource Space2}">
@@ -17,7 +17,7 @@
             <TextBlock Grid.Column="1" Classes="title" Text="{Binding Name}" VerticalAlignment="Center" />
             <!-- Detected note, or "gated" while the mic is below the gate: only meaningful while this mic is tested -->
             <TextBlock Grid.Column="2" Classes="muted" Text="{Binding NoteText}" VerticalAlignment="Center" MinWidth="110" TextAlignment="Right"
-                       IsVisible="{Binding Testing}" ToolTip.Tip="Detected note. 'gated' = below the GATE threshold, treated as silence (no notes, no points)" />
+                       IsVisible="{Binding Testing}" ToolTip.Tip="{l:T audio_input.detected_note_gated_below}" />
           </Grid>
 
           <Grid ColumnDefinitions="*,Auto">
@@ -31,10 +31,10 @@
               </ComboBox.Styles>
             </ComboBox>
             <Button Grid.Column="1" Classes="tonal" Margin="8,0,0,0" Padding="12,4" Command="{Binding ToggleTestCommand}"
-                    IsEnabled="{Binding HasMic}" Classes.go="{Binding !Testing}" Classes.stop="{Binding Testing}" ToolTip.Tip="Open this mic: live meter and note">
+                    IsEnabled="{Binding HasMic}" Classes.go="{Binding !Testing}" Classes.stop="{Binding Testing}" ToolTip.Tip="{l:T audio_input.open_mic_live_meter}">
               <StackPanel Orientation="Horizontal" Spacing="4">
                 <c:Icon Glyph="{Binding Testing, Converter={x:Static vm:PlayerConverters.TestGlyph}}" FontSize="{StaticResource IconSm}" />
-                <TextBlock Text="{Binding Testing, Converter={x:Static vm:BoolConverters.Text}, ConverterParameter='Stop|Test'}"
+                <TextBlock Text="{l:Pick Testing, True=audio_input.stop, False=audio_input.test}"
                            FontSize="{StaticResource TextSm}" />
               </StackPanel>
             </Button>
@@ -46,32 +46,32 @@
                MIX — meter = what the speakers get (gated signal × mix). -->
           <Grid ColumnDefinitions="52,*,60" RowDefinitions="Auto,Auto" RowSpacing="{StaticResource Space1}">
             <TextBlock Grid.Row="0" Grid.Column="0" Classes="label" Text="GAIN" VerticalAlignment="Top" Margin="0,9,0,0"
-                       ToolTip.Tip="{StaticResource GainGateTip}" />
+                       ToolTip.Tip="{l:T audio_input.gain_gate_tip}" />
             <c:MeterFader Grid.Row="0" Grid.Column="1" Minimum="-40" Maximum="20" ResetValue="0" Value="{Binding InputGainDb}" Level="{Binding Level}"
                           MinDb="-70" MaxDb="0" WarnDb="-14" ClipDb="-7"
                           ShowGate="True" GateDb="{Binding GateDb}" GateMinDb="-70" GateMaxDb="-20" GateResetDb="-50"
-                          ToolTip.Tip="{StaticResource GainGateTip}" />
+                          ToolTip.Tip="{l:T audio_input.gain_gate_tip}" />
             <StackPanel Grid.Row="0" Grid.Column="2" VerticalAlignment="Top">
               <TextBlock Classes="muted" Text="{Binding GainText}" TextAlignment="Right" Margin="0,5,0,0" />
               <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="{Binding GateText}" TextAlignment="Right" />
             </StackPanel>
 
             <TextBlock Grid.Row="1" Grid.Column="0" Classes="label" Text="MIX" VerticalAlignment="Center"
-                       ToolTip.Tip="Mix knob" />
+                       ToolTip.Tip="{l:T audio_input.mix_knob}" />
             <c:MeterFader Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="1" ResetValue="1" Value="{Binding MixGain}" Level="{Binding MixLevel}"
                           MinDb="-70" MaxDb="0" WarnDb="-14" ClipDb="-7"
-                          ToolTip.Tip="Mix knob" />
+                          ToolTip.Tip="{l:T audio_input.mix_knob}" />
             <TextBlock Grid.Row="1" Grid.Column="2" Classes="muted" Text="{Binding MixGain, StringFormat='{}{0:P0}'}" VerticalAlignment="Center" TextAlignment="Right" />
           </Grid>
 
           <Grid ColumnDefinitions="*,Auto">
             <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" VerticalAlignment="Center"
-                       Text="{Binding MicDelayText, StringFormat='Mic delay {0}'}" ToolTip.Tip="How much later this mic's notes reach the scorer than the singer sings them (mic, USB and pitch analysis). Scoring matches each heard pitch with the note this many ms earlier. Set it with Calibrate; until then 140 ms is assumed." />
+                       Text="{l:Format MicDelayText, audio_input.mic_delay}" ToolTip.Tip="{l:T audio_input.how_much_later_mic}" />
             <Button Grid.Column="1" Classes="tonal" Command="{Binding CalibrateCommand}" IsEnabled="{Binding !Calibrating}" Padding="12,4"
-                    ToolTip.Tip="Measures this mic's delay: plays 5 tones on the game speakers and listens for them through the same pitch analysis as the game. Hold the mic in front of the speakers in a quiet moment. Set the speakers' latency (Audio Output → Test sync) first; it is subtracted from the result.">
+                    ToolTip.Tip="{l:T audio_input.measures_mic_s_delay}">
               <StackPanel Orientation="Horizontal" Spacing="4">
                 <c:Icon Glyph="timer" FontSize="{StaticResource IconSm}" />
-                <TextBlock Text="Calibrate" FontSize="{StaticResource TextSm}" />
+                <TextBlock Text="{l:T audio_input.calibrate}" FontSize="{StaticResource TextSm}" />
               </StackPanel>
             </Button>
           </Grid>
@@ -82,14 +82,14 @@
 
   <StackPanel Spacing="{StaticResource Space2}">
     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="{StaticResource Space1}">
-      <Button Classes="sidebar" Command="{Binding RefreshDevicesCommand}" ToolTip.Tip="Refresh device list (stop the mic tests first; plugging in is detected by itself)">
+      <Button Classes="sidebar" Command="{Binding RefreshDevicesCommand}" ToolTip.Tip="{l:T audio_input.refresh_device_list_stop}">
         <c:Icon Glyph="refresh" FontSize="{StaticResource IconMd}" />
       </Button>
     </StackPanel>
 
     <!-- Where the tested mics are heard: on as soon as one mic is tested, off with the last. -->
-    <Grid ColumnDefinitions="Auto,*" ToolTip.Tip="Tested mics are heard here">
-      <TextBlock Grid.Column="0" Classes="label" Text="MONITOR" VerticalAlignment="Center" Margin="0,0,8,0" />
+    <Grid ColumnDefinitions="Auto,*" ToolTip.Tip="{l:T audio_input.tested_mics_are_heard}">
+      <TextBlock Grid.Column="0" Classes="label" Text="{l:T audio_input.monitor}" VerticalAlignment="Center" Margin="0,0,8,0" />
       <ComboBox Grid.Column="1" ItemsSource="{Binding Outputs}" SelectedItem="{Binding MonitorOutput}" HorizontalAlignment="Stretch">
         <ComboBox.ItemTemplate>
           <DataTemplate x:DataType="audio:AudioDeviceInfo">
