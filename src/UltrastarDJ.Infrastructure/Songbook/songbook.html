@@ -101,6 +101,7 @@
       <option value="genre">Genre</option>
       <option value="decade">Decade</option>
       <option value="popularity">Popularity</option>
+      <option value="voices">Duet / solo</option>
     </select>
     <select id="fv" onchange="valueChanged()" disabled><option value="">—</option></select>
   </div>
@@ -185,7 +186,7 @@
     refreshState();
   }
 
-  // ── Catalog ── songs: [id, title, artist, year, [languages], [genres], stars, usdb, youtubeId]
+  // ── Catalog ── songs: [id, title, artist, year, [languages], [genres], stars, usdb, youtubeId, duet]
   async function loadLibrary(v) {
     var res = await api('/api/library?v=' + v);
     if (!res.ok) { if (res.status === 401) verify(); return; }
@@ -205,6 +206,7 @@
     if (kind === 'genre') return s[5].map(function (i) { return lib.genres[i]; });
     if (kind === 'decade') return [s.decade];
     if (kind === 'popularity') return [STARS[s[6]]];
+    if (kind === 'voices') return [s[9] ? 'Duet (two singers)' : 'Solo'];
     return [];
   }
   function searchMatches() {
@@ -257,7 +259,9 @@
     var langs = s[4].map(function (x) { return lib.languages[x]; }).join(', ');
     var meta = [esc(s[2]), s[3] ? s[3] : '', esc(langs)].filter(Boolean).join(' · ');
     // Title and artist get the whole width; the details, YouTube and Request are in the song's dialog.
-    return '<div class="song" data-id="' + esc(s[0]) + '" onclick="openSong(' + i + ')"><div class="meta"><div class="t">' + esc(s[1]) + '</div><div class="a">' + meta + '</div></div>'
+    // Duets: two singers needed — a small sign before the title.
+    var duet = s[9] ? '<span class="duet" title="Duet — two singers">👥</span> ' : '';
+    return '<div class="song" data-id="' + esc(s[0]) + '" onclick="openSong(' + i + ')"><div class="meta"><div class="t">' + duet + esc(s[1]) + '</div><div class="a">' + meta + '</div></div>'
       + '<span class="mark">' + esc(taken[s[0]] || '') + '</span><button class="dots" aria-label="More">⋯</button></div>';
   }
 
@@ -270,7 +274,7 @@
     document.getElementById('mTitle').textContent = s[1];
     document.getElementById('mArtist').textContent = s[2];
     var info = [['Year', s[3] || ''], ['Language', s[4].map(function (x) { return lib.languages[x]; }).join(', ')],
-      ['Genre', s[5].map(function (x) { return lib.genres[x]; }).join(', ')], ['Popularity', s[6] ? STARS[s[6]] : ''], ['Source', s[7] ? 'USDB' : '']];
+      ['Genre', s[5].map(function (x) { return lib.genres[x]; }).join(', ')], ['Popularity', s[6] ? STARS[s[6]] : ''], ['Voices', s[9] ? 'Duet — two singers' : ''], ['Source', s[7] ? 'USDB' : '']];
     document.getElementById('mInfo').innerHTML = info.filter(function (r) { return r[1]; })
       .map(function (r) { return '<dt>' + r[0] + '</dt><dd>' + esc(r[1]) + '</dd>'; }).join('');
     document.getElementById('mName').value = guest;

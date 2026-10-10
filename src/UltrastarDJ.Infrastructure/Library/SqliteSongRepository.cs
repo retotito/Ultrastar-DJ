@@ -11,7 +11,8 @@ namespace UltrastarDJ.Infrastructure.Library;
 /// </summary>
 public sealed class SqliteSongRepository : ISongRepository, IDisposable
 {
-    private const int SchemaVersion = 1;
+    // 2: is_duet (a library from version 1 never checked its local songs for a second voice → NeedsRescan).
+    private const int SchemaVersion = 2;
     private readonly string _connectionString;
     private readonly Lock _writeLock = new();
 
@@ -29,12 +30,24 @@ public sealed class SqliteSongRepository : ISongRepository, IDisposable
         using SqliteConnection c = Open();
         c.Execute("PRAGMA journal_mode=WAL;");
         long version = c.ExecuteScalar<long>("PRAGMA user_version;");
-        if (version < SchemaVersion)
+        if (version == 0)
         {
             c.Execute(Schema);
+        }
+        else if (version == 1)
+        {
+            c.Execute("ALTER TABLE songs ADD COLUMN is_duet INTEGER NOT NULL DEFAULT 0;");
+            NeedsRescan = true;
+        }
+
+        if (version < SchemaVersion)
+        {
             c.Execute($"PRAGMA user_version={SchemaVersion};");
         }
     }
+
+    /// <summary>The library was upgraded and its local songs lack something only a scan finds (duets): rescan them once.</summary>
+    public bool NeedsRescan { get; }
 
     private const string Schema = """
         CREATE TABLE IF NOT EXISTS songs (
@@ -59,7 +72,8 @@ public sealed class SqliteSongRepository : ISongRepository, IDisposable
             start_sec REAL,
             end_ms REAL,
             usdb_id INTEGER,
-            usdb_views INTEGER
+            usdb_views INTEGER,
+            is_duet INTEGER NOT NULL DEFAULT 0
         );
         CREATE INDEX IF NOT EXISTS ix_songs_source ON songs(source_id);
         CREATE INDEX IF NOT EXISTS ix_songs_artist_title ON songs(artist COLLATE NOCASE, title COLLATE NOCASE);
@@ -75,9 +89,9 @@ public sealed class SqliteSongRepository : ISongRepository, IDisposable
             c.Execute(
                 """
                 INSERT INTO songs (id, source_id, title, artist, bpm, gap_ms, year, language, genre, edition, creator,
-                    txt_path, audio_path, video_path, cover_path, background_path, youtube_id, video_gap_sec, start_sec, end_ms, usdb_id, usdb_views)
+                    txt_path, audio_path, video_path, cover_path, background_path, youtube_id, video_gap_sec, start_sec, end_ms, usdb_id, usdb_views, is_duet)
                 VALUES (@Id, @SourceId, @Title, @Artist, @Bpm, @GapMs, @Year, @Language, @Genre, @Edition, @Creator,
-                    @TxtPath, @AudioPath, @VideoPath, @CoverPath, @BackgroundPath, @YouTubeId, @VideoGapSec, @StartSec, @EndMs, @UsdbId, @UsdbViews)
+                    @TxtPath, @AudioPath, @VideoPath, @CoverPath, @BackgroundPath, @YouTubeId, @VideoGapSec, @StartSec, @EndMs, @UsdbId, @UsdbViews, @IsDuet)
                 """,
                 songs.Select(Row.From), tx);
             tx.Commit();
@@ -139,13 +153,14 @@ public sealed class SqliteSongRepository : ISongRepository, IDisposable
         public double? EndMs { get; set; }
         public int? UsdbId { get; set; }
         public int? UsdbViews { get; set; }
+        public bool IsDuet { get; set; }
 
         public static Row From(Song s) => new()
         {
             Id = s.Id, SourceId = s.SourceId, Title = s.Title, Artist = s.Artist, Bpm = s.Bpm, GapMs = s.GapMs, Year = s.Year,
             Language = s.Language, Genre = s.Genre, Edition = s.Edition, Creator = s.Creator, TxtPath = s.TxtPath,
             AudioPath = s.AudioPath, VideoPath = s.VideoPath, CoverPath = s.CoverPath, BackgroundPath = s.BackgroundPath,
-            YouTubeId = s.YouTubeId, VideoGapSec = s.VideoGapSec, StartSec = s.StartSec, EndMs = s.EndMs, UsdbId = s.UsdbId, UsdbViews = s.UsdbViews,
+            YouTubeId = s.YouTubeId, VideoGapSec = s.VideoGapSec, StartSec = s.StartSec, EndMs = s.EndMs, UsdbId = s.UsdbId, UsdbViews = s.UsdbViews, IsDuet = s.IsDuet,
         };
 
         public Song ToSong() => new()
@@ -153,7 +168,7 @@ public sealed class SqliteSongRepository : ISongRepository, IDisposable
             Id = Id, SourceId = SourceId, Title = Title, Artist = Artist, Bpm = Bpm, GapMs = GapMs, Year = Year,
             Language = Language, Genre = Genre, Edition = Edition, Creator = Creator, TxtPath = TxtPath,
             AudioPath = AudioPath, VideoPath = VideoPath, CoverPath = CoverPath, BackgroundPath = BackgroundPath,
-            YouTubeId = YouTubeId, VideoGapSec = VideoGapSec, StartSec = StartSec, EndMs = EndMs, UsdbId = UsdbId, UsdbViews = UsdbViews,
+            YouTubeId = YouTubeId, VideoGapSec = VideoGapSec, StartSec = StartSec, EndMs = EndMs, UsdbId = UsdbId, UsdbViews = UsdbViews, IsDuet = IsDuet,
         };
     }
 }

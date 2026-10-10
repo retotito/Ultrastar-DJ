@@ -139,4 +139,11 @@ public class SongQueryTests
         SongQuery q = new() { BrokenOnly = true, BrokenIds = new HashSet<string> { "b::Lovefool" } };
         Assert.Equal(["Lovefool"], Titles(q));
     }
+
+    [Fact]
+    public void Apply_DuetsOnly_KeepsTheDuets()
+    {
+        Song[] songs = [S("Roxanne", "The Police", "a"), S("Shallow [DUET]", "Cooper & Gaga", "usdb") with { IsDuet = true }];
+        Assert.Equal(["Shallow [DUET]"], new SongQuery { DuetsOnly = true }.Apply(songs, id => id).Select(s => s.Title));
+    }
 }

@@ -201,6 +201,7 @@ public sealed class SongbookServer : IAsyncDisposable
                     w.WriteNullValue();
                 }
 
+                w.WriteNumberValue(e.Duet ? 1 : 0);
                 w.WriteEndArray();
             }
 

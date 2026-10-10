@@ -213,6 +213,8 @@
   <!-- Mic gate on a MeterFader: shade over the range that counts as silence, and its drag handle -->
   <!-- Favourite songs: the heart in the library and the song details -->
   <SolidColorBrush x:Key="BrushFavourite" Color="#E91E63" />
+  <!-- Duets: the two-people icon in the library and its filter (apart from the heart's pink and the player colours) -->
+  <SolidColorBrush x:Key="BrushDuet" Color="#7E57C2" />
   <SolidColorBrush x:Key="BrushGateZone" Color="{StaticResource ColorMeterClip}" Opacity="0.3" />
   <SolidColorBrush x:Key="BrushGateHandle" Color="{StaticResource ColorMeterClip}" />
   <SolidColorBrush x:Key="BrushGo" Color="{DynamicResource ColorGo}" />

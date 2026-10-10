@@ -540,7 +540,9 @@ USDB marks them "[DUET]" in the title). The format has no third voice.
 - [x] Game Player in a duet: "Duet" (bold) with an "Assign voices" button (⚠ next to it while the players changed); the
       voice each singer sings ("Bradley Cooper", "Both voices") under their mic slider; players sitting out get no slider
 - [ ] Verified live
-- Next: duet marker in the library (filter) and on the songbook; swapping voices
+- [x] Duet marker: `Song.IsDuet` — local files: a `P2` line (scan, stored: library schema 2, older libraries rescan their
+      connected folders once); USDB: "[DUET]" in the title (903 in the catalog). Library: icon before the title, rating
+      filter "Duets" with its count (violet icon; Favourites / Broken got coloured icons too instead of emoji); songbook: 👥 before the title, "Voices" in the dialog, "Duet / solo" filter (tested)
 
 ---
 

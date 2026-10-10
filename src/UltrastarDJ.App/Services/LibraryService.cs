@@ -45,6 +45,28 @@ public sealed class LibraryService : IDisposable
         CheckAvailability(atStart: true);
         // Folders on USB drives come and go; poll cheaply (Directory.Exists) instead of a watcher per source.
         _availabilityTimer = new Timer(_ => CheckAvailability(atStart: false), null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
+        if (repo.NeedsRescan)
+        {
+            _ = RescanAfterUpgradeAsync();
+        }
+    }
+
+    // The library was upgraded (duets): rescan the connected folders once in the background. Unplugged ones keep their
+    // songs as they were and get the rescan when the drive comes back (RescanReturnedAsync).
+    private async Task RescanAfterUpgradeAsync()
+    {
+        foreach (SongSource source in _doc.Sources.Where(s => s.Enabled && IsReachableNow(s.Id)).ToList())
+        {
+            try
+            {
+                await RescanAsync(source.Id).ConfigureAwait(false);
+                _log.LogInformation("Library upgrade: rescanned {Source} (duets)", source.Label);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                _log.LogWarning(ex, "Library upgrade: rescan of {Source} failed", source.Label);
+            }
+        }
     }
 
     /// <summary>Raised on the calling thread after <see cref="Songs"/> or <see cref="Sources"/> changed.</summary>

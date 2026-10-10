@@ -51,12 +51,19 @@
           <!-- Closed box: just the name; the counts are for choosing, in the open list. -->
           <ComboBox.SelectionBoxItemTemplate>
             <DataTemplate x:DataType="vm:RatingOption">
-              <TextBlock Text="{Binding}" />
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <c:Icon Glyph="{Binding Glyph}" IsVisible="{Binding HasGlyph}" FontSize="{StaticResource IconSm}"
+                        Foreground="{Binding GlyphBrushKey, Converter={x:Static vm:PlayerConverters.BrushByKey}}" />
+                <TextBlock Text="{Binding Label}" VerticalAlignment="Center" />
+              </StackPanel>
             </DataTemplate>
           </ComboBox.SelectionBoxItemTemplate>
           <ComboBox.ItemTemplate>
             <DataTemplate x:DataType="vm:RatingOption">
-              <TextBlock>
+              <StackPanel Orientation="Horizontal" Spacing="6">
+              <c:Icon Glyph="{Binding Glyph}" IsVisible="{Binding HasGlyph}" FontSize="{StaticResource IconSm}"
+                      Foreground="{Binding GlyphBrushKey, Converter={x:Static vm:PlayerConverters.BrushByKey}}" />
+              <TextBlock VerticalAlignment="Center">
                 <TextBlock.Text>
                   <MultiBinding Converter="{x:Static vm:FacetConverters.Label}" ConverterParameter="rating">
                     <Binding />
@@ -70,6 +77,7 @@
                   </MultiBinding>
                 </TextBlock.Opacity>
               </TextBlock>
+              </StackPanel>
             </DataTemplate>
           </ComboBox.ItemTemplate>
         </ComboBox>
@@ -251,14 +259,16 @@
                 </Grid.ContextMenu>
                 <!-- Before the title: ⚠ the last load failed for a reason of the song's own (LoadFailureService); the DJ's
                      marks (SongMarksService): broken (tooltip: the note) and favourite. -->
-                <Grid Grid.Column="0" ColumnDefinitions="Auto,Auto,Auto,*">
+                <Grid Grid.Column="0" ColumnDefinitions="Auto,Auto,Auto,Auto,*">
                   <c:Icon Glyph="warning" FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushError}" VerticalAlignment="Center" Margin="0,0,6,0"
                           IsVisible="{Binding HasFailure}" ToolTip.Tip="{Binding FailureTip}" Background="Transparent" />
                   <c:Icon Grid.Column="1" Glyph="report" FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushError}" VerticalAlignment="Center" Margin="0,0,6,0"
                           IsVisible="{Binding IsBroken}" ToolTip.Tip="{Binding BrokenTip}" Background="Transparent" />
                   <c:Icon Grid.Column="2" Glyph="favorite" FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushFavourite}" VerticalAlignment="Center" Margin="0,0,6,0"
                           IsVisible="{Binding IsFavourite}" ToolTip.Tip="Favourite" Background="Transparent" />
-                  <TextBlock Grid.Column="3" Text="{Binding Title}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                  <c:Icon Grid.Column="3" Glyph="group" FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushDuet}" VerticalAlignment="Center" Margin="0,0,6,0"
+                          IsVisible="{Binding IsDuet}" ToolTip.Tip="Duet — two voices" Background="Transparent" />
+                  <TextBlock Grid.Column="4" Text="{Binding Title}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                 </Grid>
                 <TextBlock Grid.Column="1" Text="{Binding Artist}" Classes="muted" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,8,0"
                            IsVisible="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).Table.ShowArtist}" />

@@ -29,7 +29,9 @@ public static class FacetConverters
             int count = Count(entry, values.Count > 1 ? values[1] as SongFacets : null, parameter as string);
             if (!opacity)
             {
-                return $"{entry} ({count.ToString("N0", culture)})";
+                // Rating entries with an icon draw it themselves: their text is just the label.
+                string label = entry is RatingOption r ? r.Label : entry.ToString() ?? "";
+                return $"{label} ({count.ToString("N0", culture)})";
             }
 
             double greyed = entry is SourceOption { IsAvailable: false } ? 0.45 : 1.0;
@@ -49,7 +51,7 @@ public static class FacetConverters
         {
             ("language", string s) => s == LibraryViewModel.AnyLanguage ? f.LanguageTotal : f.Languages.GetValueOrDefault(s),
             ("genre", string s) => s == LibraryViewModel.AnyGenre ? f.GenreTotal : f.Genres.GetValueOrDefault(s),
-            ("rating", RatingOption r) => r.Favourites ? f.Favourites : r.Broken ? f.Broken : r.Stars is { } n ? f.Stars.GetValueOrDefault(n) : f.StarsTotal,
+            ("rating", RatingOption r) => r.Favourites ? f.Favourites : r.Broken ? f.Broken : r.Duets ? f.Duets : r.Stars is { } n ? f.Stars.GetValueOrDefault(n) : f.StarsTotal,
             ("source", SourceOption o) => o.Key switch
             {
                 SourceOption.AllKey => f.SourcesTotal,

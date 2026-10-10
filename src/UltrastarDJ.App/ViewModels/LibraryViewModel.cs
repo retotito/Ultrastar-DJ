@@ -12,6 +12,8 @@ namespace UltrastarDJ.App.ViewModels;
 public sealed record LibraryRow(Song Song, string Source, bool IsAvailable, LoadFailure? Failure = null, SongMark? Mark = null)
 {
     public bool IsFavourite => Mark?.Favourite == true;
+    /// <summary>Two voices (UltraStar duet) — the icon before the title, the rating filter's "Duets".</summary>
+    public bool IsDuet => Song.IsDuet;
     /// <summary>Marked broken by the DJ (bad notes / timing) — still playable, never offered on the songbook.</summary>
     public bool IsBroken => Mark?.Broken == true;
     public string? BrokenTip => IsBroken ? $"Marked as broken{(Mark!.Note is { } n ? $": {n}" : "")}" : null;
@@ -45,9 +47,15 @@ public sealed record LibraryRow(Song Song, string Source, bool IsAvailable, Load
 }
 
 /// <summary>An entry of the rating filter: exactly <see cref="Stars"/> stars, the DJ's favourites or broken songs, or no filter.</summary>
-public sealed record RatingOption(int? Stars, string Label, bool Favourites = false, bool Broken = false)
+public sealed record RatingOption(int? Stars, string Label, bool Favourites = false, bool Broken = false, bool Duets = false)
 {
-    public override string ToString() => Label;
+    /// <summary>The coloured icon of a special entry (favourites, duets, broken) — emoji could not take a colour.</summary>
+    public string? Glyph => Favourites ? "favorite" : Duets ? "group" : Broken ? "report" : null;
+    public string GlyphBrushKey => Favourites ? "BrushFavourite" : Duets ? "BrushDuet" : "BrushError";
+    public bool HasGlyph => Glyph is not null;
+
+    // An em space stands in for the icon where only the text is measured (FitWidestItem sizes the box by ToString).
+    public override string ToString() => HasGlyph ? "\u2003 " + Label : Label;
 }
 
 /// <summary>An entry of the source filter. <see cref="Key"/> is a source id, or <see cref="AllKey"/>/<see cref="LocalKey"/>.</summary>
@@ -128,7 +136,7 @@ public sealed partial class LibraryViewModel : ViewModelBase
     public ObservableCollection<string> Languages { get; } = [AnyLanguage];
     public ObservableCollection<string> Genres { get; } = [AnyGenre];
     /// <summary>A search or any of rating/language/genre/source set: Clear is active (it clears them all).</summary>
-    public bool HasActiveFilters => Search.Length > 0 || Rating?.Stars is not null || Rating?.Favourites == true || Rating?.Broken == true || Language != AnyLanguage || Genre != AnyGenre
+    public bool HasActiveFilters => Search.Length > 0 || Rating?.Stars is not null || Rating?.Favourites == true || Rating?.Broken == true || Rating?.Duets == true || Language != AnyLanguage || Genre != AnyGenre
         || Source?.Key is not (null or SourceOption.AllKey);
 
     [RelayCommand]
@@ -144,10 +152,10 @@ public sealed partial class LibraryViewModel : ViewModelBase
         Source = AllSources;
     }
 
-    private static readonly RatingOption[] BaseRatings = [AnyRating, new(null, "♥ Favourites", Favourites: true), new(1, "★"), new(2, "★★"), new(3, "★★★"), new(4, "★★★★")];
-    private static readonly RatingOption BrokenRating = new(null, "⚠ Broken", Broken: true);
+    private static readonly RatingOption[] BaseRatings = [AnyRating, new(null, "Favourites", Favourites: true), new(null, "Duets", Duets: true), new(1, "★"), new(2, "★★"), new(3, "★★★"), new(4, "★★★★")];
+    private static readonly RatingOption BrokenRating = new(null, "Broken", Broken: true);
 
-    /// <summary>"⚠ Broken" only while broken songs are shown (Layout): hidden songs cannot be filtered on.</summary>
+    /// <summary>"Broken" only while broken songs are shown (Layout): hidden songs cannot be filtered on.</summary>
     public IReadOnlyList<RatingOption> Ratings => _showBroken ? [.. BaseRatings, BrokenRating] : BaseRatings;
 
     private void OnSettingsChanged()
@@ -304,6 +312,7 @@ public sealed partial class LibraryViewModel : ViewModelBase
             FavouritesOnly = Rating?.Favourites == true,
             FavouriteIds = _marks.FavouriteIds,
             BrokenOnly = Rating?.Broken == true,
+            DuetsOnly = Rating?.Duets == true,
             BrokenIds = _marks.BrokenIds,
             Hidden = _showBroken ? null : _marks.BrokenIds,
             SourceIds = SelectedSourceIds(),

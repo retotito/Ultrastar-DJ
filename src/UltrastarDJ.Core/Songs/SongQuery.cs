@@ -35,6 +35,8 @@ public sealed record SongQuery
     public bool FavouritesOnly { get; init; }
     /// <summary>The DJ's favourites (song ids) — filtered on with <see cref="FavouritesOnly"/>, counted in the facets.</summary>
     public IReadOnlySet<string> FavouriteIds { get; init; } = new HashSet<string>();
+    /// <summary>The rating filter's "Duets": only songs with two voices (<see cref="Song.IsDuet"/>).</summary>
+    public bool DuetsOnly { get; init; }
     /// <summary>The rating filter's "Broken" (shown while broken songs are): only songs in <see cref="BrokenIds"/>.</summary>
     public bool BrokenOnly { get; init; }
     /// <summary>Songs the DJ marked broken — filtered on with <see cref="BrokenOnly"/>, counted in the facets.</summary>
@@ -55,6 +57,7 @@ public sealed record SongQuery
     public bool MatchesGenre(Song s) => Genre is null || ValueList.Contains(s.Genre, Genre, ValueList.GenreSeparators);
     public bool MatchesStars(Song s) => FavouritesOnly ? FavouriteIds.Contains(s.Id)
         : BrokenOnly ? BrokenIds.Contains(s.Id)
+        : DuetsOnly ? s.IsDuet
         : Stars is not { } stars || s.Stars == stars;
     public bool IsHidden(Song s) => Hidden is not null && Hidden.Contains(s.Id);
     public bool MatchesSource(Song s) => SourceIds is null || SourceIds.Contains(s.SourceId);

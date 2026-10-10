@@ -54,4 +54,11 @@ public class SongbookCatalogTests
         Assert.Equal(["Good"], c.Songs.Select(e => e.Title));
         Assert.Equal(["English"], c.Languages);
     }
+
+    [Fact]
+    public void Duets_AreMarked()
+    {
+        SongbookCatalog c = SongbookCatalog.Build([S("Solo", "A", null, null), S("Shallow [DUET]", "B", null, null) with { IsDuet = true }]);
+        Assert.Equal([false, true], c.Songs.OrderBy(e => e.Title).Select(e => e.Duet).Reverse());
+    }
 }

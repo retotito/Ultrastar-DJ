@@ -89,4 +89,11 @@ public class SongFacetsTests
         SongQuery q = new() { Language = "French", BrokenIds = new HashSet<string> { "a::One", "a::Two", "b::Three" } };
         Assert.Equal(2, SongFacets.Of(Songs, q).Broken);   // One and Two list French
     }
+
+    [Fact]
+    public void Duets_AreCountedUnderTheOtherFilters()
+    {
+        Song[] songs = [.. Songs.Select(s => s.Title is "One" or "Three" ? s with { IsDuet = true } : s)];
+        Assert.Equal(1, SongFacets.Of(songs, new SongQuery { Language = "German" }).Duets);   // Three is German
+    }
 }

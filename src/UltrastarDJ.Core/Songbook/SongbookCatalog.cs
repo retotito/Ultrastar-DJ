@@ -11,7 +11,9 @@ namespace UltrastarDJ.Core.Songbook;
 /// <param name="Stars">USDB popularity 1–4, 0 = not rated (local songs, few views).</param>
 /// <param name="Usdb">From the USDB catalog (played from YouTube).</param>
 /// <param name="YouTubeId">Known for local songs with a YouTube link; USDB songs fetch theirs on demand.</param>
-public sealed record SongbookEntry(string Id, string Title, string Artist, int Year, int[] Languages, int[] Genres, int Stars, bool Usdb, string? YouTubeId);
+/// <param name="Duet">Two voices — guests see that it needs two singers.</param>
+public sealed record SongbookEntry(string Id, string Title, string Artist, int Year, int[] Languages, int[] Genres, int Stars, bool Usdb, string? YouTubeId,
+    bool Duet = false);
 
 /// <summary>
 /// The library as guests' phones get it — once, then they search and filter locally, so the party does not send a
@@ -36,7 +38,7 @@ public sealed record SongbookCatalog(IReadOnlyList<string> Languages, IReadOnlyL
             entries.Add(new SongbookEntry(s.Id, s.Title, s.Artist, s.Year ?? 0,
                 Indexes(ValueList.Split(s.Language, ValueList.LanguageSeparators), languageIndex),
                 Indexes(ValueList.Split(s.Genre, ValueList.GenreSeparators), genreIndex),
-                s.Stars ?? 0, s.UsdbId is not null, s.HasYouTube ? s.YouTubeId : null));
+                s.Stars ?? 0, s.UsdbId is not null, s.HasYouTube ? s.YouTubeId : null, s.IsDuet));
         }
 
         return new SongbookCatalog(languages, genres, entries);

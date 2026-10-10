@@ -204,6 +204,21 @@ public static class UltraStarParser
         return h;
     }
 
+    /// <summary>A second voice: a line that is just "P2" (or "P 2"). Cheap — the scan reads the file anyway.</summary>
+    public static bool HasTwoVoices(string text)
+    {
+        foreach (ReadOnlySpan<char> raw in text.AsSpan().EnumerateLines())
+        {
+            ReadOnlySpan<char> line = raw.Trim();
+            if (line is "P2" or "P 2")
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public static Song? ParseSong(string txtPath, string sourceId, string text)
     {
         SongHeader h = ParseHeader(text);
@@ -232,6 +247,7 @@ public static class UltraStarParser
             Comment = h.Comment,
             Voice1 = h.Voice1,
             Voice2 = h.Voice2,
+            IsDuet = HasTwoVoices(text),
             TxtPath = txtPath,
             AudioPath = Sibling(h.Mp3),
             CoverPath = Sibling(h.Cover),

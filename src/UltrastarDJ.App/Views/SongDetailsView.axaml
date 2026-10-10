@@ -42,7 +42,7 @@
               <TextBlock Text="{Binding Source}" FontSize="{StaticResource TextXs}" Foreground="{DynamicResource BrushOnSecondaryContainer}" />
             </Border>
             <ToggleButton IsChecked="{Binding IsFavourite}" Padding="10,2" CornerRadius="{StaticResource RadiusFull}" VerticalAlignment="Center"
-                          ToolTip.Tip="Favourite — find it with the rating filter's ♥ Favourites">
+                          ToolTip.Tip="Favourite — find it with the rating filter's Favourites">
               <StackPanel Orientation="Horizontal" Spacing="4">
                 <c:Icon Glyph="favorite" FontSize="{StaticResource IconSm}" Foreground="{DynamicResource BrushFavourite}" />
                 <TextBlock Text="Favourite" FontSize="{StaticResource TextXs}" />

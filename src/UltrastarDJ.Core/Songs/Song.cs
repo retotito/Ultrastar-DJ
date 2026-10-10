@@ -81,6 +81,11 @@ public sealed record Song
     public IReadOnlyList<NoteTrack>? Notes { get; init; }
 
     public int? UsdbId { get; init; }
+    /// <summary>
+    /// Two voices (UltraStar duet): a <c>P2</c> line in the notes of a local file, or "[DUET]" in a USDB title (USDB's
+    /// convention — known before the txt is fetched).
+    /// </summary>
+    public bool IsDuet { get; init; }
     public int? UsdbViews { get; init; }
     /// <summary>When the song last changed on USDB (Unix seconds, from the catalog). Newer than a cached text → refetch.</summary>
     public long? UsdbMtime { get; init; }

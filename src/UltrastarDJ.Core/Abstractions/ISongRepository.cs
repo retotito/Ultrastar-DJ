@@ -23,4 +23,7 @@ public interface ISongRepository
     void RemoveSource(string sourceId);
     IReadOnlyList<Song> GetAll();
     int CountBySource(string sourceId);
+
+    /// <summary>Upgraded from an older library: local songs lack what only a scan finds (duets) — rescan them once.</summary>
+    bool NeedsRescan { get; }
 }

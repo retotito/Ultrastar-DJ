@@ -28,6 +28,8 @@ public sealed record UsdbCatalogEntry
         UsdbId = SongId,
         Title = Title,
         Artist = Artist,
+        // USDB marks duets in the title — known from the list, before the txt is fetched.
+        IsDuet = Title.Contains("[DUET]", StringComparison.OrdinalIgnoreCase),
         Bpm = 0,
         Year = Year,
         Language = Language,
