@@ -169,11 +169,14 @@ winner's colour twinkle and drift upwards for 5 s (`Controls.StarShower`).
 
 ## Score screen
 
-One row per player: trophy for the winner, name, a 36 px bar in the player's colour, the percentage in that colour and
+One row per player: trophy for the first three (gold, silver, bronze — `Core.Game.Podium`, tested: equal scores
+share a place and the next is skipped, 1-1-3; no points, no trophy), name, a 36 px bar in the player's colour, the percentage in that colour and
 the score; bar, percentage and score count up together (1.8 s). The percentage is the score as a share of the points
 possible — the whole song (`MaxScore`), or after an early stop what was possible until each player's sung beat
 (`PlayerScorer.MaxScoreUntil`: scorable beats before it plus the bonus of finished lines). An early stop adds the note
-"Stopped at m:ss — percentages of the points possible until then". Stars in the winner's colour once counted.
+"Stopped at m:ss — percentages of the points possible until then". The trophies stay hidden while the bars count
+(who won stays open) and fade in afterwards one place at a time, 0.7 s apart: bronze, silver, gold last — then stars
+in the winner's colour.
 
 ## Mic meter (beamer)
 

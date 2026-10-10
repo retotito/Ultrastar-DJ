@@ -72,7 +72,18 @@
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:ScoreRowViewModel">
                 <Grid ColumnDefinitions="56,260,*,150,200" Margin="0,12" VerticalAlignment="Center">
-                  <c:Icon Grid.Column="0" Glyph="emoji_events" FontSize="40" Foreground="{StaticResource BrushGolden}" IsVisible="{Binding IsWinner}" />
+                  <!-- Trophy in its metal, faded in after the count-up (bronze, silver, then gold). -->
+                  <c:Icon Grid.Column="0" Glyph="emoji_events" FontSize="40" IsVisible="{Binding HasTrophy}" Opacity="{Binding TrophyOpacity}"
+                          Classes.gold="{Binding IsGold}" Classes.silver="{Binding IsSilver}" Classes.bronze="{Binding IsBronze}">
+                    <c:Icon.Styles>
+                      <Style Selector="c|Icon.gold"><Setter Property="Foreground" Value="{StaticResource BrushGolden}" /></Style>
+                      <Style Selector="c|Icon.silver"><Setter Property="Foreground" Value="{StaticResource BrushSilver}" /></Style>
+                      <Style Selector="c|Icon.bronze"><Setter Property="Foreground" Value="{StaticResource BrushBronze}" /></Style>
+                    </c:Icon.Styles>
+                    <c:Icon.Transitions>
+                      <Transitions><DoubleTransition Property="Opacity" Duration="0:0:0.4" /></Transitions>
+                    </c:Icon.Transitions>
+                  </c:Icon>
                   <TextBlock Grid.Column="1" Classes="beamer" Text="{Binding Name}" FontSize="40" FontWeight="{StaticResource WeightSemibold}" Foreground="{Binding Brush}" VerticalAlignment="Center" />
                   <!-- Bar and percentage: share of the points possible (whole song, or until an early stop). -->
                   <c:LevelMeter Grid.Column="2" Height="36" Level="{Binding Fraction}" Fill="{Binding Brush}" Track="#33FFFFFF" VerticalAlignment="Center" Margin="24,0,16,0" />

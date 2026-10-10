@@ -568,6 +568,16 @@ replaced by "System default" for good. Found unplugging a display with speakers 
 
 ---
 
+## Sprint 20 — Score screen podium  *(done)*
+
+- [x] Gold, silver and bronze trophies for the first three; ties share a place (1-1-3); no points, no trophy
+      (`Core.Game.Podium`, tested)
+- [x] Trophies hidden during the count-up, then revealed one place at a time (bronze → silver → gold, 0.7 s apart,
+      0.4 s fade); the winner's stars after gold
+- [x] Verified live
+
+---
+
 ## Later / ideas
 
 - Flaky test: `SqliteLoadFailureStoreTests.Save_RoundTrips_UpdatesAndRemoves` failed once in a full `dotnet test` run, passes alone —

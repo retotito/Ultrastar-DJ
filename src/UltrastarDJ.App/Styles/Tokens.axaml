@@ -172,6 +172,9 @@
   <Color x:Key="ColorPlayer3">#4ECB71</Color>
   <Color x:Key="ColorPlayer4">#F7C84F</Color>
   <Color x:Key="ColorGolden">#FFD700</Color>
+  <!-- Score screen trophies: 2nd and 3rd place. -->
+  <Color x:Key="ColorSilver">#C9D1D9</Color>
+  <Color x:Key="ColorBronze">#CD7F32</Color>
   <Color x:Key="ColorUsdb">#2E9E5B</Color>
   <!-- Level meters (MeterFader): green → yellow → red, as in the Tauri app -->
   <Color x:Key="ColorMeterLow">#4ECB71</Color>
@@ -234,6 +237,8 @@
   <SolidColorBrush x:Key="BrushPlayer3" Color="{StaticResource ColorPlayer3}" />
   <SolidColorBrush x:Key="BrushPlayer4" Color="{StaticResource ColorPlayer4}" />
   <SolidColorBrush x:Key="BrushGolden" Color="{StaticResource ColorGolden}" />
+  <SolidColorBrush x:Key="BrushSilver" Color="{StaticResource ColorSilver}" />
+  <SolidColorBrush x:Key="BrushBronze" Color="{StaticResource ColorBronze}" />
   <SolidColorBrush x:Key="BrushUsdb" Color="{StaticResource ColorUsdb}" />
   <SolidColorBrush x:Key="BrushBeamerBackground" Color="{StaticResource ColorBeamerBackground}" />
   <SolidColorBrush x:Key="BrushBeamerText" Color="{StaticResource ColorBeamerText}" />

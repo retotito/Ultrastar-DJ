@@ -29,6 +29,8 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
     private readonly DispatcherTimer _countdown;
     private readonly DispatcherTimer _scoreAnim;
     private DateTime _scoreAnimStart;
+    // Places still to show after the count-up, bronze first (Podium.RevealOrder).
+    private int[] _reveal = [];
 
     [ObservableProperty] private PlaybackState _state = PlaybackState.Idle;
     [ObservableProperty] private bool _hasVideo;
@@ -261,27 +263,42 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
             : $"Stopped at {TimeSpan.FromSeconds(timeline.Elapsed(_playback.Clock?.PositionSec ?? 0)):m\\:ss} — percentages of the points possible until then";
         WinnerId = standings.Count > 0 && standings[0].Score > 0 ? standings[0].PlayerId : -1;
         WinnerBrush = WinnerId > 0 ? PlayerBrush(WinnerId) : null;
-        foreach ((int pid, int score, int max) in standings.OrderBy(s => s.PlayerId))
+        List<(int PlayerId, int Score, int MaxScore)> rows = [.. standings.OrderBy(s => s.PlayerId)];
+        int[] places = Podium.Places([.. rows.Select(r => r.Score)]);
+        _reveal = Podium.RevealOrder(places);
+        for (int i = 0; i < rows.Count; i++)
         {
+            (int pid, int score, int max) = rows[i];
             PlayerConfig cfg = _players.Get(pid);
-            Scores.Add(new ScoreRowViewModel(pid, cfg.Name, PlayerBrush(pid), score, max, session.PossibleScoreAt(stoppedAt, pid), pid == WinnerId));
+            Scores.Add(new ScoreRowViewModel(pid, cfg.Name, PlayerBrush(pid), score, max, session.PossibleScoreAt(stoppedAt, pid), places[i]));
         }
 
         _scoreAnimStart = DateTime.UtcNow;
         _scoreAnim.Start();
     }
 
+    // The bars count up first; only then the trophies, one place after another, gold last with the stars — who won
+    // stays open until the end.
     private void AnimateScores()
     {
         const double durationSec = 1.8;
-        double t = Math.Min(1, (DateTime.UtcNow - _scoreAnimStart).TotalSeconds / durationSec);
+        const double revealGapSec = 0.7;
+        double elapsed = (DateTime.UtcNow - _scoreAnimStart).TotalSeconds;
+        double t = Math.Min(1, elapsed / durationSec);
         double eased = 1 - Math.Pow(1 - t, 3);
         foreach (ScoreRowViewModel row in Scores)
         {
             row.Displayed = (int)Math.Round(row.Final * eased);
         }
 
-        if (t >= 1)
+        // Place i of the reveal order shows at the end of the count-up + i gaps (the first one right away).
+        int due = elapsed < durationSec ? 0 : Math.Min(_reveal.Length, 1 + (int)((elapsed - durationSec) / revealGapSec));
+        foreach (ScoreRowViewModel row in Scores)
+        {
+            row.TrophyShown = row.Place > 0 && Array.IndexOf(_reveal, row.Place) is int at && at >= 0 && at < due;
+        }
+
+        if (t >= 1 && due == _reveal.Length)
         {
             _scoreAnim.Stop();
             ScoreCounted = WinnerId > 0;
@@ -330,9 +347,11 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
     private void OnSyncTestChanged() => OnPropertyChanged(nameof(SyncTestRunning));
 }
 
-public sealed partial class ScoreRowViewModel(int playerId, string name, IBrush brush, int final, int max, int possible, bool isWinner) : ObservableObject
+public sealed partial class ScoreRowViewModel(int playerId, string name, IBrush brush, int final, int max, int possible, int place) : ObservableObject
 {
     [ObservableProperty] private int _displayed;
+    /// <summary>The trophy has been revealed (after the count-up, bronze → silver → gold).</summary>
+    [ObservableProperty] private bool _trophyShown;
 
     public int PlayerId { get; } = playerId;
     public string Name { get; } = name;
@@ -341,10 +360,18 @@ public sealed partial class ScoreRowViewModel(int playerId, string name, IBrush 
     public int Max { get; } = max;
     /// <summary>The most the player could have scored until the stop (the full maximum when sung through).</summary>
     public int Possible { get; } = possible;
-    public bool IsWinner { get; } = isWinner;
+    /// <summary>1 gold, 2 silver, 3 bronze, 0 no trophy (<see cref="Podium.Places"/>).</summary>
+    public int Place { get; } = place;
+    public bool HasTrophy => Place > 0;
+    public double TrophyOpacity => TrophyShown ? 1 : 0;
+    public bool IsGold => Place == 1;
+    public bool IsSilver => Place == 2;
+    public bool IsBronze => Place == 3;
     /// <summary>Bar and percentage: the counted-up score as a share of what was possible (count up together).</summary>
     public double Fraction => Possible > 0 ? Math.Min(1, (double)Displayed / Possible) : 0;
     public string Percent => $"{Math.Round(Fraction * 100):0} %";
+
+    partial void OnTrophyShownChanged(bool value) => OnPropertyChanged(nameof(TrophyOpacity));
 
     partial void OnDisplayedChanged(int value)
     {
