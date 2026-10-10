@@ -26,10 +26,16 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp -R "$PUBLISH_DIR"/. "$APP/Contents/MacOS/"
 cp "$ROOT/src/UltrastarDJ.App/Assets/icon.icns" "$APP/Contents/Resources/icon.icns"
 
-# Sidecars/dylibs are published under MacOS/natives/; dyld finds libmpv via DllImport search paths
-# configured in the app (natives/ next to the executable), so no install_name_tool pass is needed.
+# libmpv and its dylibs stay in MacOS/natives/ (code; DllImport finds them next to the executable). The tools
+# (yt-dlp's folder, ffmpeg, cloudflared) move to Resources/natives/: codesign treats every file in MacOS/ as code,
+# and yt-dlp's folder (text files, a flattened Python.framework) cannot be signed that way. SidecarLocator
+# looks in Resources/natives/ too.
 chmod +x "$APP/Contents/MacOS/$EXECUTABLE"
-[[ -d "$APP/Contents/MacOS/natives" ]] && chmod +x "$APP/Contents/MacOS/natives/"{yt-dlp/yt-dlp,ffmpeg,cloudflared} 2>/dev/null || true
+mkdir -p "$APP/Contents/Resources/natives"
+for tool in yt-dlp ffmpeg cloudflared; do
+  [[ -e "$APP/Contents/MacOS/natives/$tool" ]] && mv "$APP/Contents/MacOS/natives/$tool" "$APP/Contents/Resources/natives/"
+done
+chmod +x "$APP/Contents/Resources/natives/"{yt-dlp/yt-dlp,ffmpeg,cloudflared} 2>/dev/null || true
 
 cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -54,8 +60,19 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 PLIST
 
 echo "→ ad-hoc signing"
-codesign --force --deep --sign - "$APP"
-codesign --verify --deep --strict "$APP" && echo "✓ signature valid"
+# Not --deep: it takes folders like yt-dlp's "*.dist-info" for bundles. codesign treats every file in
+# Contents/MacOS as code, so each is signed on its own (.NET's .dll included — the signature goes into extended
+# attributes), then ffmpeg and cloudflared (Apple Silicon runs no unsigned arm64 binary), then the bundle, which
+# seals Resources/ (yt-dlp keeps the signature it ships with).
+find "$APP/Contents/MacOS" -type f ! -path "$APP/Contents/MacOS/$EXECUTABLE" -print0 |
+  while IFS= read -r -d '' f; do
+    codesign --force --sign - "$f" 2>/dev/null || echo "  ! could not sign ${f#$APP/}"
+  done
+for tool in ffmpeg cloudflared; do
+  [[ -f "$APP/Contents/Resources/natives/$tool" ]] && codesign --force --sign - "$APP/Contents/Resources/natives/$tool"
+done
+codesign --force --sign - "$APP"
+codesign --verify --strict "$APP" && echo "✓ signature valid"
 
 echo "→ building dmg"
 STAGE=$(mktemp -d)

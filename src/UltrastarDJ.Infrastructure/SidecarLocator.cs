@@ -4,7 +4,8 @@ namespace UltrastarDJ.Infrastructure;
 
 /// <summary>
 /// Finds sidecar executables (yt-dlp, ffmpeg, cloudflared): first updates in the app's data folder
-/// (<c>sidecars/</c>, see <see cref="YtDlpUpdater"/>), then next to the app in <c>natives/</c>, then the
+/// (<c>sidecars/</c>, see <see cref="YtDlpUpdater"/>), then next to the app in <c>natives/</c> (in a macOS .app:
+/// <c>Contents/Resources/natives/</c>), then the
 /// repository's <c>natives/&lt;rid&gt;/</c> during development, then <c>PATH</c>.
 /// In each directory a folder build (<c>yt-dlp/yt-dlp</c> beside its <c>_internal/</c>) wins over a single file.
 /// </summary>
@@ -59,7 +60,8 @@ public sealed class SidecarLocator
     private static List<string> BuildDirs(string? updates)
     {
         List<string> dirs = updates is null ? [] : [updates];
-        dirs.AddRange([Path.Combine(AppContext.BaseDirectory, "natives"), AppContext.BaseDirectory]);
+        // In a macOS .app the tools sit in Contents/Resources/natives (code signing allows only code in Contents/MacOS).
+        dirs.AddRange([Path.Combine(AppContext.BaseDirectory, "natives"), Path.Combine(AppContext.BaseDirectory, "..", "Resources", "natives"), AppContext.BaseDirectory]);
         DirectoryInfo? dir = new(AppContext.BaseDirectory);
         for (int i = 0; i < 8 && dir is not null; i++, dir = dir.Parent)
         {

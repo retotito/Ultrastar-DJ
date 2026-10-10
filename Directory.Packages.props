@@ -13,6 +13,8 @@
     <PackageVersion Include="Avalonia.Fonts.Inter" Version="12.1.2" />
     <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageVersion Include="QRCoder" Version="1.6.0" />
+    <!-- Installers and self-updates from GitHub Releases. Keep in step with the vpk tool in .github/workflows. -->
+    <PackageVersion Include="Velopack" Version="1.2.161" />
 
     <!-- Hosting / logging -->
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
