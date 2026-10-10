@@ -526,12 +526,19 @@ USDB marks them "[DUET]" in the title). The format has no third voice.
       28/33, 43/53): a pause holds the mic's callback up, the output asks first. Each jump is a click while singing. The
       lead now covers the largest output block seen and grows ~10 ms each time it runs dry (≤ 50 ms). Tests first:
       varying output blocks 1 → 0 clicks, GC-like mic pauses 4 → 1 click in 60 s
-- [x] Game Player: "Duet: Reto → Bradley Cooper · Anna → Lady Gaga" under the artist, "change" reopens the pick (not while it runs)
+- [x] Game Player: a duet line under the artist with a button to reopen the pick (not while it runs) — see below
 - [x] Singers changed after the pick (a player added / removed on a display, a mic set to none or unplugged): the Game
       Player line shows ⚠, and the popup comes back when Game Displays / Audio Input closes — at the latest at Play, where
       OK then starts the song. Same singers as confirmed (e.g. only the mic device swapped) → no popup
 - [x] Verified live: duet with players 1 + 2 (popup, lanes, Game Player line)
 - [x] ~~Bug: players 1 + 4 — player 4 gets no note bars~~ — not a bug: sung into the wrong mic
+- [x] Game Player: minimum width 420 (was a fixed 390) and grows with its content — the name column is shared by the song
+      and mic rows (`SharedSizeGroup`), ready for longer labels in other languages; each mic row starts with a screen icon
+      holding the display number the player sings on
+- [x] Player names are fixed ("Player 1" … — translated later): no longer editable in Audio Input; custom names in older
+      settings files are reset on start
+- [x] Game Player in a duet: "Duet" (bold) with an "Assign voices" button (⚠ next to it while the players changed); the
+      voice each singer sings ("Bradley Cooper", "Both voices") under their mic slider; players sitting out get no slider
 - [ ] Verified live
 - Next: duet marker in the library (filter) and on the songbook; swapping voices
 

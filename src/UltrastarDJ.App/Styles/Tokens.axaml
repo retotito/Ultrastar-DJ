@@ -309,8 +309,8 @@
   <!-- ── Layout constants ─────────────────────────────────────────────── -->
   <x:Double x:Key="SidebarWidth">56</x:Double>
   <x:Double x:Key="RightPanelWidth">340</x:Double>
-  <!-- The floating Game Player card: wider than the right panel so its faders have room -->
-  <x:Double x:Key="GamePlayerWidth">390</x:Double>
+  <!-- The floating Game Player card: its minimum width (it grows with longer labels, e.g. translations) -->
+  <x:Double x:Key="GamePlayerWidth">420</x:Double>
   <!-- 420 + 12: room between the content and the floating scrollbar -->
   <x:Double x:Key="PopoverWidth">432</x:Double>
   <!-- Text width inside a popover of PopoverWidth (minus PadPanel): hints in a wider popover keep it. -->

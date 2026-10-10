@@ -82,8 +82,8 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
         }
 
         _playback.StateChanged += OnStateChanged;
-        _playback.DuetChoiceChanged += () => OnPropertyChanged(nameof(DuetText));
-        _displays.PlayersChanged += () => OnPropertyChanged(nameof(DuetText));
+        _playback.DuetChoiceChanged += () => OnPropertyChanged(nameof(VoicesUnconfirmed));
+        _displays.PlayersChanged += () => OnPropertyChanged(nameof(VoicesUnconfirmed));
         _countdown = new DispatcherTimer(TimeSpan.FromSeconds(1), DispatcherPriority.Normal, (_, _) => CountdownTick());
         _playback.PicturesChanged += RefreshBox;
         _displays.OpenStateChanged += (_, _) => Refresh();
@@ -218,26 +218,42 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
     {
         MixRows.FirstOrDefault(r => r.Id == p.Id)?.Reload(p);
         SyncRows();
-        OnPropertyChanged(nameof(DuetText));   // a player renamed, or a singer lost their mic
+        OnPropertyChanged(nameof(VoicesUnconfirmed));   // a player renamed, or a singer lost their mic
     }
 
     /// <summary>Rows mirror the players that will actually sing: mic bound and assigned to an open beamer.</summary>
     private void SyncRows()
     {
         IReadOnlyList<PlayerConfig> active = _playback.ActivePlayers();
-        if (active.Count == MixRows.Count && active.Zip(MixRows).All(pair => pair.First.Id == pair.Second.Id))
+        // A duet: only who sings (the others sit out — no slider), each with the voice they sing under it.
+        IReadOnlyList<(int PlayerId, int Voice)> singers = _playback.IsDuet ? _playback.Singers() : [];
+        if (_playback.IsDuet)
         {
-            return;
+            active = [.. active.Where(p => singers.Any(s => s.PlayerId == p.Id))];
         }
 
-        MixRows.Clear();
-        foreach (PlayerConfig p in active)
+        if (active.Count != MixRows.Count || !active.Zip(MixRows).All(pair => pair.First.Id == pair.Second.Id))
         {
-            MixRows.Add(new MixRowViewModel(p, _players));
+            MixRows.Clear();
+            foreach (PlayerConfig p in active)
+            {
+                MixRows.Add(new MixRowViewModel(p, _players));
+            }
+        }
+
+        // Which display each sings on (a player may have moved without the rows changing).
+        foreach (MixRowViewModel row in MixRows)
+        {
+            row.Display = _displays.GetConfig(DisplayId.Beamer1).PlayerIds.Contains(row.Id) ? 1 : 2;
+            row.VoiceText = singers.FirstOrDefault(x => x.PlayerId == row.Id) is { PlayerId: > 0 } sung ? VoiceName(sung.Voice) : "";
         }
 
         OnPropertyChanged(nameof(HasMixRows));
     }
+
+    // "Bradley Cooper" (the file's singer name, else "Voice 1"), or "Both voices".
+    private string VoiceName(int voice) => voice == DuetVoices.BothVoices ? "Both voices"
+        : (voice == 0 ? _playback.Song?.Voice1 : _playback.Song?.Voice2) is { Length: > 0 } name ? name : $"Voice {voice + 1}";
 
     private void Refresh()
     {
@@ -260,7 +276,7 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(State));
         OnPropertyChanged(nameof(HasSong));
         OnPropertyChanged(nameof(IsDuet));
-        OnPropertyChanged(nameof(DuetText));
+        OnPropertyChanged(nameof(VoicesUnconfirmed));
         ChangeDuetSingersCommand.NotifyCanExecuteChanged();
         OnMarksChanged();
         OnPropertyChanged(nameof(PlayGlyph));
@@ -453,36 +469,8 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
 
     [RelayCommand] private void SelectDisplays() => DisplaysRequested?.Invoke();
 
-    /// <summary>
-    /// Who sings the loaded duet: "Duet: Reto → Bradley Cooper · Anna → Lady Gaga", or "Duet — Reto sings both voices".
-    /// Empty for a solo song.
-    /// </summary>
-    public string DuetText
-    {
-        get
-        {
-            if (!_playback.IsDuet || _playback.Song is not { } song)
-            {
-                return "";
-            }
-
-            IReadOnlyList<(int PlayerId, int Voice)> singers = _playback.Singers();
-            if (singers.Count == 0)
-            {
-                return "Duet";
-            }
-
-            // ⚠ until the DJ confirmed these singers (players changed on a display or in Audio Input since).
-            string check = _playback.SingersConfirmed ? "" : "⚠ ";
-            if (singers is [(int only, DuetVoices.BothVoices)])
-            {
-                return $"{check}Duet — {_players.Get(only).Name} sings both voices";
-            }
-
-            string VoiceName(int voice) => (voice == 0 ? song.Voice1 : song.Voice2) is { Length: > 0 } n ? n : $"voice {voice + 1}";
-            return check + "Duet: " + string.Join(" · ", singers.OrderBy(s => s.Voice).Select(s => $"{_players.Get(s.PlayerId).Name} → {VoiceName(s.Voice)}"));
-        }
-    }
+    /// <summary>The players changed since the duet's voices were assigned: ⚠ next to "Duet" until assigned again.</summary>
+    public bool VoicesUnconfirmed => IsDuet && !_playback.SingersConfirmed;
 
     public bool IsDuet => _playback.IsDuet && _playback.Song is not null;
 
@@ -526,6 +514,10 @@ public sealed partial class MixRowViewModel : ObservableObject
     [ObservableProperty] private bool _muted;
     [ObservableProperty] private double _level;
     [ObservableProperty] private bool _isGated;
+    /// <summary>The display this player sings on (1 or 2) — the number in the screen icon.</summary>
+    [ObservableProperty] private int _display = 1;
+    /// <summary>Duet: the voice this player sings ("Bradley Cooper", "Both voices"); empty for a solo song.</summary>
+    [ObservableProperty] private string _voiceText = "";
 
     public MixRowViewModel(PlayerConfig config, PlayersService players)
     {

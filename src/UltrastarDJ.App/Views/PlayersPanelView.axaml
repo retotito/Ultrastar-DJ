@@ -14,7 +14,7 @@
           <Grid ColumnDefinitions="Auto,*,Auto">
             <Border Grid.Column="0" Width="10" Height="10" CornerRadius="{StaticResource RadiusFull}" Margin="0,0,8,0"
                     Background="{Binding ColorKey, Converter={x:Static vm:PlayerConverters.BrushByKey}}" />
-            <TextBox Grid.Column="1" Text="{Binding Name}" Classes="inline" />
+            <TextBlock Grid.Column="1" Classes="title" Text="{Binding Name}" VerticalAlignment="Center" />
             <!-- Detected note, or "gated" while the mic is below the gate: only meaningful while this mic is tested -->
             <TextBlock Grid.Column="2" Classes="muted" Text="{Binding NoteText}" VerticalAlignment="Center" MinWidth="110" TextAlignment="Right"
                        IsVisible="{Binding Testing}" ToolTip.Tip="Detected note. 'gated' = below the GATE threshold, treated as silence (no notes, no points)" />

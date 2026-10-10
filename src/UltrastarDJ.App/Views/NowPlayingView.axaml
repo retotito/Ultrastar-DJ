@@ -4,7 +4,7 @@
              xmlns:c="using:UltrastarDJ.App.Controls"
              x:Class="UltrastarDJ.App.Views.NowPlayingView"
              x:DataType="vm:NowPlayingViewModel"
-             Width="{StaticResource GamePlayerWidth}"
+             MinWidth="{StaticResource GamePlayerWidth}"
              ClipToBounds="False">
 
   <!-- The card's shadow reaches outside this control; see DjWindow.axaml. -->
@@ -15,7 +15,8 @@
   </UserControl.Styles>
 
   <Border Classes="card floating">
-    <StackPanel Spacing="{StaticResource Space2}">
+    <!-- Shared-size scope: the song row and the mic rows share their name column. -->
+    <StackPanel Spacing="{StaticResource Space2}" Grid.IsSharedSizeScope="True">
       <!-- Header like the sidebar popovers (DjWindow), and the drag handle of the card -->
       <Border x:Name="DragHandle" Background="Transparent" ToolTip.Tip="Drag to move"
               BorderBrush="{DynamicResource BrushOutlineVariant}" BorderThickness="0,0,0,1"
@@ -63,12 +64,19 @@
         <StackPanel>
           <TextBlock Classes="title" Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
           <TextBlock Classes="muted" Text="{Binding Artist}" TextTrimming="CharacterEllipsis" />
-          <!-- A duet: who sings which voice; "change" reopens the pick before Play. -->
-          <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}" IsVisible="{Binding IsDuet}" Margin="0,2,0,0">
-            <c:Icon Glyph="group" FontSize="{StaticResource IconSm}" VerticalAlignment="Center" />
-            <TextBlock Text="{Binding DuetText}" FontSize="{StaticResource TextXs}" TextTrimming="CharacterEllipsis" MaxWidth="250" VerticalAlignment="Center" />
-            <Button Classes="text" Padding="6,0" Command="{Binding ChangeDuetSingersCommand}" ToolTip.Tip="Choose who sings which voice">
-              <TextBlock Text="change" FontSize="{StaticResource TextXs}" />
+          <!-- A duet: "Duet" and the button to assign the voices; who sings which voice shows under each mic slider.
+               ⚠ while the players changed since the voices were assigned. -->
+          <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space2}" IsVisible="{Binding IsDuet}" Margin="0,16,0,0">
+            <c:Icon Glyph="group" FontSize="{StaticResource IconMd}" VerticalAlignment="Center" />
+            <TextBlock Text="Duet" FontSize="{StaticResource TextBase}" FontWeight="{StaticResource WeightBold}" VerticalAlignment="Center" />
+            <c:Icon Glyph="warning" FontSize="{StaticResource IconSm}" Foreground="{DynamicResource BrushError}" VerticalAlignment="Center"
+                    IsVisible="{Binding VoicesUnconfirmed}" ToolTip.Tip="The players changed — assign the voices again" Background="Transparent" />
+            <Button Classes="tonal" Padding="12,4" Command="{Binding ChangeDuetSingersCommand}" VerticalAlignment="Center"
+                    ToolTip.Tip="Choose who sings which voice">
+              <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
+                <c:Icon Glyph="record_voice_over" FontSize="{StaticResource IconSm}" />
+                <TextBlock Text="Assign voices" FontSize="{StaticResource TextSm}" />
+              </StackPanel>
             </Button>
           </StackPanel>
         </StackPanel>
@@ -134,7 +142,13 @@
            of their range, so they look alike although song and mic use different dB ranges. -->
       <!-- No display open: nothing can play, so the song fader is invisible and inert — but keeps its space,
            so the card does not change height when a beamer opens. -->
-      <Grid ColumnDefinitions="104,*,44" Classes.unused="{Binding NoBeamerOpen}">
+      <Grid Classes.unused="{Binding NoBeamerOpen}">
+        <!-- The name column is shared with the mic rows and grows with the longest label (translations later). -->
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="Auto" SharedSizeGroup="MixName" />
+          <ColumnDefinition Width="*" MinWidth="180" />
+          <ColumnDefinition Width="44" />
+        </Grid.ColumnDefinitions>
         <Grid.Styles>
           <Style Selector="Grid.unused">
             <Setter Property="Opacity" Value="0" />
@@ -142,8 +156,8 @@
             <Setter Property="IsEnabled" Value="False" />
           </Style>
         </Grid.Styles>
-        <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-          <c:Icon Glyph="volume_up" FontSize="{StaticResource IconMd}" Width="28" TextAlignment="Center" />
+        <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center" Margin="0,0,8,0">
+          <c:Icon Glyph="volume_up" FontSize="{StaticResource IconMd}" Width="28" TextAlignment="Center" Margin="32,0,0,0" />
           <TextBlock Classes="muted" FontSize="{StaticResource TextSm}" Text="Song" VerticalAlignment="Center" />
         </StackPanel>
         <c:MeterFader Grid.Column="1" Minimum="0" Maximum="1" Value="{Binding Gain}" Level="{Binding SongLevel}"
@@ -155,17 +169,32 @@
       <ItemsControl ItemsSource="{Binding MixRows}" IsVisible="{Binding HasMixRows}">
         <ItemsControl.ItemTemplate>
           <DataTemplate x:DataType="vm:MixRowViewModel">
-            <Grid ColumnDefinitions="104,*,44" Margin="0,2,0,0">
-              <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+            <Grid Margin="0,2,0,0" RowDefinitions="Auto,Auto">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" SharedSizeGroup="MixName" />
+                <ColumnDefinition Width="*" MinWidth="180" />
+                <ColumnDefinition Width="44" />
+              </Grid.ColumnDefinitions>
+              <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center" Margin="0,0,8,0">
+                <!-- The display this player sings on: a screen with its number. -->
+                <Panel Width="28" Height="28" ToolTip.Tip="{Binding Display, StringFormat='Sings on Display {0}'}">
+                  <c:Icon Glyph="tv" FontSize="{StaticResource IconLg}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                  <TextBlock Text="{Binding Display}" FontSize="10" FontWeight="{StaticResource WeightBold}"
+                             HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,2" />
+                </Panel>
                 <Button Classes="sidebar small" Command="{Binding ToggleMuteCommand}" ToolTip.Tip="Mute in the speakers">
                   <c:Icon Glyph="{Binding MuteGlyph}" FontSize="{StaticResource IconMd}"
                           Foreground="{Binding ColorKey, Converter={x:Static vm:PlayerConverters.BrushByKey}}" />
                 </Button>
-                <TextBlock Classes="muted" FontSize="{StaticResource TextSm}" Text="{Binding Name}" VerticalAlignment="Center"
-                           TextTrimming="CharacterEllipsis" MaxWidth="72" />
+                <TextBlock Classes="muted" FontSize="{StaticResource TextSm}" Text="{Binding Name}" VerticalAlignment="Center" />
               </StackPanel>
               <c:MeterFader Grid.Column="1" Minimum="0" Maximum="1" ResetValue="1" Value="{Binding MixGain}" Level="{Binding MixLevel}"
                             MinDb="-70" MaxDb="0" WarnDb="-14" ClipDb="-7" VerticalAlignment="Center" IsEnabled="{Binding !Muted}" ToolTip.Tip="Mix knob" />
+              <!-- Duet: the voice this player sings, under their name (lined up with it, past the screen and mic icons),
+                   in their colour. Spans the row so a long singer name does not widen the name column. -->
+              <TextBlock Grid.Row="1" Grid.ColumnSpan="3" Text="{Binding VoiceText}" FontSize="{StaticResource TextXs}" FontWeight="{StaticResource WeightBold}"
+                         Foreground="{Binding ColorKey, Converter={x:Static vm:PlayerConverters.BrushByKey}}" Margin="64,2,0,4"
+                         IsVisible="{Binding VoiceText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" TextTrimming="CharacterEllipsis" />
               <TextBlock Grid.Column="2" Classes="muted" Text="{Binding MixGain, StringFormat='{}{0:P0}'}" VerticalAlignment="Center" TextAlignment="Right" />
             </Grid>
           </DataTemplate>
