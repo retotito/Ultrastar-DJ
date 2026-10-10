@@ -51,7 +51,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
   <key>CFBundleIconFile</key>           <string>icon.icns</string>
   <key>CFBundlePackageType</key>        <string>APPL</string>
   <key>CFBundleInfoDictionaryVersion</key> <string>6.0</string>
-  <key>LSMinimumSystemVersion</key>     <string>12.0</string>
+  <key>LSMinimumSystemVersion</key>     <string>14.0</string>
   <key>NSHighResolutionCapable</key>    <true/>
   <key>NSMicrophoneUsageDescription</key>
   <string>Ultrastar DJ needs microphone access to detect pitch and score your singing.</string>

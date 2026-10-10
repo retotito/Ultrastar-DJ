@@ -642,6 +642,8 @@ Microsoft (no yearly fee): users confirm once — macOS "Open Anyway", Windows "
       (`--deep` failed on yt-dlp's folder build); libmpv's 48 dylibs self-contained (checked with otool)
 - [x] `.github/workflows/build.yml`: macOS Apple Silicon + Intel (dmg), Windows (Velopack Setup.exe), tests first
 - [x] Velopack SDK in the app (`VelopackApp.Build().Run()`)
+- [x] macOS 14 (Sonoma) or newer; tried on an Intel Mac with macOS 12: libmpv (Homebrew, then IINA's) did not
+      load → `LSMinimumSystemVersion` 14.0, macOS itself tells older Macs
 - [ ] First green run on GitHub; packages tested on a Mac and a Windows PC without developer tools
 - [ ] Releases: a `v*` tag publishes the packages as a GitHub Release (Velopack for all systems)
 - [ ] In-app update notice ("Update available — Install now / Later", never during a song)
