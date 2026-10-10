@@ -578,6 +578,15 @@ replaced by "System default" for good. Found unplugging a display with speakers 
 
 ---
 
+## Sprint 21 — Material 3 toggle switches  *(done)*
+
+- [x] Own `ToggleSwitch` template (Fluent's has its sizes built in): 52 × 32 track with a 2 px outline; knob 16 px grey
+      when off, 24 px in the on-primary colour (white in light mode) on the primary track when on, 28 px while pressed;
+      slides 20 px. Replaces the 40 × 20 Fluent switch with the sidebar-blue track and a text-coloured knob
+- [x] Verified live
+
+---
+
 ## Later / ideas
 
 - Flaky test: `SqliteLoadFailureStoreTests.Save_RoundTrips_UpdatesAndRemoves` failed once in a full `dotnet test` run, passes alone —

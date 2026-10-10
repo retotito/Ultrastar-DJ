@@ -6,6 +6,59 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:c="using:UltrastarDJ.App.Controls">
 
+  <Styles.Resources>
+    <!-- Toggle switches as Material 3 (Fluent's template has the sizes built in, so it is replaced): 52 × 32 track with
+         a 2 px outline; knob 16 px off, 24 px on, 28 px while pressed, sliding 20 px. Colours: the ToggleSwitch* keys
+         in Tokens.axaml. ToggleSwitch's code needs PART_SwitchKnob / PART_MovingKnobs (dragging and the slide). -->
+    <ControlTheme x:Key="{x:Type ToggleSwitch}" TargetType="ToggleSwitch">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="KnobTransitions">
+        <Transitions>
+          <DoubleTransition Property="Canvas.Left" Duration="0:0:0.15" Easing="CubicEaseOut" />
+        </Transitions>
+      </Setter>
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Grid Background="{TemplateBinding Background}" Width="52" Height="32" HorizontalAlignment="Left">
+            <Border x:Name="OuterBorder" CornerRadius="16" BorderThickness="2"
+                    Background="{DynamicResource ToggleSwitchFillOff}" BorderBrush="{DynamicResource ToggleSwitchStrokeOff}" />
+            <!-- The canvas width is the knob's travel (ToggleSwitch moves the knobs by it): 52 − 32. -->
+            <Canvas x:Name="PART_SwitchKnob" Width="20" Height="32" HorizontalAlignment="Left">
+              <Grid x:Name="PART_MovingKnobs" Width="32" Height="32">
+                <Ellipse x:Name="Knob" Width="16" Height="16" Fill="{DynamicResource ToggleSwitchKnobFillOff}">
+                  <Ellipse.Transitions>
+                    <Transitions>
+                      <DoubleTransition Property="Width" Duration="0:0:0.15" />
+                      <DoubleTransition Property="Height" Duration="0:0:0.15" />
+                    </Transitions>
+                  </Ellipse.Transitions>
+                </Ellipse>
+              </Grid>
+            </Canvas>
+          </Grid>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:pointerover /template/ Ellipse#Knob">
+        <Setter Property="Fill" Value="{DynamicResource ToggleSwitchKnobFillOffPointerOver}" />
+      </Style>
+      <Style Selector="^:checked">
+        <Style Selector="^ /template/ Border#OuterBorder">
+          <Setter Property="Background" Value="{DynamicResource ToggleSwitchFillOn}" />
+          <Setter Property="BorderBrush" Value="{DynamicResource ToggleSwitchStrokeOn}" />
+        </Style>
+        <Style Selector="^ /template/ Ellipse#Knob">
+          <Setter Property="Width" Value="24" />
+          <Setter Property="Height" Value="24" />
+          <Setter Property="Fill" Value="{DynamicResource ToggleSwitchKnobFillOn}" />
+        </Style>
+      </Style>
+      <Style Selector="^:pressed /template/ Ellipse#Knob">
+        <Setter Property="Width" Value="28" />
+        <Setter Property="Height" Value="28" />
+      </Style>
+    </ControlTheme>
+  </Styles.Resources>
+
   <!-- Base text: windows set the inherited size; TextBlocks without an explicit size follow it -->
   <Style Selector="Window">
     <Setter Property="FontSize" Value="{StaticResource TextBase}" />

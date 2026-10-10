@@ -62,20 +62,33 @@
       <SolidColorBrush x:Key="SliderThumbBackgroundDisabled" Color="{DynamicResource ColorOnSurface}" />
       <SolidColorBrush x:Key="SliderThumbBackgroundPointerOver" Color="{DynamicResource ColorOnSurface}" />
       <SolidColorBrush x:Key="SliderThumbBackgroundPressed" Color="{DynamicResource ColorOnSurface}" />
-      <!-- Toggle switches "on" = the same selected blue as the sidebar's active button (Fluent's solid accent was too loud),
-           knob in the text colour like the active sidebar icon. Overrides Fluent's own ToggleSwitch keys. -->
-      <SolidColorBrush x:Key="ToggleSwitchFillOn" Color="{DynamicResource SystemAccentColor}" Opacity="0.6" />
-      <SolidColorBrush x:Key="ToggleSwitchFillOnDisabled" Color="{DynamicResource SystemAccentColor}" Opacity="0.6" />
-      <SolidColorBrush x:Key="ToggleSwitchFillOnPointerOver" Color="{DynamicResource SystemAccentColor}" Opacity="0.8" />
-      <SolidColorBrush x:Key="ToggleSwitchFillOnPressed" Color="{DynamicResource SystemAccentColor}" Opacity="0.9" />
-      <SolidColorBrush x:Key="ToggleSwitchStrokeOn" Color="Transparent" />
-      <SolidColorBrush x:Key="ToggleSwitchStrokeOnDisabled" Color="Transparent" />
-      <SolidColorBrush x:Key="ToggleSwitchStrokeOnPointerOver" Color="Transparent" />
-      <SolidColorBrush x:Key="ToggleSwitchStrokeOnPressed" Color="Transparent" />
-      <SolidColorBrush x:Key="ToggleSwitchKnobFillOn" Color="{DynamicResource ColorOnSurface}" />
-      <SolidColorBrush x:Key="ToggleSwitchKnobFillOnDisabled" Color="{DynamicResource ColorOnSurface}" />
-      <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPointerOver" Color="{DynamicResource ColorOnSurface}" />
-      <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPressed" Color="{DynamicResource ColorOnSurface}" />
+      <!-- Toggle switches as Material 3: off = light track with an outline and a small grey knob; on = primary track with
+           a large knob in the on-primary colour (white in light mode). Overrides Fluent's own ToggleSwitch keys;
+           the sizes are in Controls.axaml. -->
+      <SolidColorBrush x:Key="ToggleSwitchFillOn" Color="{DynamicResource ColorPrimary}" />
+      <SolidColorBrush x:Key="ToggleSwitchStrokeOn" Color="{DynamicResource ColorPrimary}" />
+      <SolidColorBrush x:Key="ToggleSwitchKnobFillOn" Color="{DynamicResource ColorOnPrimary}" />
+      <SolidColorBrush x:Key="ToggleSwitchFillOff" Color="{DynamicResource ColorSurfaceContainerHighest}" />
+      <SolidColorBrush x:Key="ToggleSwitchStrokeOff" Color="{DynamicResource ColorOutline}" />
+      <SolidColorBrush x:Key="ToggleSwitchKnobFillOff" Color="{DynamicResource ColorOutline}" />
+      <SolidColorBrush x:Key="ToggleSwitchFillOnPointerOver" Color="{DynamicResource ColorPrimary}" />
+      <SolidColorBrush x:Key="ToggleSwitchStrokeOnPointerOver" Color="{DynamicResource ColorPrimary}" />
+      <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPointerOver" Color="{DynamicResource ColorOnPrimary}" />
+      <SolidColorBrush x:Key="ToggleSwitchFillOffPointerOver" Color="{DynamicResource ColorSurfaceContainerHighest}" />
+      <SolidColorBrush x:Key="ToggleSwitchStrokeOffPointerOver" Color="{DynamicResource ColorOutline}" />
+      <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPointerOver" Color="{DynamicResource ColorOnSurfaceVariant}" />
+      <SolidColorBrush x:Key="ToggleSwitchFillOnPressed" Color="{DynamicResource ColorPrimary}" />
+      <SolidColorBrush x:Key="ToggleSwitchStrokeOnPressed" Color="{DynamicResource ColorPrimary}" />
+      <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPressed" Color="{DynamicResource ColorOnPrimary}" />
+      <SolidColorBrush x:Key="ToggleSwitchFillOffPressed" Color="{DynamicResource ColorSurfaceContainerHighest}" />
+      <SolidColorBrush x:Key="ToggleSwitchStrokeOffPressed" Color="{DynamicResource ColorOutline}" />
+      <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPressed" Color="{DynamicResource ColorOnSurfaceVariant}" />
+      <SolidColorBrush x:Key="ToggleSwitchFillOnDisabled" Color="{DynamicResource ColorPrimary}" />
+      <SolidColorBrush x:Key="ToggleSwitchStrokeOnDisabled" Color="{DynamicResource ColorPrimary}" />
+      <SolidColorBrush x:Key="ToggleSwitchKnobFillOnDisabled" Color="{DynamicResource ColorOnPrimary}" />
+      <SolidColorBrush x:Key="ToggleSwitchFillOffDisabled" Color="{DynamicResource ColorSurfaceContainerHighest}" />
+      <SolidColorBrush x:Key="ToggleSwitchStrokeOffDisabled" Color="{DynamicResource ColorOutline}" />
+      <SolidColorBrush x:Key="ToggleSwitchKnobFillOffDisabled" Color="{DynamicResource ColorOutline}" />
       <!-- Buttons: start (green) / stop (red), filled with white text; normal = a light blue tint with a thin outline. -->
       <Color x:Key="ColorGo">#2D9B57</Color>
       <Color x:Key="ColorGoHover">#36AD63</Color>
@@ -139,20 +152,33 @@
       <SolidColorBrush x:Key="SliderThumbBackgroundDisabled" Color="{DynamicResource ColorOnSurface}" />
       <SolidColorBrush x:Key="SliderThumbBackgroundPointerOver" Color="{DynamicResource ColorOnSurface}" />
       <SolidColorBrush x:Key="SliderThumbBackgroundPressed" Color="{DynamicResource ColorOnSurface}" />
-      <!-- Toggle switches "on" = the same selected blue as the sidebar's active button (Fluent's solid accent was too loud),
-           knob in the text colour like the active sidebar icon. Overrides Fluent's own ToggleSwitch keys. -->
-      <SolidColorBrush x:Key="ToggleSwitchFillOn" Color="{DynamicResource SystemAccentColor}" Opacity="0.4" />
-      <SolidColorBrush x:Key="ToggleSwitchFillOnDisabled" Color="{DynamicResource SystemAccentColor}" Opacity="0.4" />
-      <SolidColorBrush x:Key="ToggleSwitchFillOnPointerOver" Color="{DynamicResource SystemAccentColor}" Opacity="0.6" />
-      <SolidColorBrush x:Key="ToggleSwitchFillOnPressed" Color="{DynamicResource SystemAccentColor}" Opacity="0.7" />
-      <SolidColorBrush x:Key="ToggleSwitchStrokeOn" Color="Transparent" />
-      <SolidColorBrush x:Key="ToggleSwitchStrokeOnDisabled" Color="Transparent" />
-      <SolidColorBrush x:Key="ToggleSwitchStrokeOnPointerOver" Color="Transparent" />
-      <SolidColorBrush x:Key="ToggleSwitchStrokeOnPressed" Color="Transparent" />
-      <SolidColorBrush x:Key="ToggleSwitchKnobFillOn" Color="{DynamicResource ColorOnSurface}" />
-      <SolidColorBrush x:Key="ToggleSwitchKnobFillOnDisabled" Color="{DynamicResource ColorOnSurface}" />
-      <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPointerOver" Color="{DynamicResource ColorOnSurface}" />
-      <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPressed" Color="{DynamicResource ColorOnSurface}" />
+      <!-- Toggle switches as Material 3: off = light track with an outline and a small grey knob; on = primary track with
+           a large knob in the on-primary colour (white in light mode). Overrides Fluent's own ToggleSwitch keys;
+           the sizes are in Controls.axaml. -->
+      <SolidColorBrush x:Key="ToggleSwitchFillOn" Color="{DynamicResource ColorPrimary}" />
+      <SolidColorBrush x:Key="ToggleSwitchStrokeOn" Color="{DynamicResource ColorPrimary}" />
+      <SolidColorBrush x:Key="ToggleSwitchKnobFillOn" Color="{DynamicResource ColorOnPrimary}" />
+      <SolidColorBrush x:Key="ToggleSwitchFillOff" Color="{DynamicResource ColorSurfaceContainerHighest}" />
+      <SolidColorBrush x:Key="ToggleSwitchStrokeOff" Color="{DynamicResource ColorOutline}" />
+      <SolidColorBrush x:Key="ToggleSwitchKnobFillOff" Color="{DynamicResource ColorOutline}" />
+      <SolidColorBrush x:Key="ToggleSwitchFillOnPointerOver" Color="{DynamicResource ColorPrimary}" />
+      <SolidColorBrush x:Key="ToggleSwitchStrokeOnPointerOver" Color="{DynamicResource ColorPrimary}" />
+      <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPointerOver" Color="{DynamicResource ColorOnPrimary}" />
+      <SolidColorBrush x:Key="ToggleSwitchFillOffPointerOver" Color="{DynamicResource ColorSurfaceContainerHighest}" />
+      <SolidColorBrush x:Key="ToggleSwitchStrokeOffPointerOver" Color="{DynamicResource ColorOutline}" />
+      <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPointerOver" Color="{DynamicResource ColorOnSurfaceVariant}" />
+      <SolidColorBrush x:Key="ToggleSwitchFillOnPressed" Color="{DynamicResource ColorPrimary}" />
+      <SolidColorBrush x:Key="ToggleSwitchStrokeOnPressed" Color="{DynamicResource ColorPrimary}" />
+      <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPressed" Color="{DynamicResource ColorOnPrimary}" />
+      <SolidColorBrush x:Key="ToggleSwitchFillOffPressed" Color="{DynamicResource ColorSurfaceContainerHighest}" />
+      <SolidColorBrush x:Key="ToggleSwitchStrokeOffPressed" Color="{DynamicResource ColorOutline}" />
+      <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPressed" Color="{DynamicResource ColorOnSurfaceVariant}" />
+      <SolidColorBrush x:Key="ToggleSwitchFillOnDisabled" Color="{DynamicResource ColorPrimary}" />
+      <SolidColorBrush x:Key="ToggleSwitchStrokeOnDisabled" Color="{DynamicResource ColorPrimary}" />
+      <SolidColorBrush x:Key="ToggleSwitchKnobFillOnDisabled" Color="{DynamicResource ColorOnPrimary}" />
+      <SolidColorBrush x:Key="ToggleSwitchFillOffDisabled" Color="{DynamicResource ColorSurfaceContainerHighest}" />
+      <SolidColorBrush x:Key="ToggleSwitchStrokeOffDisabled" Color="{DynamicResource ColorOutline}" />
+      <SolidColorBrush x:Key="ToggleSwitchKnobFillOffDisabled" Color="{DynamicResource ColorOutline}" />
       <Color x:Key="ColorGo">#1E8E3E</Color>
       <Color x:Key="ColorGoHover">#188038</Color>
       <Color x:Key="ColorStop">#C5221F</Color>
