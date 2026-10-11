@@ -1,4 +1,7 @@
 {
+  "about.title": "O programie Ultrastar DJ",
+  "about.version": "Wersja {0}",
+  "about.website": "Strona projektu na GitHubie",
   "audio.device_missing": "Nie znaleziono urządzenia audio: {0}",
   "audio_input.bind_mic_first": "Najpierw przypisz mikrofon, aby skalibrować",
   "audio_input.calibrate": "Kalibruj",

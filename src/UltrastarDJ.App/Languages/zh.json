@@ -1,4 +1,7 @@
 {
+  "about.title": "关于 Ultrastar DJ",
+  "about.version": "版本 {0}",
+  "about.website": "GitHub 上的项目页面",
   "audio.device_missing": "找不到音频设备：{0}",
   "audio_input.bind_mic_first": "请先分配麦克风再校准",
   "audio_input.calibrate": "校准",

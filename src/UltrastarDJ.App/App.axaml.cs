@@ -27,6 +27,9 @@ public sealed partial class App : Application
 
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
 
+    private void OnAbout(object? sender, EventArgs e) =>
+        AboutWindow.Open((ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow);
+
     public override void OnFrameworkInitializationCompleted()
     {
         if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop)

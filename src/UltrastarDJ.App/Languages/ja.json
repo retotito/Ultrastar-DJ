@@ -1,4 +1,7 @@
 {
+  "about.title": "Ultrastar DJ について",
+  "about.version": "バージョン {0}",
+  "about.website": "GitHub のプロジェクトページ",
   "audio.device_missing": "オーディオデバイスが見つかりません：{0}",
   "audio_input.bind_mic_first": "キャリブレーションの前にマイクを割り当ててください",
   "audio_input.calibrate": "キャリブレーション",

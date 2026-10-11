@@ -1,8 +1,17 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:app="using:UltrastarDJ.App"
+             xmlns:l="using:UltrastarDJ.App.Localization"
              x:Class="UltrastarDJ.App.App"
+             Name="Ultrastar DJ"
              RequestedThemeVariant="Light">
+
+  <!-- macOS app menu: our About instead of Avalonia's ("About Avalonia"); Hide and Quit stay macOS's own. -->
+  <NativeMenu.Menu>
+    <NativeMenu>
+      <NativeMenuItem Header="{l:T about.title}" Click="OnAbout" />
+    </NativeMenu>
+  </NativeMenu.Menu>
 
   <Application.DataTemplates>
     <app:ViewLocator />

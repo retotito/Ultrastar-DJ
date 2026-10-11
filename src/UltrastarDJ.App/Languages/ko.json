@@ -1,4 +1,7 @@
 {
+  "about.title": "Ultrastar DJ 정보",
+  "about.version": "버전 {0}",
+  "about.website": "GitHub 프로젝트 페이지",
   "audio.device_missing": "오디오 장치를 찾을 수 없습니다: {0}",
   "audio_input.bind_mic_first": "보정하려면 먼저 마이크를 지정하세요",
   "audio_input.calibrate": "보정",

@@ -249,7 +249,7 @@ public sealed partial class DjWindowViewModel : ViewModelBase
     [RelayCommand]
     private void ToggleNowPlaying() => NowPlaying.ToggleVisible();
 
-    public static string Version => typeof(DjWindowViewModel).Assembly.GetName().Version?.ToString(3) ?? "dev";
+    public static string Version => BuildInfo.Version;
 
     [RelayCommand]
     private void TogglePanel(SidebarPanel panel)

@@ -1,4 +1,7 @@
 {
+  "about.title": "À propos d’Ultrastar DJ",
+  "about.version": "Version {0}",
+  "about.website": "Page du projet sur GitHub",
   "audio.device_missing": "Périphérique audio introuvable : {0}",
   "audio_input.bind_mic_first": "Attribuez d'abord un micro pour calibrer",
   "audio_input.calibrate": "Calibrer",

@@ -251,7 +251,7 @@ public sealed partial class SettingsPanelViewModel : ViewModelBase
         }
     }
 
-    public static string Version => typeof(SettingsPanelViewModel).Assembly.GetName().Version?.ToString(3) ?? "dev";
+    public static string Version => BuildInfo.Version;
     public IReadOnlyList<Difficulty> Difficulties { get; } = [Difficulty.Easy, Difficulty.Medium, Difficulty.Hard];
     public string DifficultyHint => Difficulty switch
     {
