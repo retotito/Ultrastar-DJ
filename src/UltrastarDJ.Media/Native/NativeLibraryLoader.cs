@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using UltrastarDJ.Core.Localization;
 
 namespace UltrastarDJ.Media.Native;
 
@@ -43,10 +44,19 @@ public static class NativeLibraryLoader
             }
         }
 
-        // Last resort: whatever the OS finds (e.g. Homebrew's libmpv on a dev machine).
-        if (NativeLibrary.TryLoad(OperatingSystem.IsWindows() ? "libmpv-2.dll" : "libmpv.2.dylib", out nint sys))
+        // Last resort: whatever the OS finds — Linux's own mpv (the AppImage does not ship one), Homebrew's on a dev Mac.
+        foreach (string name in SystemFileNames())
         {
-            return sys;
+            if (NativeLibrary.TryLoad(name, out nint sys))
+            {
+                return sys;
+            }
+        }
+
+        if (OperatingSystem.IsLinux() && failure is null)
+        {
+            throw new DllNotFoundException(Text.T("mpv.linux_missing",
+                "Ultrastar DJ plays songs with mpv, which is not installed. Install it in a terminal: sudo apt install libmpv2 (on older systems: libmpv1), then start Ultrastar DJ again."));
         }
 
         // The shipped library is there but would not load: say why, not .NET's generic list of names it tried.
@@ -68,9 +78,15 @@ public static class NativeLibraryLoader
         else
         {
             yield return "libmpv.so.2";
+            yield return "libmpv.so.1";   // Ubuntu 22.04 / Linux Mint 21 (mpv 0.34)
             yield return "libmpv.so";
         }
     }
+
+    private static IEnumerable<string> SystemFileNames() =>
+        OperatingSystem.IsWindows() ? ["libmpv-2.dll"]
+        : OperatingSystem.IsMacOS() ? ["libmpv.2.dylib"]
+        : ["libmpv.so.2", "libmpv.so.1", "libmpv.so"];
 
     private static List<string> BuildSearchDirs()
     {

@@ -354,6 +354,7 @@
   "mic.n_not_found": "ไม่พบไมโครโฟน {0} ตัว",
   "mic.not_found": "ไม่พบไมโครโฟน",
   "mic.unassigned_detail": " — ยกเลิกการกำหนดแล้ว เสียบแล้วกำหนดใหม่ในอินพุตเสียง",
+  "mpv.linux_missing": "Ultrastar DJ ใช้ mpv ในการเล่นเพลง แต่ยังไม่ได้ติดตั้ง mpv ติดตั้งในเทอร์มินัล: sudo apt install libmpv2 (ระบบรุ่นเก่า: libmpv1) แล้วเปิด Ultrastar DJ ใหม่",
   "net.back_online": "กลับมาออนไลน์แล้ว",
   "net.back_online_detail": "เล่นเพลง YouTube และ USDB ได้อีกครั้ง",
   "net.offline": "คุณออฟไลน์อยู่",

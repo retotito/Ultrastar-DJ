@@ -354,6 +354,7 @@
   "mic.n_not_found": "{0} micros introuvables",
   "mic.not_found": "Micro introuvable",
   "mic.unassigned_detail": " — désattribué. Branchez-le et attribuez-le sous Entrée audio.",
+  "mpv.linux_missing": "Ultrastar DJ lit les chansons avec mpv, qui n’est pas installé. Installe-le dans un terminal : sudo apt install libmpv2 (sur les systèmes plus anciens : libmpv1), puis relance Ultrastar DJ.",
   "net.back_online": "De nouveau en ligne",
   "net.back_online_detail": "Les chansons YouTube et USDB peuvent de nouveau être lues.",
   "net.offline": "Vous êtes hors ligne",

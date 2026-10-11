@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Net.Http.Json;
+using System.Runtime.InteropServices;
 using System.Text.Json.Serialization;
 using UltrastarDJ.Core.Localization;
 
@@ -37,6 +38,7 @@ public sealed class YtDlpUpdater(HttpClient http, AppPaths paths)
     {
         (string asset, string inside) = OperatingSystem.IsWindows() ? ("yt-dlp_win.zip", "yt-dlp.exe")
             : OperatingSystem.IsMacOS() ? ("yt-dlp_macos.zip", "yt-dlp_macos")
+            : OperatingSystem.IsLinux() && RuntimeInformation.OSArchitecture == Architecture.X64 ? ("yt-dlp_linux.zip", "yt-dlp_linux")
             : throw new PlatformNotSupportedException(Text.T("ytdlp.platform", "yt-dlp updates are supported on macOS and Windows."));
         string exeName = OperatingSystem.IsWindows() ? "yt-dlp.exe" : "yt-dlp";
 

@@ -354,6 +354,7 @@
   "mic.n_not_found": "Не найдено микрофонов: {0}",
   "mic.not_found": "Микрофон не найден",
   "mic.unassigned_detail": " — назначение снято. Подключите его и назначьте в Аудиовходе.",
+  "mpv.linux_missing": "Ultrastar DJ воспроизводит песни с помощью mpv, но он не установлен. Установите его в терминале: sudo apt install libmpv2 (в старых системах: libmpv1), затем снова запустите Ultrastar DJ.",
   "net.back_online": "Снова в сети",
   "net.back_online_detail": "Песни YouTube и USDB снова можно воспроизводить.",
   "net.offline": "Нет подключения к сети",

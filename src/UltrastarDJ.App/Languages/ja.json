@@ -354,6 +354,7 @@
   "mic.n_not_found": "{0} 本のマイクが見つかりません",
   "mic.not_found": "マイクが見つかりません",
   "mic.unassigned_detail": " — 割り当てを解除しました。接続してオーディオ入力で割り当ててください。",
+  "mpv.linux_missing": "Ultrastar DJ は mpv で曲を再生しますが、mpv がインストールされていません。ターミナルでインストールしてください：sudo apt install libmpv2（古いシステムでは libmpv1）。その後 Ultrastar DJ を再起動してください。",
   "net.back_online": "オンラインに戻りました",
   "net.back_online_detail": "YouTube と USDB の曲を再び再生できます。",
   "net.offline": "オフラインです",

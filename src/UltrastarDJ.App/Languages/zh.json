@@ -354,6 +354,7 @@
   "mic.n_not_found": "找不到 {0} 个麦克风",
   "mic.not_found": "找不到麦克风",
   "mic.unassigned_detail": " — 已取消分配。插上后在音频输入中重新分配。",
+  "mpv.linux_missing": "Ultrastar DJ 使用 mpv 播放歌曲，但系统中未安装 mpv。请在终端中安装：sudo apt install libmpv2（较旧的系统：libmpv1），然后重新启动 Ultrastar DJ。",
   "net.back_online": "已恢复联网",
   "net.back_online_detail": "YouTube 和 USDB 歌曲可以再次播放。",
   "net.offline": "你已离线",

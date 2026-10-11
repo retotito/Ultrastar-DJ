@@ -354,6 +354,7 @@
   "mic.n_not_found": "{0} माइक नहीं मिले",
   "mic.not_found": "माइक नहीं मिला",
   "mic.unassigned_detail": " — हटा दिया गया। प्लग करें और ऑडियो इनपुट में फिर से दें।",
+  "mpv.linux_missing": "Ultrastar DJ गाने mpv से चलाता है, जो इंस्टॉल नहीं है। टर्मिनल में इंस्टॉल करें: sudo apt install libmpv2 (पुराने सिस्टम पर: libmpv1), फिर Ultrastar DJ दोबारा शुरू करें।",
   "net.back_online": "फिर से ऑनलाइन",
   "net.back_online_detail": "YouTube और USDB के गाने फिर से चल सकते हैं।",
   "net.offline": "आप ऑफ़लाइन हैं",

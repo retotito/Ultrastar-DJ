@@ -354,6 +354,7 @@
   "mic.n_not_found": "{0} microfones não encontrados",
   "mic.not_found": "Microfone não encontrado",
   "mic.unassigned_detail": " — desatribuído. Conecte e atribua em Entrada de áudio.",
+  "mpv.linux_missing": "O Ultrastar DJ toca as músicas com o mpv, que não está instalado. Instale-o no terminal: sudo apt install libmpv2 (em sistemas mais antigos: libmpv1) e abra o Ultrastar DJ de novo.",
   "net.back_online": "Online de novo",
   "net.back_online_detail": "Músicas do YouTube e do USDB podem tocar de novo.",
   "net.offline": "Você está offline",
