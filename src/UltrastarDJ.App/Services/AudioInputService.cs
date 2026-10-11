@@ -108,6 +108,8 @@ public sealed class AudioInputService : IDisposable
             Monitor.SetGain(p.Id, p.MixGain);
             Monitor.SetMuted(p.Id, p.MutedInMonitor(_gameMode));
         }
+
+        Monitor.OpenIfAudible();
     }
 
     public void StopMonitor() => Monitor.Stop();
@@ -123,6 +125,7 @@ public sealed class AudioInputService : IDisposable
 
         Monitor.SetGain(p.Id, p.MixGain);
         Monitor.SetMuted(p.Id, p.MutedInMonitor(_gameMode));
+        Monitor.OpenIfAudible();
     }
 
     private HashSet<string> InputIds() => [.. InputDevices.Select(d => d.Id)];

@@ -7,6 +7,8 @@ namespace UltrastarDJ.Audio.Monitor;
 /// <summary>
 /// Sums the players' gated mic signals (× mix gain, mute-aware) into one stereo output on the game
 /// device. Mic and output rates may differ; a linear resampler bridges them.
+/// The output opens only once a mic is audible (<see cref="OpenIfAudible"/>): its callback is managed code on the
+/// device's IO thread, which on macOS the song's output shares — every GC pause then clicks in the song too.
 /// </summary>
 public sealed class MonitorMixer : IDisposable
 {
@@ -16,6 +18,9 @@ public sealed class MonitorMixer : IDisposable
     private Source[] _sources = [];
     private IAudioLine? _line;
     private int _channelOffset;
+    private AudioDeviceInfo? _device;
+    private double _outRate;
+    private bool _failed;
 
     public MonitorMixer(IAudioBackend backend, ILogger<MonitorMixer> log)
     {
@@ -23,9 +28,10 @@ public sealed class MonitorMixer : IDisposable
         _log = log;
     }
 
-    public bool IsRunning => _line is not null;
+    /// <summary>Started and not refused by the device (the output itself may still wait for an audible mic).</summary>
+    public bool IsRunning => _device is not null && !_failed;
 
-    /// <summary>Opens the output and starts mixing the given pipelines.</summary>
+    /// <summary>Prepares mixing the given pipelines; <see cref="OpenIfAudible"/> opens the output.</summary>
     public void Start(string outputDeviceId, int channelOffset, IReadOnlyCollection<MicPipeline> pipelines)
     {
         Stop();
@@ -36,20 +42,36 @@ public sealed class MonitorMixer : IDisposable
             return;
         }
 
-        double outRate = info.DefaultSampleRateHz;
+        _outRate = info.DefaultSampleRateHz;
         lock (_gate)
         {
             _channelOffset = channelOffset;
-            _sources = pipelines.Select(p => new Source(p, p.SampleRateHz / outRate)).ToArray();
+            _sources = pipelines.Select(p => new Source(p, p.SampleRateHz / _outRate)).ToArray();
+        }
+
+        _device = info;
+        _failed = false;
+    }
+
+    /// <summary>
+    /// Opens the output once a mic would be heard (not muted, mix above 0). Call after setting gains and mutes. Stays
+    /// open when they are muted again: reopening mid-song would click as well.
+    /// </summary>
+    public void OpenIfAudible()
+    {
+        if (_device is not { } info || _line is not null || _failed || !_sources.Any(s => !s.Muted && s.Gain > 0))
+        {
+            return;
         }
 
         try
         {
-            _line = _backend.OpenOutput(info.Id, channelOffset, outRate, OnOutput);
+            _line = _backend.OpenOutput(info.Id, _channelOffset, _outRate, OnOutput);
             _log.LogInformation("Monitor mixer started on {Device} ({Players} mics)", info.Id, _sources.Length);
         }
         catch (AudioBackendException ex)
         {
+            _failed = true;
             _log.LogError(ex, "Cannot open monitor output {Device}", info.Id);
         }
     }
@@ -102,6 +124,7 @@ public sealed class MonitorMixer : IDisposable
 
     public void Stop()
     {
+        _device = null;
         _line?.Dispose();
         _line = null;
         // A jump back to the lead is a small click — audible only while that mic carries a voice (crackling evidence).

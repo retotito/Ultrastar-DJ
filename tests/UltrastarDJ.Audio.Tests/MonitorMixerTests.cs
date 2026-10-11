@@ -52,6 +52,7 @@ public class MonitorMixerTests
 
         using MonitorMixer mixer = new(backend, NullLogger<MonitorMixer>.Instance);
         mixer.Start("out", 0, [mic]);
+        mixer.OpenIfAudible();
         mixer.SetGain(1, 0.5);
 
         float[] outBuf = new float[512 * 2];
@@ -72,6 +73,7 @@ public class MonitorMixerTests
 
         using MonitorMixer mixer = new(backend, NullLogger<MonitorMixer>.Instance);
         mixer.Start("out", 0, [mic]);
+        mixer.OpenIfAudible();
 
         float[] outBuf = new float[256 * 2];
         backend.Output!(outBuf, 256, 2);
@@ -96,6 +98,7 @@ public class MonitorMixerTests
         MicPipeline mic = new(1, MicChannelSide.Left, 48000) { Threshold = 0 };
         using MonitorMixer mixer = new(backend, NullLogger<MonitorMixer>.Instance);
         mixer.Start("out", 0, [mic]);
+        mixer.OpenIfAudible();
 
         List<float> heard = [];
         float[] inBuf = new float[micBlock * 2];
@@ -164,6 +167,7 @@ public class MonitorMixerTests
         MicPipeline mic = new(1, MicChannelSide.Left, 48000) { Threshold = 0 };
         using MonitorMixer mixer = new(backend, NullLogger<MonitorMixer>.Instance);
         mixer.Start("out", 0, [mic]);
+        mixer.OpenIfAudible();
 
         const int micBlock = 64;
         List<float> heard = [];
@@ -272,12 +276,38 @@ public class MonitorMixerTests
 
         using MonitorMixer mixer = new(backend, NullLogger<MonitorMixer>.Instance);
         mixer.Start("out", 0, [mic]);
+        mixer.OpenIfAudible();
         mixer.SetMuted(1, true);
 
         float[] outBuf = new float[256 * 2];
         backend.Output!(outBuf, 256, 2);
 
         Assert.All(outBuf, v => Assert.Equal(0, v));
+    }
+
+    [Fact]
+    public void Mixer_NoAudibleMic_OpensNoOutputUntilOneIs()
+    {
+        // Regression: the open output (managed code on the IO thread the song shares) clicked the song at every GC
+        // pause — also with every mic muted.
+        FakeBackend backend = new();
+        MicPipeline mic = new(1, MicChannelSide.Left, 48000) { Threshold = 0 };
+
+        using MonitorMixer mixer = new(backend, NullLogger<MonitorMixer>.Instance);
+        mixer.Start("out", 0, [mic]);
+        mixer.SetMuted(1, true);
+        mixer.OpenIfAudible();
+        Assert.Null(backend.Output);
+        Assert.True(mixer.IsRunning);
+
+        mixer.SetMuted(1, false);
+        mixer.SetGain(1, 0);
+        mixer.OpenIfAudible();
+        Assert.Null(backend.Output);
+
+        mixer.SetGain(1, 0.8);
+        mixer.OpenIfAudible();
+        Assert.NotNull(backend.Output);
     }
 
     [Fact]
@@ -289,6 +319,7 @@ public class MonitorMixerTests
 
         using MonitorMixer mixer = new(backend, NullLogger<MonitorMixer>.Instance);
         mixer.Start("out", 2, [mic]);
+        mixer.OpenIfAudible();
 
         float[] outBuf = new float[128 * 4];
         backend.Output!(outBuf, 128, 4);

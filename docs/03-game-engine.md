@@ -92,6 +92,11 @@ settings above 1 read as 1; muted → 0, fader position kept — the mute is for
 song starts, stops on `Score`/`Stop`. In the mic test it is on whenever at least one mic is tested, on the
 **MONITOR** output picked at the top of Audio Input (always shown; defaults to the game output).
 
+The output stream opens only once a mic would be heard (not muted, mix above 0): its callback is managed code on
+the device's IO thread, and on macOS mpv's output to the same device in this process runs on that thread too. Every
+GC pause (about every 4 s during a song with a display open) held both up — the song clicked even with every mic
+muted. Once open it stays open until the song ends (reopening would click as well).
+
 Mic and output are separate devices: the mic writes in bursts (its block size, 256–1024 frames on USB), the
 output reads in its own, and the two clocks drift apart slightly. Each mic's reader therefore keeps a lead behind
 the writer covering both blocks (largest mic block, max 2048 + 1.5 × the largest output block so far + 128) and

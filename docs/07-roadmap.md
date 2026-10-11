@@ -644,6 +644,8 @@ Microsoft (no yearly fee): users confirm once — macOS "Open Anyway", Windows "
 - [x] Velopack SDK in the app (`VelopackApp.Build().Run()`)
 - [x] macOS 14 (Sonoma) or newer; tried on an Intel Mac with macOS 12: libmpv (Homebrew, then IINA's) did not
       load → `LSMinimumSystemVersion` 14.0, macOS itself tells older Macs
+- [x] Song crackled every 3–5 s in the game with a mic set up and a display open, mics muted too: the monitor's
+      output (managed callback on the IO thread mpv shares) stalled at each GC → opens only once a mic is audible
 - [ ] First green run on GitHub; packages tested on a Mac and a Windows PC without developer tools
 - [ ] Releases: a `v*` tag publishes the packages as a GitHub Release (Velopack for all systems)
 - [ ] In-app update notice ("Update available — Install now / Later", never during a song)
