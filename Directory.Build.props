@@ -15,7 +15,7 @@
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     <InvariantGlobalization>true</InvariantGlobalization>
 
-    <Version>0.2.0-alpha.1</Version>
+    <Version>0.2.0-beta.1</Version>
     <Product>Ultrastar DJ</Product>
     <Authors>Reto Küpfer</Authors>
     <Copyright>© Reto Küpfer</Copyright>

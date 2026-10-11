@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
-# Wrap a `dotnet publish` output folder into "Ultrastar DJ.app", ad-hoc sign it, and build a dmg.
-# Called by publish-macos.sh; usable standalone:
+# Wrap a `dotnet publish` output folder into "Ultrastar DJ.app" and ad-hoc sign it.
+# Called by publish-macos.sh (which adds Velopack and the dmg); usable standalone:
 #
 #   zsh scripts/bundle-macos.sh out/osx-arm64 0.2.0 osx-arm64
 #
@@ -17,10 +17,9 @@ BUNDLE_ID="com.retokupfer.ultrastardj"
 EXECUTABLE="UltrastarDJ"
 OUT_DIR="$ROOT/out"
 APP="$OUT_DIR/$APP_NAME.app"
-DMG="$OUT_DIR/Ultrastar-DJ-$VERSION-$RID.dmg"
 
 echo "→ bundling $APP"
-rm -rf "$APP" "$DMG"
+rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 
 cp -R "$PUBLISH_DIR"/. "$APP/Contents/MacOS/"
@@ -73,13 +72,3 @@ for tool in ffmpeg cloudflared; do
 done
 codesign --force --sign - "$APP"
 codesign --verify --strict "$APP" && echo "✓ signature valid"
-
-echo "→ building dmg"
-STAGE=$(mktemp -d)
-cp -R "$APP" "$STAGE/"
-ln -s /Applications "$STAGE/Applications"
-hdiutil create -quiet -volname "$APP_NAME" -srcfolder "$STAGE" -ov -format UDZO "$DMG"
-rm -rf "$STAGE"
-
-echo "✓ $DMG ($(du -sh "$DMG" | cut -f1))"
-echo "  First launch on another Mac: System Settings → Privacy & Security → Open Anyway"

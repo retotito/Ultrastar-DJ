@@ -208,6 +208,32 @@
     </Border>
   </Border>
 
+  <!-- A newer version on GitHub Releases (UpdateService): Update now downloads with progress and restarts into it. -->
+  <Border Background="#99000000" IsVisible="{Binding ShowUpdate}" ZIndex="9">
+    <Border Classes="card floating" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="{StaticResource Pad6}" Width="420">
+      <StackPanel Spacing="{StaticResource Space3}">
+        <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space2}">
+          <c:Icon Glyph="system_update" />
+          <TextBlock Classes="title" Text="{l:T update.title}" VerticalAlignment="Center" TextWrapping="Wrap" />
+        </StackPanel>
+        <TextBlock TextWrapping="Wrap" Text="{l:Format Updates.NewVersion, update.text}" />
+        <TextBlock Classes="muted" FontSize="{StaticResource TextSm}" TextWrapping="Wrap"
+                   Text="{l:Format Updates.CurrentVersion, update.current}" />
+        <StackPanel Spacing="{StaticResource Space1}" IsVisible="{Binding Updates.IsDownloading}">
+          <TextBlock FontSize="{StaticResource TextSm}" Text="{l:Format Updates.Progress, update.downloading}" />
+          <ProgressBar Minimum="0" Maximum="100" Value="{Binding Updates.Progress}" />
+        </StackPanel>
+        <TextBlock Foreground="{DynamicResource BrushError}" FontSize="{StaticResource TextSm}" TextWrapping="Wrap"
+                   Text="{Binding Updates.Error}" IsVisible="{Binding Updates.Error, Converter={x:Static ObjectConverters.IsNotNull}}" />
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="{StaticResource Space2}"
+                    IsEnabled="{Binding !Updates.IsDownloading}">
+          <Button Classes="text" Padding="16,8" Command="{Binding UpdateLaterCommand}" Content="{l:T update.later}" />
+          <Button Classes="tonal go" Padding="20,8" Command="{Binding UpdateNowCommand}" Content="{l:T update.now}" />
+        </StackPanel>
+      </StackPanel>
+    </Border>
+  </Border>
+
   <Border x:Name="DuetLayer" Background="#99000000" IsVisible="{Binding DuetSingers, Converter={x:Static ObjectConverters.IsNotNull}}"
           PointerPressed="OnDuetBackdropPressed">
     <Border Classes="card floating" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="{StaticResource Pad6}" MinWidth="460"

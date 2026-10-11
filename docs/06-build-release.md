@@ -1,6 +1,6 @@
 # 06 — Build, run, release
 
-Targets: **macOS (arm64 + x64)** and **Windows (x64)**. Linux is architecturally supported, not shipped.
+Targets: **macOS (arm64 + x64, macOS 14+)**, **Windows (x64)** and **Linux (x64 AppImage, system libmpv)**.
 
 ---
 
@@ -60,8 +60,18 @@ day, a new file after 10 MB, 7 files kept), `settings/*.json`, `library.db`, `ca
 ```
 dotnet publish src/UltrastarDJ.App -c Release -r osx-arm64 --self-contained \
   -p:PublishSingleFile=false -p:DebugType=none -o out/osx-arm64
-scripts/bundle-macos.sh out/osx-arm64 "Ultrastar DJ" 0.2.0     # creates out/Ultrastar DJ.app
+scripts/bundle-macos.sh out/osx-arm64 0.2.0 osx-arm64    # creates and signs out/Ultrastar DJ.app
+vpk pack … -p "out/Ultrastar DJ.app" --channel osx-arm64 --signAppIdentity - --signDisableDeep \
+  --signEntitlements scripts/macos.entitlements --noInst      # adds the updater, re-signs the bundle
+# dmg from the app Velopack made → out/Releases/Ultrastar-DJ-<version>-osx-arm64.dmg
 ```
+
+Velopack adds its updater (`UpdateMac`) to the bundle, so it signs: `-` is the same ad-hoc identity,
+`--signDisableDeep` keeps our per-file signatures (its `--deep` would fail on yt-dlp's folder), and it signs with
+the **hardened runtime** — `scripts/macos.entitlements` lists what .NET needs plus
+`com.apple.security.device.audio-input` (without it the microphone delivers silence). The dmg is built from
+Velopack's app, so an app installed from the dmg updates itself; Velopack's portable zip of the same app is
+dropped. Without `vpk` on the PATH the script still builds a dmg, of an app that does not update.
 
 `bundle-macos.sh`:
 1. Creates `Ultrastar DJ.app/Contents/{MacOS,Resources}`.
@@ -99,19 +109,47 @@ vpk pack -u UltrastarDJ -v 0.2.0 -p out/win-x64 -e UltrastarDJ.App.exe --packTit
 Velopack produces `Setup.exe` + update packages. Unsigned → SmartScreen warning on first run; acceptable
 for now (a code-signing certificate can be added later without architectural change).
 
+### Linux (`scripts/publish-linux.sh`, on Linux)
+
+`dotnet publish -r linux-x64` → `vpk pack` → `UltrastarDJ.AppImage` + update packages. libmpv is not in the
+AppImage: the app uses the system's (`libmpv.so.2`, or `.so.1` on Ubuntu 22.04 / Mint 21) and says what to install
+when it is missing. Built on Ubuntu 22.04 so it runs there and on everything newer.
+
 ### Versioning
 
-Single source: `<Version>` in `Directory.Build.props`. Scripts read it; tags are `v0.2.0`.
+`<Version>` in `Directory.Build.props` (SemVer, e.g. `0.2.0-beta.1`) for local builds. `$VERSION` (CI: the tag
+without its `v`) wins over it; the scripts pass it to `dotnet publish` (`BuildInfo.Version`, About, Settings) and to
+`vpk`. Bump `<Version>` together with the tag.
+
+## Releases and updates
+
+**Publishing a version:** bump `<Version>`, commit, then `git tag v0.2.0-beta.2 && git push origin v0.2.0-beta.2`.
+The workflow builds all four packages and its `release` job creates the GitHub Release (title "Ultrastar DJ
+<version>", text from `.github/release-notes.md` with the download table and the first-start steps). A version with
+`-` is a pre-release. Before packing, each job fetches the previous release (`vpk download github`), so Velopack
+also builds a small delta package; the old full package itself is not re-uploaded.
+
+Velopack channels keep the systems apart in one release: `osx-arm64`, `osx-x64`, `win`, `linux`
+(`releases.<channel>.json`, `*-full.nupkg`, `*-delta.nupkg`). Release assets for people: the two dmgs,
+`UltrastarDJ-win-Setup.exe`, `UltrastarDJ.AppImage`.
+
+**In the app** (`UpdateService`): 5 s after the start an installed app asks GitHub (pre-releases included) for a
+newer version of its channel; the developer build never asks. Found → "Update available — Ultrastar DJ x.y.z is
+available · Later / Update now", shown only while no song is on (idle or loaded, not from "Get ready" to the score).
+Update now downloads with progress and restarts into the new version (`ApplyUpdatesAndRestart`); settings and songs
+are in the user's data folder and stay. Later: asked again at the next start. A failed download keeps the offer with
+the reason. Offline / GitHub unreachable: logged, nothing shown.
 
 ---
 
 ## CI (`.github/workflows/build.yml`)
 
 GitHub Actions (free for this public repository): `macos-14` (Apple Silicon), `macos-15-intel` (Intel),
-`windows-latest`. Each job: setup-dotnet (from `global.json`) → fetch-natives → `dotnet test` → publish +
-package → upload the dmg / `Setup.exe` as an artifact. Runs by hand (Actions → Build → Run workflow, or
-`gh workflow run build.yml`) and on a `v*` tag. Velopack (`vpk`, pinned to the SDK's version) packs Windows;
-`VelopackApp.Build().Run()` is the first line of `Main` (install / update hooks). Linux is not built yet.
+`windows-latest`, `ubuntu-22.04`. Each job: setup-dotnet (from `global.json`) → fetch-natives → `dotnet test` →
+publish + Velopack pack (`vpk`, pinned to the SDK's version) → upload `out/Releases/*` as an artifact. Runs by hand
+(Actions → Build → Run workflow, or `gh workflow run build.yml`; artifacts are downloadable when signed in) and on a
+`v*` tag, which also publishes the Release (above). `VelopackApp.Build().Run()` is the first line of `Main`
+(install / update hooks).
 
 ---
 

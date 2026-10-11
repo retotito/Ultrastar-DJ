@@ -646,10 +646,12 @@ Microsoft (no yearly fee): users confirm once — macOS "Open Anyway", Windows "
       load → `LSMinimumSystemVersion` 14.0, macOS itself tells older Macs
 - [x] Song crackled every 3–5 s in the game with a mic set up and a display open, mics muted too: the monitor's
       output (managed callback on the IO thread mpv shares) stalled at each GC → opens only once a mic is audible
-- [ ] First green run on GitHub; packages tested on a Mac and a Windows PC without developer tools
-- [ ] Releases: a `v*` tag publishes the packages as a GitHub Release (Velopack for all systems)
-- [ ] In-app update notice ("Update available — Install now / Later", never during a song)
-- [ ] Linux (AppImage)
+- [x] First green run on GitHub (all four packages)
+- [x] Linux (AppImage, system libmpv with a clear message when missing)
+- [x] Releases: a `v*` tag publishes the packages as a GitHub Release (Velopack for all systems; macOS packed by
+      Velopack after our signing, hardened runtime with microphone entitlement)
+- [x] In-app update notice ("Update available — Later / Update now", never during a song)
+- [ ] 0.2.0-beta.1 installed on Mac, Windows and Linux; 0.2.0-beta.2 offered and installed by the app itself
 - [ ] README: download, the one-time "Open Anyway" / "Run anyway" steps; first beta release
 
 ---

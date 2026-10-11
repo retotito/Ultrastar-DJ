@@ -9,7 +9,8 @@ set -euo pipefail
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 RID=linux-x64
-VERSION=$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' "$ROOT/Directory.Build.props" | head -1)
+# $VERSION (CI: the tag) wins over Directory.Build.props.
+VERSION=${VERSION:-$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' "$ROOT/Directory.Build.props" | head -1)}
 [[ -n "$VERSION" ]] || { echo "✗ <Version> not found in Directory.Build.props"; exit 1; }
 [[ -d "$ROOT/natives/$RID" ]] || { echo "✗ natives/$RID missing — run scripts/fetch-natives-linux.sh first"; exit 1; }
 
@@ -17,7 +18,7 @@ OUT="$ROOT/out/$RID"
 rm -rf "$OUT"
 echo "→ dotnet publish $RID v$VERSION"
 dotnet publish "$ROOT/src/UltrastarDJ.App" -c Release -r "$RID" --self-contained \
-  -p:PublishSingleFile=false -p:DebugType=none -nologo -v q -o "$OUT"
+  -p:PublishSingleFile=false -p:DebugType=none -p:Version="$VERSION" -nologo -v q -o "$OUT"
 # The copy into the publish folder drops the executable bit of the tools.
 chmod +x "$OUT/UltrastarDJ" "$OUT/natives/"{yt-dlp/yt-dlp,ffmpeg,cloudflared}
 

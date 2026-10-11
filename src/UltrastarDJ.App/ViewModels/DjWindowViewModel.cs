@@ -111,7 +111,10 @@ public sealed partial class DjWindowViewModel : ViewModelBase
         {
             UpdateLock();
             AskForDuetSingersOnLoad();
+            OnPropertyChanged(nameof(ShowUpdate));
         };
+        Updates = services.GetRequiredService<UpdateService>();
+        Updates.PropertyChanged += (_, _) => OnPropertyChanged(nameof(ShowUpdate));
         nowPlaying.DuetSingersRequested += () => OpenDuetSingers(thenPlay: null);
         nowPlaying.SingersToConfirmBeforePlay += play => AskForDuetSingers(play);
         nowPlaying.DisplaysRequested += () =>
@@ -151,6 +154,22 @@ public sealed partial class DjWindowViewModel : ViewModelBase
         _services.GetRequiredService<AppSettingsService>().SetLanguage(Translations.Instance.Code);
         ChooseLanguage = false;
     }
+
+    partial void OnChooseLanguageChanged(bool value) => OnPropertyChanged(nameof(ShowUpdate));
+
+    // ── Updates ──
+
+    public UpdateService Updates { get; }
+
+    /// <summary>A newer version waits for an answer — never on top of a song (from "Get ready" to the score).</summary>
+    public bool ShowUpdate => Updates.IsAvailable && !ChooseLanguage
+        && _playback.State is PlaybackState.Idle or PlaybackState.Loaded;
+
+    [RelayCommand]
+    private Task UpdateNow() => Updates.UpdateNowAsync();
+
+    [RelayCommand]
+    private void UpdateLater() => Updates.Later();
 
     public LibraryViewModel Library { get; }
     public NowPlayingViewModel NowPlaying { get; }

@@ -70,9 +70,11 @@ public sealed partial class App : Application
         _ = _services.GetRequiredService<SongbookService>().AutoStartAsync();
         // Song texts kept offline: downloads in the background while the app is open (Song Sources → USDB).
         _services.GetRequiredService<UsdbTextDownloader>();
+        // A newer version on GitHub Releases is offered once no song is on (installed apps only).
+        _ = _services.GetRequiredService<UpdateService>().CheckAfterStartAsync();
 
         _services.GetRequiredService<ILogger<App>>().LogInformation(
-            "Ultrastar DJ {Version} started", typeof(App).Assembly.GetName().Version?.ToString(3));
+            "Ultrastar DJ {Version} started", BuildInfo.Version);
         if (restored > 0)
         {
             _services.GetRequiredService<ILogger<App>>().LogInformation("Backup restored: {Count} settings files", restored);
@@ -158,6 +160,7 @@ public sealed partial class App : Application
         services.AddSingleton<PlaybackService>();
         services.AddSingleton<SyncTestService>();
         services.AddSingleton<DisplayService>();
+        services.AddSingleton<UpdateService>();
         services.AddSingleton<IDisplayService>(sp => sp.GetRequiredService<DisplayService>());
 
         // ViewModels

@@ -1,13 +1,18 @@
 # Builds the installable apps on GitHub's machines (docs/06-build-release.md):
-#   macOS Apple Silicon → .dmg, macOS Intel → .dmg, Windows x64 → Setup.exe, Linux x64 → AppImage (Velopack).
-# Each job fetches the native parts (mpv, yt-dlp, ffmpeg, cloudflared), runs the tests and uploads its package
-# as an artifact (Actions → this run → Artifacts). Started by hand (Run workflow) or by a push of a v* tag.
+#   macOS Apple Silicon → .dmg, macOS Intel → .dmg, Windows x64 → Setup.exe, Linux x64 → AppImage — each with
+#   Velopack's update packages (channel per system).
+# Started by hand (Actions → Build → Run workflow): the packages land under Artifacts (signed-in only).
+# A pushed v* tag (git tag v0.2.0-beta.1 && git push origin v0.2.0-beta.1) also publishes them as a GitHub Release
+# — public downloads, and what installed apps check for updates. A version with "-" (beta, alpha) is a pre-release.
 name: Build
 
 on:
   workflow_dispatch:
   push:
     tags: ["v*"]
+
+env:
+  REPO_URL: https://github.com/${{ github.repository }}
 
 jobs:
   macos:
@@ -25,16 +30,24 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           global-json-file: global.json
+      - name: Version from the tag
+        if: github.ref_type == 'tag'
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
       - name: Native parts (libmpv from IINA, yt-dlp, ffmpeg, cloudflared)
         run: zsh scripts/fetch-natives.sh
       - name: Tests
         run: dotnet test --nologo -v q
-      - name: App + dmg
+      - name: Velopack
+        run: dotnet tool install -g vpk --version 1.2.161
+      - name: Previous release (for a small update package)
+        if: github.ref_type == 'tag'
+        run: vpk download github --repoUrl "$REPO_URL" --channel ${{ matrix.rid }} --pre -o out/Releases || echo "no previous release"
+      - name: App + dmg + update packages
         run: zsh scripts/publish-macos.sh ${{ matrix.rid }}
       - uses: actions/upload-artifact@v4
         with:
           name: Ultrastar-DJ-${{ matrix.rid }}
-          path: out/*.dmg
+          path: out/Releases/*
           if-no-files-found: error
 
   windows:
@@ -44,6 +57,10 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           global-json-file: global.json
+      - name: Version from the tag
+        if: github.ref_type == 'tag'
+        shell: bash
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
       - name: Native parts (libmpv, yt-dlp, ffmpeg, cloudflared)
         shell: pwsh
         env:
@@ -53,7 +70,11 @@ jobs:
         run: dotnet test --nologo -v q
       - name: Velopack
         run: dotnet tool install -g vpk --version 1.2.161
-      - name: App + Setup.exe
+      - name: Previous release (for a small update package)
+        if: github.ref_type == 'tag'
+        shell: bash
+        run: vpk download github --repoUrl "$REPO_URL" --channel win --pre -o out/Releases || echo "no previous release"
+      - name: App + Setup.exe + update packages
         shell: pwsh
         run: ./scripts/publish-windows.ps1
       - uses: actions/upload-artifact@v4
@@ -71,16 +92,46 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           global-json-file: global.json
+      - name: Version from the tag
+        if: github.ref_type == 'tag'
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
       - name: Native parts (yt-dlp, ffmpeg, cloudflared; libmpv comes from the system)
         run: bash scripts/fetch-natives-linux.sh
       - name: Tests
         run: dotnet test --nologo -v q
       - name: Velopack
         run: dotnet tool install -g vpk --version 1.2.161
-      - name: App + AppImage
+      - name: Previous release (for a small update package)
+        if: github.ref_type == 'tag'
+        run: vpk download github --repoUrl "$REPO_URL" --channel linux --pre -o out/Releases || echo "no previous release"
+      - name: App + AppImage + update packages
         run: bash scripts/publish-linux.sh
       - uses: actions/upload-artifact@v4
         with:
           name: Ultrastar-DJ-linux-x64
           path: out/Releases/*
           if-no-files-found: error
+
+  release:
+    # Only for a v* tag, after every system built: one GitHub Release with all packages.
+    if: github.ref_type == 'tag'
+    needs: [macos, windows, linux]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: packages
+          merge-multiple: true
+      - name: GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          PRE=""; [[ "$VERSION" == *-* ]] && PRE="--prerelease"
+          # The previous release's packages were only downloaded to build the small update package.
+          find packages -name "*.nupkg" ! -name "*-$VERSION-*" -delete
+          sed "s/{VERSION}/$VERSION/g" .github/release-notes.md > notes.md
+          gh release create "$GITHUB_REF_NAME" packages/* $PRE --title "Ultrastar DJ $VERSION" --notes-file notes.md
