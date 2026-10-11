@@ -126,7 +126,7 @@ without its `v`) wins over it; the scripts pass it to `dotnet publish` (`BuildIn
 **Publishing a version:** bump `<Version>`, commit, then `git tag v0.2.0-beta.2 && git push origin v0.2.0-beta.2`.
 The workflow builds all four packages and its `release` job creates the GitHub Release (title "Ultrastar DJ
 <version>", text from `.github/release-notes.md` with the download table and the first-start steps). A version with
-`-` is a pre-release. Before packing, each job fetches the previous release (`vpk download github`), so Velopack
+`-` is a pre-release. Before packing, each job fetches the previous release (`vpk download github`, with the job's token — anonymous calls hit GitHub's rate limit on shared runners), so Velopack
 also builds a small delta package; the old full package itself is not re-uploaded.
 
 Velopack channels keep the systems apart in one release: `osx-arm64`, `osx-x64`, `win`, `linux`

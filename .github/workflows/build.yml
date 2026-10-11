@@ -41,7 +41,7 @@ jobs:
         run: dotnet tool install -g vpk --version 1.2.161
       - name: Previous release (for a small update package)
         if: github.ref_type == 'tag'
-        run: vpk download github --repoUrl "$REPO_URL" --channel ${{ matrix.rid }} --pre -o out/Releases || echo "no previous release"
+        run: vpk download github --repoUrl "$REPO_URL" --token "${{ github.token }}" --channel ${{ matrix.rid }} --pre -o out/Releases || echo "no previous release"
       - name: App + dmg + update packages
         run: zsh scripts/publish-macos.sh ${{ matrix.rid }}
       - uses: actions/upload-artifact@v4
@@ -73,7 +73,7 @@ jobs:
       - name: Previous release (for a small update package)
         if: github.ref_type == 'tag'
         shell: bash
-        run: vpk download github --repoUrl "$REPO_URL" --channel win --pre -o out/Releases || echo "no previous release"
+        run: vpk download github --repoUrl "$REPO_URL" --token "${{ github.token }}" --channel win --pre -o out/Releases || echo "no previous release"
       - name: App + Setup.exe + update packages
         shell: pwsh
         run: ./scripts/publish-windows.ps1
@@ -103,7 +103,7 @@ jobs:
         run: dotnet tool install -g vpk --version 1.2.161
       - name: Previous release (for a small update package)
         if: github.ref_type == 'tag'
-        run: vpk download github --repoUrl "$REPO_URL" --channel linux --pre -o out/Releases || echo "no previous release"
+        run: vpk download github --repoUrl "$REPO_URL" --token "${{ github.token }}" --channel linux --pre -o out/Releases || echo "no previous release"
       - name: App + AppImage + update packages
         run: bash scripts/publish-linux.sh
       - uses: actions/upload-artifact@v4
