@@ -23,6 +23,10 @@ public sealed class MediaChannel : IAsyncDisposable
 
     private IMediaPlayer? _audio;
     private IMediaPlayer? _visual;
+    // Asked for the device list while no song is loaded; kept, not rebuilt per call (it was every 3 s — a whole mpv
+    // start and stop each time, minutes of stalls on slow PCs). mpv's hot-plug keeps its list current.
+    private IMediaPlayer? _probe;
+    private readonly Lock _probeLock = new();
     private ClockFollower? _follower;
     private MediaGameClock? _clock;
     private string _deviceId = AudioOutputDevice.Auto.Id;
@@ -101,19 +105,21 @@ public sealed class MediaChannel : IAsyncDisposable
         }
     }
 
-    public async Task<IReadOnlyList<AudioOutputDevice>> ListAudioDevicesAsync()
+    public Task<IReadOnlyList<AudioOutputDevice>> ListAudioDevicesAsync()
     {
         if (_audio is not null)
         {
-            return _audio.ListAudioDevices();
+            return Task.FromResult(_audio.ListAudioDevices());
         }
 
-        // No player yet: spin up a throwaway one to ask mpv.
-        IMediaPlayer probe = _factory.Create($"{Kind}-probe", video: false);
-        await using (probe.ConfigureAwait(false))
+        // No player yet: ask the idle one kept for this.
+        IMediaPlayer probe;
+        lock (_probeLock)
         {
-            return probe.ListAudioDevices();
+            probe = _probe ??= _factory.Create($"{Kind}-probe", video: false);
         }
+
+        return Task.FromResult(probe.ListAudioDevices());
     }
 
     /// <summary>Loads a plan. Returns when every role is <see cref="MediaState.Ready"/>.</summary>
@@ -237,6 +243,11 @@ public sealed class MediaChannel : IAsyncDisposable
 
         _disposed = true;
         await UnloadAsync().ConfigureAwait(false);
+        if (_probe is not null)
+        {
+            await _probe.DisposeAsync().ConfigureAwait(false);
+        }
+
         Frames.Dispose();
         _gate.Dispose();
     }

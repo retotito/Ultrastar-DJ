@@ -651,6 +651,8 @@ Microsoft (no yearly fee): users confirm once — macOS "Open Anyway", Windows "
 - [x] Releases: a `v*` tag publishes the packages as a GitHub Release (Velopack for all systems; macOS packed by
       Velopack after our signing, hardened runtime with microphone entitlement)
 - [x] In-app update notice ("Update available — Later / Update now", never during a song)
+- [x] Slow Windows PC stalled for seconds to minutes: with no song loaded the device check started and stopped a
+      whole mpv every 3 s → one idle mpv kept for it
 - [ ] 0.2.0-beta.1 installed on Mac, Windows and Linux; 0.2.0-beta.2 offered and installed by the app itself
 - [ ] README: download, the one-time "Open Anyway" / "Run anyway" steps; first beta release
 
