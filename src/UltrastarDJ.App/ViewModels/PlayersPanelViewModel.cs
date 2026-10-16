@@ -247,7 +247,7 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
                 progress: new Progress<double>(ms => Status = L.F("audio_input.calibrating_ms", card.Config.Name, ms)));
             _players.Update(card.Config.Id, p => p.WithCalibration(outputKey, Math.Round(r.MedianMs)));
             card.Reload();
-            Status = L.F("audio_input.calibrated", card.Config.Name, r.MedianMs, card.MicDelayText, string.Join(", ", r.TrialsMs.Select(t => t.ToString("F0"))));
+            Status = L.F("audio_input.calibrated", card.Config.Name, r.MedianMs, card.MicDelayMsText, string.Join(", ", r.TrialsMs.Select(t => t.ToString("F0"))));
         }
         catch (AudioBackendException ex)
         {
@@ -370,7 +370,11 @@ public sealed partial class PlayerCardViewModel : ObservableObject
         _loading = false;
         SyncMicOption();
     }
-    public string MicDelayText => $"{_owner.MicDelay(Config).Ms:F0} ms";
+    /// <summary>"123 ms" — the value alone (the Calibrate result line quotes it).</summary>
+    public string MicDelayMsText => $"{_owner.MicDelay(Config).Ms:F0} ms";
+
+    /// <summary>"Mic delay 123 ms", or "… — estimated" while this mic is not calibrated for the game output.</summary>
+    public string MicDelayText => L.F(IsCalibrated ? "audio_input.mic_delay" : "audio_input.mic_delay_estimated", MicDelayMsText);
 
     /// <summary>Calibrated for the game output now — mic delays are per speaker; red on the card when not.</summary>
     public bool IsCalibrated => _owner.MicDelay(Config).Calibrated;

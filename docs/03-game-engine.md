@@ -94,8 +94,8 @@ PortAudio input (device, channel L/R/mono)
 and sums each active player's gated mic × `mixGain` (0–1 = 0–100 %: mix only turns a mic down, boosting is the input gain's job; older
 settings above 1 read as 1; muted → 0, fader position kept — the mute is for the song only, the Audio Input mic test always plays the mic). Starts when the
 song starts, stops on `Score`/`Stop`. In the mic test it is on whenever at least one mic is tested, on the game
-output — shown at the top of Audio Input as **GAME OUTPUT: name**, not a choice (it is where the mics are heard during
-a song and what they are calibrated for; it follows a change of the game output).
+output — not a choice (it is where the mics are heard during a song and what they are calibrated for; it follows a
+change of the game output). Each card names it in its calibration line.
 
 The output stream opens only once a mic would be heard (not muted, mix above 0): its callback is managed code on
 the device's IO thread, and on macOS mpv's output to the same device in this process runs on that thread too. Every
@@ -133,8 +133,9 @@ counted in the callbacks, logged once.
 The player's **mic delay** on the game output (`LatencyModel.MicDelay`, `OutputsService.MicDelayFor`): calibrated
 there → total − that output's latency (never below 0). Not → an **estimate**: 140 ms (USDX's default mic) plus, while
 the output's latency is not set either, a typical speaker of its kind (Bluetooth 200 ms, display 80 ms, other 0 —
-`Media.OutputKinds`). Each Audio Input card shows it live for the game output now: green "Calibrated for JBL Charge 5"
-or red "Not calibrated for Speakers (Realtek) — estimated". When the game output changes and players with a mic are
+`Media.OutputKinds`). Each Audio Input card shows it live for the game output now, below a divider under the faders:
+"Mic delay 368 ms" (or "Mic delay 340 ms — estimated") beside **Calibrate**, and under both, full width, green
+"Calibrated for JBL Charge 5" or red "Not calibrated for Speakers (Realtek)". When the game output changes and players with a mic are
 not calibrated there, a warning toast names them with **[Calibrate]** (opens Audio Input) and **[Later]**.
 
 Scoring compares at `display − mic delay` (`GameSession.SungBeatAt`, USDX `MidBeatD`): it is not applied as an audio

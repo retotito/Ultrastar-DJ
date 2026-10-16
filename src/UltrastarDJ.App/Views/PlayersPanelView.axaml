@@ -63,10 +63,21 @@
             <TextBlock Grid.Row="1" Grid.Column="2" Classes="muted" Text="{Binding MixGain, StringFormat='{}{0:P0}'}" VerticalAlignment="Center" TextAlignment="Right" />
           </Grid>
 
-          <Grid ColumnDefinitions="*,Auto">
-            <!-- Calibrations are per speaker: whether this mic is calibrated for the game output now (red: an estimate). -->
-            <StackPanel VerticalAlignment="Center" Spacing="2" ToolTip.Tip="{l:T audio_input.how_much_later_mic}">
-              <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="{l:Format MicDelayText, audio_input.mic_delay}" />
+          <!-- Calibration, set off from the faders: mic delay beside Calibrate; below, full width, the speaker it is
+               calibrated for (green) or not (red) — calibrations are per game output. -->
+          <Border BorderBrush="{DynamicResource BrushOutlineVariant}" BorderThickness="0,1,0,0" Margin="0,4,0,0" Padding="0,12,0,0">
+            <StackPanel Spacing="{StaticResource Space1}">
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" VerticalAlignment="Center" TextWrapping="Wrap"
+                           Text="{Binding MicDelayText}" ToolTip.Tip="{l:T audio_input.how_much_later_mic}" />
+                <Button Grid.Column="1" Classes="tonal" Command="{Binding CalibrateCommand}" IsEnabled="{Binding !Calibrating}" Padding="12,4"
+                        Margin="8,0,0,0" ToolTip.Tip="{l:T audio_input.measures_mic_s_delay}">
+                  <StackPanel Orientation="Horizontal" Spacing="4">
+                    <c:Icon Glyph="timer" FontSize="{StaticResource IconSm}" />
+                    <TextBlock Text="{l:T audio_input.calibrate}" FontSize="{StaticResource TextSm}" />
+                  </StackPanel>
+                </Button>
+              </Grid>
               <TextBlock FontSize="{StaticResource TextXs}" TextWrapping="Wrap" Text="{Binding CalibrationText}" IsVisible="{Binding HasMic}"
                          Classes.ok="{Binding IsCalibrated}" Classes.missing="{Binding !IsCalibrated}">
                 <TextBlock.Styles>
@@ -79,14 +90,7 @@
                 </TextBlock.Styles>
               </TextBlock>
             </StackPanel>
-            <Button Grid.Column="1" Classes="tonal" Command="{Binding CalibrateCommand}" IsEnabled="{Binding !Calibrating}" Padding="12,4"
-                    ToolTip.Tip="{l:T audio_input.measures_mic_s_delay}">
-              <StackPanel Orientation="Horizontal" Spacing="4">
-                <c:Icon Glyph="timer" FontSize="{StaticResource IconSm}" />
-                <TextBlock Text="{l:T audio_input.calibrate}" FontSize="{StaticResource TextSm}" />
-              </StackPanel>
-            </Button>
-          </Grid>
+          </Border>
         </StackPanel>
       </Border>
     </DataTemplate>
@@ -98,12 +102,6 @@
         <c:Icon Glyph="refresh" FontSize="{StaticResource IconMd}" />
       </Button>
     </StackPanel>
-
-    <!-- The game output: tested mics are heard there, and the calibrations below are for it. Chosen in Audio Output. -->
-    <Grid ColumnDefinitions="Auto,*" ToolTip.Tip="{l:T audio_input.tested_mics_are_heard}">
-      <TextBlock Grid.Column="0" Classes="label" Text="{l:T audio_input.game_output}" VerticalAlignment="Center" Margin="0,0,8,0" />
-      <TextBlock Grid.Column="1" Text="{Binding GameOutputName}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-    </Grid>
 
     <ItemsControl ItemsSource="{Binding Players}" ItemTemplate="{StaticResource PlayerCard}" />
 

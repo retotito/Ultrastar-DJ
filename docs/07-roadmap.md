@@ -699,7 +699,9 @@ speaker + mic together, so it is kept per game output and shown for the one play
 - [x] Sidebar: Audio Output before Audio Input
 - [x] Output list: each speaker once, "(default)" next to the system's; no "System default" entry, "Default (openal)"
       (mpv's second audio API) left out; older "System default" choices pinned to their speaker
-- [ ] Owner test on Windows (JBL, laptop speakers, ARZOPA)
+- [x] Owner test on Windows (JBL, laptop speakers, ARZOPA)
+- [x] Audio Input card: calibration area under a divider — mic delay ("— estimated" when not calibrated) beside
+      Calibrate, the calibrated-for line full width below; the "GAME OUTPUT" line at the top dropped (each card names it)
 
 ---
 
