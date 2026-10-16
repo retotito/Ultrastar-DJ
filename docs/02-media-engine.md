@@ -209,7 +209,12 @@ This gives YouTube a real readiness signal — the prototype had none.
 ## Device routing
 
 - Device list: union of mpv `audio-device-list` (for output names/ids mpv understands) and PortAudio outputs
-  (for channel counts). Matched by name; expose `OutputDeviceInfo { Id, Name, MaxChannels }`.
+  (for channel counts). Matched by name; expose `OutputDeviceInfo { Id, Name, MaxChannels }`. mpv lists every audio
+  API it was built with, so `MpvPlayer.ListAudioDevices` keeps the native route only (drops `openal` — "Default
+  (openal)" on Windows —, `avfoundation/…`, `sdl`). Each speaker appears once; the one the system plays on now is
+  marked "(default)". "System default" is not offered next to it (it was the same speaker twice): older settings
+  holding it are pinned to that speaker once it is known (`OutputsService.PinSystemDefault`); it stays only as the
+  fallback while no speaker can be named.
 - Multichannel devices are offered as pairs ("Device — Ch 1–2", "Ch 3–4", …). Selection stores `(deviceId, channelOffset)`.
 - Hidden device name patterns: `blackhole`, `loopback`, `speaker audio recorder`, `screen recorder`, `stereo mix`
   (Windows' recording of the speakers — as a mic it would score the song itself).
@@ -219,13 +224,24 @@ This gives YouTube a real readiness signal — the prototype had none.
   device's mix rate, so streams open at `DefaultSampleRateHz`. macOS / Linux have one host API and are unfiltered.
 - Hot-plug: poll `audio-device-list` every 3 s while a routing view is open; if the selected device vanishes → reset to default and notify.
 - **Output hot-plug** (`OutputsService`): mpv's device list is checked every 3 s (it works while a song plays; PortAudio's
-  refresh does not). A chosen output that is unplugged plays on the system default meanwhile — the choice is kept
-  (`Core.Playback.OutputPresence`, tested) and the channel returns when the device does; toasts both ways, and one for
-  a newly plugged-in output. The game output lost mid-song stops the song (rewound, still loaded; displays stay open) —
+  refresh does not). A chosen output that is unplugged (or not there at start) is replaced for good by **the speaker
+  the system plays on now**, chosen explicitly (`Core.Playback.OutputPresence.Replacement`, tested; asked from the OS
+  via `Media.SystemDefaultOutput` — Windows' default endpoint — else PortAudio's default by name; neither known →
+  System default). Not "System default" itself: the OS makes a returning Bluetooth speaker its default again and the
+  game followed it. Warning toast naming both. When it is back, an info toast says so and the DJ chooses it again —
+  it never switches back by itself (that happened mid-song and confused more than it helped).
+  The game output lost mid-song stops the song (rewound, still loaded; displays stay open) —
   the default speakers would be out of sync. mpv's audio output dies with the device ("Could not open/initialize audio
   device -> no sound") and `ao-reload` has nothing to reload, so `MpvPlayer.AudioDevice` reselects the audio track when
-  `current-ao` is empty — otherwise Play on the loaded song stayed silent until a new load. The Audio Output popup updates live; a missing choice shows
-  System default (what really plays) while the choice stays stored for its return.
+  `current-ao` is empty — otherwise Play on the loaded song stayed silent until a new load. The Audio Output popup updates live.
+- **The speaker the game really plays on** (`OutputsService.GameOutputKey`, the latency and calibration key): the
+  chosen output, or for System default the device that is the default now (`SystemDefaultOutput`, else PortAudio's
+  default output by name → mpv's id; only a present one counts, PortAudio's list is stale while a stream is open).
+  macOS / Linux use the PortAudio fallback for now (CoreAudio's default device uid would match `coreaudio/<uid>`). Shown as "System default ·
+  Speakers (Realtek(R) Audio)". It changing (chosen, replaced, a new system default) raises `GameOutputChanged`.
+- **Speaker kind** (`Media.OutputKinds`, tested): Bluetooth / display / other, for the latency estimate of an unmeasured
+  speaker. Windows: the endpoint's registry entry (enumerator `BTH…` → Bluetooth, form factor 9 → display); macOS: a
+  Bluetooth device's uid is its address; PulseAudio / PipeWire: `bluez` / `hdmi` in the sink name.
 - Mic monitoring uses a **separate PortAudio output stream** on the game device (see `03-game-engine.md`). Two streams on one device are mixed by the OS; that is acceptable and much simpler than routing mpv PCM through our own mixer.
 
 ### Known fallback

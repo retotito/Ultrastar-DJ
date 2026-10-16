@@ -18,6 +18,13 @@ public sealed class PlayersService
         {
             _doc = PlayersDocument.Default();
         }
+
+        // Settings from before calibrations were kept per output: moved once, saved in the new shape.
+        if (_doc.Players.Any(p => p.CalibratedTotalMs is not null))
+        {
+            _doc = new PlayersDocument([.. _doc.Players.Select(p => p.Migrated())]);
+            _settings.Save(SettingsName, _doc);
+        }
     }
 
     public event Action<PlayerConfig>? Changed;

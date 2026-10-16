@@ -32,6 +32,11 @@ public sealed partial class Toast(string title, string? detail, ToastKind kind) 
     };
 
     public bool HasDetail => !string.IsNullOrEmpty(Detail);
+
+    /// <summary>A button that does something about it ("Calibrate"); the toast then offers "Later" too and stays longer.</summary>
+    public string? ActionLabel { get; init; }
+    public Action? Action { get; init; }
+    public bool HasAction => Action is not null;
 }
 
 /// <summary>
@@ -53,6 +58,7 @@ public sealed class NotificationService
 {
     private static readonly TimeSpan ToastLifetime = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan WarningLifetime = TimeSpan.FromSeconds(8);
+    private static readonly TimeSpan ActionLifetime = TimeSpan.FromSeconds(20);
 
     private readonly Queue<DialogMessage> _pending = [];
 
@@ -74,6 +80,10 @@ public sealed class NotificationService
     public void Success(string title, string? detail = null) => Show(new Toast(title, detail, ToastKind.Success));
     public void Warn(string title, string? detail = null) => Show(new Toast(title, detail, ToastKind.Warning));
     public void Request(string title, string? detail = null) => Show(new Toast(title, detail, ToastKind.Request));
+
+    /// <summary>A warning the DJ can act on at once: [<paramref name="actionLabel"/>] [Later].</summary>
+    public void Warn(string title, string? detail, string actionLabel, Action action)
+        => Show(new Toast(title, detail, ToastKind.Warning) { ActionLabel = actionLabel, Action = action });
 
     /// <summary>An action the DJ started failed. <paramref name="reasons"/>: one plain sentence each.</summary>
     public void ShowError(string title, IEnumerable<string> reasons, string? details = null)
@@ -123,7 +133,7 @@ public sealed class NotificationService
         Dispatcher.UIThread.Post(() =>
         {
             Toasts.Add(toast);
-            DispatcherTimer.RunOnce(() => Toasts.Remove(toast), toast.IsWarning ? WarningLifetime : ToastLifetime);
+            DispatcherTimer.RunOnce(() => Toasts.Remove(toast), toast.HasAction ? ActionLifetime : toast.IsWarning ? WarningLifetime : ToastLifetime);
         });
     }
 }

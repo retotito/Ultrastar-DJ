@@ -49,5 +49,8 @@ public enum MediaState
 /// <summary>An audio output as mpv names it. <see cref="Id"/> is what goes into <c>audio-device</c>.</summary>
 public sealed record AudioOutputDevice(string Id, string Name)
 {
+    /// <summary>Bluetooth, a display or other — for the latency estimate of a speaker nobody measured.</summary>
+    public Core.Timing.OutputKind Kind { get; init; }
+
     public static AudioOutputDevice Auto { get; } = new("auto", "System default");
 }

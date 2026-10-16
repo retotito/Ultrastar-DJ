@@ -625,8 +625,8 @@ public sealed class PlaybackService : IDisposable
     public double MicActivityOf(int playerId)
         => _audio.Mics.Pipeline(playerId) is { } p ? MicActivity.Level(p.LevelRms, p.Threshold) : 0;
 
-    /// <summary>The player's scoring delay: calibrated total minus the output latency it was calibrated through.</summary>
-    public double MicDelayMs(PlayerConfig p) => LatencyModel.InputDelayMs(p.CalibratedTotalMs, _outputs.LatencyFor(p.CalibrationOutputKey));
+    /// <summary>The player's scoring delay on the game output now: its calibration there, or an estimate.</summary>
+    public double MicDelayMs(PlayerConfig p) => _outputs.MicDelayFor(p).Ms;
 
     public void Dispose() => StopTicker();
 }

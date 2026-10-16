@@ -35,7 +35,6 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
     private readonly HashSet<int> _tested = [];
 
     [ObservableProperty] private bool _testing;
-    [ObservableProperty] private AudioDeviceInfo? _monitorOutput;
     [ObservableProperty] private string _status = "";
 
     public PlayersPanelViewModel(AudioInputService audio, PlayersService players, OutputsService outputs, ILogger<PlayersPanelViewModel> log)
@@ -50,8 +49,9 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
         _audio.Mics.Analyzed += OnAnalyzed;
         _players.Changed += OnConfigChanged;
         _audio.MicsChanged += OnMicsChanged;
-        // The mic delay depends on the latency of the output it was calibrated through.
+        // Calibrations are per game output: its change (chosen, replaced, a new system default) shows each card's state.
         _outputs.Changed += OnOutputsChanged;
+        _outputs.GameOutputChanged += OnOutputsChanged;
         _meterTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(50), DispatcherPriority.Background, (_, _) => PollMeters());
         _meterTimer.Start();
     }
@@ -59,7 +59,6 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
     public ObservableCollection<PlayerCardViewModel> Players { get; }
     // Every input once; each card shows its own copy with the inputs other players use marked (RefreshCardOptions).
     private readonly List<MicOption> _baseOptions = [];
-    public ObservableCollection<AudioDeviceInfo> Outputs { get; } = [];
 
     internal PlayersService PlayersService => _players;
     internal AudioInputService Audio => _audio;
@@ -101,18 +100,6 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
             }
         }
 
-        // Clearing the list resets the ComboBox selection: keep the chosen monitor while it is still plugged in.
-        string? chosen = MonitorOutput?.Id;
-        Outputs.Clear();
-        foreach (AudioDeviceInfo d in _audio.OutputDevices)
-        {
-            Outputs.Add(d);
-        }
-
-        // The game output by default: that is where the mics are heard during a song.
-        MonitorOutput = Outputs.FirstOrDefault(o => o.Id == chosen)
-            ?? Outputs.FirstOrDefault(o => o.Id == _outputs.GamePortAudioDeviceId())
-            ?? Outputs.FirstOrDefault(o => o.IsDefaultOutput) ?? Outputs.FirstOrDefault();
         RefreshCardOptions();
     }
 
@@ -183,21 +170,29 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
         }
     }
 
+    // Tested mics are heard on the game output: where they are heard during a song and calibrated for.
     private void StartMonitor()
     {
-        if (!Testing || MonitorOutput is null)
+        if (!Testing)
         {
             return;
         }
 
-        _audio.StartMonitor(MonitorOutput.Id);
+        if (_outputs.GamePortAudioDeviceId() is not { } output)
+        {
+            Status = L.T("audio_input.output_missing");
+            return;
+        }
+
+        _audio.StartMonitor(output);
         if (!_audio.Monitor.IsRunning)
         {
             Status = L.T("audio_input.cannot_open_monitor");
         }
     }
 
-    partial void OnMonitorOutputChanged(AudioDeviceInfo? value) => StartMonitor();
+    /// <summary>"JBL Charge 5" — the speaker the mics are heard on and calibrated for.</summary>
+    public string GameOutputName => _outputs.GameOutputName;
 
     /// <summary>Mic bindings changed → streams must be reopened.</summary>
     internal void RestartIfTesting()
@@ -208,17 +203,24 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
         }
     }
 
+    // Another game output (or its latency): each card's calibration state is for that speaker.
     private void OnOutputsChanged()
     {
+        OnPropertyChanged(nameof(GameOutputName));
         foreach (PlayerCardViewModel card in Players)
         {
             card.RefreshDelay();
         }
+
+        // The monitor follows the game output.
+        if (Testing)
+        {
+            StartMonitor();
+        }
     }
 
-    /// <summary>Scoring delay of a player in ms, and whether it was calibrated or is the default.</summary>
-    internal (double Ms, bool Calibrated) MicDelay(PlayerConfig p)
-        => (LatencyModel.InputDelayMs(p.CalibratedTotalMs, _outputs.LatencyFor(p.CalibrationOutputKey)), p.CalibratedTotalMs is not null);
+    /// <summary>Scoring delay of a player on the game output in ms, and whether it was calibrated there (else an estimate).</summary>
+    internal (double Ms, bool Calibrated) MicDelay(PlayerConfig p) => _outputs.MicDelayFor(p);
 
     internal async Task CalibrateAsync(PlayerCardViewModel card)
     {
@@ -243,7 +245,7 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
             string outputKey = _outputs.GameOutputKey;
             LatencyTest.Result r = await _audio.Latency.RunAsync(output, card.Config.Mic, card.Config.InputGain, trials: 5,
                 progress: new Progress<double>(ms => Status = L.F("audio_input.calibrating_ms", card.Config.Name, ms)));
-            _players.Update(card.Config.Id, p => p with { CalibratedTotalMs = Math.Round(r.MedianMs), CalibrationOutputKey = outputKey });
+            _players.Update(card.Config.Id, p => p.WithCalibration(outputKey, Math.Round(r.MedianMs)));
             card.Reload();
             Status = L.F("audio_input.calibrated", card.Config.Name, r.MedianMs, card.MicDelayText, string.Join(", ", r.TrialsMs.Select(t => t.ToString("F0"))));
         }
@@ -309,6 +311,7 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
         _audio.Mics.Analyzed -= OnAnalyzed;
         _players.Changed -= OnConfigChanged;
         _outputs.Changed -= OnOutputsChanged;
+        _outputs.GameOutputChanged -= OnOutputsChanged;
         _audio.StopAll();
     }
 }
@@ -367,9 +370,19 @@ public sealed partial class PlayerCardViewModel : ObservableObject
         _loading = false;
         SyncMicOption();
     }
-    public string MicDelayText => _owner.MicDelay(Config) is var (ms, calibrated) ? $"{ms:F0} ms{(calibrated ? "" : L.T("audio_input.default_suffix"))}" : "";
+    public string MicDelayText => $"{_owner.MicDelay(Config).Ms:F0} ms";
 
-    public void RefreshDelay() => OnPropertyChanged(nameof(MicDelayText));
+    /// <summary>Calibrated for the game output now — mic delays are per speaker; red on the card when not.</summary>
+    public bool IsCalibrated => _owner.MicDelay(Config).Calibrated;
+
+    public string CalibrationText => L.F(IsCalibrated ? "audio_input.calibrated_for" : "audio_input.not_calibrated_for", _owner.GameOutputName);
+
+    public void RefreshDelay()
+    {
+        OnPropertyChanged(nameof(MicDelayText));
+        OnPropertyChanged(nameof(IsCalibrated));
+        OnPropertyChanged(nameof(CalibrationText));
+    }
     public string GateText => $"{GateDb:F0} dB";
     public string GainText => $"{InputGainScale.Snap(InputGainDb):+0.#;-0.#;0} dB";
     /// <summary>What the speakers get from this mic: the monitor mixes the gated signal × mix (linear).</summary>
@@ -406,7 +419,7 @@ public sealed partial class PlayerCardViewModel : ObservableObject
     public void Reload()
     {
         Config = _owner.PlayersService.Get(Config.Id);
-        OnPropertyChanged(nameof(MicDelayText));
+        RefreshDelay();
     }
 
     /// <summary>Config changed elsewhere (Now Playing mix row, mic unassigned on unplug): mirror it without re-saving.</summary>
@@ -423,7 +436,11 @@ public sealed partial class PlayerCardViewModel : ObservableObject
         }
     }
 
-    partial void OnConfigChanged(PlayerConfig value) => OnPropertyChanged(nameof(HasMic));
+    partial void OnConfigChanged(PlayerConfig value)
+    {
+        OnPropertyChanged(nameof(HasMic));
+        RefreshDelay();
+    }
 
     public void ApplySample(PitchSample s)
     {

@@ -93,8 +93,9 @@ PortAudio input (device, channel L/R/mono)
 `MonitorMixer` opens one PortAudio **output** stream on the game output device (respecting channel offset)
 and sums each active player's gated mic × `mixGain` (0–1 = 0–100 %: mix only turns a mic down, boosting is the input gain's job; older
 settings above 1 read as 1; muted → 0, fader position kept — the mute is for the song only, the Audio Input mic test always plays the mic). Starts when the
-song starts, stops on `Score`/`Stop`. In the mic test it is on whenever at least one mic is tested, on the
-**MONITOR** output picked at the top of Audio Input (always shown; defaults to the game output).
+song starts, stops on `Score`/`Stop`. In the mic test it is on whenever at least one mic is tested, on the game
+output — shown at the top of Audio Input as **GAME OUTPUT: name**, not a choice (it is where the mics are heard during
+a song and what they are calibrated for; it follows a change of the game output).
 
 The output stream opens only once a mic would be heard (not muted, mix above 0): its callback is managed code on
 the device's IO thread, and on macOS mpv's output to the same device in this process runs on that thread too. Every
@@ -123,16 +124,23 @@ counted in the callbacks, logged once.
   `Controls.SyncFlash`, per display frame). Flash and click together ⇔ the value is right; the flash goes through
   the same render path and projector as the lyrics. Needs an open beamer and no running song. Replaces the old
   Settings → Lyrics offset (migrated once: latency = −offset).
-- **Calibrated total** per player (Audio Input → **Calibrate**, `LatencyTest`): an A4 tone on the game output →
-  speaker → air → mic → USB → the game's own pitch analysis (`MicPipeline`, every 33 ms) → A4 recognised. 5 trials,
-  median. Stored with the output it was measured on. The player's **mic delay** = total − that output's latency
-  (never below 0); uncalibrated players use 140 ms (USDX's default).
+- **Calibrated total** per player **and game output** (Audio Input → **Calibrate**, `LatencyTest`): an A4 tone on the
+  game output → speaker → air → mic → USB → the game's own pitch analysis (`MicPipeline`, every 33 ms) → A4
+  recognised. 5 trials, median. Kept per speaker (`PlayerConfig.Calibrations`, key = `GameOutputKey`): Bluetooth adds
+  hundreds of ms, so a calibration is only valid for the speaker it was measured on; switching back finds it again.
+  Settings with the older single calibration move it to its output once (`PlayerConfig.Migrated`, on load).
+
+The player's **mic delay** on the game output (`LatencyModel.MicDelay`, `OutputsService.MicDelayFor`): calibrated
+there → total − that output's latency (never below 0). Not → an **estimate**: 140 ms (USDX's default mic) plus, while
+the output's latency is not set either, a typical speaker of its kind (Bluetooth 200 ms, display 80 ms, other 0 —
+`Media.OutputKinds`). Each Audio Input card shows it live for the game output now: green "Calibrated for JBL Charge 5"
+or red "Not calibrated for Speakers (Realtek) — estimated". When the game output changes and players with a mic are
+not calibrated there, a warning toast names them with **[Calibrate]** (opens Audio Input) and **[Later]**.
 
 Scoring compares at `display − mic delay` (`GameSession.SungBeatAt`, USDX `MidBeatD`): it is not applied as an audio
 delay, it shifts the beat a heard pitch is matched against. The sung fill therefore lags the lyrics by the mic delay
-— correct and expected. Because the mic delay subtracts the latency of the calibration output, scoring does not
-change if the latency is set before or after calibrating (test `Scoring_IsIndependentOfWhenTheLatencyWasSet`);
-the order "Test sync, then Calibrate" only makes the shown mic delay meaningful.
+— correct and expected. `display − mic delay = clock − total`, so the output latency only moves the lyrics: scoring
+does not change if it is set before or after calibrating (test `Scoring_IsIndependentOfWhenTheLatencyWasSet`).
 
 The pitch analysis alone takes ≈ 60 ms from a tone onset to a stable note (YIN window 2048 at 48 kHz, analysis
 every 33 ms, median of 5; measured by `PitchPathDelayTests`). The old calibration detected the beep in the raw
@@ -211,8 +219,7 @@ Rule: **a player only has a mic while it is plugged in.** Device ids are device 
 presence, the rules are in `Core.Players.MicPresence` (tested).
 
 - **Detection:** PortAudio can only re-enumerate with no stream open. Idle (no mic test, no song, no monitor): the
-  device list is re-read every 3 s — outputs too, so a speaker switched on later (Bluetooth) shows up in the monitor
-  list (the chosen monitor stays selected while it is there). With streams open, a dying stream reports its device (`MicEngine.DeviceLost`).
+  device list is re-read every 3 s. With streams open, a dying stream reports its device (`MicEngine.DeviceLost`).
   Opening a stream and re-enumerating share one lock in `PortAudioBackend`.
 - **Unplugged** (idle, during a mic test, or at start for a saved mic that is not there): the mic is **unassigned**
   (dropdown shows "— no microphone —"), a toast names the players. `DisplayService` takes a player without a mic off

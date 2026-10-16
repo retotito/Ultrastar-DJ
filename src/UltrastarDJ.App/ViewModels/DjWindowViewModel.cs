@@ -15,8 +15,8 @@ public enum SidebarPanel
     None,
     Layout,
     Sources,
-    AudioInput,
     AudioOutput,
+    AudioInput,
     Displays,
     Songbook,
     Settings,
@@ -124,8 +124,39 @@ public sealed partial class DjWindowViewModel : ViewModelBase
                 TogglePanel(SidebarPanel.Displays);
             }
         };
+        services.GetRequiredService<OutputsService>().GameOutputChanged += OnGameOutputChanged;
         UpdateLock();
         ChooseLanguage = services.GetRequiredService<AppSettingsService>().Language is null;
+    }
+
+    /// <summary>
+    /// Mic delays are calibrated per speaker (Bluetooth adds hundreds of ms): on another game output, the players with a
+    /// mic but no calibration there are named, with a way straight to calibrating them.
+    /// </summary>
+    private void OnGameOutputChanged()
+    {
+        OutputsService outputs = _services.GetRequiredService<OutputsService>();
+        // The system default before its device is known: nothing to name yet (the next check names it).
+        if (outputs.GameOutputKey.StartsWith(OutputPresence.SystemDefault + "|", StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        List<string> missing = [.. _services.GetRequiredService<PlayersService>().WithMic
+            .Where(p => !outputs.MicDelayFor(p).Calibrated).Select(p => p.Name)];
+        if (missing.Count == 0)
+        {
+            return;
+        }
+
+        Notifications.Warn(L.F("calibration.needed", outputs.GameOutputName), L.F("calibration.needed_detail", string.Join(", ", missing)),
+            L.T("audio_input.calibrate"), () =>
+            {
+                if (ActivePanel != SidebarPanel.AudioInput && !AudioLocked)
+                {
+                    TogglePanel(SidebarPanel.AudioInput);
+                }
+            });
     }
 
     // ── First start: which language? ──
@@ -264,6 +295,13 @@ public sealed partial class DjWindowViewModel : ViewModelBase
 
     [RelayCommand]
     private void DismissToast(Toast toast) => Notifications.Dismiss(toast);
+
+    [RelayCommand]
+    private void RunToastAction(Toast toast)
+    {
+        Notifications.Dismiss(toast);
+        toast.Action?.Invoke();
+    }
 
     [RelayCommand]
     private void ToggleNowPlaying() => NowPlaying.ToggleVisible();

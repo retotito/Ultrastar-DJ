@@ -3,7 +3,6 @@
              xmlns:l="using:UltrastarDJ.App.Localization"
              xmlns:vm="using:UltrastarDJ.App.ViewModels"
              xmlns:c="using:UltrastarDJ.App.Controls"
-             xmlns:audio="using:UltrastarDJ.Audio"
              x:Class="UltrastarDJ.App.Views.PlayersPanelView"
              x:DataType="vm:PlayersPanelViewModel">
 
@@ -65,8 +64,21 @@
           </Grid>
 
           <Grid ColumnDefinitions="*,Auto">
-            <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" VerticalAlignment="Center"
-                       Text="{l:Format MicDelayText, audio_input.mic_delay}" ToolTip.Tip="{l:T audio_input.how_much_later_mic}" />
+            <!-- Calibrations are per speaker: whether this mic is calibrated for the game output now (red: an estimate). -->
+            <StackPanel VerticalAlignment="Center" Spacing="2" ToolTip.Tip="{l:T audio_input.how_much_later_mic}">
+              <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="{l:Format MicDelayText, audio_input.mic_delay}" />
+              <TextBlock FontSize="{StaticResource TextXs}" TextWrapping="Wrap" Text="{Binding CalibrationText}" IsVisible="{Binding HasMic}"
+                         Classes.ok="{Binding IsCalibrated}" Classes.missing="{Binding !IsCalibrated}">
+                <TextBlock.Styles>
+                  <Style Selector="TextBlock.ok">
+                    <Setter Property="Foreground" Value="{DynamicResource BrushTertiary}" />
+                  </Style>
+                  <Style Selector="TextBlock.missing">
+                    <Setter Property="Foreground" Value="{DynamicResource BrushError}" />
+                  </Style>
+                </TextBlock.Styles>
+              </TextBlock>
+            </StackPanel>
             <Button Grid.Column="1" Classes="tonal" Command="{Binding CalibrateCommand}" IsEnabled="{Binding !Calibrating}" Padding="12,4"
                     ToolTip.Tip="{l:T audio_input.measures_mic_s_delay}">
               <StackPanel Orientation="Horizontal" Spacing="4">
@@ -87,16 +99,10 @@
       </Button>
     </StackPanel>
 
-    <!-- Where the tested mics are heard: on as soon as one mic is tested, off with the last. -->
+    <!-- The game output: tested mics are heard there, and the calibrations below are for it. Chosen in Audio Output. -->
     <Grid ColumnDefinitions="Auto,*" ToolTip.Tip="{l:T audio_input.tested_mics_are_heard}">
-      <TextBlock Grid.Column="0" Classes="label" Text="{l:T audio_input.monitor}" VerticalAlignment="Center" Margin="0,0,8,0" />
-      <ComboBox Grid.Column="1" ItemsSource="{Binding Outputs}" SelectedItem="{Binding MonitorOutput}" HorizontalAlignment="Stretch">
-        <ComboBox.ItemTemplate>
-          <DataTemplate x:DataType="audio:AudioDeviceInfo">
-            <TextBlock Text="{Binding Name}" />
-          </DataTemplate>
-        </ComboBox.ItemTemplate>
-      </ComboBox>
+      <TextBlock Grid.Column="0" Classes="label" Text="{l:T audio_input.game_output}" VerticalAlignment="Center" Margin="0,0,8,0" />
+      <TextBlock Grid.Column="1" Text="{Binding GameOutputName}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
     </Grid>
 
     <ItemsControl ItemsSource="{Binding Players}" ItemTemplate="{StaticResource PlayerCard}" />

@@ -12,33 +12,44 @@ public class LatencyModelTests
     }
 
     [Fact]
-    public void InputDelay_CalibratedTotalMinusTheOutputLatencyOfTheCalibrationDevice()
+    public void MicDelay_CalibratedTotalMinusTheOutputLatency()
     {
-        // Measured beep → note: 400 ms on a device whose latency is 250 ms → 150 ms are mic + analysis.
-        Assert.Equal(150, LatencyModel.InputDelayMs(calibratedTotalMs: 400, latencyOfCalibrationOutputMs: 250), 6);
+        // Measured tone → note: 400 ms on a speaker whose latency is 250 ms → 150 ms are mic + analysis.
+        Assert.Equal((150, true), LatencyModel.MicDelay(calibratedTotalMs: 400, outputLatencyMs: 250, OutputKind.Bluetooth));
     }
 
     [Fact]
-    public void InputDelay_Uncalibrated_UsesTheDefault()
-    {
-        Assert.Equal(LatencyModel.DefaultInputDelayMs, LatencyModel.InputDelayMs(calibratedTotalMs: null, latencyOfCalibrationOutputMs: 0), 6);
-    }
-
-    [Fact]
-    public void InputDelay_NeverNegative()
+    public void MicDelay_NeverNegative()
     {
         // Latency set larger than what the mic measured (wrong setting): clamp instead of scoring in the future.
-        Assert.Equal(0, LatencyModel.InputDelayMs(100, 300), 6);
+        Assert.Equal((0, true), LatencyModel.MicDelay(100, 300, OutputKind.Other));
+    }
+
+    [Theory]
+    [InlineData(OutputKind.Other, 0)]
+    [InlineData(OutputKind.Bluetooth, 200)]
+    [InlineData(OutputKind.Display, 80)]
+    public void MicDelay_NotCalibrated_TypicalMicPlusTypicalSpeaker(OutputKind kind, double speakerMs)
+    {
+        // Nobody measured anything: the sung pitch reaches the scorer after the speaker and the mic path.
+        Assert.Equal((LatencyModel.DefaultInputDelayMs + speakerMs, false), LatencyModel.MicDelay(null, 0, kind));
+    }
+
+    [Fact]
+    public void MicDelay_NotCalibrated_ButSpeakerLatencySet_OnlyTheTypicalMic()
+    {
+        // Test sync set 250 ms: the display already runs 250 ms late, so only the mic path is left.
+        Assert.Equal((LatencyModel.DefaultInputDelayMs, false), LatencyModel.MicDelay(null, 250, OutputKind.Bluetooth));
     }
 
     [Fact]
     public void Scoring_IsIndependentOfWhenTheLatencyWasSet()
     {
         // Calibrated with latency 0 (not set yet) on a 250 ms speaker: total 400 ms measured.
-        // Later the DJ sets the true 250 ms. Scoring time = display − input delay must not change.
+        // Later the DJ sets the true 250 ms. Scoring time = display − mic delay must not change.
         double clock = 20.0;
-        double before = LatencyModel.DisplaySec(clock, 0) - LatencyModel.InputDelayMs(400, 0) / 1000;
-        double after = LatencyModel.DisplaySec(clock, 250) - LatencyModel.InputDelayMs(400, 250) / 1000;
+        double before = LatencyModel.DisplaySec(clock, 0) - LatencyModel.MicDelay(400, 0, OutputKind.Bluetooth).Ms / 1000;
+        double after = LatencyModel.DisplaySec(clock, 250) - LatencyModel.MicDelay(400, 250, OutputKind.Bluetooth).Ms / 1000;
 
         Assert.Equal(before, after, 6);
     }

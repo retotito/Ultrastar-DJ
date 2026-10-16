@@ -80,7 +80,7 @@ Everything below exists in the prototype and must exist in v2 unless marked *(la
 - 4 fixed player slots: active, name, colour (blue/red/green/yellow), mic assignment (device + channel L/R/mono).
 - Per player: input gain 0–2, noise gate threshold 0–0.5, mix gain 0–2, mute, mic delay ms (default 40, cap 250 in UI).
 - Live level meters; mic test mode; hot-plug detection (disconnected / reconnected toasts, auto-clear at startup if device gone).
-- Latency: output latency per game device (Test sync: click + beamer flash); mic calibration: tone through the pitch analysis, 5 trials, median, per player.
+- Latency: output latency per game device (Test sync: click + beamer flash); mic calibration: tone through the pitch analysis, 5 trials, median, per player and game output.
 - Mic monitoring: mic audio mixed into the game output during the song (mix fader + mute per player in the Game Player card).
 
 ### Audio outputs

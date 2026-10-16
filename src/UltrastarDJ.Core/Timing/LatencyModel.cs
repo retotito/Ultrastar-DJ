@@ -5,9 +5,9 @@ namespace UltrastarDJ.Core.Timing;
 /// <list type="bullet">
 /// <item><b>Output latency</b> per output device: app plays → audience hears (cable ~15 ms, HDMI/TV 50–150 ms,
 /// Bluetooth 150–300 ms). Set with Test sync. The beamer shows the song at <see cref="DisplaySec"/>.</item>
-/// <item><b>Calibrated total</b> per player: a tone on the game output → its note recognised by the pitch analysis
-/// (output + air + mic + USB + analysis). The player's input delay is that minus the latency the calibration device
-/// had, so scoring = display − input delay is the same whichever was set first.</item>
+/// <item><b>Calibrated total</b> per player and game output: a tone on the game output → its note recognised by the
+/// pitch analysis (output + air + mic + USB + analysis). The player's mic delay is that minus the output's latency, so
+/// scoring = display − mic delay = clock − total, whether the latency was set or not.</item>
 /// </list>
 /// </summary>
 public static class LatencyModel
@@ -18,9 +18,23 @@ public static class LatencyModel
     /// <summary>Game time the audience is hearing now: the clock minus the output latency.</summary>
     public static double DisplaySec(double clockSec, double outputLatencyMs) => clockSec - outputLatencyMs / 1000.0;
 
-    /// <summary>Mic + analysis delay of a player: calibrated total minus the calibration device's output latency.</summary>
-    public static double InputDelayMs(double? calibratedTotalMs, double latencyOfCalibrationOutputMs)
-        => calibratedTotalMs is { } total ? Math.Max(0, total - latencyOfCalibrationOutputMs) : DefaultInputDelayMs;
+    /// <summary>A speaker nobody measured: what such outputs typically add (Bluetooth 150–300 ms, TV / monitor over HDMI 40–150 ms).</summary>
+    public static double TypicalOutputLatencyMs(OutputKind kind) => kind switch
+    {
+        OutputKind.Bluetooth => 200,
+        OutputKind.Display => 80,
+        _ => 0,
+    };
+
+    /// <summary>
+    /// Mic delay of a player on the game output, and whether it was calibrated there. Calibrated: the total minus the
+    /// output latency. Not: a typical mic, plus a typical speaker of its kind while the latency is not set either
+    /// (the display then runs on the clock, so the speaker's delay is still to be bridged).
+    /// </summary>
+    public static (double Ms, bool Calibrated) MicDelay(double? calibratedTotalMs, double outputLatencyMs, OutputKind kind)
+        => calibratedTotalMs is { } total
+            ? (Math.Max(0, total - outputLatencyMs), true)
+            : (DefaultInputDelayMs + (outputLatencyMs > 0 ? 0 : TypicalOutputLatencyMs(kind)), false);
 
     /// <summary>Test sync: a click every this many seconds; the latency range (≤ 800 ms) fits in one period.</summary>
     public const double SyncPeriodSec = 1.0;

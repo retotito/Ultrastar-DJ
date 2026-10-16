@@ -26,8 +26,6 @@ public sealed class AudioInputService : IDisposable
     private readonly CancellationTokenSource _pollCts = new();
     // Input device ids currently plugged in. Replaced (never mutated) on the UI thread; the poll thread only reads it.
     private volatile IReadOnlySet<string> _present;
-    // Output device ids (monitor list); only the poll thread reads and writes it.
-    private HashSet<string> _presentOutputs;
     private bool _gameMode;
 
     public AudioInputService(IAudioBackend backend, PlayersService players, NotificationService notifications, ILoggerFactory loggers)
@@ -42,11 +40,10 @@ public sealed class AudioInputService : IDisposable
         players.Changed += OnPlayerChanged;
         Mics.DeviceLost += id => Dispatcher.UIThread.Post(() => OnDeviceLost(id));
         _present = InputIds();
-        _presentOutputs = OutputIds();
         _ = Task.Run(() => PollAsync(_pollCts.Token));
     }
 
-    /// <summary>UI thread: the device list (mics or outputs) or a mic's presence changed (panels re-read devices and missing marks).</summary>
+    /// <summary>UI thread: the device list or a mic's presence changed (panels re-read devices and missing marks).</summary>
     public event Action? MicsChanged;
 
     /// <summary>
@@ -76,7 +73,6 @@ public sealed class AudioInputService : IDisposable
     public LatencyTest Latency { get; }
 
     public IReadOnlyList<AudioDeviceInfo> InputDevices => Backend.Devices.Where(d => d.IsInput && !IsHidden(d)).ToList();
-    public IReadOnlyList<AudioDeviceInfo> OutputDevices => Backend.Devices.Where(d => d.IsOutput && !IsHidden(d)).ToList();
 
     /// <summary>Re-enumerates devices; only works while nothing is open. Returns false if streams are running.</summary>
     public bool RefreshDevices() => Backend.RefreshDevices();
@@ -132,7 +128,6 @@ public sealed class AudioInputService : IDisposable
     }
 
     private HashSet<string> InputIds() => [.. InputDevices.Select(d => d.Id)];
-    private HashSet<string> OutputIds() => [.. OutputDevices.Select(d => d.Id)];
 
     private async Task PollAsync(CancellationToken ct)
     {
@@ -152,17 +147,6 @@ public sealed class AudioInputService : IDisposable
                 if (!change.IsEmpty)
                 {
                     Dispatcher.UIThread.Post(() => ApplyChange(change, now));
-                }
-
-                // A speaker plugged in or switched on (Bluetooth): the monitor list must offer it too.
-                HashSet<string> outputs = OutputIds();
-                if (!outputs.SetEquals(_presentOutputs))
-                {
-                    _presentOutputs = outputs;
-                    if (change.IsEmpty)
-                    {
-                        Dispatcher.UIThread.Post(() => MicsChanged?.Invoke());
-                    }
                 }
             }
         }

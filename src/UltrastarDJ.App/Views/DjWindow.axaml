@@ -51,17 +51,18 @@
                   ToolTip.Tip="{l:T window.song_sources}">
             <c:Icon Glyph="library_music" />
           </Button>
-          <Button Classes="sidebar" Classes.active="{Binding ActivePanel, Converter={x:Static vm:SidebarPanelConverters.Is}, ConverterParameter=AudioInput}"
-                  IsEnabled="{Binding !AudioLocked}"
-                  Command="{Binding TogglePanelCommand}" CommandParameter="{x:Static vm:SidebarPanel.AudioInput}"
-                  ToolTip.Tip="{l:T window.audio_input_players_microphones}">
-            <c:Icon Glyph="mic_external_on" />
-          </Button>
+          <!-- Output before input: the mics are calibrated for the game output, so it is chosen first. -->
           <Button Classes="sidebar" Classes.active="{Binding ActivePanel, Converter={x:Static vm:SidebarPanelConverters.Is}, ConverterParameter=AudioOutput}"
                   IsEnabled="{Binding !AudioLocked}"
                   Command="{Binding TogglePanelCommand}" CommandParameter="{x:Static vm:SidebarPanel.AudioOutput}"
                   ToolTip.Tip="{l:T window.audio_output}">
             <c:Icon Glyph="speaker" />
+          </Button>
+          <Button Classes="sidebar" Classes.active="{Binding ActivePanel, Converter={x:Static vm:SidebarPanelConverters.Is}, ConverterParameter=AudioInput}"
+                  IsEnabled="{Binding !AudioLocked}"
+                  Command="{Binding TogglePanelCommand}" CommandParameter="{x:Static vm:SidebarPanel.AudioInput}"
+                  ToolTip.Tip="{l:T window.audio_input_players_microphones}">
+            <c:Icon Glyph="mic_external_on" />
           </Button>
           <Button Classes="sidebar" Classes.active="{Binding ActivePanel, Converter={x:Static vm:SidebarPanelConverters.Is}, ConverterParameter=Displays}"
                   IsEnabled="{Binding !AudioLocked}"
@@ -168,6 +169,12 @@
             <StackPanel Grid.Column="1" Spacing="2">
               <TextBlock Text="{Binding Title}" FontSize="{StaticResource TextLg}" FontWeight="{StaticResource WeightSemibold}" TextWrapping="Wrap" />
               <TextBlock Classes="muted" FontSize="{StaticResource TextBase}" Text="{Binding Detail}" TextWrapping="Wrap" IsVisible="{Binding HasDetail}" />
+              <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space2}" Margin="0,12,0,0" IsVisible="{Binding HasAction}">
+                <Button Classes="tonal" Content="{Binding ActionLabel}"
+                        Command="{Binding $parent[Window].((vm:DjWindowViewModel)DataContext).RunToastActionCommand}" CommandParameter="{Binding}" />
+                <Button Classes="text" Content="{l:T toast.later}"
+                        Command="{Binding $parent[Window].((vm:DjWindowViewModel)DataContext).DismissToastCommand}" CommandParameter="{Binding}" />
+              </StackPanel>
             </StackPanel>
             <Button Grid.Column="2" Classes="sidebar small" VerticalAlignment="Top" Margin="8,-4,-4,0" ToolTip.Tip="{l:T window.dismiss}"
                     Command="{Binding $parent[Window].((vm:DjWindowViewModel)DataContext).DismissToastCommand}" CommandParameter="{Binding}">

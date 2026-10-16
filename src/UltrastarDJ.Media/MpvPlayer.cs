@@ -353,7 +353,16 @@ public sealed class MpvPlayer : IMediaPlayer
 
     public void Seek(TimeSpan position) => Command("seek", F(position.TotalSeconds), "absolute");
 
-    /// <summary>Audio outputs known to mpv (<c>audio-device-list</c>).</summary>
+    /// <summary>
+    /// mpv lists every audio API it was built with, so the same speakers appear again through a second one: OpenAL's
+    /// "Default (openal)" (Windows, macOS), AVFoundation next to CoreAudio (macOS). Only the native route is offered.
+    /// </summary>
+    internal static bool IsSecondRoute(string id)
+        => id == "openal" || id.StartsWith("openal/", StringComparison.Ordinal)
+            || id.StartsWith("avfoundation/", StringComparison.Ordinal)
+            || id == "sdl" || id.StartsWith("sdl/", StringComparison.Ordinal);
+
+    /// <summary>Audio outputs known to mpv (<c>audio-device-list</c>), native route only.</summary>
     public IReadOnlyList<AudioOutputDevice> ListAudioDevices()
     {
         string? json = TakeString(GetPropertyString(_handle, "audio-device-list"));
@@ -367,8 +376,13 @@ public sealed class MpvPlayer : IMediaPlayer
         foreach (JsonElement e in doc.RootElement.EnumerateArray())
         {
             string id = e.GetProperty("name").GetString() ?? "";
+            if (IsSecondRoute(id))
+            {
+                continue;
+            }
+
             string desc = e.TryGetProperty("description", out JsonElement d) ? d.GetString() ?? id : id;
-            list.Add(id == "auto" ? AudioOutputDevice.Auto : new AudioOutputDevice(id, desc));
+            list.Add(id == "auto" ? AudioOutputDevice.Auto : new AudioOutputDevice(id, desc) { Kind = OutputKinds.Of(id) });
         }
 
         return list;

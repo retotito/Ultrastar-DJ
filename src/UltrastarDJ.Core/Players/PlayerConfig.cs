@@ -45,14 +45,31 @@ public sealed record PlayerConfig
     public bool MutedInMonitor(bool duringSong) => duringSong && MixMuted;
 
     /// <summary>
-    /// Calibrate's result: a tone on the game output until the pitch analysis recognised it (ms); null = never
-    /// calibrated. The scoring delay is this minus the latency of <see cref="CalibrationOutputKey"/>
-    /// (Core.Timing.LatencyModel).
+    /// Calibrate's results per game output (OutputsService key): ms from the tone leaving the app until the pitch
+    /// analysis recognised it. Speakers differ by hundreds of ms (cable vs Bluetooth), so each keeps its own; on an
+    /// output without one the mic delay is an estimate (Core.Timing.LatencyModel.MicDelay).
     /// </summary>
+    public IReadOnlyDictionary<string, double> Calibrations { get; init; } = new Dictionary<string, double>();
+
+    /// <summary>Settings before per-output calibration: the one result. Read by <see cref="Migrated"/>, never written again.</summary>
     public double? CalibratedTotalMs { get; init; }
 
-    /// <summary>The output (OutputsService key) the calibration tone played on.</summary>
+    /// <summary>Settings before per-output calibration: the output it was measured on. See <see cref="CalibratedTotalMs"/>.</summary>
     public string? CalibrationOutputKey { get; init; }
+
+    public double? CalibrationFor(string outputKey) => Calibrations.TryGetValue(outputKey, out double ms) ? ms : null;
+
+    public PlayerConfig WithCalibration(string outputKey, double totalMs)
+        => this with { Calibrations = new Dictionary<string, double>(Calibrations) { [outputKey] = totalMs } };
+
+    /// <summary>Moves an old single calibration to its output.</summary>
+    public PlayerConfig Migrated()
+    {
+        PlayerConfig p = CalibratedTotalMs is { } total && CalibrationOutputKey is { } key && !Calibrations.ContainsKey(key)
+            ? WithCalibration(key, total)
+            : this;
+        return p with { CalibratedTotalMs = null, CalibrationOutputKey = null };
+    }
 
     public static PlayerConfig Default(int id) => new()
     {

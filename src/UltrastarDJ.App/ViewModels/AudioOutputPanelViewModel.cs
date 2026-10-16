@@ -58,23 +58,10 @@ public sealed partial class AudioOutputPanelViewModel : ViewModelBase, IDisposab
             Options.Add(o);
         }
 
-        // An unplugged choice shows what really plays: System default. The choice itself stays stored, so the device
-        // takes over again by itself when it is plugged back in.
-        Sync(Game, MediaChannelKind.Game, _outputs.Game);
-        Sync(Preview, MediaChannelKind.Preview, _outputs.Preview);
-        Status = list.Count <= 1 ? L.T("audio_output.only_system") : "";
-    }
-
-    private void Sync(OutputChannelViewModel card, MediaChannelKind kind, OutputsService.ChannelOutput chosen)
-    {
-        if (_outputs.IsMissing(kind))
-        {
-            card.Sync(Options, AudioOutputDevice.Auto.Id, 0);
-        }
-        else
-        {
-            card.Sync(Options, chosen.MpvDeviceId, chosen.ChannelOffset);
-        }
+        // An unplugged choice is replaced by the next device check (OutputsService): the list shows the choice as stored.
+        Game.Sync(Options, _outputs.Game.MpvDeviceId, _outputs.Game.ChannelOffset);
+        Preview.Sync(Options, _outputs.Preview.MpvDeviceId, _outputs.Preview.ChannelOffset);
+        Status = list.All(o => o.MpvDeviceId == AudioOutputDevice.Auto.Id) ? L.T("audio_output.only_system") : "";
     }
 
     public void Dispose()

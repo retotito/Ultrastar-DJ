@@ -676,7 +676,30 @@ Goal: the developer build set up and tested on a Windows laptop (Ryzen 3 7320U, 
 - [x] Game output (Bluetooth) switched off mid-song: song stopped and the output went to the default, but Play stayed
       silent until another load — mpv had no audio output left for `ao-reload` → audio track reselected
 - [ ] External USB / Bluetooth audio devices: plug in, unplug, during a song
-- [ ] Display 1: fullscreen and its position when closed and opened again (no error in the log — details pending)
+- [x] Display 1: fullscreen and its position when closed and opened again — not reproducible (a missed touchpad
+      click), no error in the log
+
+---
+
+## Sprint 26 — Mics calibrated per speaker  *(in progress)*
+
+Goal: a DJ who knows nothing about latency still scores right after changing speakers. The mic calibration measures
+speaker + mic together, so it is kept per game output and shown for the one playing now.
+
+- [x] Calibrations per player and game output (`PlayerConfig.Calibrations`); older single calibrations migrated on load
+- [x] Uncalibrated: estimate = typical mic + typical speaker of its kind (Bluetooth / display / other, read from the
+      device registry on Windows, the uid on macOS, the sink name on Linux)
+- [x] Audio Input: "GAME OUTPUT: name" instead of the monitor picker; each card green "Calibrated for …" or red
+      "Not calibrated for … — estimated", live with every game output change
+- [x] Game output changed and players not calibrated there → warning toast [Calibrate] [Later] (toasts can carry an action)
+- [x] Unplugged output → the speaker the system plays on then, chosen for good (not "System default": Windows made the
+      returning JBL its default again and the game followed it); back → info toast only, the DJ chooses it again
+- [ ] macOS: ask CoreAudio for the default output (Windows asks the OS; macOS falls back to PortAudio's list, which is
+      stale while a mic is open)
+- [x] Sidebar: Audio Output before Audio Input
+- [x] Output list: each speaker once, "(default)" next to the system's; no "System default" entry, "Default (openal)"
+      (mpv's second audio API) left out; older "System default" choices pinned to their speaker
+- [ ] Owner test on Windows (JBL, laptop speakers, ARZOPA)
 
 ---
 
