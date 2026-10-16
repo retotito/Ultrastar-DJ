@@ -4,12 +4,20 @@ using Xunit.Abstractions;
 
 namespace UltrastarDJ.Audio.Tests;
 
-/// <summary>Runs against this machine's real devices, on Windows (the host API filter); elsewhere and without devices it passes trivially.</summary>
+/// <summary>
+/// Runs against this machine's real devices, on Windows only: the host API filter it checks exists there, and CI's
+/// sound-card-less Linux cannot even start PortAudio. Without devices it passes trivially.
+/// </summary>
 public class PortAudioBackendTests(ITestOutputHelper output)
 {
     [Fact]
     public void Devices_AreListedOnce_WithOneDefaultPerDirection()
     {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
         using PortAudioBackend backend = new(NullLogger<PortAudioBackend>.Instance);
         foreach (AudioDeviceInfo d in backend.Devices)
         {
@@ -17,12 +25,6 @@ public class PortAudioBackendTests(ITestOutputHelper output)
         }
 
         // Windows lists each device once per host API (MME, DirectSound, WASAPI, WDM-KS); the second copy gets "(2)".
-        // Elsewhere nothing is filtered — and CI's sound-card-less Linux lists ALSA's virtual devices as they come.
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
-
         Assert.DoesNotContain(backend.Devices, d => d.Id != d.Name);
         if (backend.Devices.Any(d => d.IsInput))
         {
