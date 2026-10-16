@@ -8,4 +8,7 @@
     <ProjectReference Include="../UltrastarDJ.Core/UltrastarDJ.Core.csproj" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
   </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="UltrastarDJ.Media.Tests" />
+  </ItemGroup>
 </Project>

@@ -666,7 +666,15 @@ Goal: the developer build set up and tested on a Windows laptop (Ryzen 3 7320U, 
       string → both `.ps1` saved with BOM, `.editorconfig` keeps it
 - [x] Audio devices listed four to six times (MME, DirectSound, WASAPI, WDM-KS, Sound Mapper) → WASAPI only, with
       its own default mic/speakers; "Stereo Mix" hidden (it records the speakers)
-- [ ] Loading a song into the game player (the installed 0.2.0-beta.2 crashed)
+- [x] App closed itself about a second after any video started (game or preview, YouTube or local; all six crashes
+      since 0.2.0-beta.2, Windows error 0xC0000374 heap corruption): the video frame buffer came from
+      `NativeMemory.AlignedAlloc` but went back through `Free` → `AlignedFree` (macOS / Linux accept either)
+- [x] SingStar USB dongle: player 2 (right) also heard mic 1 (left) — Windows' shared mode mixed the dongle to mono
+      ("Default Format: 1 channel") → mics open in WASAPI exclusive mode, shared as fallback
+- [x] Audio Input → Monitor offered only the speakers present at app start: the 3 s device check compared mics only →
+      outputs too; the chosen monitor stays selected
+- [ ] External USB / Bluetooth audio devices: plug in, unplug, during a song
+- [ ] Display 1: fullscreen and its position when closed and opened again (no error in the log — details pending)
 
 ---
 

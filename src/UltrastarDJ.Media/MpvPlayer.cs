@@ -673,62 +673,40 @@ public sealed class MpvPlayer : IMediaPlayer
         int* size = stackalloc int[2];
         MpvRenderParam* p = stackalloc MpvRenderParam[5];
         nuint stride = 0;
-        void* buffer = null;
-        int bufW = 0, bufH = 0;
-
-        try
+        using FrameBuffer buffer = new();
+        while (!_disposing)
         {
-            while (!_disposing)
+            _renderSignal.WaitOne(250);
+            if (_disposing)
             {
-                _renderSignal.WaitOne(250);
-                if (_disposing)
-                {
-                    break;
-                }
-
-                if ((RenderContextUpdate(_renderContext) & RenderUpdateFrame) == 0)
-                {
-                    continue;
-                }
-
-                (int w, int h) = TargetSize();
-                if (w != bufW || h != bufH)
-                {
-                    if (buffer is not null)
-                    {
-                        NativeMemory.Free(buffer);
-                    }
-
-                    bufW = w;
-                    bufH = h;
-                    stride = (nuint)(w * 4);
-                    buffer = NativeMemory.AlignedAlloc(stride * (nuint)h, 64);
-                }
-
-                size[0] = w;
-                size[1] = h;
-                p[0] = new MpvRenderParam { Type = MpvRenderParamType.SwSize, Data = size };
-                p[1] = new MpvRenderParam { Type = MpvRenderParamType.SwFormat, Data = format };
-                p[2] = new MpvRenderParam { Type = MpvRenderParamType.SwStride, Data = &stride };
-                p[3] = new MpvRenderParam { Type = MpvRenderParamType.SwPointer, Data = buffer };
-                p[4] = default;
-
-                int err = RenderContextRender(_renderContext, p);
-                if (err < 0)
-                {
-                    _log.LogWarning("{Player}: render failed: {Error}", Name, ErrorMessage(err));
-                    continue;
-                }
-
-                _frames!.Publish(new FrameRef((nint)buffer, w, h, (int)stride));
+                break;
             }
-        }
-        finally
-        {
-            if (buffer is not null)
+
+            if ((RenderContextUpdate(_renderContext) & RenderUpdateFrame) == 0)
             {
-                NativeMemory.Free(buffer);
+                continue;
             }
+
+            (int w, int h) = TargetSize();
+            buffer.EnsureSize(w, h);
+            stride = buffer.Stride;
+
+            size[0] = w;
+            size[1] = h;
+            p[0] = new MpvRenderParam { Type = MpvRenderParamType.SwSize, Data = size };
+            p[1] = new MpvRenderParam { Type = MpvRenderParamType.SwFormat, Data = format };
+            p[2] = new MpvRenderParam { Type = MpvRenderParamType.SwStride, Data = &stride };
+            p[3] = new MpvRenderParam { Type = MpvRenderParamType.SwPointer, Data = buffer.Pointer };
+            p[4] = default;
+
+            int err = RenderContextRender(_renderContext, p);
+            if (err < 0)
+            {
+                _log.LogWarning("{Player}: render failed: {Error}", Name, ErrorMessage(err));
+                continue;
+            }
+
+            _frames!.Publish(new FrameRef((nint)buffer.Pointer, w, h, (int)stride));
         }
     }
 

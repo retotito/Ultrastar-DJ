@@ -171,8 +171,10 @@ public interface IFrameSource
 }
 ```
 
-- `MpvPlayer` renders with the software render API into a **double buffer** sized to the video (capped at
-  720p by `ytdl-format` and `--vf=scale` for local files above 1080p).
+- `MpvPlayer` renders with the software render API into one `FrameBuffer` sized to the video (capped at
+  1280×720). The first frame often comes at 1280×720 before mpv reports the video size, so the buffer is
+  reallocated right after the start: the aligned block must be released with `AlignedFree` — the plain `Free`
+  corrupted Windows' heap and killed the app a second after every video started (`FrameBufferTests`).
 - `FrameBus` fan-outs `FrameReady` to subscribed **surfaces**. Each `VideoSurface` control owns a
   `WriteableBitmap`, copies the frame into it on the render thread, and calls `InvalidateVisual()` via the
   dispatcher. Copy cost at 720p BGRA ≈ 3.7 MB/frame — fine for 3 surfaces at 30 fps.

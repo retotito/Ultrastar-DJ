@@ -82,6 +82,10 @@ PortAudio input (device, channel L/R/mono)
 - One `MicPipeline` per **active** player = has a mic assigned, not disconnected, assigned to an **open** display.
 - Runs entirely on the PortAudio callback thread + one worker; **no allocations** in the callback (preallocated buffers, `ArrayPool` never used there).
 - `PortAudio` stream per **device**, demuxed to players by channel — two players on L/R of the same interface share one stream.
+- **Windows:** inputs open in WASAPI **exclusive** mode, shared mode only when that is refused. Shared mode mixes a
+  device down to its "Default Format" in the Sound settings — often mono for USB mics, so a SingStar dongle delivered
+  mic 1 + mic 2 on both channels (measured: L/R identical in MME, DirectSound and WASAPI shared; separate in
+  exclusive). While the app has a mic open no other program can use it. Outputs stay shared (mpv plays there too).
 - Hot-plug: device list polled every 3 s; disappearance → `MicDisconnected(playerId)` message, pipeline stopped, UI toast; reappearance → `MicReconnected`, auto-restart if still assigned.
 
 ### Monitoring mix
@@ -207,7 +211,8 @@ Rule: **a player only has a mic while it is plugged in.** Device ids are device 
 presence, the rules are in `Core.Players.MicPresence` (tested).
 
 - **Detection:** PortAudio can only re-enumerate with no stream open. Idle (no mic test, no song, no monitor): the
-  device list is re-read every 3 s. With streams open, a dying stream reports its device (`MicEngine.DeviceLost`).
+  device list is re-read every 3 s — outputs too, so a speaker switched on later (Bluetooth) shows up in the monitor
+  list (the chosen monitor stays selected while it is there). With streams open, a dying stream reports its device (`MicEngine.DeviceLost`).
   Opening a stream and re-enumerating share one lock in `PortAudioBackend`.
 - **Unplugged** (idle, during a mic test, or at start for a saved mic that is not there): the mic is **unassigned**
   (dropdown shows "— no microphone —"), a toast names the players. `DisplayService` takes a player without a mic off

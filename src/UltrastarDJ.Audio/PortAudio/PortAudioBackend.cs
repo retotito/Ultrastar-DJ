@@ -112,6 +112,23 @@ public sealed class PortAudioBackend : IAudioBackend
     private static int WasapiHostApi() => OperatingSystem.IsWindows() ? Math.Max(-1, Pa_HostApiTypeIdToHostApiIndex(PaWasapi)) : -1;
 
     private const int PaWasapi = 13; // PaHostApiTypeId.paWASAPI
+    private const uint PaWinWasapiExclusive = 1;
+
+    /// <summary>PaWasapiStreamInfo (pa_win_wasapi.h), version 1; PortAudio copies it during Pa_OpenStream.</summary>
+    [StructLayout(LayoutKind.Sequential)]
+    private struct PaWasapiStreamInfo
+    {
+        public uint Size;
+        public int HostApiType;
+        public uint Version;
+        public uint Flags;
+        public uint ChannelMask;
+        public nint HostProcessorOutput;
+        public nint HostProcessorInput;
+        public int ThreadPriority;
+        public int StreamCategory;
+        public int StreamOption;
+    }
 
     [DllImport("portaudio")]
     private static extern int Pa_HostApiTypeIdToHostApiIndex(int type);
@@ -146,7 +163,7 @@ public sealed class PortAudioBackend : IAudioBackend
         }
     }
 
-    private PaStream OpenInputLocked(string deviceId, int channels, double? sampleRateHz, AudioInputCallback callback)
+    private unsafe PaStream OpenInputLocked(string deviceId, int channels, double? sampleRateHz, AudioInputCallback callback)
     {
         (int index, DeviceInfo info) = Resolve(deviceId);
         channels = Math.Clamp(channels, 1, Math.Max(1, info.maxInputChannels));
@@ -160,11 +177,35 @@ public sealed class PortAudioBackend : IAudioBackend
             hostApiSpecificStreamInfo = nint.Zero,
         };
 
+        // Windows' shared mode mixes a stereo device down to its "Default Format" in the Sound settings, which is
+        // often mono for USB mics: a SingStar dongle (mic 1 left, mic 2 right) then delivered the sum of both mics on
+        // both channels. Exclusive mode reads the device's own channels. Refused (another app holds it exclusively,
+        // exclusive mode disabled in the settings, format not native) → shared mode as before.
+        if (info.hostApi == WasapiHostApi())
+        {
+            PaWasapiStreamInfo wasapi = new() { Size = (uint)sizeof(PaWasapiStreamInfo), HostApiType = PaWasapi, Version = 1, Flags = PaWinWasapiExclusive };
+            StreamParameters exclusive = p with { hostApiSpecificStreamInfo = (nint)(&wasapi), suggestedLatency = Math.Max(info.defaultLowInputLatency, ExclusiveInputLatencySec) };
+            PaStream excl = new(this, deviceId, rate, channels, channelOffset: 0);
+            try
+            {
+                excl.Open(exclusive, null, callback, null, PortAudioSharp.PortAudio.FramesPerBufferUnspecified);
+                _log.LogInformation("Input opened: {Device} ({Channels} ch @ {Rate} Hz, exclusive)", deviceId, channels, rate);
+                return excl;
+            }
+            catch (AudioBackendException ex)
+            {
+                _log.LogInformation("Input {Device}: exclusive mode refused ({Reason}), shared mode — a stereo mic may arrive as mono", deviceId, ex.Message);
+            }
+        }
+
         PaStream stream = new(this, deviceId, rate, channels, channelOffset: 0);
         stream.Open(p, null, callback, null, PortAudioSharp.PortAudio.FramesPerBufferUnspecified);
         _log.LogInformation("Input opened: {Device} ({Channels} ch @ {Rate} Hz)", deviceId, channels, rate);
         return stream;
     }
+
+    // Exclusive mode hands the device period straight to the callback; 10 ms keeps a slow PC from dropping blocks.
+    private const double ExclusiveInputLatencySec = 0.010;
 
     private PaStream OpenOutputLocked(string deviceId, int channelOffset, double? sampleRateHz, AudioOutputCallback callback)
     {

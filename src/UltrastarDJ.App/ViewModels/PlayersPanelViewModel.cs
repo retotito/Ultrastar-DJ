@@ -101,6 +101,8 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
             }
         }
 
+        // Clearing the list resets the ComboBox selection: keep the chosen monitor while it is still plugged in.
+        string? chosen = MonitorOutput?.Id;
         Outputs.Clear();
         foreach (AudioDeviceInfo d in _audio.OutputDevices)
         {
@@ -108,7 +110,8 @@ public sealed partial class PlayersPanelViewModel : ViewModelBase, IDisposable
         }
 
         // The game output by default: that is where the mics are heard during a song.
-        MonitorOutput ??= Outputs.FirstOrDefault(o => o.Id == _outputs.GamePortAudioDeviceId())
+        MonitorOutput = Outputs.FirstOrDefault(o => o.Id == chosen)
+            ?? Outputs.FirstOrDefault(o => o.Id == _outputs.GamePortAudioDeviceId())
             ?? Outputs.FirstOrDefault(o => o.IsDefaultOutput) ?? Outputs.FirstOrDefault();
         RefreshCardOptions();
     }
