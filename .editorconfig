@@ -70,6 +70,9 @@ dotnet_diagnostic.CA2007.severity = none   # ConfigureAwait — desktop app
 dotnet_diagnostic.CA1812.severity = none   # instantiated via DI/XAML
 dotnet_diagnostic.CA1515.severity = none   # public types in exe are fine
 dotnet_diagnostic.CA1873.severity = none   # log argument evaluation — logs are always enabled at Debug
+dotnet_diagnostic.CA1859.severity = none   # concrete types "for performance" — the interface states the intent, the gain is nil
+# "Can be static" on public members: XAML binds to instance properties (UiLanguages, MinLatencyMs …), static breaks them.
+dotnet_code_quality.CA1822.api_surface = private, internal
 
 [tests/**.cs]
 dotnet_diagnostic.CA1707.severity = none   # Method_Scenario_Expectation test names use underscores by convention

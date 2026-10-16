@@ -759,7 +759,7 @@ public sealed class GameOverlayControl : Control
 
     // cache: the slot this line is cached in (single voice, or voice 1 / voice 2 of a duet). top: where the line goes —
     // null = the normal layout (line above its preview, anchored to the bar); set = a duet line, without preview.
-    private void DrawLyrics(DrawingContext ctx, Rect area, NoteTrack track, Song song, IBrush sweep, double beat, double pos,
+    private static void DrawLyrics(DrawingContext ctx, Rect area, NoteTrack track, Song song, IBrush sweep, double beat, double pos,
         double mainSize, double nextSize, ref LyricsCache? cache, double? top = null)
     {
         LyricLine? line = NoteLaneGeometry.ActiveLine(track, beat);

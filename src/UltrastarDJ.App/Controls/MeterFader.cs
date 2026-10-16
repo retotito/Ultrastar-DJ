@@ -202,7 +202,7 @@ public sealed class MeterFader : Control
         }
     }
 
-    public override void Render(DrawingContext ctx)
+    public override void Render(DrawingContext context)
     {
         double w = Bounds.Width;
         double h = Bounds.Height;
@@ -212,7 +212,7 @@ public sealed class MeterFader : Control
         }
 
         // Transparent fill: the whole strip takes the pointer (hover, knob grab near the edges).
-        ctx.DrawRectangle(Brushes.Transparent, null, new Rect(Bounds.Size));
+        context.DrawRectangle(Brushes.Transparent, null, new Rect(Bounds.Size));
         MeterScale scale = Scale;
         double barY = (StripH - BarH) / 2;
         double left = KnobW / 2;
@@ -230,24 +230,24 @@ public sealed class MeterFader : Control
             IImmutableBrush brush = i >= Math.Round(clip) ? (on ? _clip : _clipDim)
                 : i >= Math.Round(warn) ? (on ? _warn : _warnDim)
                 : on ? _low : _lowDim;
-            ctx.DrawRectangle(brush, null, new Rect(left + i * (segW + Gap), barY, segW, BarH));
+            context.DrawRectangle(brush, null, new Rect(left + i * (segW + Gap), barY, segW, BarH));
         }
 
         if (_peak01 > 0.001)
         {
             double px = left + Math.Min(_peak01, 1) * span;
-            ctx.DrawRectangle(PeakBrush ?? Brushes.White, null, new Rect(px - 1, barY - 2, 2, BarH + 4));
+            context.DrawRectangle(PeakBrush ?? Brushes.White, null, new Rect(px - 1, barY - 2, 2, BarH + 4));
         }
 
         if (ShowGate)
         {
             // Below the gate = silence: shaded, and the handle on a thin line down from the meter.
             double gx = GateX();
-            ctx.DrawRectangle(GateZone ?? Brushes.Transparent, null, new Rect(left, barY - 2, Math.Max(0, gx - left), BarH + 4));
+            context.DrawRectangle(GateZone ?? Brushes.Transparent, null, new Rect(left, barY - 2, Math.Max(0, gx - left), BarH + 4));
             IBrush handle = GateHandle ?? Brushes.Red;
-            ctx.DrawRectangle(handle, null, new Rect(gx - 0.5, barY + BarH, 1, StripH - barY - BarH + 1));
+            context.DrawRectangle(handle, null, new Rect(gx - 0.5, barY + BarH, 1, StripH - barY - BarH + 1));
             double d = HandleD * (_drag == Part.Gate || _hover == Part.Gate ? 1.3 : 1);
-            ctx.DrawEllipse(handle, HandleRim, new Point(gx, StripH + GateRowH / 2 - 1), d / 2, d / 2);
+            context.DrawEllipse(handle, HandleRim, new Point(gx, StripH + GateRowH / 2 - 1), d / 2, d / 2);
         }
 
         // Knob: base (opaque) + colour, so a translucent accent reads exactly as on the toggle switches.
@@ -257,9 +257,9 @@ public sealed class MeterFader : Control
         double kw = KnobW * grow;
         double kh = KnobH * grow;
         RoundedRect knob = new(new Rect(left + v * span - kw / 2, (StripH - kh) / 2, kw, kh), 4);
-        ctx.DrawRectangle(KnobBase ?? Brushes.White, null, knob, KnobShadow);
-        ctx.DrawRectangle(Knob ?? Brushes.DodgerBlue, _hover == Part.Knob || _drag == Part.Knob ? _hoverRing : null, knob);
-        ctx.DrawRectangle(KnobGrip ?? Brushes.Black, null, new Rect(knob.Rect.Center.X - 1, knob.Rect.Center.Y - 5, 2, 10));
+        context.DrawRectangle(KnobBase ?? Brushes.White, null, knob, KnobShadow);
+        context.DrawRectangle(Knob ?? Brushes.DodgerBlue, _hover == Part.Knob || _drag == Part.Knob ? _hoverRing : null, knob);
+        context.DrawRectangle(KnobGrip ?? Brushes.Black, null, new Rect(knob.Rect.Center.X - 1, knob.Rect.Center.Y - 5, 2, 10));
     }
 
     private double KnobCentre()

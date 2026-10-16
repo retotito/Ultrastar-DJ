@@ -70,7 +70,7 @@ public sealed class Spinner : Control
         Animate();
     }
 
-    public override void Render(DrawingContext ctx)
+    public override void Render(DrawingContext context)
     {
         Size size = Bounds.Size;
         double r = Math.Min(size.Width, size.Height) / 2 - Thickness;
@@ -95,9 +95,9 @@ public sealed class Spinner : Control
 
         _pen ??= new Pen(Stroke ?? Brushes.White, Thickness, lineCap: PenLineCap.Round);
         Matrix turn = Matrix.CreateRotation(_angle * Math.PI / 180) * Matrix.CreateTranslation(size.Width / 2, size.Height / 2);
-        using (ctx.PushTransform(turn))
+        using (context.PushTransform(turn))
         {
-            ctx.DrawGeometry(null, _pen, _ring);
+            context.DrawGeometry(null, _pen, _ring);
         }
     }
 }

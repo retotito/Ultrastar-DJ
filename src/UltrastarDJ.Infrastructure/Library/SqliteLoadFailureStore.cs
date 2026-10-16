@@ -42,14 +42,14 @@ public sealed class SqliteLoadFailureStore : ILoadFailureStore
                 DateTime.Parse(r.AtUtc, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal), r.Fingerprint))];
     }
 
-    public void Save(LoadFailure f)
+    public void Save(LoadFailure failure)
     {
         using SqliteConnection c = Open();
         c.Execute("""
             INSERT INTO load_failures (song_id, reason, at_utc, fingerprint) VALUES (@SongId, @Reason, @AtUtc, @Fingerprint)
             ON CONFLICT(song_id) DO UPDATE SET reason = excluded.reason, at_utc = excluded.at_utc, fingerprint = excluded.fingerprint
             """,
-            new { f.SongId, f.Reason, AtUtc = f.AtUtc.ToString("O", CultureInfo.InvariantCulture), f.Fingerprint });
+            new { failure.SongId, failure.Reason, AtUtc = failure.AtUtc.ToString("O", CultureInfo.InvariantCulture), failure.Fingerprint });
     }
 
     public void Remove(string songId)

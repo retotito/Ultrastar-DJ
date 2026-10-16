@@ -42,23 +42,23 @@ public sealed class SeekStrip : Control
 
     protected override Size MeasureOverride(Size availableSize) => new(0, StripH);
 
-    public override void Render(DrawingContext ctx)
+    public override void Render(DrawingContext context)
     {
         double w = Bounds.Width;
         double h = Bounds.Height;
         // Transparent fill: the whole strip (taller than the line) takes the pointer.
-        ctx.DrawRectangle(Brushes.Transparent, null, new Rect(Bounds.Size));
+        context.DrawRectangle(Brushes.Transparent, null, new Rect(Bounds.Size));
 
         bool big = _hover || _dragging;
         double lineH = big ? HoverLineH : LineH;
         double y = h - lineH;
         double v = Math.Clamp(_dragging ? _drag : Value, 0, 1);
-        ctx.DrawRectangle(Track ?? Brushes.Gray, null, new Rect(0, y, w, lineH));
-        ctx.DrawRectangle(Fill ?? Brushes.DodgerBlue, null, new Rect(0, y, w * v, lineH));
+        context.DrawRectangle(Track ?? Brushes.Gray, null, new Rect(0, y, w, lineH));
+        context.DrawRectangle(Fill ?? Brushes.DodgerBlue, null, new Rect(0, y, w * v, lineH));
         if (big)
         {
             double x = Math.Clamp(w * v, KnobD / 2, w - KnobD / 2);
-            ctx.DrawEllipse(Knob ?? Fill ?? Brushes.White, null, new Point(x, y + lineH / 2), KnobD / 2, KnobD / 2);
+            context.DrawEllipse(Knob ?? Fill ?? Brushes.White, null, new Point(x, y + lineH / 2), KnobD / 2, KnobD / 2);
         }
     }
 

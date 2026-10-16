@@ -66,9 +66,18 @@ public sealed partial class SourcesPanelViewModel : ViewModelBase, IDisposable
     private UsdbTextsMode _textsMode;
     [ObservableProperty] private bool _textsMoving;
 
-    public bool TextsLoaded { get => TextsMode == UsdbTextsMode.Loaded; set { if (value) TextsMode = UsdbTextsMode.Loaded; } }
-    public bool TextsFavourites { get => TextsMode == UsdbTextsMode.Favourites; set { if (value) TextsMode = UsdbTextsMode.Favourites; } }
-    public bool TextsAll { get => TextsMode == UsdbTextsMode.All; set { if (value) TextsMode = UsdbTextsMode.All; } }
+    public bool TextsLoaded { get => TextsMode == UsdbTextsMode.Loaded; set => PickTextsMode(value, UsdbTextsMode.Loaded); }
+    public bool TextsFavourites { get => TextsMode == UsdbTextsMode.Favourites; set => PickTextsMode(value, UsdbTextsMode.Favourites); }
+    public bool TextsAll { get => TextsMode == UsdbTextsMode.All; set => PickTextsMode(value, UsdbTextsMode.All); }
+
+    // Radio buttons: the one switched on sets the mode; the others switching off do nothing.
+    private void PickTextsMode(bool on, UsdbTextsMode mode)
+    {
+        if (on)
+        {
+            TextsMode = mode;
+        }
+    }
 
     partial void OnTextsModeChanged(UsdbTextsMode value)
     {
