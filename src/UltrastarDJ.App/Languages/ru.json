@@ -367,6 +367,7 @@
   "note_bar.Black": "Чёрный",
   "note_bar.White": "Белый",
   "output.channels": "{0} — каналы {1}–{2}",
+  "output.default_suffix": " (по умолчанию)",
   "output.game": "Игра",
   "output.gone": "Аудиовыход отключён",
   "output.new": "Аудиовыход подключён",

@@ -367,6 +367,7 @@
   "note_bar.Black": "검정",
   "note_bar.White": "흰색",
   "output.channels": "{0} — 채널 {1}–{2}",
+  "output.default_suffix": " (기본값)",
   "output.game": "게임",
   "output.gone": "오디오 출력 분리됨",
   "output.new": "오디오 출력 연결됨",

@@ -367,6 +367,7 @@
   "note_bar.Black": "黑色",
   "note_bar.White": "白色",
   "output.channels": "{0} — 声道 {1}–{2}",
+  "output.default_suffix": " （默认）",
   "output.game": "游戏",
   "output.gone": "音频输出已断开",
   "output.new": "音频输出已连接",

@@ -367,6 +367,7 @@
   "note_bar.Black": "Czarny",
   "note_bar.White": "Biały",
   "output.channels": "{0} — kanały {1}–{2}",
+  "output.default_suffix": " (domyślnie)",
   "output.game": "Gra",
   "output.gone": "Wyjście audio odłączone",
   "output.new": "Wyjście audio podłączone",

@@ -367,6 +367,7 @@
   "note_bar.Black": "黒",
   "note_bar.White": "白",
   "output.channels": "{0} — チャンネル {1}–{2}",
+  "output.default_suffix": " （既定）",
   "output.game": "ゲーム",
   "output.gone": "オーディオ出力が外れました",
   "output.new": "オーディオ出力を接続しました",

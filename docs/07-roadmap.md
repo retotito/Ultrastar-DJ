@@ -658,7 +658,7 @@ Microsoft (no yearly fee): users confirm once — macOS "Open Anyway", Windows "
 
 ---
 
-## Sprint 25 — Windows fixes  *(in progress)*
+## Sprint 25 — Windows fixes  *(done)*
 
 Goal: the developer build set up and tested on a Windows laptop (Ryzen 3 7320U, 8 GB, Radeon 610M).
 
@@ -675,13 +675,13 @@ Goal: the developer build set up and tested on a Windows laptop (Ryzen 3 7320U, 
       outputs too; the chosen monitor stays selected
 - [x] Game output (Bluetooth) switched off mid-song: song stopped and the output went to the default, but Play stayed
       silent until another load — mpv had no audio output left for `ao-reload` → audio track reselected
-- [ ] External USB / Bluetooth audio devices: plug in, unplug, during a song
+- [x] External USB / Bluetooth audio devices: plug in, unplug, during a song
 - [x] Display 1: fullscreen and its position when closed and opened again — not reproducible (a missed touchpad
       click), no error in the log
 
 ---
 
-## Sprint 26 — Mics calibrated per speaker  *(in progress)*
+## Sprint 26 — Mics calibrated per speaker  *(done)*
 
 Goal: a DJ who knows nothing about latency still scores right after changing speakers. The mic calibration measures
 speaker + mic together, so it is kept per game output and shown for the one playing now.
@@ -694,8 +694,6 @@ speaker + mic together, so it is kept per game output and shown for the one play
 - [x] Game output changed and players not calibrated there → warning toast [Calibrate] [Later] (toasts can carry an action)
 - [x] Unplugged output → the speaker the system plays on then, chosen for good (not "System default": Windows made the
       returning JBL its default again and the game followed it); back → info toast only, the DJ chooses it again
-- [ ] macOS: ask CoreAudio for the default output (Windows asks the OS; macOS falls back to PortAudio's list, which is
-      stale while a mic is open)
 - [x] Sidebar: Audio Output before Audio Input
 - [x] Output list: each speaker once, "(default)" next to the system's; no "System default" entry, "Default (openal)"
       (mpv's second audio API) left out; older "System default" choices pinned to their speaker
@@ -707,6 +705,10 @@ speaker + mic together, so it is kept per game output and shown for the one play
 
 ## Later / ideas
 
+- macOS: ask CoreAudio for the default output (`Media.SystemDefaultOutput`; Windows asks the OS, macOS falls back to
+  PortAudio's list, which is stale while a mic is open) and check the Bluetooth detection by uid on a Mac
+- Translations: a small check that every key in en.json exists in all languages with the same placeholders (done by
+  hand in Sprint 26 — a script crash had left 8 languages without a new key)
 - Settings → "Reset app": deletes settings, library database and cache (never the song folders). Uninstall keeps
   the data folder on purpose (updates, reinstall); only Windows has an uninstaller that could ask, so a button in
   the app works the same on all three systems.

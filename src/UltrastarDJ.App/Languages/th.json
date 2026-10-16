@@ -367,6 +367,7 @@
   "note_bar.Black": "ดำ",
   "note_bar.White": "ขาว",
   "output.channels": "{0} — ช่อง {1}–{2}",
+  "output.default_suffix": " (ค่าเริ่มต้น)",
   "output.game": "เกม",
   "output.gone": "เอาต์พุตเสียงหลุด",
   "output.new": "เชื่อมต่อเอาต์พุตเสียงแล้ว",
