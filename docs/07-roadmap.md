@@ -709,6 +709,8 @@ speaker + mic together, so it is kept per game output and shown for the one play
       → open hand drawn like the fist; the preview's seek strip had the pointing hand → open hand / fist too
 - [x] The drawn hands follow Windows' pointer settings (black scheme, pointer size × display scaling) — they were
       white and 32 px next to black 60 px system pointers
+- [x] GitHub build: macOS ffmpeg download gone (evermeet.cx removed its API, "410") → Martin Riedl's static builds per
+      arch; the device-list test checked CI's sound-card-less Linux too → Windows only (where the filter is)
 
 ---
 

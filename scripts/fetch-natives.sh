@@ -38,13 +38,14 @@ else
   echo "✓ yt-dlp $("$DEST/yt-dlp/yt-dlp" --version)"
 fi
 
-# ── ffmpeg (static; evermeet serves a build that runs on both arches) ────────
+# ── ffmpeg (static, per arch, Martin Riedl's builds; evermeet.cx removed its download API in 2026) ──
 if [[ -x "$DEST/ffmpeg" ]]; then
   echo "✓ ffmpeg present"
 else
   echo "→ downloading ffmpeg…"
   TMP=$(mktemp -d)
-  curl -fsSL "https://evermeet.cx/ffmpeg/getrelease/ffmpeg/zip" -o "$TMP/ffmpeg.zip"
+  case "$ARCH" in arm64) FFARCH=arm64 ;; *) FFARCH=amd64 ;; esac
+  curl -fsSL "https://ffmpeg.martin-riedl.de/redirect/latest/macos/$FFARCH/release/ffmpeg.zip" -o "$TMP/ffmpeg.zip"
   unzip -q "$TMP/ffmpeg.zip" -d "$TMP"
   mv "$TMP/ffmpeg" "$DEST/ffmpeg"
   chmod +x "$DEST/ffmpeg"
