@@ -31,8 +31,10 @@ public sealed class SeekStrip : Control
     static SeekStrip()
     {
         AffectsRender<SeekStrip>(ValueProperty, TrackProperty, FillProperty, KnobProperty);
-        CursorProperty.OverrideDefaultValue<SeekStrip>(new Cursor(StandardCursorType.Hand));
     }
+
+    // Click and drag to jump: the grab hands, like the faders and the Game Player card.
+    public SeekStrip() => Cursor = GrabCursors.Grab;
 
     /// <summary>Position 0..1.</summary>
     public double Value { get => GetValue(ValueProperty); set => SetValue(ValueProperty, value); }
@@ -88,6 +90,7 @@ public sealed class SeekStrip : Control
 
         _dragging = true;
         _drag = At(e);
+        Cursor = GrabCursors.Grabbing;
         e.Pointer.Capture(this);
         e.Handled = true;
         InvalidateVisual();
@@ -119,6 +122,7 @@ public sealed class SeekStrip : Control
         if (_dragging)
         {
             _dragging = false;
+            Cursor = GrabCursors.Grab;
             Value = _drag;   // one seek, where the pointer was let go
             InvalidateVisual();
         }

@@ -185,7 +185,7 @@ videos (Sprint 6 list), read-ahead cap (Later). Guest songbook phone test moved 
 - [x] Sidebar navigation icons 36px (`IconNav`) with 20px gaps, as in the prototype; other icon buttons unchanged.
 - [x] Body text 14 → 16px app-wide (`Window` font size + Fluent's `ControlContentThemeFontSize`); explicit sizes (labels, titles, small notes) unchanged. The prototype's CSS said 14px but its screenshots render ~16px.
 - [x] Settings panel anchors to the window's bottom (its button is at the sidebar's bottom); others stay at the top.
-- [x] Cursors: hand on buttons, drop-downs, menu items, toggles; Now Playing header open hand, closed fist while dragging (prototype's grab/grabbing). Windows: check what `DragMove` looks like.
+- [x] Cursors: hand on buttons, drop-downs, menu items, toggles; Now Playing header open hand, closed fist while dragging (prototype's grab/grabbing). Windows: `DragMove` is the drag-and-drop arrow → open hand drawn (Sprint 27).
 - [x] `Fader` for every volume/gain/gate/offset slider: knob only (track clicks ignored), open hand / fist on the knob, double-click resets (100%, gate −50 dB, offset 0). Song position slider keeps click-to-jump.
 - [x] Song list: zebra stripes (`ColorTableRowAlt`, on-surface 4% as in the prototype, `:nth-child(2n)`), rows 53 → 43px.
 - [x] Verified live
@@ -700,6 +700,15 @@ speaker + mic together, so it is kept per game output and shown for the one play
 - [x] Owner test on Windows (JBL, laptop speakers, ARZOPA)
 - [x] Audio Input card: calibration area under a divider — mic delay ("— estimated" when not calibrated) beside
       Calibrate, the calibrated-for line full width below; the "GAME OUTPUT" line at the top dropped (each card names it)
+
+---
+
+## Sprint 27 — Windows UI polish  *(done)*
+
+- [x] Drag cursor: on Windows `DragMove` showed the drag-and-drop arrow with a dashed box (Game Player header, faders)
+      → open hand drawn like the fist; the preview's seek strip had the pointing hand → open hand / fist too
+- [x] The drawn hands follow Windows' pointer settings (black scheme, pointer size × display scaling) — they were
+      white and 32 px next to black 60 px system pointers
 
 ---
 
