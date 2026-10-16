@@ -207,7 +207,8 @@ public sealed class AudioInputService : IDisposable
     private static bool IsHidden(AudioDeviceInfo d)
     {
         string n = d.Name.ToLowerInvariant();
-        return n.Contains("blackhole") || n.Contains("loopback") || n.Contains("audio recorder") || n.Contains("screen recorder");
+        // "Stereo Mix" is Windows' recording of what the speakers play: picked as a mic it scores the song itself.
+        return n.Contains("blackhole") || n.Contains("loopback") || n.Contains("audio recorder") || n.Contains("screen recorder") || n.Contains("stereo mix");
     }
 
     private bool _disposed;

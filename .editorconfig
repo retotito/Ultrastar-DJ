@@ -17,6 +17,10 @@ trim_trailing_whitespace = false
 [*.{sh,ps1}]
 indent_size = 2
 
+# Windows PowerShell 5.1 reads BOM-less scripts as ANSI: "✓" then contains a quote byte and breaks the parser.
+[*.ps1]
+charset = utf-8-bom
+
 [*.cs]
 # Style
 csharp_style_namespace_declarations = file_scoped:warning

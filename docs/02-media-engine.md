@@ -209,7 +209,12 @@ This gives YouTube a real readiness signal — the prototype had none.
 - Device list: union of mpv `audio-device-list` (for output names/ids mpv understands) and PortAudio outputs
   (for channel counts). Matched by name; expose `OutputDeviceInfo { Id, Name, MaxChannels }`.
 - Multichannel devices are offered as pairs ("Device — Ch 1–2", "Ch 3–4", …). Selection stores `(deviceId, channelOffset)`.
-- Hidden device name patterns: `blackhole`, `loopback`, `speaker audio recorder`, `screen recorder`.
+- Hidden device name patterns: `blackhole`, `loopback`, `speaker audio recorder`, `screen recorder`, `stereo mix`
+  (Windows' recording of the speakers — as a mic it would score the song itself).
+- **Windows:** PortAudio lists each device once per host API (MME, DirectSound, WASAPI, WDM-KS) plus virtual
+  "Sound Mapper" / "Primary Sound Driver" entries. `PortAudioBackend` keeps WASAPI's only, with WASAPI's own defaults:
+  full names (MME cuts at 31 characters) that match mpv's `wasapi/…` list by name. Shared mode accepts only the
+  device's mix rate, so streams open at `DefaultSampleRateHz`. macOS / Linux have one host API and are unfiltered.
 - Hot-plug: poll `audio-device-list` every 3 s while a routing view is open; if the selected device vanishes → reset to default and notify.
 - **Output hot-plug** (`OutputsService`): mpv's device list is checked every 3 s (it works while a song plays; PortAudio's
   refresh does not). A chosen output that is unplugged plays on the system default meanwhile — the choice is kept

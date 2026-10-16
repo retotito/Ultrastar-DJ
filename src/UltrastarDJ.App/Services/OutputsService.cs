@@ -26,7 +26,7 @@ public sealed class OutputsService : IDisposable
 {
     private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(3);
     private const string SettingsName = "outputs";
-    private static readonly string[] HiddenPatterns = ["blackhole", "loopback", "audio recorder", "screen recorder"];
+    private static readonly string[] HiddenPatterns = ["blackhole", "loopback", "audio recorder", "screen recorder", "stereo mix"];
 
     private readonly ISettingsStore _settings;
     private readonly MediaService _media;

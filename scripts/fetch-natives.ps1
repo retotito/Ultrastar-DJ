@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   Download native dependencies for this Windows machine into natives\win-x64\.
   Idempotent: existing files are skipped.

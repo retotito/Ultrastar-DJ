@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 using PortAudioSharp;
 using PaNativeStream = PortAudioSharp.Stream;
@@ -68,9 +69,23 @@ public sealed class PortAudioBackend : IAudioBackend
             Dictionary<string, int> index = [];
             int defIn = PortAudioSharp.PortAudio.DefaultInputDevice;
             int defOut = PortAudioSharp.PortAudio.DefaultOutputDevice;
+            int wasapi = WasapiHostApi();
+            if (wasapi >= 0)
+            {
+                // The global defaults are MME's; WASAPI has its own.
+                PaHostApiInfo api = Marshal.PtrToStructure<PaHostApiInfo>(Pa_GetHostApiInfo(wasapi));
+                defIn = api.DefaultInputDevice;
+                defOut = api.DefaultOutputDevice;
+            }
+
             for (int i = 0; i < PortAudioSharp.PortAudio.DeviceCount; i++)
             {
                 DeviceInfo d = PortAudioSharp.PortAudio.GetDeviceInfo(i);
+                if (wasapi >= 0 && d.hostApi != wasapi)
+                {
+                    continue;
+                }
+
                 string id = d.name;
                 // Two identical names (rare: identical dongles without serials) get a suffix so both stay addressable.
                 int n = 2;
@@ -86,6 +101,33 @@ public sealed class PortAudioBackend : IAudioBackend
             _devices = list;
             _indexById = index;
         }
+    }
+
+    /// <summary>
+    /// Windows: PortAudio lists every device once per host API (MME, DirectSound, WASAPI, WDM-KS) plus virtual ones
+    /// ("Microsoft Sound Mapper", "Primary Sound Driver"), so one laptop mic showed up five times. Only WASAPI's are
+    /// kept: full names (MME cuts them at 31 characters), the same names mpv's output list and the Windows sound
+    /// settings show, and the lowest shared-mode latency. -1 elsewhere (one host API) or when WASAPI is missing.
+    /// </summary>
+    private static int WasapiHostApi() => OperatingSystem.IsWindows() ? Math.Max(-1, Pa_HostApiTypeIdToHostApiIndex(PaWasapi)) : -1;
+
+    private const int PaWasapi = 13; // PaHostApiTypeId.paWASAPI
+
+    [DllImport("portaudio")]
+    private static extern int Pa_HostApiTypeIdToHostApiIndex(int type);
+
+    [DllImport("portaudio")]
+    private static extern nint Pa_GetHostApiInfo(int hostApi);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private readonly struct PaHostApiInfo
+    {
+        public readonly int StructVersion;
+        public readonly int Type;
+        public readonly nint Name;
+        public readonly int DeviceCount;
+        public readonly int DefaultInputDevice;
+        public readonly int DefaultOutputDevice;
     }
 
     public IAudioLine OpenInput(string deviceId, int channels, double? sampleRateHz, AudioInputCallback callback)

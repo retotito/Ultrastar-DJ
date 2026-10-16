@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   Build a self-contained Windows x64 release and (if Velopack's `vpk` is installed) a Setup.exe.
 

@@ -658,8 +658,23 @@ Microsoft (no yearly fee): users confirm once — macOS "Open Anyway", Windows "
 
 ---
 
+## Sprint 25 — Windows fixes  *(in progress)*
+
+Goal: the developer build set up and tested on a Windows laptop (Ryzen 3 7320U, 8 GB, Radeon 610M).
+
+- [x] `scripts/fetch-natives.ps1` did not run in Windows PowerShell 5.1: BOM-less UTF-8 read as ANSI, "✓" ended a
+      string → both `.ps1` saved with BOM, `.editorconfig` keeps it
+- [x] Audio devices listed four to six times (MME, DirectSound, WASAPI, WDM-KS, Sound Mapper) → WASAPI only, with
+      its own default mic/speakers; "Stereo Mix" hidden (it records the speakers)
+- [ ] Loading a song into the game player (the installed 0.2.0-beta.2 crashed)
+
+---
+
 ## Later / ideas
 
+- Settings → "Reset app": deletes settings, library database and cache (never the song folders). Uninstall keeps
+  the data folder on purpose (updates, reinstall); only Windows has an uninstaller that could ask, so a button in
+  the app works the same on all three systems.
 - Flaky test: `SqliteLoadFailureStoreTests.Save_RoundTrips_UpdatesAndRemoves` failed once in a full `dotnet test` run, passes alone —
   probably another test class's `SqliteConnection.ClearAllPools()` running in parallel
 - Cap mpv read-ahead (~60 s) so YouTube streams like a player instead of pulling the whole song into RAM
