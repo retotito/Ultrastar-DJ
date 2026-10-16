@@ -222,7 +222,9 @@ This gives YouTube a real readiness signal — the prototype had none.
   refresh does not). A chosen output that is unplugged plays on the system default meanwhile — the choice is kept
   (`Core.Playback.OutputPresence`, tested) and the channel returns when the device does; toasts both ways, and one for
   a newly plugged-in output. The game output lost mid-song stops the song (rewound, still loaded; displays stay open) —
-  the default speakers would be out of sync. The Audio Output popup updates live; a missing choice shows
+  the default speakers would be out of sync. mpv's audio output dies with the device ("Could not open/initialize audio
+  device -> no sound") and `ao-reload` has nothing to reload, so `MpvPlayer.AudioDevice` reselects the audio track when
+  `current-ao` is empty — otherwise Play on the loaded song stayed silent until a new load. The Audio Output popup updates live; a missing choice shows
   System default (what really plays) while the choice stays stored for its return.
 - Mic monitoring uses a **separate PortAudio output stream** on the game device (see `03-game-engine.md`). Two streams on one device are mixed by the OS; that is acceptable and much simpler than routing mpv PCM through our own mixer.
 

@@ -673,6 +673,8 @@ Goal: the developer build set up and tested on a Windows laptop (Ryzen 3 7320U, 
       ("Default Format: 1 channel") → mics open in WASAPI exclusive mode, shared as fallback
 - [x] Audio Input → Monitor offered only the speakers present at app start: the 3 s device check compared mics only →
       outputs too; the chosen monitor stays selected
+- [x] Game output (Bluetooth) switched off mid-song: song stopped and the output went to the default, but Play stayed
+      silent until another load — mpv had no audio output left for `ao-reload` → audio track reselected
 - [ ] External USB / Bluetooth audio devices: plug in, unplug, during a song
 - [ ] Display 1: fullscreen and its position when closed and opened again (no error in the log — details pending)
 

@@ -61,6 +61,7 @@ public sealed class MpvPlayer : IMediaPlayer
     private bool _muted;
     private double _speed = 1.0;
     private string _audioDevice = "auto";
+    private volatile bool _audioWanted;
     private double _levelRms;
     private long _lastMeterTicks;
     private int _videoWidth;
@@ -216,6 +217,16 @@ public sealed class MpvPlayer : IMediaPlayer
             if (changed && loaded)
             {
                 Command("ao-reload");
+                // The old device vanished under mpv ("Could not open/initialize audio device -> no sound"): there is no
+                // output left to reload, and mpv builds none until the audio track is selected again — the loaded song
+                // played on silently, only a new load had sound.
+                if (_audioWanted && TakeString(GetPropertyString(_handle, "current-ao")) is null)
+                {
+                    SetProp("aid", "no");
+                    SetProp("aid", "auto");
+                    _log.LogInformation("{Player}: no audio output after the device change — audio track reselected", Name);
+                }
+
                 _log.LogInformation("{Player}: audio output moved to {Device}", Name, _audioDevice);
             }
         }
@@ -269,6 +280,7 @@ public sealed class MpvPlayer : IMediaPlayer
         }
 
         SetProp("vid", options.Video && _video ? "auto" : "no");
+        _audioWanted = options.Audio;
         SetProp("aid", options.Audio ? "auto" : "no");
         SetProp("start", options.StartAt > TimeSpan.Zero ? F(options.StartAt.TotalSeconds) : "none");
         SetProp("end", options.EndAt is { } end ? F(end.TotalSeconds) : "none");
