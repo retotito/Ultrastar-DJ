@@ -356,9 +356,13 @@ public sealed partial class LibraryViewModel : ViewModelBase
             Descending = Descending,
         };
         Facets = SongFacets.Of(all, query);
+        // Rows are new records each time (a mark changed, a song was checked): the chosen song stays chosen, so the
+        // DJ can go on with the keyboard (H, then G…) without picking it again.
+        string? selectedId = Selected?.Song.Id;
         Rows = query.Apply(all, _library.SourceLabel)
             .Select(s => new LibraryRow(s, _library.SourceLabel(s.SourceId), _library.IsAvailable(s.SourceId), _failures.For(s), _marks.For(s)))
             .ToList();
+        Selected = selectedId is null ? null : Rows.FirstOrDefault(r => r.Song.Id == selectedId);
         ShownCount = Rows.Count;
         OnPropertyChanged(nameof(HasActiveFilters));
         ClearFiltersCommand.NotifyCanExecuteChanged();

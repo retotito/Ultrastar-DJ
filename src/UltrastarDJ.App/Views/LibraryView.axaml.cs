@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Threading;
 using Avalonia.Interactivity;
 using UltrastarDJ.App.ViewModels;
 
@@ -21,6 +22,8 @@ public sealed partial class LibraryView : UserControl
                 await LoadAsync();
             }
         };
+        // Tunnel: the text box takes Esc and Enter itself, before a plain handler would see them.
+        SearchBox.AddHandler(KeyDownEvent, OnSearchKeyDown, RoutingStrategies.Tunnel);
         TableScroll.SizeChanged += (_, _) => FitTable();
         // Tunnel: the song list's own ScrollViewer would take every wheel / trackpad event (it scrolls vertically)
         // and the table's horizontal scrolling would never see a sideways swipe.
@@ -98,6 +101,59 @@ public sealed partial class LibraryView : UserControl
 
         TableGrid.Width = Math.Max(TableScroll.Bounds.Width, _vm.Table.MinWidth);
         _vm.Table.Fit(TableGrid.Width);
+    }
+
+    /// <summary>"/" or ⌘F: into the search, its text selected — typing replaces it.</summary>
+    public void FocusSearch()
+    {
+        SearchBox.Focus();
+        SearchBox.SelectAll();
+    }
+
+    // From the search: ↓ or Enter into the song list (first result picked), so the song keys work at once; Esc clears
+    // the search, a second Esc leaves it (to the list).
+    private void OnSearchKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (DataContext is not LibraryViewModel vm)
+        {
+            return;
+        }
+
+        switch (e.Key)
+        {
+            case Key.Down or Key.Enter when vm.Rows.Count > 0:
+                vm.Selected = vm.Rows[0];
+                FocusSelectedRow();
+                e.Handled = true;
+                break;
+            case Key.Escape when !string.IsNullOrEmpty(vm.Search):
+                vm.Search = "";
+                e.Handled = true;
+                break;
+            case Key.Escape:
+                FocusSelectedRow();
+                e.Handled = true;
+                break;
+        }
+    }
+
+    // Out of the search onto the chosen song (the first one if none) — its row exists only once laid out.
+    private void FocusSelectedRow()
+    {
+        if (DataContext is LibraryViewModel vm)
+        {
+            vm.Selected ??= vm.Rows.FirstOrDefault();
+        }
+
+        SongList.Focus();
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (SongList.SelectedItem is { } item)
+            {
+                SongList.ScrollIntoView(item);
+                SongList.ContainerFromItem(item)?.Focus();
+            }
+        }, DispatcherPriority.Loaded);
     }
 
     private Task LoadAsync() => DataContext is LibraryViewModel vm ? vm.PreviewSelectedAsync() : Task.CompletedTask;

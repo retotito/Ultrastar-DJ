@@ -41,7 +41,7 @@
         <StackPanel DockPanel.Dock="Bottom" Spacing="{StaticResource Space5}">
           <Button Classes="sidebar" Classes.active="{Binding ActivePanel, Converter={x:Static vm:SidebarPanelConverters.Is}, ConverterParameter=Settings}"
                   Command="{Binding TogglePanelCommand}" CommandParameter="{x:Static vm:SidebarPanel.Settings}"
-                  ToolTip.Tip="{l:T window.settings}">
+                  ToolTip.Tip="{l:TK window.settings, Keys=7}">
             <c:Icon Glyph="settings" />
           </Button>
         </StackPanel>
@@ -54,36 +54,36 @@
           </Button>
           <Button Classes="sidebar" Classes.active="{Binding ActivePanel, Converter={x:Static vm:SidebarPanelConverters.Is}, ConverterParameter=Layout}"
                   Command="{Binding TogglePanelCommand}" CommandParameter="{x:Static vm:SidebarPanel.Layout}"
-                  ToolTip.Tip="{l:T window.layout}">
+                  ToolTip.Tip="{l:TK window.layout, Keys=1}">
             <c:Icon Glyph="table_chart" />
           </Button>
           <Button Classes="sidebar" Classes.active="{Binding ActivePanel, Converter={x:Static vm:SidebarPanelConverters.Is}, ConverterParameter=Sources}"
                   Command="{Binding TogglePanelCommand}" CommandParameter="{x:Static vm:SidebarPanel.Sources}"
-                  ToolTip.Tip="{l:T window.song_sources}">
+                  ToolTip.Tip="{l:TK window.song_sources, Keys=2}">
             <c:Icon Glyph="library_music" />
           </Button>
           <!-- Output before input: the mics are calibrated for the game output, so it is chosen first. -->
           <Button Classes="sidebar" Classes.active="{Binding ActivePanel, Converter={x:Static vm:SidebarPanelConverters.Is}, ConverterParameter=AudioOutput}"
                   IsEnabled="{Binding !AudioLocked}"
                   Command="{Binding TogglePanelCommand}" CommandParameter="{x:Static vm:SidebarPanel.AudioOutput}"
-                  ToolTip.Tip="{l:T window.audio_output}">
+                  ToolTip.Tip="{l:TK window.audio_output, Keys=3}">
             <c:Icon Glyph="speaker" />
           </Button>
           <Button Classes="sidebar" Classes.active="{Binding ActivePanel, Converter={x:Static vm:SidebarPanelConverters.Is}, ConverterParameter=AudioInput}"
                   IsEnabled="{Binding !AudioLocked}"
                   Command="{Binding TogglePanelCommand}" CommandParameter="{x:Static vm:SidebarPanel.AudioInput}"
-                  ToolTip.Tip="{l:T window.audio_input_players_microphones}">
+                  ToolTip.Tip="{l:TK window.audio_input_players_microphones, Keys=4}">
             <c:Icon Glyph="mic_external_on" />
           </Button>
           <Button Classes="sidebar" Classes.active="{Binding ActivePanel, Converter={x:Static vm:SidebarPanelConverters.Is}, ConverterParameter=Displays}"
                   IsEnabled="{Binding !AudioLocked}"
                   Command="{Binding TogglePanelCommand}" CommandParameter="{x:Static vm:SidebarPanel.Displays}"
-                  ToolTip.Tip="{l:T window.game_displays}">
+                  ToolTip.Tip="{l:TK window.game_displays, Keys=5}">
             <c:Icon Glyph="tv" Classes.single="{Binding IsSingleScreen}" />
           </Button>
           <Button Classes="sidebar" Classes.active="{Binding ActivePanel, Converter={x:Static vm:SidebarPanelConverters.Is}, ConverterParameter=Songbook}"
                   Command="{Binding TogglePanelCommand}" CommandParameter="{x:Static vm:SidebarPanel.Songbook}"
-                  ToolTip.Tip="{l:T window.songbook_guests_phone}">
+                  ToolTip.Tip="{l:TK window.songbook_guests_phone, Keys=6}">
             <c:Icon Glyph="phone_iphone" />
           </Button>
         </StackPanel>
@@ -275,6 +275,51 @@
       </DataTemplate>
     </ContentControl.ContentTemplate>
   </ContentControl>
+
+  <!-- Keyboard shortcuts ("?", the status bar's Shortcuts, the macOS app menu): every group with its keys, from
+       ShortcutList. A press on the dimmed area or Esc closes it. -->
+  <Border x:Name="ShortcutsLayer" Background="#99000000" IsVisible="{Binding ShortcutsOpen}" ZIndex="9"
+          PointerPressed="OnShortcutsBackdropPressed">
+    <Border Classes="card floating" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="{StaticResource Pad6}"
+            Margin="{StaticResource Pad6}" MaxWidth="980">
+      <DockPanel>
+        <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,12">
+          <c:Icon Glyph="keyboard" VerticalAlignment="Center" Margin="0,0,8,0" />
+          <TextBlock Grid.Column="1" Classes="title" Text="{l:T shortcuts.title}" VerticalAlignment="Center" />
+          <Button Grid.Column="2" Classes="sidebar small" Command="{Binding CloseShortcutsCommand}" ToolTip.Tip="{l:TK window.close, Keys=Esc}">
+            <c:Icon Glyph="close" FontSize="{StaticResource IconMd}" />
+          </Button>
+        </Grid>
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+          <ItemsControl ItemsSource="{Binding ShortcutGroups}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:ShortcutGroup">
+                <StackPanel Width="300" Margin="0,0,24,16" Spacing="6">
+                  <TextBlock Classes="label" Text="{Binding Title}" />
+                  <ItemsControl ItemsSource="{Binding Rows}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:ShortcutRow">
+                        <Grid ColumnDefinitions="110,*" Margin="0,2">
+                          <Border Background="{DynamicResource BrushSurfaceContainerHighest}" CornerRadius="{StaticResource RadiusSm}"
+                                  Padding="6,1" HorizontalAlignment="Left" VerticalAlignment="Top">
+                            <TextBlock Text="{Binding Keys}" FontSize="{StaticResource TextSm}" FontWeight="{StaticResource WeightSemibold}" />
+                          </Border>
+                          <TextBlock Grid.Column="1" Text="{Binding Text}" FontSize="{StaticResource TextSm}" TextWrapping="Wrap" Margin="8,1,0,0" />
+                        </Grid>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+      </DockPanel>
+    </Border>
+  </Border>
 
   <!-- Single-screen mode explained (Game Displays → ⓘ): two screens and one, each in a sentence and a picture.
        A press on the dimmed area closes it; the Game Displays panel stays open behind it. -->

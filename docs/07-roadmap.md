@@ -771,6 +771,9 @@ Goal: a DJ with one screen (a laptop alone) plays without juggling windows.
       packages, old MIDI-tool formats — not UltraStar.)
 - [x] Forgiving search, library and songbook (`SongSearch`): accents and punctuation ignored, words in any order
       across title and artist, typos forgiven when few songs are found (verified live 2026-10-17)
+- [x] Keyboard shortcuts: single keys for search, songs, preview and panels; ⌘ / Ctrl for the game; shown in tooltips
+      and menus; an overview (?, status bar, macOS app menu); stop is ⌘E (macOS never passes ⌘. on); preview player
+      ⇧↑ / ⇧↓, ⇧Q, ⇧G (verified live 2026-10-17)
 
 ---
 

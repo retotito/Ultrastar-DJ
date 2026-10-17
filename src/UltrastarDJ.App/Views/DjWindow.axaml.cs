@@ -8,6 +8,8 @@ using Avalonia.LogicalTree;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using UltrastarDJ.App.Localization;
+using UltrastarDJ.App.Library;
 using UltrastarDJ.App.ViewModels;
 
 namespace UltrastarDJ.App.Views;
@@ -50,10 +52,16 @@ public sealed partial class DjWindow : Window
         }
     }
 
-    // A button reacts to Space when the key comes up: the release must stop at the layer as well as the press.
+    // A button reacts to Space when the key comes up: the release must stop where the press was taken — at the game
+    // layer, and (Space = preview play / pause) anywhere outside a text field.
     private void OnKeyUpAnywhere(object? sender, KeyEventArgs e)
     {
-        if (Layer is not null && e.Key is Key.Space or Key.Escape && (e.KeyModifiers & (KeyModifiers.Meta | KeyModifiers.Control)) == 0)
+        if ((e.KeyModifiers & (KeyModifiers.Meta | KeyModifiers.Control)) != 0)
+        {
+            return;
+        }
+
+        if ((Layer is not null && e.Key is Key.Space or Key.Escape) || (e.Key == Key.Space && !Typing))
         {
             e.Handled = true;
         }
@@ -172,7 +180,12 @@ public sealed partial class DjWindow : Window
             return;
         }
 
-        if (e.Key == Key.Escape && DataContext is DjWindowViewModel { DuetSingers: not null } duet)
+        if (e.Key == Key.Escape && DataContext is DjWindowViewModel { ShortcutsOpen: true } help)
+        {
+            help.ShortcutsOpen = false;
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Escape && DataContext is DjWindowViewModel { DuetSingers: not null } duet)
         {
             duet.CloseDuetSingers(ok: false);
             e.Handled = true;
@@ -182,6 +195,162 @@ public sealed partial class DjWindow : Window
             vm.SongDetails = null;
             e.Handled = true;
         }
+        else if (OnShortcut(e))
+        {
+            e.Handled = true;
+        }
+    }
+
+    // ── Keyboard shortcuts (docs/04-ui.md "Keyboard shortcuts"; the list for the overview: ShortcutList) ──
+    // The game takes the command key (⌘ / Ctrl) — nothing starts or stops it by accident while the DJ types or browses;
+    // those work while typing too. Single keys only when no text field has the focus: there they are letters.
+
+    private bool Typing => FocusManager?.GetFocusedElement() is TextBox;
+
+    private bool OnShortcut(KeyEventArgs e)
+    {
+        if (DataContext is not DjWindowViewModel vm)
+        {
+            return false;
+        }
+
+        if (Shortcuts.IsCommand(e.KeyModifiers))
+        {
+            return OnCommandKey(vm, e);
+        }
+
+        if ((e.KeyModifiers & (KeyModifiers.Meta | KeyModifiers.Control | KeyModifiers.Alt)) != 0 || Typing)
+        {
+            return false;
+        }
+
+        // By the character first: "?" (and on many layouts "/") is typed with Shift — the preview's Shift keys come after.
+        switch (e.KeySymbol)
+        {
+            case "/":
+                this.FindDescendantOfType<LibraryView>()?.FocusSearch();
+                return true;
+            case "?":
+                vm.ShortcutsOpen = true;
+                return true;
+        }
+
+        if (e.KeyModifiers == KeyModifiers.Shift)
+        {
+            return OnPreviewKey(vm.Preview, e.Key);
+        }
+
+        LibraryRow? song = vm.Library.Selected;
+        switch (e.Key)
+        {
+            // The chosen song into the preview player, from wherever the focus is (not only the list itself).
+            case Key.Enter when song is not null && FocusManager?.GetFocusedElement() is not Button:
+                _ = vm.Library.PreviewSelectedAsync();
+                return true;
+            case Key.Space:
+                Run(vm.Preview.TogglePlayCommand);
+                return true;
+            case Key.G when song is not null:
+                Run(vm.Library.LoadIntoGameCommand, song);
+                return true;
+            case Key.Q when song is not null:
+                Run(vm.Library.AddToQueueCommand, song);
+                return true;
+            case Key.I when song is not null:
+                Run(vm.Library.ShowDetailsCommand, song);
+                return true;
+            case Key.H when song is not null:
+                Run(vm.Library.ToggleFavouriteCommand, song);
+                return true;
+            case Key.Escape when vm.PanelContent is not null:
+                vm.ClosePanelCommand.Execute(null);
+                return true;
+        }
+
+        return PanelOf(e.Key) is { } panel && OpenPanel(vm, panel);
+    }
+
+    private bool OnCommandKey(DjWindowViewModel vm, KeyEventArgs e)
+    {
+        // Which key the system reported with ⌘ / Ctrl — macOS turns some combinations into others (⌘. is "cancel").
+        Serilog.Log.Debug("Shortcut: command + {Key} ({Symbol})", e.Key, e.KeySymbol);
+        NowPlayingViewModel game = vm.NowPlaying;
+        switch (e.Key)
+        {
+            case Key.F:
+                this.FindDescendantOfType<LibraryView>()?.FocusSearch();
+                return true;
+            case Key.P:
+                Run(game.PlayPauseCommand);
+                return true;
+            // ⌘E (End). Not ⌘.: macOS keeps that as its "cancel" command — the app never sees it.
+            case Key.E:
+                Run(game.StopCommand);
+                return true;
+            case Key.Up or Key.Down:
+                game.Gain = Math.Clamp(Math.Round(game.Gain * 20 + (e.Key == Key.Up ? 1 : -1)) / 20, 0, 1);
+                return true;
+            case Key.S:
+                Run(game.HomeCommand);
+                return true;
+            case Key.G:
+                Run(game.PreviewCommand);
+                return true;
+        }
+
+        return false;
+    }
+
+    // Shift + key: the preview player's song (as its buttons) and its volume.
+    private static bool OnPreviewKey(PreviewViewModel preview, Key key)
+    {
+        switch (key)
+        {
+            case Key.Up or Key.Down:
+                preview.Gain = Math.Clamp(Math.Round(preview.Gain * 20 + (key == Key.Up ? 1 : -1)) / 20, 0, 1);
+                return true;
+            case Key.Q:
+                Run(preview.AddToQueueCommand);
+                return true;
+            case Key.G:
+                Run(preview.LoadIntoGameCommand);
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    // 1 – 6 the sidebar panels in their order, 7 Settings.
+    private static SidebarPanel? PanelOf(Key key) => key switch
+    {
+        Key.D1 or Key.NumPad1 => SidebarPanel.Layout,
+        Key.D2 or Key.NumPad2 => SidebarPanel.Sources,
+        Key.D3 or Key.NumPad3 => SidebarPanel.AudioOutput,
+        Key.D4 or Key.NumPad4 => SidebarPanel.AudioInput,
+        Key.D5 or Key.NumPad5 => SidebarPanel.Displays,
+        Key.D6 or Key.NumPad6 => SidebarPanel.Songbook,
+        Key.D7 or Key.NumPad7 => SidebarPanel.Settings,
+        _ => null,
+    };
+
+    private static bool OpenPanel(DjWindowViewModel vm, SidebarPanel panel)
+    {
+        // As the sidebar: the audio and display panels are locked while a song runs.
+        if (vm.AudioLocked && panel is SidebarPanel.AudioOutput or SidebarPanel.AudioInput or SidebarPanel.Displays)
+        {
+            return true;
+        }
+
+        vm.TogglePanelCommand.Execute(panel);
+        return true;
+    }
+
+    private static void Run(System.Windows.Input.ICommand command, object? parameter = null)
+    {
+        if (command.CanExecute(parameter))
+        {
+            command.Execute(parameter);
+        }
     }
 
     // The duet pick: a press on the dimmed area keeps the current pick (the first two set up, or the last choice).
@@ -190,6 +359,14 @@ public sealed partial class DjWindow : Window
         if (ReferenceEquals(e.Source, DuetLayer) && DataContext is DjWindowViewModel vm)
         {
             vm.CloseDuetSingers(ok: false);
+        }
+    }
+
+    private void OnShortcutsBackdropPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (ReferenceEquals(e.Source, ShortcutsLayer) && DataContext is DjWindowViewModel vm)
+        {
+            vm.ShortcutsOpen = false;
         }
     }
 
@@ -227,7 +404,7 @@ public sealed partial class DjWindow : Window
         List<Visual> path = source.GetSelfAndVisualAncestors().ToList();
         // The single-screen explanation sits over the panel it was opened from: a press on it, or outside it, is its
         // own (OnSingleScreenInfoBackdropPressed) — the panel stays open behind it.
-        if (path.Any(v => ReferenceEquals(v, SingleScreenInfoLayer)))
+        if (path.Any(v => ReferenceEquals(v, SingleScreenInfoLayer) || ReferenceEquals(v, ShortcutsLayer)))
         {
             return;
         }

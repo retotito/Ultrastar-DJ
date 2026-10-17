@@ -33,7 +33,8 @@
         <!-- The clear X floats over the search box (same cell, drawn after it): visible whenever there is text — Fluent's
              own X shows only while the box has focus — and it cannot change the box's size. -->
         <Panel Grid.Column="0" Margin="0,0,16,0">
-          <TextBox PlaceholderText="{l:T library.search_title_artist}" Text="{Binding Search}" />
+          <TextBox x:Name="SearchBox" PlaceholderText="{l:T library.search_title_artist}" Text="{Binding Search}"
+                   ToolTip.Tip="{l:TK library.search_tip, Keys=/  ·  Cmd+F}" />
           <!-- Opaque in the box's own colour (Fluent's focused text box background): a long search runs under it, not through it. -->
           <Button Classes="sidebar" Width="26" Height="26" Margin="0,0,4,0" HorizontalAlignment="Right" VerticalAlignment="Center"
                   Background="{DynamicResource TextControlBackgroundFocused}"
@@ -249,13 +250,13 @@
                 </Grid.ColumnDefinitions>
                 <Grid.ContextMenu>
                   <ContextMenu>
-                    <MenuItem Header="{l:T library.preview}" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).PreviewCommand}" CommandParameter="{Binding}" ToolTip.Tip="{Binding UnavailableTip}" ToolTip.ShowOnDisabled="True">
+                    <MenuItem Header="{l:T library.preview}" InputGesture="Enter" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).PreviewCommand}" CommandParameter="{Binding}" ToolTip.Tip="{Binding UnavailableTip}" ToolTip.ShowOnDisabled="True">
                       <MenuItem.Icon><c:Icon Glyph="play_arrow" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
                     </MenuItem>
-                    <MenuItem Header="{l:T library.add_queue}" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).AddToQueueCommand}" CommandParameter="{Binding}" ToolTip.Tip="{Binding UnavailableTip}" ToolTip.ShowOnDisabled="True">
+                    <MenuItem Header="{l:T library.add_queue}" InputGesture="Q" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).AddToQueueCommand}" CommandParameter="{Binding}" ToolTip.Tip="{Binding UnavailableTip}" ToolTip.ShowOnDisabled="True">
                       <MenuItem.Icon><c:Icon Glyph="queue_music" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
                     </MenuItem>
-                    <MenuItem Header="{l:T library.load_into_game}" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).LoadIntoGameCommand}" CommandParameter="{Binding}"
+                    <MenuItem Header="{l:T library.load_into_game}" InputGesture="G" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).LoadIntoGameCommand}" CommandParameter="{Binding}"
                               ToolTip.ShowOnDisabled="True">
                     <ToolTip.Tip>
                       <MultiBinding Converter="{x:Static vm:PlayerConverters.FirstText}">
@@ -266,7 +267,7 @@
                       <MenuItem.Icon><c:Icon Glyph="play_circle" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
                     </MenuItem>
                     <Separator />
-                    <MenuItem Header="{Binding FavouriteMenuText}" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).ToggleFavouriteCommand}" CommandParameter="{Binding}">
+                    <MenuItem Header="{Binding FavouriteMenuText}" InputGesture="H" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).ToggleFavouriteCommand}" CommandParameter="{Binding}">
                       <MenuItem.Icon><c:Icon Glyph="favorite" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="{Binding BrokenMenuText}" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).ToggleBrokenCommand}" CommandParameter="{Binding}"
@@ -274,7 +275,7 @@
                       <MenuItem.Icon><c:Icon Glyph="report" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
                     </MenuItem>
                     <Separator />
-                    <MenuItem Header="{l:T library.details}" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).ShowDetailsCommand}" CommandParameter="{Binding}">
+                    <MenuItem Header="{l:T library.details}" InputGesture="I" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).ShowDetailsCommand}" CommandParameter="{Binding}">
                       <MenuItem.Icon><c:Icon Glyph="info" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
                     </MenuItem>
                   </ContextMenu>
@@ -331,13 +332,13 @@
                 <Button Grid.Column="11" Classes="sidebar" Width="28" Height="28" ToolTip.Tip="{l:T library.actions}">
                   <Button.Flyout>
                     <MenuFlyout>
-                      <MenuItem Header="{l:T library.preview}" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).PreviewCommand}" CommandParameter="{Binding}" ToolTip.Tip="{Binding UnavailableTip}" ToolTip.ShowOnDisabled="True">
+                      <MenuItem Header="{l:T library.preview}" InputGesture="Enter" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).PreviewCommand}" CommandParameter="{Binding}" ToolTip.Tip="{Binding UnavailableTip}" ToolTip.ShowOnDisabled="True">
                         <MenuItem.Icon><c:Icon Glyph="play_arrow" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
                       </MenuItem>
-                      <MenuItem Header="{l:T library.add_queue}" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).AddToQueueCommand}" CommandParameter="{Binding}" ToolTip.Tip="{Binding UnavailableTip}" ToolTip.ShowOnDisabled="True">
+                      <MenuItem Header="{l:T library.add_queue}" InputGesture="Q" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).AddToQueueCommand}" CommandParameter="{Binding}" ToolTip.Tip="{Binding UnavailableTip}" ToolTip.ShowOnDisabled="True">
                         <MenuItem.Icon><c:Icon Glyph="queue_music" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
                       </MenuItem>
-                      <MenuItem Header="{l:T library.load_into_game}" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).LoadIntoGameCommand}" CommandParameter="{Binding}"
+                      <MenuItem Header="{l:T library.load_into_game}" InputGesture="G" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).LoadIntoGameCommand}" CommandParameter="{Binding}"
                               ToolTip.ShowOnDisabled="True">
                     <ToolTip.Tip>
                       <MultiBinding Converter="{x:Static vm:PlayerConverters.FirstText}">
@@ -348,7 +349,7 @@
                         <MenuItem.Icon><c:Icon Glyph="play_circle" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
                       </MenuItem>
                       <Separator />
-                      <MenuItem Header="{Binding FavouriteMenuText}" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).ToggleFavouriteCommand}" CommandParameter="{Binding}">
+                      <MenuItem Header="{Binding FavouriteMenuText}" InputGesture="H" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).ToggleFavouriteCommand}" CommandParameter="{Binding}">
                         <MenuItem.Icon><c:Icon Glyph="favorite" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
                       </MenuItem>
                       <MenuItem Header="{Binding BrokenMenuText}" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).ToggleBrokenCommand}" CommandParameter="{Binding}"
@@ -356,7 +357,7 @@
                         <MenuItem.Icon><c:Icon Glyph="report" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
                       </MenuItem>
                       <Separator />
-                      <MenuItem Header="{l:T library.details}" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).ShowDetailsCommand}" CommandParameter="{Binding}">
+                      <MenuItem Header="{l:T library.details}" InputGesture="I" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).ShowDetailsCommand}" CommandParameter="{Binding}">
                         <MenuItem.Icon><c:Icon Glyph="info" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
                       </MenuItem>
                     </MenuFlyout>
@@ -373,7 +374,7 @@
     <!-- Footer: shown / total; USDB song texts downloading for offline use (click → Song Sources) -->
     <Border Grid.Row="3" Padding="{StaticResource Pad2}"
             BorderBrush="{DynamicResource BrushOutlineVariant}" BorderThickness="0,1,0,0">
-      <Grid ColumnDefinitions="Auto,Auto,*">
+      <Grid ColumnDefinitions="Auto,Auto,*,Auto">
         <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Margin="4,0,0,0" VerticalAlignment="Center">
           <Run Text="{Binding ShownCount}" /><Run Text=" / " /><Run Text="{Binding TotalCount}" /><Run Text="{l:T library.songs}" />
         </TextBlock>
@@ -382,6 +383,14 @@
           <StackPanel Orientation="Horizontal" Spacing="6">
             <c:Spinner Width="14" Height="14" Stroke="{DynamicResource BrushPrimary}" IsVisible="{Binding TextsActive}" />
             <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="{Binding TextsText}" VerticalAlignment="Center" />
+          </StackPanel>
+        </Button>
+        <!-- The keyboard shortcuts at a glance (also "?" and the macOS app menu). -->
+        <Button Grid.Column="3" Classes="text" Padding="8,2" Margin="0,0,4,0" ToolTip.Tip="{l:TK shortcuts.title, Keys=?}"
+                Command="{Binding $parent[Window].((vm:DjWindowViewModel)DataContext).ShowShortcutsCommand}">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <c:Icon Glyph="keyboard" FontSize="{StaticResource IconMd}" VerticalAlignment="Center" />
+            <TextBlock FontSize="{StaticResource TextXs}" Text="{l:T shortcuts.button}" VerticalAlignment="Center" />
           </StackPanel>
         </Button>
       </Grid>

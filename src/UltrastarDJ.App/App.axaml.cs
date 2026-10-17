@@ -27,6 +27,14 @@ public sealed partial class App : Application
 
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
 
+    private void OnShortcuts(object? sender, EventArgs e)
+    {
+        if ((ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow?.DataContext is DjWindowViewModel vm)
+        {
+            vm.ShortcutsOpen = true;
+        }
+    }
+
     private void OnAbout(object? sender, EventArgs e) =>
         AboutWindow.Open((ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow);
 

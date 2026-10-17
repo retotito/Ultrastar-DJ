@@ -65,6 +65,25 @@ public sealed partial class BeamerWindow : Window
 
     private void OnKeyDown(object? sender, KeyEventArgs e)
     {
+        // ⌘P / ⌘E as in the DJ window: the DJ may have clicked the display last.
+        if (Localization.Shortcuts.IsCommand(e.KeyModifiers)
+            && (Application.Current?.ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow?.DataContext
+                is ViewModels.DjWindowViewModel dj)
+        {
+            System.Windows.Input.ICommand? command = e.Key switch
+            {
+                Key.P => dj.NowPlaying.PlayPauseCommand,
+                Key.E => dj.NowPlaying.StopCommand,
+                _ => null,
+            };
+            if (command?.CanExecute(null) == true)
+            {
+                command.Execute(null);
+                e.Handled = true;
+                return;
+            }
+        }
+
         switch (e.Key)
         {
             case Key.F:

@@ -10,6 +10,7 @@
   <NativeMenu.Menu>
     <NativeMenu>
       <NativeMenuItem Header="{l:T about.title}" Click="OnAbout" />
+      <NativeMenuItem Header="{l:T shortcuts.menu}" Click="OnShortcuts" />
     </NativeMenu>
   </NativeMenu.Menu>
 

@@ -127,15 +127,15 @@
 
       <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}" HorizontalAlignment="Center" Margin="0,0,0,8">
         <!-- Four buttons (prototype): rules in Core.Playback.PlaybackRules. Hidden while no beamer is open. -->
-        <Button Classes="sidebar" Command="{Binding HomeCommand}" ToolTip.Tip="{l:T game_player.displays_start_view_song}"
+        <Button Classes="sidebar" Command="{Binding HomeCommand}" ToolTip.Tip="{l:TK game_player.displays_start_view_song, Keys=Cmd+S}"
                 IsVisible="{Binding ShowsHomeAndPreview}" VerticalAlignment="Center"><c:Icon Glyph="home" /></Button>
-        <Button Classes="sidebar" Command="{Binding PreviewCommand}" ToolTip.Tip="{l:T game_player.show_get_ready_screen}"
+        <Button Classes="sidebar" Command="{Binding PreviewCommand}" ToolTip.Tip="{l:TK game_player.show_get_ready_screen, Keys=Cmd+G}"
                 IsVisible="{Binding ShowsHomeAndPreview}" VerticalAlignment="Center"><c:Icon Glyph="tv" /></Button>
         <Button Classes="transport" Classes.go="{Binding !IsPauseButton}" Classes.pause="{Binding IsPauseButton}"
-                Command="{Binding PlayPauseCommand}" ToolTip.Tip="{Binding PlayTip}" IsVisible="{Binding !NoBeamerOpen}">
+                Command="{Binding PlayPauseCommand}" ToolTip.Tip="{Binding PlayTip, Converter={x:Static l:Shortcuts.Append}, ConverterParameter=Cmd+P}" IsVisible="{Binding !NoBeamerOpen}">
           <c:Icon Glyph="{Binding PlayGlyph}" FontSize="{StaticResource IconXl}" />
         </Button>
-        <Button Classes="transport stop" Command="{Binding StopCommand}" ToolTip.Tip="{l:T game_player.stop_show_scores}" IsVisible="{Binding ShowsStop}">
+        <Button Classes="transport stop" Command="{Binding StopCommand}" ToolTip.Tip="{l:TK game_player.stop_show_scores, Keys=Cmd+E}" IsVisible="{Binding ShowsStop}">
           <c:Icon Glyph="stop" FontSize="{StaticResource IconLg}" />
         </Button>
 
@@ -173,7 +173,7 @@
           <TextBlock Classes="muted" FontSize="{StaticResource TextSm}" Text="{l:T game_player.song}" VerticalAlignment="Center" />
         </StackPanel>
         <c:MeterFader Grid.Column="1" Minimum="0" Maximum="1" ResetValue="0.8" Value="{Binding Gain}" Level="{Binding SongLevel}"
-                      MinDb="-40" MaxDb="0" WarnDb="-8" ClipDb="-4" VerticalAlignment="Center" ToolTip.Tip="{l:T game_player.song_knob}" />
+                      MinDb="-40" MaxDb="0" WarnDb="-8" ClipDb="-4" VerticalAlignment="Center" ToolTip.Tip="{l:TK game_player.song_knob, Keys=Cmd+↑ / Cmd+↓}" />
         <TextBlock Grid.Column="2" Classes="muted" Text="{Binding Gain, StringFormat='{}{0:P0}'}" VerticalAlignment="Center" TextAlignment="Right" />
       </Grid>
 

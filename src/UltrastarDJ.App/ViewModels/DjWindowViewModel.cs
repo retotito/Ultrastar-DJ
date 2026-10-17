@@ -192,6 +192,21 @@ public sealed partial class DjWindowViewModel : ViewModelBase
 
     partial void OnChooseLanguageChanged(bool value) => OnPropertyChanged(nameof(ShowUpdate));
 
+    // ── Keyboard shortcuts overview ("?", the status bar's Shortcuts, the macOS app menu) ──
+
+    [ObservableProperty] private bool _shortcutsOpen;
+
+    public IReadOnlyList<ShortcutGroup> ShortcutGroups => ShortcutList.Groups;
+
+    // Built when it opens: in the language of the moment.
+    partial void OnShortcutsOpenChanged(bool value) => OnPropertyChanged(nameof(ShortcutGroups));
+
+    [RelayCommand]
+    private void ShowShortcuts() => ShortcutsOpen = true;
+
+    [RelayCommand]
+    private void CloseShortcuts() => ShortcutsOpen = false;
+
     // ── Single-screen mode ──
 
     /// <summary>Single-screen mode during a song: the game over the whole window (null otherwise).</summary>

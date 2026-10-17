@@ -44,16 +44,16 @@
     <!-- One row under the picture: play / pause, then Queue and Load (short labels, so it fits the panel width). -->
     <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space2}" HorizontalAlignment="Center">
       <Button Classes="transport" Classes.go="{Binding !IsPlaying}" Classes.pause="{Binding IsPlaying}" VerticalAlignment="Center"
-              Command="{Binding TogglePlayCommand}" IsEnabled="{Binding HasSong}" ToolTip.Tip="{l:T preview.play_pause}">
+              Command="{Binding TogglePlayCommand}" IsEnabled="{Binding HasSong}" ToolTip.Tip="{l:TK preview.play_pause, Keys=Space}">
         <c:Icon Glyph="{Binding IsPlaying, Converter={x:Static vm:PlayerConverters.PlayPauseGlyph}}" FontSize="{StaticResource IconXl}" />
       </Button>
-      <Button Classes="tonal" Command="{Binding AddToQueueCommand}" VerticalAlignment="Center" ToolTip.Tip="{l:T preview.add_song_end_queue}">
+      <Button Classes="tonal" Command="{Binding AddToQueueCommand}" VerticalAlignment="Center" ToolTip.Tip="{l:TK preview.add_song_end_queue, Keys=Shift+Q}">
         <StackPanel Orientation="Horizontal" Spacing="6">
           <c:Icon Glyph="queue_music" FontSize="{StaticResource IconMd}" />
           <TextBlock Text="{l:T preview.queue}" />
         </StackPanel>
       </Button>
-      <Button Classes="tonal" Command="{Binding LoadIntoGameCommand}" VerticalAlignment="Center" ToolTip.Tip="{Binding LoadSongTip}">
+      <Button Classes="tonal" Command="{Binding LoadIntoGameCommand}" VerticalAlignment="Center" ToolTip.Tip="{Binding LoadSongTip, Converter={x:Static l:Shortcuts.Append}, ConverterParameter=Shift+G}">
         <StackPanel Orientation="Horizontal" Spacing="6">
           <c:Icon Glyph="play_circle" FontSize="{StaticResource IconMd}" />
           <TextBlock Text="{l:T preview.load}" />
@@ -65,7 +65,8 @@
     <Grid ColumnDefinitions="Auto,*,44">
       <c:Icon Glyph="headphones" FontSize="{StaticResource IconMd}" Margin="0,0,8,0" />
       <c:MeterFader Grid.Column="1" Minimum="0" Maximum="1" ResetValue="0.8" Value="{Binding Gain}" Level="{Binding MeterLevel}"
-                    MinDb="-40" MaxDb="0" WarnDb="-8" ClipDb="-4" VerticalAlignment="Center" />
+                    MinDb="-40" MaxDb="0" WarnDb="-8" ClipDb="-4" VerticalAlignment="Center"
+                    ToolTip.Tip="{l:TK shortcuts.preview_volume, Keys=Shift+↑ / Shift+↓}" />
       <TextBlock Grid.Column="2" Classes="muted" Text="{Binding Gain, StringFormat='{}{0:P0}'}" VerticalAlignment="Center" TextAlignment="Right" />
     </Grid>
 
