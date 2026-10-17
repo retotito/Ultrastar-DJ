@@ -64,6 +64,7 @@ public sealed partial class SettingsPanelViewModel : ViewModelBase
     [ObservableProperty] private bool _showTooltips;
     [ObservableProperty] private NoteBarStyle _noteBarStyle;
     [ObservableProperty] private bool _showGridLines;
+    [ObservableProperty] private bool _reduceEffects;
     [ObservableProperty] private Difficulty _difficulty;
 
     [ObservableProperty] private string _crashReportsText = "";
@@ -102,6 +103,7 @@ public sealed partial class SettingsPanelViewModel : ViewModelBase
         ShowTooltips = settings.ShowTooltips;
         NoteBarStyle = settings.NoteBarStyle;
         ShowGridLines = settings.ShowGridLines;
+        ReduceEffects = settings.ReduceEffects;
         Difficulty = settings.Difficulty;
         _loading = false;
     }
@@ -267,6 +269,14 @@ public sealed partial class SettingsPanelViewModel : ViewModelBase
         if (!_loading)
         {
             _settings.SetShowGridLines(value);
+        }
+    }
+
+    partial void OnReduceEffectsChanged(bool value)
+    {
+        if (!_loading)
+        {
+            _settings.SetReduceEffects(value);
         }
     }
 

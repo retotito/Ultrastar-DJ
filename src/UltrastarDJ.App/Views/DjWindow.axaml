@@ -172,7 +172,7 @@
               <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space2}" Margin="0,12,0,0" IsVisible="{Binding HasAction}">
                 <Button Classes="tonal" Content="{Binding ActionLabel}"
                         Command="{Binding $parent[Window].((vm:DjWindowViewModel)DataContext).RunToastActionCommand}" CommandParameter="{Binding}" />
-                <Button Classes="text" Content="{l:T toast.later}"
+                <Button Classes="text" Content="{Binding DismissLabel}"
                         Command="{Binding $parent[Window].((vm:DjWindowViewModel)DataContext).DismissToastCommand}" CommandParameter="{Binding}" />
               </StackPanel>
             </StackPanel>

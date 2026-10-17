@@ -71,6 +71,14 @@
           </StackPanel>
           <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowGridLines}" OnContent="" OffContent="" VerticalAlignment="Center" />
         </Grid>
+        <Grid ColumnDefinitions="*,Auto" Margin="0,8,0,0">
+          <StackPanel>
+            <TextBlock Text="{l:T settings.reduce_effects}" />
+            <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap"
+                       Text="{l:T settings.reduce_effects_hint}" />
+          </StackPanel>
+          <ToggleSwitch Grid.Column="1" IsChecked="{Binding ReduceEffects}" OnContent="" OffContent="" VerticalAlignment="Center" />
+        </Grid>
       </StackPanel>
     </Border>
 

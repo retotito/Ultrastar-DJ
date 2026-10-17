@@ -169,9 +169,19 @@ signal and missed it; the tone-through-analysis calibration includes it.
 Prototype NoteLane.svelte, drawn in `GameOverlayControl`: ≤ 2 players on a beamer → 16 rows, bars ≥ 40 px, radius 8;
 3–4 players → 12 rows, ≥ 28 px, radius 4 (bar = max(80 % row, minimum)). Settings → **Note bar style**: White
 (white 18 % fill, white 35 % border) or Black (black 45 %, white 55 %; the default — reads on bright and dark video); border mixed 55 % with the player colour,
-2 px, soft glow. Golden: gold tint + border, glow, shimmer (1.4 s). Rap and freestyle use hues no player has (players blue/red/green/yellow, golden gold), each a 12 % tint
+2 px, soft glow. Glows are the prototype's CSS `box-shadow` numbers drawn as two Avalonia shadows (a tight bright one
+and a wide soft one, `GlowOf`) — one shadow with the same numbers was nearly invisible; outline-only shapes get a
+transparent fill, since Avalonia draws no shadow for an unfilled shape (the correct-note glow never showed).
+
+**Reduce effects** (Settings, for slow computers; off by default): no glows, no stars on perfect notes, no golden
+sparkles, no 100 % star burst, no golden shimmer, no star shower on the score screen. Hits still show by their border
+(white, gold, magenta, the player's colour); countdown, lyrics, fills, the phrase rating, the count-up and trophies
+stay. Never switched on by itself: each display reports the time between its frames (`Game.FrameMonitor`); after a
+song in which at least one frame in twenty took over 50 ms (at least 300 frames drawn), the DJ window shows once per
+run a 10 s hint "The displays stuttered during this song" with **Open Settings** and **Ignore**. Every song logs its
+frame counts. Golden: gold tint + border, glow, shimmer (1.4 s). Rap and freestyle use hues no player has (players blue/red/green/yellow, golden gold), each a 12 % tint
 with a 2 px dashed border over a dark 3 px underlay so it reads on bright video. Rap: magenta `#E040FB`, never filled; hit (any voice) → solid
-with a magenta glow settling over 0.5 s, badge R (★ golden rap). Freestyle: teal `#2DD4BF`; once the player is heard on it, a solid border in their
+with a magenta glow that flares (peak at 40 % of 0.5 s) and settles, like the correct pulse, badge R (★ golden rap). Freestyle: teal `#2DD4BF`; once the player is heard on it, a solid border in their
 colour with a glow, badge F, never filled. ≥ 50 % correct → border pulse (white; gold for golden) peaking at 40 % of 0.5 s, then a lasting glow.
 Correct fill = player colour 85 % inside the bar (golden: gold); wrong = player colour 50 % on the sung row.
 Grid lines (Settings → **Grid lines**, default on, live): a stave as in USDX — a semitone is half a line spacing, so one

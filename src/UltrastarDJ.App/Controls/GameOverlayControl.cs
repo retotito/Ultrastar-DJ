@@ -21,6 +21,8 @@ public sealed class GameOverlayControl : Control
     public static readonly StyledProperty<bool> IsRunningProperty = AvaloniaProperty.Register<GameOverlayControl, bool>(nameof(IsRunning));
     public static readonly StyledProperty<bool> ShowPianoRollLinesProperty = AvaloniaProperty.Register<GameOverlayControl, bool>(nameof(ShowPianoRollLines), true);
     public static readonly StyledProperty<NoteBarStyle> NoteBarStyleProperty = AvaloniaProperty.Register<GameOverlayControl, NoteBarStyle>(nameof(NoteBarStyle));
+    /// <summary>Slow computers (Settings → Reduce effects): no glows, sparkles, star bursts or golden shimmer — hits still show by their border.</summary>
+    public static readonly StyledProperty<bool> ReduceEffectsProperty = AvaloniaProperty.Register<GameOverlayControl, bool>(nameof(ReduceEffects));
 
     private static readonly FontFamily Font = FontFamily.Parse("fonts:Inter#Inter");
     private static readonly Typeface Regular = new(Font, FontStyle.Normal, FontWeight.SemiBold);
@@ -72,7 +74,7 @@ public sealed class GameOverlayControl : Control
 
     static GameOverlayControl()
     {
-        AffectsRender<GameOverlayControl>(SceneProperty);
+        AffectsRender<GameOverlayControl>(SceneProperty, ReduceEffectsProperty);
         IsRunningProperty.Changed.AddClassHandler<GameOverlayControl>((c, _) => c.UpdateTimer());
         SceneProperty.Changed.AddClassHandler<GameOverlayControl>((c, _) => { c._phraseCache.Clear(); c.UpdateTimer(); });
     }
@@ -85,16 +87,26 @@ public sealed class GameOverlayControl : Control
     public bool IsRunning { get => GetValue(IsRunningProperty); set => SetValue(IsRunningProperty, value); }
     public bool ShowPianoRollLines { get => GetValue(ShowPianoRollLinesProperty); set => SetValue(ShowPianoRollLinesProperty, value); }
     public NoteBarStyle NoteBarStyle { get => GetValue(NoteBarStyleProperty); set => SetValue(NoteBarStyleProperty, value); }
+    public bool ReduceEffects { get => GetValue(ReduceEffectsProperty); set => SetValue(ReduceEffectsProperty, value); }
 
     private void RequestFrame()
-        => TopLevel.GetTopLevel(this)?.RequestAnimationFrame(_ =>
+        => TopLevel.GetTopLevel(this)?.RequestAnimationFrame(now =>
         {
             if (_animating)
             {
+                // How evenly frames come (FrameMonitor): a computer that cannot keep up gets the Reduce effects hint.
+                if (_lastFrame is { } last)
+                {
+                    FrameMonitor.Record((now - last).TotalMilliseconds);
+                }
+
+                _lastFrame = now;
                 InvalidateVisual();
                 RequestFrame();
             }
         });
+
+    private TimeSpan? _lastFrame;
 
     private void UpdateTimer()
     {
@@ -109,6 +121,7 @@ public sealed class GameOverlayControl : Control
         else
         {
             _animating = false;
+            _lastFrame = null;
             InvalidateVisual();
         }
     }
@@ -232,6 +245,7 @@ public sealed class GameOverlayControl : Control
     private void DrawLane(DrawingContext ctx, Rect lane, GameScene scene, ScenePlayer player, double beat, double pos, int playersOnScreen)
     {
         LaneState state = scene.Lanes[player.Id];
+        bool plain = ReduceEffects;
         double extend = BeatMath.MsToBeats(scene.Session.Song.Bpm, 250); // keep the phrase while late mic data arrives
         // A phrase appears 3 s before it is sung (like the lyrics' lead-in bar); a voice with nothing to sing for
         // longer has an empty lane — in a duet the other voice's turn, in a solo song a long instrumental.
@@ -284,12 +298,16 @@ public sealed class GameOverlayControl : Control
         {
             Rect rect = BoxRect(box, lane, rowH, barH);
             RoundedRect rr = new(rect, radius);
-            DrawBar(ctx, rr, box.Note, paint, state, scorer, beat, pos, look);
+            DrawBar(ctx, rr, box.Note, paint, state, scorer, beat, pos, look, plain);
             if (!HasFill(box.Note))
             {
                 DrawSyllable(ctx, box, rect);
                 DrawBadge(ctx, box.Note, rect, state);
-                DrawNoteStars(ctx, box.Note, rect, scorer, sungBeat, pos);
+                if (!plain)
+                {
+                    DrawNoteStars(ctx, box.Note, rect, scorer, sungBeat, pos);
+                }
+
                 continue;
             }
 
@@ -305,7 +323,7 @@ public sealed class GameOverlayControl : Control
                 }
             }
 
-            if (box.Note.Type == NoteType.Golden)
+            if (box.Note.Type == NoteType.Golden && !plain)
             {
                 foreach ((double from, double to, BeatResult result) in SungSegments(box.Note, state, sungBeat))
                 {
@@ -321,7 +339,10 @@ public sealed class GameOverlayControl : Control
 
             DrawSyllable(ctx, box, rect);
             DrawBadge(ctx, box.Note, rect, state);
-            DrawNoteStars(ctx, box.Note, rect, scorer, sungBeat, pos);
+            if (!plain)
+            {
+                DrawNoteStars(ctx, box.Note, rect, scorer, sungBeat, pos);
+            }
         }
 
         // Wrong pitch: the player's colour at half strength, on the row actually sung (above the bars).
@@ -348,7 +369,11 @@ public sealed class GameOverlayControl : Control
         // End of a phrase: the 100 % star burst, then the rating word above everything (USDX, see ScoreEffects).
         if (scene.Ratings.TryGetValue(player.Id, out PhraseResult rated))
         {
-            ScoreEffects.DrawBurst(ctx, lane, rated, pos, paint.StarHalo);
+            if (!plain)
+            {
+                ScoreEffects.DrawBurst(ctx, lane, rated, pos, paint.StarHalo);
+            }
+
             _effects.DrawRating(ctx, lane, rated, pos, paint.TextGlow);
         }
     }
@@ -465,7 +490,7 @@ public sealed class GameOverlayControl : Control
 
     /// <summary>One target bar in the prototype's look, with its effects (timestamps kept in <see cref="LaneState"/>).</summary>
     private static void DrawBar(DrawingContext ctx, RoundedRect rr, Note note, PlayerPaint paint, LaneState state, PlayerScorer scorer,
-        double beat, double pos, BarLook look)
+        double beat, double pos, BarLook look, bool plain)
     {
         bool correct = note.IsScorable && note.LengthBeats > 0 && scorer.CorrectBeats(note) * 2 >= note.LengthBeats;
         if (correct)
@@ -477,20 +502,21 @@ public sealed class GameOverlayControl : Control
         {
             case NoteType.Golden:
                 // Golden: gold tint and border, glowing, shimmering (opacity 0.75 ↔ 1 over 1.4 s).
-                using (ctx.PushOpacity(0.875 + 0.125 * Math.Sin(2 * Math.PI * pos / 1.4)))
+                using (ctx.PushOpacity(plain ? 1 : 0.875 + 0.125 * Math.Sin(2 * Math.PI * pos / 1.4)))
                 {
-                    ctx.DrawRectangle(GoldBarBg, GoldBarPen, rr, GoldGlow);
+                    ctx.DrawRectangle(GoldBarBg, GoldBarPen, rr, Halo(GoldGlow, plain));
                 }
 
                 if (correct)
                 {
-                    DrawPulse(ctx, rr, Color.FromRgb(255, 215, 0), pos - state.CorrectSince[note.StartBeat], golden: true);
+                    DrawPulse(ctx, rr, Color.FromRgb(255, 215, 0), pos - state.CorrectSince[note.StartBeat], golden: true, plain);
                 }
 
                 break;
 
             case NoteType.Rap or NoteType.RapGolden:
-                // Rap: dashed magenta; once hit, solid with a magenta glow that settles over 0.5 s.
+                // Rap: dashed magenta; once hit, solid — its glow flares and settles like the correct pulse (it used to
+                // start at full glow, which read as a jump next to the other notes' smooth flare).
                 if (scorer.CorrectBeats(note) > 0)
                 {
                     state.RapHitAt.TryAdd(note.StartBeat, pos);
@@ -501,11 +527,14 @@ public sealed class GameOverlayControl : Control
                     double k = Math.Clamp((pos - hit) / PulseSec, 0, 1);
                     if (k >= 1)
                     {
-                        ctx.DrawRectangle(RapBarBg, SettledRap, rr, SettledRapGlow);
+                        ctx.DrawRectangle(RapBarBg, SettledRap, rr, Halo(SettledRapGlow, plain));
                     }
                     else
                     {
-                        ctx.DrawRectangle(RapBarBg, new Pen(new SolidColorBrush(Magenta, Lerp(1, 0.8, k)), 2), rr, GlowOf(Magenta, Lerp(0.85, 0.35, k), Lerp(18, 6, k)));
+                        (double border, double glow, double blur) = k < 0.4
+                            ? (Lerp(0.5, 1, k / 0.4), Lerp(0, 0.85, k / 0.4), Lerp(0, 18, k / 0.4))
+                            : (Lerp(1, 0.8, (k - 0.4) / 0.6), Lerp(0.85, 0.35, (k - 0.4) / 0.6), Lerp(18, 6, (k - 0.4) / 0.6));
+                        ctx.DrawRectangle(RapBarBg, new Pen(new SolidColorBrush(Magenta, border), 2), rr, plain ? default : GlowOf(Magenta, glow, blur));
                     }
                 }
                 else
@@ -521,7 +550,7 @@ public sealed class GameOverlayControl : Control
                 // Not scored — the voice alone lights it, like a rap hit.
                 if (Heard(note, state))
                 {
-                    ctx.DrawRectangle(FreestyleBarBg, paint.FreestyleLit, rr, paint.FreestyleGlow);
+                    ctx.DrawRectangle(FreestyleBarBg, paint.FreestyleLit, rr, Halo(paint.FreestyleGlow, plain));
                 }
                 else
                 {
@@ -533,10 +562,10 @@ public sealed class GameOverlayControl : Control
 
             default:
                 // Normal: see-through (white or black style), border tinted with the player's colour, soft glow.
-                ctx.DrawRectangle(look.Background, ReferenceEquals(look, BlackBars) ? paint.BorderOnBlack : paint.BorderOnWhite, rr, paint.Glow);
+                ctx.DrawRectangle(look.Background, ReferenceEquals(look, BlackBars) ? paint.BorderOnBlack : paint.BorderOnWhite, rr, Halo(paint.Glow, plain));
                 if (correct)
                 {
-                    DrawPulse(ctx, rr, Colors.White, pos - state.CorrectSince[note.StartBeat], golden: false);
+                    DrawPulse(ctx, rr, Colors.White, pos - state.CorrectSince[note.StartBeat], golden: false, plain);
                 }
 
                 break;
@@ -544,19 +573,20 @@ public sealed class GameOverlayControl : Control
     }
 
     /// <summary>≥ 50 % correct: the border flares (peak at 40 % of 0.5 s) and settles to a lasting glow.</summary>
-    private static void DrawPulse(DrawingContext ctx, RoundedRect rr, Color color, double sinceSec, bool golden)
+    private static void DrawPulse(DrawingContext ctx, RoundedRect rr, Color color, double sinceSec, bool golden, bool plain)
     {
         double t = Math.Clamp(sinceSec / PulseSec, 0, 1);
         if (t >= 1)
         {
-            ctx.DrawRectangle(null, golden ? SettledGold : SettledWhite, rr, golden ? SettledGoldGlow : SettledWhiteGlow);
+            ctx.DrawRectangle(Brushes.Transparent, golden ? SettledGold : SettledWhite, rr, Halo(golden ? SettledGoldGlow : SettledWhiteGlow, plain));
             return;
         }
 
         (double border, double glow, double blur) = t < 0.4
             ? (Lerp(0.6, 1, t / 0.4), Lerp(0, golden ? 0.75 : 0.5, t / 0.4), Lerp(0, golden ? 14 : 10, t / 0.4))
             : (Lerp(1, golden ? 0.9 : 0.7, (t - 0.4) / 0.6), Lerp(golden ? 0.75 : 0.5, golden ? 0.4 : 0.25, (t - 0.4) / 0.6), Lerp(golden ? 14 : 10, golden ? 8 : 6, (t - 0.4) / 0.6));
-        ctx.DrawRectangle(null, new Pen(new SolidColorBrush(color, border), 2), rr, GlowOf(color, glow, blur));
+        // A transparent fill, not null: Avalonia draws no shadow for an unfilled shape (the glow never showed).
+        ctx.DrawRectangle(Brushes.Transparent, new Pen(new SolidColorBrush(color, border), 2), rr, plain ? default : GlowOf(color, glow, blur));
     }
 
     private static void DrawSyllable(DrawingContext ctx, NoteBox box, Rect rect)
@@ -599,8 +629,19 @@ public sealed class GameOverlayControl : Control
         ctx.DrawText(ft, new Point(bg.X + 2, bg.Y + 1));
     }
 
+    /// <summary>No glow when the DJ reduced effects: blurred shadows are the costliest thing a display draws.</summary>
+    private static BoxShadows Halo(BoxShadows glow, bool plain) => plain ? default : glow;
+
+    /// <summary>
+    /// A CSS <c>box-shadow: 0 0 blur color</c> as the prototype wrote it. One Avalonia shadow with the same numbers is
+    /// far fainter than the browser's (the settled rap and correct glows were all but invisible), so it is drawn as
+    /// two: a tight bright one hugging the border and a wide soft one — the smooth halo the Tauri app had.
+    /// </summary>
     private static BoxShadows GlowOf(Color color, double alpha, double blur)
-        => new(new BoxShadow { Blur = blur, Color = Color.FromArgb((byte)Math.Clamp(alpha * 255, 0, 255), color.R, color.G, color.B) });
+    {
+        Color Tint(double a) => Color.FromArgb((byte)Math.Clamp(a * 255, 0, 255), color.R, color.G, color.B);
+        return new(new BoxShadow { Blur = blur * 0.7, Color = Tint(alpha * 2.5) }, [new BoxShadow { Blur = blur * 2.2, Color = Tint(alpha * 1.4) }]);
+    }
 
     /// <summary>CSS color-mix: <paramref name="share"/> of <paramref name="a"/>, the rest <paramref name="b"/> (alpha too).</summary>
     private static Color Mix(Color a, Color b, double share)

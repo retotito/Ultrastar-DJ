@@ -71,6 +71,10 @@ public sealed class AppSettingsService
     /// <summary>Beamer: the stave lines behind the note bars.</summary>
     public bool ShowGridLines => !_doc.HideGridLines;
     public void SetShowGridLines(bool show) => Update(_doc with { HideGridLines = !show });
+
+    /// <summary>Slow computers: the displays draw no glows, sparkles or star showers (docs/03-game-engine.md).</summary>
+    public bool ReduceEffects => _doc.ReduceEffects;
+    public void SetReduceEffects(bool reduce) => Update(_doc with { ReduceEffects = reduce });
     public void SetDifficulty(Difficulty d) => Update(_doc with { Difficulty = d });
     /// <summary>Migrated into the game output's latency (OutputsService); kept only to read old settings files.</summary>
     public void ClearLyricsOffset() => Update(_doc with { LyricsOffsetMs = 0 });
@@ -103,6 +107,7 @@ public sealed class AppSettingsService
         public NoteBarStyle NoteBarStyle { get; init; }
         /// <summary>Stored inverted so settings files from before the switch keep the lines.</summary>
         public bool HideGridLines { get; init; }
+        public bool ReduceEffects { get; init; }
         public double? NowPlayingX { get; init; }
         public double? NowPlayingY { get; init; }
         /// <summary>Null = <see cref="LibraryColumns.DefaultVisible"/> (files written before the Layout panel).</summary>

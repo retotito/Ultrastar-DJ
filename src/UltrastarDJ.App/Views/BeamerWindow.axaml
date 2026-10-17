@@ -53,7 +53,7 @@
                HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsCountdown}" />
 
     <!-- Game -->
-    <c:GameOverlayControl Scene="{Binding Scene}" IsRunning="{Binding IsGame}" IsVisible="{Binding IsGame}" NoteBarStyle="{Binding NoteBarStyle}" ShowPianoRollLines="{Binding ShowGridLines}" />
+    <c:GameOverlayControl Scene="{Binding Scene}" IsRunning="{Binding IsGame}" IsVisible="{Binding IsGame}" NoteBarStyle="{Binding NoteBarStyle}" ShowPianoRollLines="{Binding ShowGridLines}" ReduceEffects="{Binding ReduceEffects}" />
     <Border IsVisible="{Binding IsPaused}" Background="#88000000">
       <TextBlock Classes="beamer" Text="{l:T display.paused}" FontSize="96" FontWeight="{StaticResource WeightBold}" HorizontalAlignment="Center" VerticalAlignment="Center" />
     </Border>
@@ -62,7 +62,7 @@
     <Border IsVisible="{Binding IsScore}" Background="#AA000000">
       <Panel>
         <!-- Once the count-up is done: stars in the winner's colour (none when nobody scored). -->
-        <c:StarShower IsRunning="{Binding ScoreCounted}" StarBrush="{Binding WinnerBrush}" />
+        <c:StarShower IsRunning="{Binding ScoreCounted}" StarBrush="{Binding WinnerBrush}" IsVisible="{Binding !ReduceEffects}" />
         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="{StaticResource Space6}" MinWidth="1100" Margin="48,0">
           <StackPanel Spacing="{StaticResource Space2}">
             <TextBlock Classes="beamer" Text="{Binding Title}" FontSize="40" FontWeight="{StaticResource WeightBold}" HorizontalAlignment="Center" />

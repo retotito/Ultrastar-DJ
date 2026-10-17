@@ -727,6 +727,12 @@ Only a first start changes; saved settings stay as they are.
 ## Sprint 29 — Small UI fixes  *(in progress)*
 
 - [x] Song details → Problems: warning icons centred with their text (were at the top of the row), 12 px to the text
+- [x] Note glows as in the Tauri app: the correct-note glow (white / gold) never showed — Avalonia draws no shadow
+      without a fill; the rap-hit, freestyle and normal glows were nearly invisible — each glow is now two shadows
+- [x] Rap hit flares like the correct pulse (rise to a peak, then settle) — it started at full glow
+- [x] Settings → Reduce effects (slow computers): no glows, sparkles, star bursts, golden shimmer or star shower;
+      never switched on by itself — after a stuttering song (≥ 1 frame in 20 over 50 ms) a 10 s hint with
+      Open Settings / Ignore, once per run
 - [ ] Verified live
 
 ---

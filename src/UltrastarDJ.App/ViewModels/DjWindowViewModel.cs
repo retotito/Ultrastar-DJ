@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using UltrastarDJ.App.Game;
 using UltrastarDJ.App.Services;
 using UltrastarDJ.Infrastructure;
 using UltrastarDJ.Core.Playback;
@@ -107,8 +108,9 @@ public sealed partial class DjWindowViewModel : ViewModelBase
             Dialog = d;
             DialogDetailsShown = false;
         };
-        playback.StateChanged += _ =>
+        playback.StateChanged += s =>
         {
+            CheckFrameRate(s);
             UpdateLock();
             AskForDuetSingersOnLoad();
             OnPropertyChanged(nameof(ShowUpdate));
@@ -187,6 +189,53 @@ public sealed partial class DjWindowViewModel : ViewModelBase
     }
 
     partial void OnChooseLanguageChanged(bool value) => OnPropertyChanged(nameof(ShowUpdate));
+
+    // ── Slow computer? ──
+    // Once per run: after a song the displays could not draw smoothly, a hint offers Settings → Reduce effects.
+    private bool _inSong;
+    private bool _effectsHintShown;
+
+    private void CheckFrameRate(PlaybackState state)
+    {
+        if (state is PlaybackState.Countdown)
+        {
+            FrameMonitor.Take();
+            _inSong = true;
+            return;
+        }
+
+        if (!_inSong || state is PlaybackState.Playing or PlaybackState.Paused)
+        {
+            return;
+        }
+
+        _inSong = false;
+        (long frames, long slow) = FrameMonitor.Take();
+        if (frames == 0)
+        {
+            return;
+        }
+
+        AppSettingsService settings = _services.GetRequiredService<AppSettingsService>();
+        _services.GetRequiredService<ILogger<DjWindowViewModel>>().LogInformation(
+            "Displays during the song: {Frames} frames, {Slow} slower than {Ms} ms{Effects}", frames, slow, FrameMonitor.SlowFrameMs,
+            settings.ReduceEffects ? " (effects reduced)" : "");
+        if (_effectsHintShown || settings.ReduceEffects || !FrameMonitor.StruggledWith(frames, slow))
+        {
+            return;
+        }
+
+        _effectsHintShown = true;
+        Notifications.Suggest(L.T("effects_hint.title"), L.T("effects_hint.detail"), L.T("effects_hint.open_settings"),
+            () =>
+            {
+                if (ActivePanel != SidebarPanel.Settings)
+                {
+                    TogglePanel(SidebarPanel.Settings);
+                }
+            },
+            L.T("effects_hint.ignore"), TimeSpan.FromSeconds(10));
+    }
 
     // ── Updates ──
 

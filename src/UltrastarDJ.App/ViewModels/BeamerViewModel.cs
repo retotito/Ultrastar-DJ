@@ -40,6 +40,7 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private int _countdownValue;
     /// <summary>Settings → Note bar style, applied live.</summary>
     [ObservableProperty] private NoteBarStyle _noteBarStyle;
+    [ObservableProperty] private bool _reduceEffects;
     /// <summary>Settings → Grid lines, applied live.</summary>
     [ObservableProperty] private bool _showGridLines = true;
     [ObservableProperty] private GameScene? _scene;
@@ -61,6 +62,7 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
         _settings = settings;
         _noteBarStyle = settings.NoteBarStyle;
         _showGridLines = settings.ShowGridLines;
+        _reduceEffects = settings.ReduceEffects;
         settings.Changed += OnSettingsChanged;
         GameFrames = gameFrames;
         _playback = playback;
@@ -85,6 +87,7 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
     {
         NoteBarStyle = _settings.NoteBarStyle;
         ShowGridLines = _settings.ShowGridLines;
+        ReduceEffects = _settings.ReduceEffects;
     });
 
     public DisplayId Id { get; }
