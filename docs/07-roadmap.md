@@ -724,7 +724,7 @@ Only a first start changes; saved settings stay as they are.
       lowered to the screen; the language screen's list scrolls, so OK stays visible on a low window
 - [ ] Verified live (fresh settings folder on the Mac; first start on the Windows PC)
 
-## Sprint 29 — Small UI fixes  *(in progress)*
+## Sprint 29 — Small UI fixes  *(done)*
 
 - [x] Song details → Problems: warning icons centred with their text (were at the top of the row), 12 px to the text
 - [x] Note glows as in the Tauri app: the correct-note glow (white / gold) never showed — Avalonia draws no shadow
@@ -737,7 +737,7 @@ Only a first start changes; saved settings stay as they are.
       icons 10 px below the top row, the sidebar's grey and divider start there too (no line under the macOS buttons);
       search bar and preview header one height (`TopBarHeight`); popovers 30 px from the top (just below the macOS buttons);
       empty spots of the top row drag the window, double-click maximises
-- [ ] Verified live
+- [x] Verified live on the Mac (2026-10-17)
 
 ## Sprint 30 — Single-screen mode  *(done)*
 
