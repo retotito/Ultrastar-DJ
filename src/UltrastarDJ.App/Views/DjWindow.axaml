@@ -251,6 +251,17 @@
                   IsVisible="{Binding IsGame}">
             <c:Icon Glyph="stop" FontSize="{StaticResource IconLg}" />
           </Button>
+          <!-- The song's volume — the Game Player's "Song" fader (one setting); ↑ / ↓ change it in 5 % steps. -->
+          <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space2}" IsVisible="{Binding IsGame}" VerticalAlignment="Center"
+                      Margin="8,0,4,0" ToolTip.Tip="{l:T single.tip_volume}">
+            <c:Icon Glyph="volume_up" FontSize="{StaticResource IconMd}" Foreground="White" VerticalAlignment="Center" />
+            <c:MeterFader Width="180" Minimum="0" Maximum="1" ResetValue="0.8" VerticalAlignment="Center"
+                          MinDb="-40" MaxDb="0" WarnDb="-8" ClipDb="-4"
+                          Value="{Binding $parent[Window].((vm:DjWindowViewModel)DataContext).NowPlaying.Gain}"
+                          Level="{Binding $parent[Window].((vm:DjWindowViewModel)DataContext).NowPlaying.SongLevel}" />
+            <TextBlock Foreground="White" FontSize="{StaticResource TextSm}" VerticalAlignment="Center" MinWidth="36" TextAlignment="Right"
+                       Text="{Binding $parent[Window].((vm:DjWindowViewModel)DataContext).NowPlaying.Gain, StringFormat='{}{0:P0}'}" />
+          </StackPanel>
           <Button Classes="tonal" Command="{Binding BackToDjCommand}" VerticalAlignment="Center" Padding="16,10" IsVisible="{Binding IsScore}"
                 ToolTip.Tip="{l:T single.tip_back}">
             <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space2}">

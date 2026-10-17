@@ -287,6 +287,7 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(IsPauseButton));
         OnPropertyChanged(nameof(NoBeamerOpen));
         OnPropertyChanged(nameof(ShowsHomeAndPreview));
+        OnPropertyChanged(nameof(IsSingleScreen));
         OnPropertyChanged(nameof(ShowsStop));
         OnPropertyChanged(nameof(PlayTip));
         LoadCommand.NotifyCanExecuteChanged();
@@ -475,6 +476,9 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
     /// Game Player is just Play, then Pause / Continue and Stop.
     /// </summary>
     public bool ShowsHomeAndPreview => !NoBeamerOpen && !_displays.IsSingleScreen;
+
+    /// <summary>Single-screen mode in effect: the orange label under the title.</summary>
+    public bool IsSingleScreen => _displays.IsSingleScreen;
 
     /// <summary>Stop: always with two screens; with one, only while a song runs.</summary>
     public bool ShowsStop => !NoBeamerOpen && (!_displays.IsSingleScreen || _playback.CanStop);

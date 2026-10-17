@@ -759,7 +759,8 @@ Goal: a DJ with one screen (a laptop alone) plays without juggling windows.
 - [x] One window instead of a display window brought to the front (window switching still showed both): the game
       fills the DJ window (`GameLayer`, the display content as `DisplayView`); Space pause / continue, Esc stop →
       scores → back; the bar during the song only Pause / Stop, keys in the tooltips; Space no longer resumed at
-      once (focus on the layer, key release stopped there)
+      once (focus on the layer, key release stopped there); Esc in the countdown back without scores; the bar's
+      song volume (↑ / ↓); an orange "Single-screen mode" label in the Game Player
 - [ ] Verified live (Mac alone; Mac with a second screen: Automatic switches back)
 
 ---

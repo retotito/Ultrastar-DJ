@@ -32,6 +32,17 @@
         </Grid>
       </Border>
 
+      <!-- Single-screen mode in effect: the game fills the DJ window. Orange like everywhere it is shown; a click opens
+           Game Displays (where it is switched). -->
+      <Button Classes="sidebar" Width="NaN" Height="NaN" Padding="6,2" HorizontalAlignment="Left" Margin="-6,-6,0,0"
+              IsVisible="{Binding IsSingleScreen}" Command="{Binding SelectDisplaysCommand}" ToolTip.Tip="{l:T single.label_tip}">
+        <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
+          <c:Icon Glyph="tv" FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushSingleScreen}" VerticalAlignment="Center" />
+          <TextBlock Text="{l:T single.title}" FontSize="{StaticResource TextSm}" FontWeight="{StaticResource WeightSemibold}"
+                     Foreground="{DynamicResource BrushSingleScreen}" VerticalAlignment="Center" />
+        </StackPanel>
+      </Button>
+
       <!-- Always there (fixed size), like the preview player: note when empty, loader while loading, then what the
            beamers show behind the game (Core.Playback.StageView): song picture, video while it runs, or backdrop. -->
       <Border Background="{DynamicResource BrushBeamerBackground}" CornerRadius="{StaticResource RadiusMd}" Height="{StaticResource GamePlayerPictureHeight}" ClipToBounds="True">

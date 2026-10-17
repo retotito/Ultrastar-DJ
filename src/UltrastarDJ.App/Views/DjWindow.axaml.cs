@@ -60,7 +60,7 @@ public sealed partial class DjWindow : Window
     }
 
     // ── Single-screen mode: the game layer over the whole window (DisplayService.GameLayer) ──
-    // Its own keys (Space pause / continue, Esc stop → scores, on the scores back) and mouse (the control bar while the mouse moves;
+    // Its own keys (Space pause / continue, Esc stop → scores, on the scores back, ↑ / ↓ volume) and mouse (the control bar while the mouse moves;
     // pointer hidden when still). Every other key stops here: nothing typed lands in the search field behind it.
 
     private static readonly Cursor HiddenCursor = new(StandardCursorType.None);
@@ -120,6 +120,11 @@ public sealed partial class DjWindow : Window
                 break;
             case Key.Escape:
                 layer.Escape();
+                break;
+            case Key.Up or Key.Down when layer.IsGame && DataContext is DjWindowViewModel dj:
+                // The song's volume in 5 % steps; the bar comes up so the DJ sees the level.
+                dj.NowPlaying.Gain = Math.Clamp(Math.Round(dj.NowPlaying.Gain * 20 + (e.Key == Key.Up ? 1 : -1)) / 20, 0, 1);
+                OnGameLayerPointerMoved();
                 break;
         }
 
