@@ -739,7 +739,7 @@ Only a first start changes; saved settings stay as they are.
       empty spots of the top row drag the window, double-click maximises
 - [ ] Verified live
 
-## Sprint 30 — Single-screen mode  *(in progress)*
+## Sprint 30 — Single-screen mode  *(done)*
 
 Goal: a DJ with one screen (a laptop alone) plays without juggling windows.
 
@@ -760,8 +760,9 @@ Goal: a DJ with one screen (a laptop alone) plays without juggling windows.
       fills the DJ window (`GameLayer`, the display content as `DisplayView`); Space pause / continue, Esc stop →
       scores → back; the bar during the song only Pause / Stop, keys in the tooltips; Space no longer resumed at
       once (focus on the layer, key release stopped there); Esc in the countdown back without scores; the bar's
-      song volume (↑ / ↓); an orange "Single-screen mode" label in the Game Player
-- [ ] Verified live (Mac alone; Mac with a second screen: Automatic switches back)
+      song volume (↑ / ↓); an orange "Single-screen mode" label in the Game Player; the preview player pauses when
+      the game starts
+- [x] Verified live on the Mac (2026-10-17)
 
 ---
 

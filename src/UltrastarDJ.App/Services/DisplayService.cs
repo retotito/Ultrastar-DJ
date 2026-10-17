@@ -196,8 +196,11 @@ public sealed class DisplayService : IDisplayService
     }
 
     // The game fills the DJ window for the singers (one window: nothing to switch, nothing to bring forward).
+    // The preview player pauses: hidden under the game it could be neither seen nor stopped, and alone with a laptop it
+    // plays from the same speakers. Paused, not stopped — its song and position wait for the DJ.
     private void PresentForSong()
     {
+        _media.Preview.Pause();
         if (GameLayer is null)
         {
             GameLayer = CreateViewModel(DisplayId.Beamer1);
