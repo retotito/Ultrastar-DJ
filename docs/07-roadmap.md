@@ -754,6 +754,12 @@ Goal: a DJ with one screen (a laptop alone) plays without juggling windows.
 - [x] Panel polish: orange (`BrushSingleScreen`) Active badge, Display 1 without Open / Fullscreen ("Opens fullscreen
       when a song starts"), the sidebar icon orange while in effect; the long hints replaced by an ⓘ explanation with
       two pictures (multiple screens / one laptop, `ScreensPicture`); it closes on a press outside, the panel stays
+- [x] Game Player in single-screen mode: just Play, then Pause / Continue and Stop (no Home, Get ready, Select
+      displays); the score screen's bar shows only Back to DJ window, always
+- [x] One window instead of a display window brought to the front (window switching still showed both): the game
+      fills the DJ window (`GameLayer`, the display content as `DisplayView`); Space pause / continue, Esc stop →
+      scores → back; the bar during the song only Pause / Stop, keys in the tooltips; Space no longer resumed at
+      once (focus on the layer, key release stopped there)
 - [ ] Verified live (Mac alone; Mac with a second screen: Automatic switches back)
 
 ---

@@ -116,6 +116,8 @@ public sealed class DisplayService : IDisplayService
 
     public SingleScreenMode SingleScreenMode => _doc.SingleScreen;
     public bool IsSingleScreen => _single;
+    public BeamerViewModel? GameLayer { get; private set; }
+    public event Action? GameLayerChanged;
     public int ScreenCount => _screens.Count;
     public event Action? SingleScreenChanged;
 
@@ -140,9 +142,15 @@ public sealed class DisplayService : IDisplayService
 
         _single = now;
         _log.LogInformation("Single-screen mode {State} ({Count} screens, {Mode})", now ? "on" : "off", _screens.Count, _doc.SingleScreen);
-        if (now && _open.ContainsKey(DisplayId.Beamer2))
+        // One window then: the display windows close, the game will fill the DJ window.
+        if (now)
         {
+            Close(DisplayId.Beamer1);
             Close(DisplayId.Beamer2);
+        }
+        else
+        {
+            HideGameLayer();
         }
 
         if (byScreens)
@@ -180,31 +188,41 @@ public sealed class DisplayService : IDisplayService
                 });
                 _backToDj.Start();
                 break;
-            default:
+            case PlaybackState.Idle or PlaybackState.Loaded:
+                HideGameLayer();
                 UpdateSingleScreen(byScreens: true);
                 break;
         }
     }
 
-    // Display 1 in front and fullscreen for the singers — opened if the DJ never opened it.
+    // The game fills the DJ window for the singers (one window: nothing to switch, nothing to bring forward).
     private void PresentForSong()
     {
-        Open(DisplayId.Beamer1);
-        if (_open.TryGetValue(DisplayId.Beamer1, out BeamerWindow? window))
+        if (GameLayer is null)
         {
-            if (window.WindowState != WindowState.FullScreen)
-            {
-                window.WindowState = WindowState.FullScreen;
-            }
-
-            window.Activate();
+            GameLayer = CreateViewModel(DisplayId.Beamer1);
+            GameLayerChanged?.Invoke();
         }
+
+        _owner?.Activate();
     }
 
     public void ShowDjWindow()
     {
         _backToDj?.Stop();
-        _owner?.Activate();
+        HideGameLayer();
+    }
+
+    private void HideGameLayer()
+    {
+        if (GameLayer is not { } layer)
+        {
+            return;
+        }
+
+        GameLayer = null;
+        GameLayerChanged?.Invoke();
+        layer.Dispose();
     }
 
     public void SetPlayers(DisplayId id, IReadOnlyList<int> playerIds)
@@ -225,16 +243,13 @@ public sealed class DisplayService : IDisplayService
 
     public void Open(DisplayId id)
     {
-        // Single-screen mode uses Display 1 only.
-        if (_open.ContainsKey(id) || (_single && id == DisplayId.Beamer2))
+        // Single-screen mode has no display windows (the game fills the DJ window).
+        if (_open.ContainsKey(id) || _single)
         {
             return;
         }
 
-        // Resolved here, not injected: PlaybackService depends on IDisplayService (would be a constructor cycle).
-        PlaybackService playback = _services.GetRequiredService<PlaybackService>();
-        BeamerViewModel vm = new(id, _media.Game.Frames, playback, _players, this, _services.GetRequiredService<AppSettingsService>(),
-            _services.GetRequiredService<SyncTestService>(), _services.GetRequiredService<SongbookService>());
+        BeamerViewModel vm = CreateViewModel(id);
         BeamerWindow window = new()
         {
             DataContext = vm,
@@ -293,6 +308,11 @@ public sealed class DisplayService : IDisplayService
         _log.LogInformation("Display {Display} opened", (int)id);
         OpenStateChanged?.Invoke(id, true);
     }
+
+    // Resolved here, not injected: PlaybackService depends on IDisplayService (would be a constructor cycle).
+    private BeamerViewModel CreateViewModel(DisplayId id)
+        => new(id, _media.Game.Frames, Playback, _players, this, _services.GetRequiredService<AppSettingsService>(),
+            _services.GetRequiredService<SyncTestService>(), _services.GetRequiredService<SongbookService>());
 
     private static List<ScreenArea> Areas(Window window)
         => [.. window.Screens.All.Select(s => new ScreenArea(s.WorkingArea.X, s.WorkingArea.Y, s.WorkingArea.Width, s.WorkingArea.Height, s.Scaling, s.DisplayName))];

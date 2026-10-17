@@ -90,6 +90,7 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
         _countdown = new DispatcherTimer(TimeSpan.FromSeconds(1), DispatcherPriority.Normal, (_, _) => CountdownTick());
         _playback.PicturesChanged += RefreshBox;
         _displays.OpenStateChanged += (_, _) => Refresh();
+        _displays.SingleScreenChanged += Refresh;
         _players.Changed += OnPlayerChanged;
         media.Game.Frames.SourceChanged += () => Dispatcher.UIThread.Post(() => HasVideo = media.Game.Frames.HasSource);
         _poll = new DispatcherTimer(TimeSpan.FromMilliseconds(50), DispatcherPriority.Background, (_, _) => Poll());
@@ -285,6 +286,8 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(PlayGlyph));
         OnPropertyChanged(nameof(IsPauseButton));
         OnPropertyChanged(nameof(NoBeamerOpen));
+        OnPropertyChanged(nameof(ShowsHomeAndPreview));
+        OnPropertyChanged(nameof(ShowsStop));
         OnPropertyChanged(nameof(PlayTip));
         LoadCommand.NotifyCanExecuteChanged();
         NotifyLoadAvailability();
@@ -466,6 +469,15 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
 
     /// <summary>No beamer open: the transport is replaced by one "Select displays" button.</summary>
     public bool NoBeamerOpen => !_playback.AnyDisplayOpen;
+
+    /// <summary>
+    /// Start view and "Get ready": not in single-screen mode — the display is only in front during a song, so the
+    /// Game Player is just Play, then Pause / Continue and Stop.
+    /// </summary>
+    public bool ShowsHomeAndPreview => !NoBeamerOpen && !_displays.IsSingleScreen;
+
+    /// <summary>Stop: always with two screens; with one, only while a song runs.</summary>
+    public bool ShowsStop => !NoBeamerOpen && (!_displays.IsSingleScreen || _playback.CanStop);
 
     /// <summary>"Select displays": the DJ window opens its Displays panel (beamers, players per screen).</summary>
     public event Action? DisplaysRequested;

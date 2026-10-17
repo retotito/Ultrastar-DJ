@@ -133,21 +133,43 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(IsPaused));
         OnPropertyChanged(nameof(IsScore));
         OnPropertyChanged(nameof(HasControls));
+        OnPropertyChanged(nameof(ControlsAlwaysShown));
+        OnPropertyChanged(nameof(BarVisible));
+        OnPropertyChanged(nameof(ShowsWindowHint));
         RefreshStage();
     }
 
-    // ── Single-screen mode: the display is in front during the song, the DJ window behind it ──
+    // ── Single-screen mode: the game fills the DJ window (its game layer shows this view model) ──
 
-    /// <summary>Only Display 1 is used, in front during the song; its own controls replace the DJ window's.</summary>
+    /// <summary>"Double-click or F: fullscreen" — a display window's hint, not the DJ window's game layer's.</summary>
+    public bool ShowsWindowHint => IsIdle && !IsSingleScreen;
+
+    /// <summary>The game layer of the DJ window: its own controls (bar, Space, Esc) replace the DJ window's.</summary>
     public bool IsSingleScreen => _displays.IsSingleScreen;
 
-    /// <summary>The control bar may show (on mouse movement): single-screen mode, during a song.</summary>
-    public bool HasControls => IsSingleScreen && IsGame;
+    /// <summary>
+    /// The control bar may show: single-screen mode, during a song (Pause / Continue, Stop — on mouse movement) and on
+    /// the score screen (only Back to DJ window, always, until the DJ view returns by itself).
+    /// </summary>
+    public bool HasControls => IsSingleScreen && (IsGame || IsScore);
+
+    /// <summary>The bar stays up without mouse movement: the score screen's way back.</summary>
+    public bool ControlsAlwaysShown => IsSingleScreen && IsScore;
+
+    /// <summary>The mouse moved over the game layer a moment ago (set by the DJ window, cleared after 3 s still).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(BarVisible))]
+    private bool _barWanted;
+
+    public bool BarVisible => HasControls && (ControlsAlwaysShown || BarWanted);
 
     private void OnSingleScreenChanged()
     {
         OnPropertyChanged(nameof(IsSingleScreen));
+        OnPropertyChanged(nameof(ShowsWindowHint));
         OnPropertyChanged(nameof(HasControls));
+        OnPropertyChanged(nameof(ControlsAlwaysShown));
+        OnPropertyChanged(nameof(BarVisible));
     }
 
     [RelayCommand]
@@ -166,16 +188,30 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     private void StopSong() => _playback.Stop();
 
-    /// <summary>Pauses a running song and brings the DJ window to the front.</summary>
+    /// <summary>From the score screen back to the DJ view.</summary>
     [RelayCommand]
-    private void BackToDj()
-    {
-        if (_playback.CanPause)
-        {
-            _playback.Pause();
-        }
+    private void BackToDj() => _displays.ShowDjWindow();
 
-        _displays.ShowDjWindow();
+    /// <summary>Esc in the game layer: a song (running or paused) stops and shows the scores; during the 3-2-1 it is
+    /// called off (nothing sung — straight back to the DJ view); the score screen goes back to the DJ view.</summary>
+    public void Escape()
+    {
+        if (IsCountdown)
+        {
+            _playback.CancelCountdown();
+        }
+        else if (_playback.CanStop)
+        {
+            _playback.Stop();
+        }
+        else if (IsScore)
+        {
+            BackToDj();
+        }
+        else if (IsPreview)
+        {
+            _ = _playback.HomeAsync();
+        }
     }
 
     partial void OnHasVideoChanged(bool value) => RefreshStage();

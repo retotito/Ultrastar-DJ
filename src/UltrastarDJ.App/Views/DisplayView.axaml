@@ -1,0 +1,130 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="using:UltrastarDJ.App.Localization"
+             xmlns:vm="using:UltrastarDJ.App.ViewModels"
+             xmlns:c="using:UltrastarDJ.App.Controls"
+             xmlns:game="using:UltrastarDJ.App.Game"
+             x:Class="UltrastarDJ.App.Views.DisplayView"
+             x:DataType="vm:BeamerViewModel"
+             Background="{DynamicResource BrushBeamerBackground}">
+  <!-- What the singers see — idle, get ready, countdown, the game, scores. Shown by a display window (BeamerWindow), and
+       in single-screen mode by the DJ window's game layer. -->
+
+  <UserControl.Resources>
+    <DataTemplate x:Key="PlayerChip" x:DataType="game:ScenePlayer">
+      <Border Background="{Binding Brush}" CornerRadius="{StaticResource RadiusFull}" Padding="24,8">
+        <TextBlock Text="{Binding Name}" FontSize="{StaticResource TextXl}" FontWeight="{StaticResource WeightSemibold}" Foreground="Black" />
+      </Border>
+    </DataTemplate>
+    <ItemsPanelTemplate x:Key="ChipRow"><StackPanel Orientation="Horizontal" Spacing="16" /></ItemsPanelTemplate>
+  </UserControl.Resources>
+
+  <Panel>
+    <!-- Background (Core.Playback.StageView, same rule as the Game Player box): get ready / score = song picture blurred;
+         countdown = picture; song = video (picture under it until the first frame) or, without video, the backdrop.
+         Sharp layers are dimmed so lyrics and notes stay readable. -->
+    <Image Source="{Binding BlurredImage}" Stretch="UniformToFill" IsVisible="{Binding ShowBlurredImage}" Opacity="0.55">
+      <Image.Effect>
+        <BlurEffect Radius="18" />
+      </Image.Effect>
+    </Image>
+    <Image Source="{Binding StageImage}" Stretch="UniformToFill" IsVisible="{Binding ShowStageImage}" Opacity="0.55" />
+    <c:VideoSurface Source="{Binding GameFrames}" IsVisible="{Binding ShowVideo}" />
+
+    <!-- Idle -->
+    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="{StaticResource Space4}" IsVisible="{Binding IsIdle}">
+      <Image Source="avares://UltrastarDJ/Assets/icon.png" Width="160" Height="160" />
+      <TextBlock Classes="beamer" Text="Ultrastar DJ" FontSize="64" FontWeight="{StaticResource WeightBold}" HorizontalAlignment="Center" />
+      <TextBlock Classes="beamer" Text="{Binding Label}" FontSize="{StaticResource Text2Xl}" Opacity="0.6" HorizontalAlignment="Center" />
+      <ItemsControl ItemsSource="{Binding AssignedPlayers}" ItemsPanel="{StaticResource ChipRow}" ItemTemplate="{StaticResource PlayerChip}"
+                    HorizontalAlignment="Center" Margin="0,24,0,0" IsVisible="{Binding HasAssignedPlayers}" />
+    </StackPanel>
+
+    <!-- Preview: get ready -->
+    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="{StaticResource Space3}" IsVisible="{Binding IsPreview}">
+      <TextBlock Classes="beamer" Text="{l:T display.get_ready}" FontSize="{StaticResource Text2Xl}" Opacity="0.7" HorizontalAlignment="Center" />
+      <TextBlock Classes="beamer" Text="{Binding Title}" FontSize="72" FontWeight="{StaticResource WeightBold}" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" />
+      <TextBlock Classes="beamer" Text="{Binding Artist}" FontSize="40" Opacity="0.8" HorizontalAlignment="Center" />
+      <ItemsControl ItemsSource="{Binding AssignedPlayers}" ItemsPanel="{StaticResource ChipRow}" ItemTemplate="{StaticResource PlayerChip}"
+                    HorizontalAlignment="Center" Margin="0,24,0,0" />
+    </StackPanel>
+
+    <!-- Countdown -->
+    <TextBlock Classes="beamer" Text="{Binding CountdownValue}" FontSize="240" FontWeight="{StaticResource WeightBold}"
+               HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsCountdown}" />
+
+    <!-- Game -->
+    <c:GameOverlayControl Scene="{Binding Scene}" IsRunning="{Binding IsGame}" IsVisible="{Binding IsGame}" NoteBarStyle="{Binding NoteBarStyle}" ShowPianoRollLines="{Binding ShowGridLines}" ReduceEffects="{Binding ReduceEffects}" />
+    <Border IsVisible="{Binding IsPaused}" Background="#88000000">
+      <TextBlock Classes="beamer" Text="{l:T display.paused}" FontSize="96" FontWeight="{StaticResource WeightBold}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+    </Border>
+
+    <!-- Score -->
+    <Border IsVisible="{Binding IsScore}" Background="#AA000000">
+      <Panel>
+        <!-- Once the count-up is done: stars in the winner's colour (none when nobody scored). -->
+        <c:StarShower IsRunning="{Binding ScoreCounted}" StarBrush="{Binding WinnerBrush}" IsVisible="{Binding !ReduceEffects}" />
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="{StaticResource Space6}" MinWidth="1100" Margin="48,0">
+          <StackPanel Spacing="{StaticResource Space2}">
+            <TextBlock Classes="beamer" Text="{Binding Title}" FontSize="40" FontWeight="{StaticResource WeightBold}" HorizontalAlignment="Center" />
+            <TextBlock Classes="beamer" Text="{Binding ScoreNote}" FontSize="{StaticResource TextXl}" Opacity="0.7" HorizontalAlignment="Center"
+                       IsVisible="{Binding ScoreNote, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+          </StackPanel>
+          <ItemsControl ItemsSource="{Binding Scores}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:ScoreRowViewModel">
+                <Grid ColumnDefinitions="56,260,*,150,200" Margin="0,12" VerticalAlignment="Center">
+                  <!-- Trophy in its metal, faded in after the count-up (bronze, silver, then gold). -->
+                  <c:Icon Grid.Column="0" Glyph="emoji_events" FontSize="40" IsVisible="{Binding HasTrophy}" Opacity="{Binding TrophyOpacity}"
+                          Classes.gold="{Binding IsGold}" Classes.silver="{Binding IsSilver}" Classes.bronze="{Binding IsBronze}">
+                    <c:Icon.Styles>
+                      <Style Selector="c|Icon.gold"><Setter Property="Foreground" Value="{StaticResource BrushGolden}" /></Style>
+                      <Style Selector="c|Icon.silver"><Setter Property="Foreground" Value="{StaticResource BrushSilver}" /></Style>
+                      <Style Selector="c|Icon.bronze"><Setter Property="Foreground" Value="{StaticResource BrushBronze}" /></Style>
+                    </c:Icon.Styles>
+                    <c:Icon.Transitions>
+                      <Transitions><DoubleTransition Property="Opacity" Duration="0:0:0.4" /></Transitions>
+                    </c:Icon.Transitions>
+                  </c:Icon>
+                  <TextBlock Grid.Column="1" Classes="beamer" Text="{Binding Name}" FontSize="40" FontWeight="{StaticResource WeightSemibold}" Foreground="{Binding Brush}" VerticalAlignment="Center" />
+                  <!-- Bar and percentage: share of the points possible (whole song, or until an early stop). -->
+                  <c:LevelMeter Grid.Column="2" Height="36" Level="{Binding Fraction}" Fill="{Binding Brush}" Track="#33FFFFFF" VerticalAlignment="Center" Margin="24,0,16,0" />
+                  <TextBlock Grid.Column="3" Classes="beamer" Text="{Binding Percent}" Foreground="{Binding Brush}" FontSize="44" FontWeight="{StaticResource WeightBold}"
+                             TextAlignment="Right" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="4" Classes="beamer" Text="{Binding Displayed}" FontSize="48" FontWeight="{StaticResource WeightBold}" TextAlignment="Right" VerticalAlignment="Center" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Panel>
+    </Border>
+
+    <!-- Test sync (Audio Output → Game): flash on every click as the audience hears it. -->
+    <Border Background="{DynamicResource BrushBeamerBackground}" IsVisible="{Binding SyncTestRunning}">
+      <Panel>
+        <c:SyncFlash Source="{Binding SyncTest}" IsRunning="{Binding SyncTestRunning}" FlashBrush="{DynamicResource BrushBeamerText}" />
+        <TextBlock Classes="beamer" Text="{l:T display.test_sync_move_latency}" FontSize="{StaticResource Text2Xl}"
+                   HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,64" TextWrapping="Wrap" TextAlignment="Center" />
+      </Panel>
+    </Border>
+
+    <!-- Songbook: just the code and its name (start view and get ready only — never over the game or the scores).
+         The PIN stays when set: without it guests cannot get in. -->
+    <Border IsVisible="{Binding ShowSongbookQr}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="32,32,32,56"
+            Background="#CC000000" CornerRadius="{StaticResource RadiusXl}" Padding="{StaticResource Pad4}">
+      <StackPanel Spacing="{StaticResource Space2}" HorizontalAlignment="Center">
+        <Border CornerRadius="{StaticResource RadiusMd}" ClipToBounds="True" HorizontalAlignment="Center">
+          <c:QrCode Text="{Binding SongbookUrl}" Width="240" Height="240" />
+        </Border>
+        <TextBlock Classes="beamer" Text="{l:T display.songbook}" FontSize="{StaticResource TextXl}" FontWeight="{StaticResource WeightSemibold}" HorizontalAlignment="Center" />
+        <TextBlock Classes="beamer" Text="{l:Format SongbookPin, display.pin}" IsVisible="{Binding HasSongbookPin}"
+                   FontSize="{StaticResource TextXl}" FontWeight="{StaticResource WeightBold}" HorizontalAlignment="Center" />
+      </StackPanel>
+    </Border>
+
+    <TextBlock Classes="beamer" Text="{l:T display.double_click_f_fullscreen}" FontSize="{StaticResource TextSm}" Opacity="0.5"
+               HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="{StaticResource Pad4}" IsVisible="{Binding ShowsWindowHint}" />
+
+  </Panel>
+</UserControl>

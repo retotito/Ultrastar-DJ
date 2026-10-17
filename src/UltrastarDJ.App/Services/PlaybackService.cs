@@ -369,6 +369,19 @@ public sealed class PlaybackService : IDisposable
         }
     }
 
+    /// <summary>
+    /// Stopped during the 3-2-1: nothing was sung, so no scores — back to the loaded song (single-screen mode: the DJ
+    /// view). The media has not started yet.
+    /// </summary>
+    public void CancelCountdown()
+    {
+        if (State == PlaybackState.Countdown)
+        {
+            _countdownDone.Clear();
+            State = PlaybackState.Loaded;
+        }
+    }
+
     /// <summary>Called by each beamer when its 3-2-1 finishes. The first call starts the song; later ones are ignored.</summary>
     public void CountdownDone(DisplayId display)
     {

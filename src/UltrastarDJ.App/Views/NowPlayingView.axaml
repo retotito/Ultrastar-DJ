@@ -117,14 +117,14 @@
       <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}" HorizontalAlignment="Center" Margin="0,0,0,8">
         <!-- Four buttons (prototype): rules in Core.Playback.PlaybackRules. Hidden while no beamer is open. -->
         <Button Classes="sidebar" Command="{Binding HomeCommand}" ToolTip.Tip="{l:T game_player.displays_start_view_song}"
-                IsVisible="{Binding !NoBeamerOpen}" VerticalAlignment="Center"><c:Icon Glyph="home" /></Button>
+                IsVisible="{Binding ShowsHomeAndPreview}" VerticalAlignment="Center"><c:Icon Glyph="home" /></Button>
         <Button Classes="sidebar" Command="{Binding PreviewCommand}" ToolTip.Tip="{l:T game_player.show_get_ready_screen}"
-                IsVisible="{Binding !NoBeamerOpen}" VerticalAlignment="Center"><c:Icon Glyph="tv" /></Button>
+                IsVisible="{Binding ShowsHomeAndPreview}" VerticalAlignment="Center"><c:Icon Glyph="tv" /></Button>
         <Button Classes="transport" Classes.go="{Binding !IsPauseButton}" Classes.pause="{Binding IsPauseButton}"
                 Command="{Binding PlayPauseCommand}" ToolTip.Tip="{Binding PlayTip}" IsVisible="{Binding !NoBeamerOpen}">
           <c:Icon Glyph="{Binding PlayGlyph}" FontSize="{StaticResource IconXl}" />
         </Button>
-        <Button Classes="transport stop" Command="{Binding StopCommand}" ToolTip.Tip="{l:T game_player.stop_show_scores}" IsVisible="{Binding !NoBeamerOpen}">
+        <Button Classes="transport stop" Command="{Binding StopCommand}" ToolTip.Tip="{l:T game_player.stop_show_scores}" IsVisible="{Binding ShowsStop}">
           <c:Icon Glyph="stop" FontSize="{StaticResource IconLg}" />
         </Button>
 

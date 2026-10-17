@@ -117,6 +117,7 @@ public sealed partial class DjWindowViewModel : ViewModelBase
         };
         Updates = services.GetRequiredService<UpdateService>();
         services.GetRequiredService<IDisplayService>().SingleScreenChanged += () => OnPropertyChanged(nameof(IsSingleScreen));
+        services.GetRequiredService<IDisplayService>().GameLayerChanged += () => OnPropertyChanged(nameof(GameLayer));
         Updates.PropertyChanged += (_, _) => OnPropertyChanged(nameof(ShowUpdate));
         nowPlaying.DuetSingersRequested += () => OpenDuetSingers(thenPlay: null);
         nowPlaying.SingersToConfirmBeforePlay += play => AskForDuetSingers(play);
@@ -192,6 +193,9 @@ public sealed partial class DjWindowViewModel : ViewModelBase
     partial void OnChooseLanguageChanged(bool value) => OnPropertyChanged(nameof(ShowUpdate));
 
     // ── Single-screen mode ──
+
+    /// <summary>Single-screen mode during a song: the game over the whole window (null otherwise).</summary>
+    public BeamerViewModel? GameLayer => _services.GetRequiredService<IDisplayService>().GameLayer;
 
     /// <summary>In effect: the sidebar's displays icon is orange.</summary>
     public bool IsSingleScreen => _services.GetRequiredService<IDisplayService>().IsSingleScreen;

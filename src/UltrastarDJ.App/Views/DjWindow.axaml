@@ -4,6 +4,7 @@
         xmlns:vm="using:UltrastarDJ.App.ViewModels"
         xmlns:c="using:UltrastarDJ.App.Controls"
         xmlns:svc="using:UltrastarDJ.App.Services"
+        xmlns:v="using:UltrastarDJ.App.Views"
         x:Class="UltrastarDJ.App.Views.DjWindow"
         x:DataType="vm:DjWindowViewModel"
         Title="Ultrastar DJ"
@@ -227,6 +228,42 @@
       </Grid>
     </Border>
   </Border>
+
+  <!-- Single-screen mode: the game fills this window from "Get ready" until back to the DJ view (DisplayService.GameLayer).
+       Over everything; keys and mouse are its own (DjWindow.axaml.cs). -->
+  <ContentControl x:Name="GameLayerHost" ZIndex="30" Background="{DynamicResource BrushBeamerBackground}" Focusable="True"
+                  Content="{Binding GameLayer}" IsVisible="{Binding GameLayer, Converter={x:Static ObjectConverters.IsNotNull}}">
+    <ContentControl.ContentTemplate>
+      <DataTemplate x:DataType="vm:BeamerViewModel">
+  <Panel>
+    <v:DisplayView />
+        <!-- The DJ's controls: during the song on mouse movement (Pause / Continue, Stop), on the score screen always
+             (Back to DJ window). At the top, never over the lyrics. -->
+      <Border x:Name="ControlBar" IsVisible="{Binding BarVisible}" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="{StaticResource Pad6}"
+              Background="#CC000000" CornerRadius="{StaticResource RadiusFull}" Padding="12,10">
+        <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space3}">
+          <Button Classes="transport" Classes.go="{Binding IsPaused}" Classes.pause="{Binding !IsPaused}" Command="{Binding TogglePauseCommand}"
+                  IsVisible="{Binding IsGame}"
+                  ToolTip.Tip="{l:Pick IsPaused, True=single.tip_continue, False=single.tip_pause}">
+            <c:Icon Glyph="{Binding IsPaused, Converter={x:Static vm:BoolConverters.Glyph}, ConverterParameter='play_arrow|pause'}" FontSize="{StaticResource IconXl}" />
+          </Button>
+          <Button Classes="transport stop" Command="{Binding StopSongCommand}" ToolTip.Tip="{l:T single.tip_stop}"
+                  IsVisible="{Binding IsGame}">
+            <c:Icon Glyph="stop" FontSize="{StaticResource IconLg}" />
+          </Button>
+          <Button Classes="tonal" Command="{Binding BackToDjCommand}" VerticalAlignment="Center" Padding="16,10" IsVisible="{Binding IsScore}"
+                ToolTip.Tip="{l:T single.tip_back}">
+            <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space2}">
+              <c:Icon Glyph="arrow_back" FontSize="{StaticResource IconMd}" />
+              <TextBlock Text="{l:T single.back_to_dj}" />
+            </StackPanel>
+          </Button>
+        </StackPanel>
+      </Border>
+  </Panel>
+      </DataTemplate>
+    </ContentControl.ContentTemplate>
+  </ContentControl>
 
   <!-- Single-screen mode explained (Game Displays → ⓘ): two screens and one, each in a sentence and a picture.
        A press on the dimmed area closes it; the Game Displays panel stays open behind it. -->

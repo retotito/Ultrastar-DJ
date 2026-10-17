@@ -6,6 +6,7 @@ using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using UltrastarDJ.App.ViewModels;
 
@@ -19,6 +20,110 @@ public sealed partial class DjWindow : Window
         AddHandler(PointerPressedEvent, OnPointerPressedAnywhere, RoutingStrategies.Tunnel, handledEventsToo: true);
         AddHandler(KeyDownEvent, OnKeyDownAnywhere, RoutingStrategies.Tunnel);
         PointerPressed += OnTitleAreaPressed;
+        GameLayerHost.PointerMoved += (_, _) => OnGameLayerPointerMoved();
+        GameLayerHost.PointerPressed += OnGameLayerPressed;
+        _layerIdle.Tick += (_, _) => OnGameLayerIdle();
+        AddHandler(KeyUpEvent, OnKeyUpAnywhere, RoutingStrategies.Tunnel);
+        // The layer holds the keyboard focus — also after the DJ visited another window: a button behind it (the Game
+        // Player's play button) kept it before, and Space released there played again what Space had just paused.
+        Activated += (_, _) => FocusGameLayer();
+        DataContextChanged += (_, _) =>
+        {
+            if (DataContext is DjWindowViewModel vm)
+            {
+                vm.PropertyChanged += (_, e) =>
+                {
+                    if (e.PropertyName == nameof(DjWindowViewModel.GameLayer))
+                    {
+                        Dispatcher.UIThread.Post(FocusGameLayer);
+                    }
+                };
+            }
+        };
+    }
+
+    private void FocusGameLayer()
+    {
+        if (Layer is not null)
+        {
+            GameLayerHost.Focus();
+        }
+    }
+
+    // A button reacts to Space when the key comes up: the release must stop at the layer as well as the press.
+    private void OnKeyUpAnywhere(object? sender, KeyEventArgs e)
+    {
+        if (Layer is not null && e.Key is Key.Space or Key.Escape && (e.KeyModifiers & (KeyModifiers.Meta | KeyModifiers.Control)) == 0)
+        {
+            e.Handled = true;
+        }
+    }
+
+    // ── Single-screen mode: the game layer over the whole window (DisplayService.GameLayer) ──
+    // Its own keys (Space pause / continue, Esc stop → scores, on the scores back) and mouse (the control bar while the mouse moves;
+    // pointer hidden when still). Every other key stops here: nothing typed lands in the search field behind it.
+
+    private static readonly Cursor HiddenCursor = new(StandardCursorType.None);
+    private readonly DispatcherTimer _layerIdle = new() { Interval = TimeSpan.FromSeconds(3) };
+
+    private BeamerViewModel? Layer => (DataContext as DjWindowViewModel)?.GameLayer;
+
+    private void OnGameLayerPointerMoved()
+    {
+        if (Layer is not { } layer)
+        {
+            return;
+        }
+
+        layer.BarWanted = true;
+        GameLayerHost.Cursor = Cursor.Default;
+        _layerIdle.Stop();
+        _layerIdle.Start();
+    }
+
+    private void OnGameLayerIdle()
+    {
+        // Not while the DJ is about to click a button on the bar.
+        if (GameLayerHost.GetVisualDescendants().OfType<Button>().Any(b => b.IsPointerOver))
+        {
+            return;
+        }
+
+        _layerIdle.Stop();
+        if (Layer is { } layer)
+        {
+            layer.BarWanted = false;
+            GameLayerHost.Cursor = layer.IsScore ? Cursor.Default : HiddenCursor;
+        }
+    }
+
+    // The score screen: a click anywhere goes back to the DJ view (as Esc, or the timer).
+    private void OnGameLayerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (Layer is { IsScore: true } layer)
+        {
+            layer.BackToDjCommand.Execute(null);
+        }
+    }
+
+    private bool OnGameLayerKey(KeyEventArgs e)
+    {
+        if (Layer is not { } layer || (e.KeyModifiers & (KeyModifiers.Meta | KeyModifiers.Control)) != 0)
+        {
+            return false;
+        }
+
+        switch (e.Key)
+        {
+            case Key.Space when layer.IsGame:
+                layer.TogglePauseCommand.Execute(null);
+                break;
+            case Key.Escape:
+                layer.Escape();
+                break;
+        }
+
+        return true;
     }
 
     // ── Title bar: the content reaches the window's top edge (ExtendClientAreaToDecorationsHint) ──
@@ -56,6 +161,12 @@ public sealed partial class DjWindow : Window
     // Esc closes the Details popup before anything else sees the key.
     private void OnKeyDownAnywhere(object? sender, KeyEventArgs e)
     {
+        if (OnGameLayerKey(e))
+        {
+            e.Handled = true;
+            return;
+        }
+
         if (e.Key == Key.Escape && DataContext is DjWindowViewModel { DuetSingers: not null } duet)
         {
             duet.CloseDuetSingers(ok: false);
