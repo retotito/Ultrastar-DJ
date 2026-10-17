@@ -728,6 +728,18 @@ Only a first start changes; saved settings stay as they are.
 
 ## Later / ideas
 
+- **Goal: a cleaned-up USDB list for every user** (brainstormed 2026-10-17, not started). Measured: no YouTube link
+  at all (`#VIDEO:co=` = cover only) is visible in the text itself — 1 of 799 cached texts, both recorded load
+  failures; light check (YouTube oEmbed: 200 / 400 / 401 / 404) ~0.2 s per link, ~1.5 h for 28 000, catches deleted /
+  private; yt-dlp ~3.5 s (~27 h), also age / region, but risks YouTube's bot check on the DJ's connection.
+  Steps: (1) check while texts download → existing "can't be played" status (`LoadFailureService`), separate from the
+  DJ's "broken" mark; (2) light check when a song is queued; (3) "Check links" in Song Sources → USDB, re-check after
+  ~30 days; (4) later a shared **health list** (song id → ok / dead / no link + date, no song content) published on
+  GitHub, made from the developer's Mac — not copies of the .txt files (USDB content behind a login).
+  Reference: allkaraoke.party (github.com/Asvarox/allkaraoke) — 6 700 reviewed UltraStar .txt + `index.json`, nightly
+  GitHub Action imports shared songs, checks playability with the embedded YouTube player in a headless browser and
+  lyrics length vs video length; no licence file (ask the maintainer before using their songs as a source).
+
 - macOS: ask CoreAudio for the default output (`Media.SystemDefaultOutput`; Windows asks the OS, macOS falls back to
   PortAudio's list, which is stale while a mic is open) and check the Bluetooth detection by uid on a Mac
 - Translations: a small check that every key in en.json exists in all languages with the same placeholders (done by
