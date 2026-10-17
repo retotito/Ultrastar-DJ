@@ -8,6 +8,7 @@ using UltrastarDJ.App.ViewModels;
 using UltrastarDJ.App.Views;
 using UltrastarDJ.Core.Abstractions;
 using UltrastarDJ.Core.Displays;
+using UltrastarDJ.Core.Playback;
 using UltrastarDJ.Core.Players;
 using UltrastarDJ.App.Localization;
 
@@ -39,6 +40,11 @@ public sealed class DisplayService : IDisplayService
     private HashSet<ScreenArea> _screens = [];
     private Window? _owner;
     private DisplaysDocument _doc;
+    private bool _single;
+    // Single-screen mode: after a song the score screen stays in front this long (count-up ≈ 4 s, then ~10 s to look),
+    // unless a click or key on the display goes back earlier.
+    private static readonly TimeSpan ScoreInFront = TimeSpan.FromSeconds(14);
+    private DispatcherTimer? _backToDj;
 
     public DisplayService(ISettingsStore settings, MediaService media, PlayersService players, IServiceProvider services, ILogger<DisplayService> log,
         NotificationService notifications)
@@ -85,6 +91,10 @@ public sealed class DisplayService : IDisplayService
         _owner = owner;
         _screens = [.. Areas(owner)];
         owner.Screens.Changed += (_, _) => OnScreensChanged();
+        _single = SingleScreen.IsActive(_doc.SingleScreen, _screens.Count);
+        _log.LogInformation("Screens: {Count}; single-screen mode {Mode} → {State}", _screens.Count, _doc.SingleScreen, _single ? "on" : "off");
+        // Resolved here, not injected: PlaybackService depends on IDisplayService.
+        Playback.StateChanged += s => Dispatcher.UIThread.Post(() => OnPlaybackStateChanged(s));
         owner.Closing += (_, _) =>
         {
             foreach (BeamerWindow window in _open.Values.ToList())
@@ -95,6 +105,105 @@ public sealed class DisplayService : IDisplayService
     }
 
     public DisplayConfig GetConfig(DisplayId id) => _doc.Get(id);
+
+    // ── Single-screen mode ──────────────────────────────────────────────
+
+    private PlaybackService Playback => _services.GetRequiredService<PlaybackService>();
+
+    public IReadOnlyList<int> PlayersOn(DisplayId id) => SingleScreen.PlayersOn(id, _doc.Beamer1, _doc.Beamer2, _single);
+
+    public SingleScreenMode SingleScreenMode => _doc.SingleScreen;
+    public bool IsSingleScreen => _single;
+    public int ScreenCount => _screens.Count;
+    public event Action? SingleScreenChanged;
+
+    public void SetSingleScreenMode(SingleScreenMode mode)
+    {
+        _doc = _doc with { SingleScreen = mode };
+        _settings.Save(SettingsName, _doc);
+        SingleScreenChanged?.Invoke();
+        UpdateSingleScreen(byScreens: false);
+    }
+
+    private bool InSong => Playback.State is PlaybackState.Preview or PlaybackState.Countdown or PlaybackState.Playing or PlaybackState.Paused;
+
+    // A change takes effect between songs only: switching displays under singers would hide their notes.
+    private void UpdateSingleScreen(bool byScreens)
+    {
+        bool now = SingleScreen.IsActive(_doc.SingleScreen, _screens.Count);
+        if (now == _single || InSong)
+        {
+            return;
+        }
+
+        _single = now;
+        _log.LogInformation("Single-screen mode {State} ({Count} screens, {Mode})", now ? "on" : "off", _screens.Count, _doc.SingleScreen);
+        if (now && _open.ContainsKey(DisplayId.Beamer2))
+        {
+            Close(DisplayId.Beamer2);
+        }
+
+        if (byScreens)
+        {
+            _notifications.Info(now ? L.T("single.on_title") : L.T("single.off_title"), now ? L.T("single.on_detail") : L.T("single.off_detail"));
+        }
+
+        SingleScreenChanged?.Invoke();
+        PlayersChanged?.Invoke();
+    }
+
+    private void OnPlaybackStateChanged(PlaybackState state)
+    {
+        if (state != PlaybackState.Score)
+        {
+            _backToDj?.Stop();
+        }
+
+        if (!_single)
+        {
+            UpdateSingleScreen(byScreens: true);
+            return;
+        }
+
+        switch (state)
+        {
+            case PlaybackState.Preview or PlaybackState.Countdown:
+                PresentForSong();
+                break;
+            case PlaybackState.Score:
+                _backToDj ??= new DispatcherTimer(ScoreInFront, DispatcherPriority.Normal, (_, _) =>
+                {
+                    _backToDj!.Stop();
+                    ShowDjWindow();
+                });
+                _backToDj.Start();
+                break;
+            default:
+                UpdateSingleScreen(byScreens: true);
+                break;
+        }
+    }
+
+    // Display 1 in front and fullscreen for the singers — opened if the DJ never opened it.
+    private void PresentForSong()
+    {
+        Open(DisplayId.Beamer1);
+        if (_open.TryGetValue(DisplayId.Beamer1, out BeamerWindow? window))
+        {
+            if (window.WindowState != WindowState.FullScreen)
+            {
+                window.WindowState = WindowState.FullScreen;
+            }
+
+            window.Activate();
+        }
+    }
+
+    public void ShowDjWindow()
+    {
+        _backToDj?.Stop();
+        _owner?.Activate();
+    }
 
     public void SetPlayers(DisplayId id, IReadOnlyList<int> playerIds)
     {
@@ -114,7 +223,8 @@ public sealed class DisplayService : IDisplayService
 
     public void Open(DisplayId id)
     {
-        if (_open.ContainsKey(id))
+        // Single-screen mode uses Display 1 only.
+        if (_open.ContainsKey(id) || (_single && id == DisplayId.Beamer2))
         {
             return;
         }
@@ -268,6 +378,8 @@ public sealed class DisplayService : IDisplayService
                 _notifications.Info(L.F("screen.disconnected", name));
             }
         }
+
+        UpdateSingleScreen(byScreens: true);
     }
 
     // Out of fullscreen first; then next to the DJ window, at its first-open size.
@@ -363,6 +475,9 @@ public sealed class DisplayService : IDisplayService
     /// <summary>Persisted shape of the displays settings document.</summary>
     public sealed record DisplaysDocument(DisplayConfig Beamer1, DisplayConfig Beamer2)
     {
+        /// <summary>Game Displays → Single-screen mode; files from before it read as Automatic.</summary>
+        public SingleScreenMode SingleScreen { get; init; }
+
         public static DisplaysDocument Default()
             => new(DisplayConfig.Default(DisplayId.Beamer1), DisplayConfig.Default(DisplayId.Beamer2));
 

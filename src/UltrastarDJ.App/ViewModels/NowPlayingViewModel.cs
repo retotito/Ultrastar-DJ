@@ -247,7 +247,7 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
         // Which display each sings on (a player may have moved without the rows changing).
         foreach (MixRowViewModel row in MixRows)
         {
-            row.Display = _displays.GetConfig(DisplayId.Beamer1).PlayerIds.Contains(row.Id) ? 1 : 2;
+            row.Display = _displays.PlayersOn(DisplayId.Beamer1).Contains(row.Id) ? 1 : 2;
             row.VoiceText = singers.FirstOrDefault(x => x.PlayerId == row.Id) is { PlayerId: > 0 } sung ? VoiceName(sung.Voice) : "";
         }
 

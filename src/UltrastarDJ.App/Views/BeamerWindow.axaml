@@ -124,5 +124,26 @@
 
     <TextBlock Classes="beamer" Text="{l:T display.double_click_f_fullscreen}" FontSize="{StaticResource TextSm}" Opacity="0.5"
                HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="{StaticResource Pad4}" IsVisible="{Binding IsIdle}" />
+
+    <!-- Single-screen mode: the DJ's controls on the display, shown while the mouse moves (BeamerWindow.axaml.cs).
+         At the top, never over the lyrics. -->
+    <Border x:Name="ControlBar" IsVisible="False" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="{StaticResource Pad6}"
+            Background="#CC000000" CornerRadius="{StaticResource RadiusFull}" Padding="12,10">
+      <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space3}">
+        <Button Classes="transport" Classes.go="{Binding IsPaused}" Classes.pause="{Binding !IsPaused}" Command="{Binding TogglePauseCommand}"
+                ToolTip.Tip="{l:Pick IsPaused, True=game_player.resume, False=game_player.pause}">
+          <c:Icon Glyph="{Binding IsPaused, Converter={x:Static vm:BoolConverters.Glyph}, ConverterParameter='play_arrow|pause'}" FontSize="{StaticResource IconXl}" />
+        </Button>
+        <Button Classes="transport stop" Command="{Binding StopSongCommand}" ToolTip.Tip="{l:T game_player.stop_show_scores}">
+          <c:Icon Glyph="stop" FontSize="{StaticResource IconLg}" />
+        </Button>
+        <Button Classes="tonal" Command="{Binding BackToDjCommand}" VerticalAlignment="Center" Padding="16,10">
+          <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space2}">
+            <c:Icon Glyph="arrow_back" FontSize="{StaticResource IconMd}" />
+            <TextBlock Text="{l:T single.back_to_dj}" />
+          </StackPanel>
+        </Button>
+      </StackPanel>
+    </Border>
   </Panel>
 </Window>

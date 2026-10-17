@@ -151,8 +151,8 @@ public sealed class PlaybackService : IDisposable
     private string SetupKey()
     {
         IEnumerable<string> placed = new[] { DisplayId.Beamer1, DisplayId.Beamer2 }
-            .Where(_displays.IsOpen)
-            .SelectMany(d => _displays.GetConfig(d).PlayerIds.Where(id => _players.Get(id).Mic is not null).Order().Select(id => $"{id}@{d}"));
+            .Where(Shows)
+            .SelectMany(d => _displays.PlayersOn(d).Where(id => _players.Get(id).Mic is not null).Order().Select(id => $"{id}@{d}"));
         return $"{string.Join(' ', placed)} | {string.Join(' ', Singers().Select(s => $"{s.PlayerId}:{s.Voice}"))}";
     }
 
@@ -184,7 +184,11 @@ public sealed class PlaybackService : IDisposable
     public bool IsBusy { get; private set; }
 
     public bool CanLoad => State is PlaybackState.Idle or PlaybackState.Loaded or PlaybackState.Preview or PlaybackState.Score && !IsBusy;
-    public bool AnyDisplayOpen => _displays.IsOpen(DisplayId.Beamer1) || _displays.IsOpen(DisplayId.Beamer2);
+    // Single-screen mode opens Display 1 itself when the song starts.
+    public bool AnyDisplayOpen => _displays.IsSingleScreen || _displays.IsOpen(DisplayId.Beamer1) || _displays.IsOpen(DisplayId.Beamer2);
+
+    /// <summary>A display the singers will see: open, or Display 1 in single-screen mode (it opens for the song).</summary>
+    private bool Shows(DisplayId id) => _displays.IsOpen(id) || (_displays.IsSingleScreen && id == DisplayId.Beamer1);
     public bool CanPlay => PlaybackRules.CanPlay(State, AnyDisplayOpen) && !IsBusy;
     public bool CanPreview => PlaybackRules.CanGetReady(State, AnyDisplayOpen);
     public bool CanHome => PlaybackRules.CanHome(State);
@@ -198,9 +202,9 @@ public sealed class PlaybackService : IDisposable
         HashSet<int> onOpenDisplays = [];
         foreach (DisplayId id in (ReadOnlySpan<DisplayId>)[DisplayId.Beamer1, DisplayId.Beamer2])
         {
-            if (_displays.IsOpen(id))
+            if (Shows(id))
             {
-                onOpenDisplays.UnionWith(_displays.GetConfig(id).PlayerIds);
+                onOpenDisplays.UnionWith(_displays.PlayersOn(id));
             }
         }
 
@@ -483,7 +487,7 @@ public sealed class PlaybackService : IDisposable
     private void OnDisplayScreenLost(DisplayId id, string screen)
     {
         string title = L.F("playback.screen_lost", (int)id, screen);
-        if (CanStop && _displays.GetConfig(id).PlayerIds.Count > 0)
+        if (CanStop && _displays.PlayersOn(id).Count > 0)
         {
             Stop();
             _ = HomeAsync();

@@ -739,6 +739,20 @@ Only a first start changes; saved settings stay as they are.
       empty spots of the top row drag the window, double-click maximises
 - [ ] Verified live
 
+## Sprint 30 — Single-screen mode  *(in progress)*
+
+Goal: a DJ with one screen (a laptop alone) plays without juggling windows.
+
+- [x] Game Displays → **Single-screen mode: Automatic / On / Off** (Automatic = on while one screen is connected; a
+      screen plugged in or out mid-song takes effect after the song)
+- [x] Only Display 1 (Display 2 greyed out, with why); Display 1 shows every assigned player — the saved assignment is
+      not changed, players of Display 2 are back there with a second screen
+- [x] Song start: Display 1 opens fullscreen in front before "Get ready" / the countdown (no display opened by hand)
+- [x] During the song: control bar on the display when the mouse moves (Pause / Continue, Stop, Back to DJ window),
+      hidden with the pointer after ~3 s; Space pauses / continues, Esc pauses and shows the DJ window
+- [x] Song end: score screen in front until a click / key, or by itself ~10 s after the count-up → DJ window
+- [ ] Verified live (Mac alone; Mac with a second screen: Automatic switches back)
+
 ---
 
 ## Later / ideas

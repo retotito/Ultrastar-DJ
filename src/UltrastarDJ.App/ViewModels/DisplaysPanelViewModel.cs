@@ -26,6 +26,44 @@ public sealed partial class DisplaysPanelViewModel : ViewModelBase
         // A player that loses its mic (unplugged, or set to none) leaves its beamer and its toggle disables.
         _displays.PlayersChanged += SyncAssignments;
         _players.Changed += _ => SyncAssignments();
+        _singleScreenMode = displays.SingleScreenMode;
+        _displays.SingleScreenChanged += OnSingleScreenChanged;
+    }
+
+    // ── Single-screen mode ──
+
+    public IReadOnlyList<SingleScreenMode> SingleScreenModes { get; } = [SingleScreenMode.Automatic, SingleScreenMode.On, SingleScreenMode.Off];
+
+    [ObservableProperty] private SingleScreenMode _singleScreenMode;
+
+    partial void OnSingleScreenModeChanged(SingleScreenMode value)
+    {
+        if (value != _displays.SingleScreenMode)
+        {
+            _displays.SetSingleScreenMode(value);
+        }
+    }
+
+    /// <summary>"1 screen connected — in use" / "… — after this song" / "2 screens connected — off".</summary>
+    public string SingleScreenStatus
+    {
+        get
+        {
+            string screens = L.F(_displays.ScreenCount == 1 ? "single.one_screen" : "single.screens", _displays.ScreenCount);
+            bool wanted = Core.Displays.SingleScreen.IsActive(SingleScreenMode, _displays.ScreenCount);
+            string state = _displays.IsSingleScreen == wanted
+                ? L.T(_displays.IsSingleScreen ? "single.in_use" : "single.not_in_use")
+                : L.T("single.after_song");
+            return $"{screens} — {state}";
+        }
+    }
+
+    private void OnSingleScreenChanged()
+    {
+        SingleScreenMode = _displays.SingleScreenMode;
+        OnPropertyChanged(nameof(SingleScreenStatus));
+        Beamer1.RefreshSingleScreen();
+        Beamer2.RefreshSingleScreen();
     }
 
     public DisplayRowViewModel Beamer1 { get; }
@@ -76,8 +114,20 @@ public sealed partial class DisplayRowViewModel : ObservableObject
 
     internal void RefreshScreen() => Screen = _displays.ScreenText(Id);
 
+    /// <summary>Display 2 while single-screen mode is on: cannot open; its players are shown on Display 1.</summary>
+    public bool IsUnused => _displays.IsSingleScreen && Id == DisplayId.Beamer2;
+    public bool CanOpen => !IsUnused;
+
+    internal void RefreshSingleScreen()
+    {
+        OnPropertyChanged(nameof(IsUnused));
+        OnPropertyChanged(nameof(CanOpen));
+        OnPropertyChanged(nameof(ScreenText));
+        ToggleOpenCommand.NotifyCanExecuteChanged();
+    }
+
     /// <summary>The screen it is on, or where a closed one will open.</summary>
-    public string ScreenText => Screen ?? L.T("displays.opens_next");
+    public string ScreenText => Screen ?? (_displays.IsSingleScreen ? L.T("single.display1_opens") : L.T("displays.opens_next"));
 
     partial void OnScreenChanged(string? value) => OnPropertyChanged(nameof(ScreenText));
 
@@ -131,7 +181,7 @@ public sealed partial class DisplayRowViewModel : ObservableObject
     }
 
     /// <summary>The panel's one Open / Close button.</summary>
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanOpen))]
     private void ToggleOpen()
     {
         if (IsOpen)

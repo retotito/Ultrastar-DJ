@@ -5,6 +5,7 @@ using Avalonia.Media.Imaging;
 using Avalonia.Styling;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using UltrastarDJ.App.Game;
 using UltrastarDJ.App.Services;
 using UltrastarDJ.Core.Displays;
@@ -74,6 +75,7 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
         _playback.PicturesChanged += RefreshStage;
         _playback.PitchTicked += OnPitchTicked;
         _displays.PlayersChanged += OnAssignmentChanged;
+        _displays.SingleScreenChanged += OnSingleScreenChanged;
         _players.Changed += OnPlayerConfigChanged;
         _countdown = new DispatcherTimer(TimeSpan.FromSeconds(1), DispatcherPriority.Normal, (_, _) => CountdownTick());
         _scoreAnim = new DispatcherTimer(TimeSpan.FromMilliseconds(33), DispatcherPriority.Render, (_, _) => AnimateScores());
@@ -130,7 +132,50 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(IsGame));
         OnPropertyChanged(nameof(IsPaused));
         OnPropertyChanged(nameof(IsScore));
+        OnPropertyChanged(nameof(HasControls));
         RefreshStage();
+    }
+
+    // ── Single-screen mode: the display is in front during the song, the DJ window behind it ──
+
+    /// <summary>Only Display 1 is used, in front during the song; its own controls replace the DJ window's.</summary>
+    public bool IsSingleScreen => _displays.IsSingleScreen;
+
+    /// <summary>The control bar may show (on mouse movement): single-screen mode, during a song.</summary>
+    public bool HasControls => IsSingleScreen && IsGame;
+
+    private void OnSingleScreenChanged()
+    {
+        OnPropertyChanged(nameof(IsSingleScreen));
+        OnPropertyChanged(nameof(HasControls));
+    }
+
+    [RelayCommand]
+    private void TogglePause()
+    {
+        if (_playback.CanPause)
+        {
+            _playback.Pause();
+        }
+        else if (_playback.CanResume)
+        {
+            _playback.Resume();
+        }
+    }
+
+    [RelayCommand]
+    private void StopSong() => _playback.Stop();
+
+    /// <summary>Pauses a running song and brings the DJ window to the front.</summary>
+    [RelayCommand]
+    private void BackToDj()
+    {
+        if (_playback.CanPause)
+        {
+            _playback.Pause();
+        }
+
+        _displays.ShowDjWindow();
     }
 
     partial void OnHasVideoChanged(bool value) => RefreshStage();
@@ -203,7 +248,7 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
     private void RefreshAssignedPlayers()
     {
         AssignedPlayers.Clear();
-        IReadOnlyList<int> ids = _displays.GetConfig(Id).PlayerIds;
+        IReadOnlyList<int> ids = _displays.PlayersOn(Id);
         foreach (PlayerConfig p in _players.All.Where(p => ids.Contains(p.Id) && p.Mic is not null))
         {
             AssignedPlayers.Add(new ScenePlayer(p.Id, p.Name, PlayerBrush(p.Id), PlayerColor(p.Id)));
@@ -317,6 +362,7 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
         _playback.StateChanged -= OnPlaybackStateChanged;
         _playback.PitchTicked -= OnPitchTicked;
         _displays.PlayersChanged -= OnAssignmentChanged;
+        _displays.SingleScreenChanged -= OnSingleScreenChanged;
         _players.Changed -= OnPlayerConfigChanged;
         _settings.Changed -= OnSettingsChanged;
         SyncTest.Changed -= OnSyncTestChanged;

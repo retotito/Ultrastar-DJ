@@ -51,9 +51,12 @@
             </Border.Styles>
             <TextBlock Text="{Binding StateText}" FontSize="{StaticResource TextXs}" FontWeight="{StaticResource WeightSemibold}" />
           </Border>
-          <!-- Which screen it is on — always one line (also while closed), so opening does not shift the buttons. -->
+          <!-- Which screen it is on — always one line (also while closed), so opening does not shift the buttons.
+               Single-screen mode: Display 2 says why it is not used. -->
           <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Classes="muted" FontSize="{StaticResource TextXs}" Margin="0,2,0,0"
-                     TextTrimming="CharacterEllipsis" Text="{Binding ScreenText}" />
+                     TextTrimming="CharacterEllipsis" Text="{Binding ScreenText}" IsVisible="{Binding !IsUnused}" />
+          <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Classes="muted" FontSize="{StaticResource TextXs}" Margin="0,2,0,0"
+                     TextWrapping="Wrap" Text="{l:T single.display2_unused}" IsVisible="{Binding IsUnused}" />
 
           <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="{StaticResource Space2}" Margin="0,12,0,0">
             <Button Classes="tonal" Classes.go="{Binding !IsOpen}" Classes.stop="{Binding IsOpen}" Command="{Binding ToggleOpenCommand}">
@@ -98,6 +101,23 @@
   </UserControl.Resources>
 
   <StackPanel Spacing="{StaticResource Space2}">
+    <!-- Single-screen mode: one screen for the DJ and the singers (DisplayService). -->
+    <Border Classes="card" Margin="0,0,0,8">
+      <StackPanel Spacing="{StaticResource Space1}">
+        <TextBlock Classes="title" Text="{l:T single.title}" />
+        <ComboBox ItemsSource="{Binding SingleScreenModes}" SelectedItem="{Binding SingleScreenMode}" HorizontalAlignment="Stretch" Margin="0,4,0,0">
+          <ComboBox.ItemTemplate>
+            <DataTemplate>
+              <TextBlock Text="{l:TOf ., Prefix=single.mode_}" />
+            </DataTemplate>
+          </ComboBox.ItemTemplate>
+        </ComboBox>
+        <TextBlock FontSize="{StaticResource TextSm}" Text="{Binding SingleScreenStatus}" Margin="0,4,0,0" />
+        <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap" MaxWidth="{StaticResource PopoverTextWidth}"
+                   HorizontalAlignment="Left" Text="{l:T single.hint}" />
+      </StackPanel>
+    </Border>
+
     <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap" MaxWidth="{StaticResource PopoverTextWidth}" HorizontalAlignment="Left"
                Text="{l:T displays.display_opens_next_window}" />
 

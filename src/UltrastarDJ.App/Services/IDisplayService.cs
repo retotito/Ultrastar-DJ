@@ -9,6 +9,26 @@ namespace UltrastarDJ.App.Services;
 public interface IDisplayService
 {
     DisplayConfig GetConfig(DisplayId id);
+
+    /// <summary>The players a display shows now — as assigned, or in single-screen mode all of them on Display 1.</summary>
+    IReadOnlyList<int> PlayersOn(DisplayId id);
+
+    SingleScreenMode SingleScreenMode { get; }
+    void SetSingleScreenMode(SingleScreenMode mode);
+
+    /// <summary>
+    /// Single-screen mode in effect: only Display 1, in front and fullscreen during a song. A change (mode, screens
+    /// plugged in or out) waits until no song is on.
+    /// </summary>
+    bool IsSingleScreen { get; }
+
+    int ScreenCount { get; }
+
+    /// <summary>Raised on the UI thread when <see cref="IsSingleScreen"/> or the mode changed.</summary>
+    event Action? SingleScreenChanged;
+
+    /// <summary>Brings the DJ window to the front (single-screen mode: back from the display).</summary>
+    void ShowDjWindow();
     void SetPlayers(DisplayId id, IReadOnlyList<int> playerIds);
 
     bool IsOpen(DisplayId id);

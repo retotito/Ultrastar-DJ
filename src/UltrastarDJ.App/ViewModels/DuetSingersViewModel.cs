@@ -77,12 +77,13 @@ public sealed partial class DuetSingersViewModel : ObservableObject
         List<DuetDisplaySection> sections = [];
         foreach (DisplayId id in (ReadOnlySpan<DisplayId>)[DisplayId.Beamer1, DisplayId.Beamer2])
         {
-            if (!displays.IsOpen(id))
+            // Single-screen mode: Display 1 counts as open (it opens for the song).
+            if (!displays.IsOpen(id) && !(displays.IsSingleScreen && id == DisplayId.Beamer1))
             {
                 continue;
             }
 
-            IReadOnlyList<int> assigned = displays.GetConfig(id).PlayerIds;
+            IReadOnlyList<int> assigned = displays.PlayersOn(id);
             List<DuetSingerRow> rows = [.. players.All.Where(p => p.Mic is not null && assigned.Contains(p.Id))
                 .Select(p => new DuetSingerRow(p.Id, p.Name, VoiceOf(p.Id), this))];
             if (rows.Count > 0)
