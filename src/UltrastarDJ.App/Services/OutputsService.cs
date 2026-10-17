@@ -427,7 +427,8 @@ public sealed class OutputsService : IDisposable
         /// <summary>The device's name when it was chosen — for "LG TV (not connected)" and toasts while it is unplugged.</summary>
         public string? Name { get; init; }
 
-        public static ChannelOutput Default() => new(AudioOutputDevice.Auto.Id, 2, 0, 1.0);
+        /// <summary>System speaker at 80 %: room to turn up without leaving the slider's range.</summary>
+        public static ChannelOutput Default() => new(AudioOutputDevice.Auto.Id, 2, 0, 0.8);
     }
 
     public sealed record OutputsDocument(ChannelOutput Game, ChannelOutput Preview)

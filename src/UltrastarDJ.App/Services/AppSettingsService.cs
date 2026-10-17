@@ -111,7 +111,15 @@ public sealed class AppSettingsService
         public WindowPlacement? DjWindow { get; init; }
         public string? Language { get; init; }
 
-        /// <summary>A first start is light and Easy (a party, not a contest); a saved choice is kept.</summary>
-        public static AppSettingsDocument Default() => new(true, Difficulty.Easy, 0);
+        /// <summary>
+        /// A first start: light, Easy (a party, not a contest), dark note bars (they read on bright and dark videos),
+        /// broken songs listed (marked), the Game Player window closed. A saved choice is kept.
+        /// </summary>
+        public static AppSettingsDocument Default() => new(true, Difficulty.Easy, 0)
+        {
+            NoteBarStyle = NoteBarStyle.Black,
+            ShowBrokenSongs = true,
+            NowPlayingHidden = true,
+        };
     }
 }

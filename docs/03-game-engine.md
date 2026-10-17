@@ -91,7 +91,7 @@ PortAudio input (device, channel L/R/mono)
 ### Monitoring mix
 
 `MonitorMixer` opens one PortAudio **output** stream on the game output device (respecting channel offset)
-and sums each active player's gated mic × `mixGain` (0–1 = 0–100 %: mix only turns a mic down, boosting is the input gain's job; older
+and sums each active player's gated mic × `mixGain` (0–1 = 0–100 %, new players 80 % like their input gain: mix only turns a mic down, boosting is the input gain's job; older
 settings above 1 read as 1; muted → 0, fader position kept — the mute is for the song only, the Audio Input mic test always plays the mic). Starts when the
 song starts, stops on `Score`/`Stop`. In the mic test it is on whenever at least one mic is tested, on the game
 output — not a choice (it is where the mics are heard during a song and what they are calibrated for; it follows a
@@ -168,7 +168,7 @@ signal and missed it; the tone-through-analysis calibration includes it.
 
 Prototype NoteLane.svelte, drawn in `GameOverlayControl`: ≤ 2 players on a beamer → 16 rows, bars ≥ 40 px, radius 8;
 3–4 players → 12 rows, ≥ 28 px, radius 4 (bar = max(80 % row, minimum)). Settings → **Note bar style**: White
-(white 18 % fill, white 35 % border) or Black (black 45 %, white 55 %); border mixed 55 % with the player colour,
+(white 18 % fill, white 35 % border) or Black (black 45 %, white 55 %; the default — reads on bright and dark video); border mixed 55 % with the player colour,
 2 px, soft glow. Golden: gold tint + border, glow, shimmer (1.4 s). Rap and freestyle use hues no player has (players blue/red/green/yellow, golden gold), each a 12 % tint
 with a 2 px dashed border over a dark 3 px underlay so it reads on bright video. Rap: magenta `#E040FB`, never filled; hit (any voice) → solid
 with a magenta glow settling over 0.5 s, badge R (★ golden rap). Freestyle: teal `#2DD4BF`; once the player is heard on it, a solid border in their

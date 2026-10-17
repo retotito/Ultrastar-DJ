@@ -161,7 +161,7 @@
           <c:Icon Glyph="volume_up" FontSize="{StaticResource IconMd}" Width="28" TextAlignment="Center" Margin="32,0,0,0" />
           <TextBlock Classes="muted" FontSize="{StaticResource TextSm}" Text="{l:T game_player.song}" VerticalAlignment="Center" />
         </StackPanel>
-        <c:MeterFader Grid.Column="1" Minimum="0" Maximum="1" Value="{Binding Gain}" Level="{Binding SongLevel}"
+        <c:MeterFader Grid.Column="1" Minimum="0" Maximum="1" ResetValue="0.8" Value="{Binding Gain}" Level="{Binding SongLevel}"
                       MinDb="-40" MaxDb="0" WarnDb="-8" ClipDb="-4" VerticalAlignment="Center" ToolTip.Tip="{l:T game_player.song_knob}" />
         <TextBlock Grid.Column="2" Classes="muted" Text="{Binding Gain, StringFormat='{}{0:P0}'}" VerticalAlignment="Center" TextAlignment="Right" />
       </Grid>
@@ -189,7 +189,7 @@
                 </Button>
                 <TextBlock Classes="muted" FontSize="{StaticResource TextSm}" Text="{Binding Name}" VerticalAlignment="Center" />
               </StackPanel>
-              <c:MeterFader Grid.Column="1" Minimum="0" Maximum="1" ResetValue="1" Value="{Binding MixGain}" Level="{Binding MixLevel}"
+              <c:MeterFader Grid.Column="1" Minimum="0" Maximum="1" ResetValue="0.8" Value="{Binding MixGain}" Level="{Binding MixLevel}"
                             MinDb="-70" MaxDb="0" WarnDb="-14" ClipDb="-7" VerticalAlignment="Center" IsEnabled="{Binding !Muted}" ToolTip.Tip="{l:T game_player.mix_knob}" />
               <!-- Duet: the voice this player sings, under their name (lined up with it, past the screen and mic icons),
                    in their colour. Spans the row so a long singer name does not widen the name column. -->

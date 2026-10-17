@@ -712,6 +712,18 @@ speaker + mic together, so it is kept per game output and shown for the one play
 - [x] GitHub build: macOS ffmpeg download gone (evermeet.cx removed its API, "410") → Martin Riedl's static builds per
       arch; the device-list test checked CI's sound-card-less Linux too → Windows only (where the filter is)
 
+## Sprint 28 — Better first-start defaults  *(in progress)*
+
+Only a first start changes; saved settings stay as they are.
+
+- [x] Note bars Black (see-through), broken songs shown (marked), Game Player window closed
+- [x] New players: input gain and monitor mix 80 %; game and preview outputs 80 % — the faders' double-click resets
+      to these too (mic gain −2 dB)
+- [x] Songbook uses the public link (guests need no access to the party's Wi-Fi)
+- [x] DJ window on a first start: centred when 1420 × 860 fits the main screen, else maximised with the minimum size
+      lowered to the screen; the language screen's list scrolls, so OK stays visible on a low window
+- [ ] Verified live (fresh settings folder on the Mac; first start on the Windows PC)
+
 ---
 
 ## Later / ideas

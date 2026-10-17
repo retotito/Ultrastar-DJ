@@ -40,6 +40,36 @@ public static class WindowMemory
     }
 
     /// <summary>
+    /// First start (or its screen is gone): centred on the main screen when the designed size fits, else maximised —
+    /// with the minimum size lowered to the screen, so nothing is cut off on small or zoomed screens (a 1366 × 768
+    /// laptop at 125 % has only about 1090 × 580 to give).
+    /// </summary>
+    public static void FitToScreen(Window window)
+    {
+        if ((window.Screens.Primary ?? window.Screens.All.FirstOrDefault()) is not { } screen)
+        {
+            return;
+        }
+
+        double availableWidth = screen.WorkingArea.Width / screen.Scaling;
+        double availableHeight = screen.WorkingArea.Height / screen.Scaling;
+        window.MinWidth = Math.Min(window.MinWidth, availableWidth);
+        window.MinHeight = Math.Min(window.MinHeight, availableHeight);
+        // Room for the title bar the working area does not include.
+        const double TitleBarHeight = 40;
+        if (window.Width <= availableWidth && window.Height + TitleBarHeight <= availableHeight)
+        {
+            window.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            return;
+        }
+
+        window.Width = Math.Min(window.Width, availableWidth);
+        window.Height = Math.Min(window.Height, availableHeight - TitleBarHeight);
+        window.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+        window.Opened += (_, _) => window.WindowState = WindowState.Maximized;
+    }
+
+    /// <summary>
     /// Keeps the window's normal position and size and its mode as they change, and hands them over when it closes.
     /// Read while the window lives, never at closing: when the app quits, a closing window already reports position
     /// (0, 0) — every display was saved on the main screen.

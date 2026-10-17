@@ -46,7 +46,7 @@
           <Grid ColumnDefinitions="52,*,60" RowDefinitions="Auto,Auto" RowSpacing="{StaticResource Space1}">
             <TextBlock Grid.Row="0" Grid.Column="0" Classes="label" Text="GAIN" VerticalAlignment="Top" Margin="0,9,0,0"
                        ToolTip.Tip="{l:T audio_input.gain_gate_tip}" />
-            <c:MeterFader Grid.Row="0" Grid.Column="1" Minimum="-40" Maximum="20" ResetValue="0" Value="{Binding InputGainDb}" Level="{Binding Level}"
+            <c:MeterFader Grid.Row="0" Grid.Column="1" Minimum="-40" Maximum="20" ResetValue="-2" Value="{Binding InputGainDb}" Level="{Binding Level}"
                           MinDb="-70" MaxDb="0" WarnDb="-14" ClipDb="-7"
                           ShowGate="True" GateDb="{Binding GateDb}" GateMinDb="-70" GateMaxDb="-20" GateResetDb="-50"
                           ToolTip.Tip="{l:T audio_input.gain_gate_tip}" />
@@ -57,7 +57,7 @@
 
             <TextBlock Grid.Row="1" Grid.Column="0" Classes="label" Text="MIX" VerticalAlignment="Center"
                        ToolTip.Tip="{l:T audio_input.mix_knob}" />
-            <c:MeterFader Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="1" ResetValue="1" Value="{Binding MixGain}" Level="{Binding MixLevel}"
+            <c:MeterFader Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="1" ResetValue="0.8" Value="{Binding MixGain}" Level="{Binding MixLevel}"
                           MinDb="-70" MaxDb="0" WarnDb="-14" ClipDb="-7"
                           ToolTip.Tip="{l:T audio_input.mix_knob}" />
             <TextBlock Grid.Row="1" Grid.Column="2" Classes="muted" Text="{Binding MixGain, StringFormat='{}{0:P0}'}" VerticalAlignment="Center" TextAlignment="Right" />

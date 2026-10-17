@@ -57,7 +57,12 @@ public sealed partial class App : Application
         AppSettingsService appSettings = _services.GetRequiredService<AppSettingsService>();
         DjWindow window = new() { DataContext = _services.GetRequiredService<DjWindowViewModel>() };
         // Opens where it was when the app last closed (same screen, size, maximised / fullscreen).
-        WindowMemory.Restore(window, appSettings.DjWindowPlacement);
+        // First start (nothing saved, or its screen is gone): fitted to the main screen.
+        if (!WindowMemory.Restore(window, appSettings.DjWindowPlacement))
+        {
+            WindowMemory.FitToScreen(window);
+        }
+
         WindowMemory.Track(window, appSettings.SetDjWindowPlacement);
         _services.GetRequiredService<DisplayService>().AttachOwner(window);
         // Applies the persisted output routing to the media channels before anything plays, and the theme.

@@ -196,22 +196,24 @@
        Esc keeps the current pick. -->
   <!-- First start: which language? Picking one switches the app at once (the window behind follows); OK keeps it. -->
   <Border Background="#99000000" IsVisible="{Binding ChooseLanguage}" ZIndex="10">
-    <Border Classes="card floating" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="{StaticResource Pad6}" Width="380">
-      <StackPanel Spacing="{StaticResource Space3}">
+    <!-- The list scrolls when the window is low (small laptop screens), so OK always stays visible. -->
+    <Border Classes="card floating" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="{StaticResource Pad6}"
+            Margin="{StaticResource Pad6}" Width="380">
+      <Grid RowDefinitions="Auto,Auto,*,Auto" RowSpacing="{StaticResource Space3}">
         <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space2}">
           <c:Icon Glyph="translate" />
           <TextBlock Classes="title" Text="{l:T language.title}" VerticalAlignment="Center" TextWrapping="Wrap" />
         </StackPanel>
-        <TextBlock Classes="muted" FontSize="{StaticResource TextSm}" Text="{l:T language.hint}" TextWrapping="Wrap" />
-        <ListBox ItemsSource="{Binding UiLanguages}" SelectedItem="{Binding LanguageChoice}" Background="Transparent">
+        <TextBlock Grid.Row="1" Classes="muted" FontSize="{StaticResource TextSm}" Text="{l:T language.hint}" TextWrapping="Wrap" />
+        <ListBox Grid.Row="2" ItemsSource="{Binding UiLanguages}" SelectedItem="{Binding LanguageChoice}" Background="Transparent">
           <ListBox.ItemTemplate>
             <DataTemplate x:DataType="l:UiLanguage">
               <TextBlock Text="{Binding NativeName}" FontSize="{StaticResource TextLg}" Margin="4,2" />
             </DataTemplate>
           </ListBox.ItemTemplate>
         </ListBox>
-        <Button Classes="tonal go" HorizontalAlignment="Right" Padding="20,8" Command="{Binding ConfirmLanguageCommand}" Content="{l:T language.ok}" />
-      </StackPanel>
+        <Button Grid.Row="3" Classes="tonal go" HorizontalAlignment="Right" Padding="20,8" Command="{Binding ConfirmLanguageCommand}" Content="{l:T language.ok}" />
+      </Grid>
     </Border>
   </Border>
 

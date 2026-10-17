@@ -538,6 +538,7 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
         /// <summary>Guests connect via the public link instead of the Wi-Fi (default Wi-Fi: no internet needed).</summary>
         public bool PublicLink { get; init; }
 
-        public static SongbookDocument Default() => new(4747, false, NewPin(), false);
+        /// <summary>A first start uses the public link: guests' phones need no access to the party's Wi-Fi.</summary>
+        public static SongbookDocument Default() => new(4747, false, NewPin(), false) { PublicLink = true };
     }
 }

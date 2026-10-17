@@ -22,6 +22,9 @@ public sealed record MicBinding(string DeviceId, MicChannelSide Channel)
 public sealed record PlayerConfig
 {
     public const int MaxPlayers = 4;
+
+    /// <summary>Input gain and monitor mix of a new player: 80 %, headroom for loud singers and a quieter monitor.</summary>
+    public const double DefaultGain = 0.8;
     public static readonly IReadOnlyList<string> Colors = ["blue", "red", "green", "yellow"];
 
     public required int Id { get; init; }
@@ -33,11 +36,11 @@ public sealed record PlayerConfig
     public required string Color { get; init; }
     public MicBinding? Mic { get; init; }
     /// <summary>Input gain 0.01–10 (the UI edits it in dB, <see cref="InputGainScale"/>), applied before the gate.</summary>
-    public double InputGain { get; init; } = 1.0;
+    public double InputGain { get; init; } = DefaultGain;
     /// <summary>Noise gate on block RMS (linear, post-gain). Default 0.003 ≈ −50 dBFS; the UI edits it in dB.</summary>
     public double Threshold { get; init; } = 0.003;
     /// <summary>Level of this mic in the speaker mix, 0–1 (older settings may hold up to 2; read as 1).</summary>
-    public double MixGain { get; init; } = 1.0;
+    public double MixGain { get; init; } = DefaultGain;
     /// <summary>Mic removed from the speaker mix during a song (Game Player mute; scoring unaffected).</summary>
     public bool MixMuted { get; init; }
 
