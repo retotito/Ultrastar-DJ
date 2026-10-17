@@ -146,12 +146,13 @@ public sealed partial class DjWindow : Window
     /// <summary>The strip along the top that moves the window: the search and filter row (TopBarHeight).</summary>
     private const double DragStripHeight = 57;
     // A press on an empty spot of the top row (the bars marked "titlebar", the sidebar's top) drags the window, a
-    // double-click maximises or restores it — as the title bar did. Buttons, the search field and drop-downs handle
-    // their presses first, so they never get here; popovers and cards reaching up there are not part of the row.
+    // double-click maximises or restores it — as the title bar did. Popovers and cards reaching up there are not part
+    // of the row. Never from a control: a drop-down opens on the release and lets the press pass, and Windows' move
+    // loop swallows that release — the filters turned grey and never opened (macOS only moves once the mouse does).
     private void OnTitleAreaPressed(object? sender, PointerPressedEventArgs e)
     {
         if (!IsExtendedIntoWindowDecorations || e.GetPosition(this).Y > DragStripHeight || !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed
-            || !InTitleRow(e.Source as Visual))
+            || !InTitleRow(e.Source as Visual) || OnControl(e.Source as Visual))
         {
             return;
         }
@@ -170,6 +171,10 @@ public sealed partial class DjWindow : Window
 
     private bool InTitleRow(Visual? source)
         => source?.GetSelfAndVisualAncestors().Any(v => ReferenceEquals(v, Sidebar) || (v is StyledElement { Classes: var c } && c.Contains("titlebar"))) == true;
+
+    // Something the DJ presses to use it (drop-down, button, search field), between the press and the row.
+    private static bool OnControl(Visual? source)
+        => source?.GetSelfAndVisualAncestors().OfType<InputElement>().Any(c => c is { Focusable: true, IsEffectivelyEnabled: true }) == true;
 
     // Esc closes the Details popup before anything else sees the key.
     private void OnKeyDownAnywhere(object? sender, KeyEventArgs e)

@@ -780,6 +780,15 @@ Goal: a DJ with one screen (a laptop alone) plays without juggling windows.
 
 ---
 
+## Sprint 32 — Windows: DJ window without title bar  *(done)*
+
+- [x] Library filters turned grey and never opened on Windows: a press on the top row started the window move, and
+      Windows' move loop swallowed the release the drop-down opens on → no move from controls
+- [x] Windows: "Ultrastar DJ" drawn over the search field by Avalonia's title bar → title text hidden
+- [x] App icon in the sidebar's top corner (Windows / Linux; macOS has its window buttons there)
+
+---
+
 ## Later / ideas
 
 - **Goal: a cleaned-up USDB list for every user** (brainstormed 2026-10-17, not started). Measured: no YouTube link

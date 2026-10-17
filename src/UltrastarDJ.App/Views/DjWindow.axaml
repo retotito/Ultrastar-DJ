@@ -5,6 +5,7 @@
         xmlns:c="using:UltrastarDJ.App.Controls"
         xmlns:svc="using:UltrastarDJ.App.Services"
         xmlns:v="using:UltrastarDJ.App.Views"
+        xmlns:chrome="using:Avalonia.Controls.Chrome"
         x:Class="UltrastarDJ.App.Views.DjWindow"
         x:DataType="vm:DjWindowViewModel"
         Title="Ultrastar DJ"
@@ -13,6 +14,15 @@
         Icon="avares://UltrastarDJ/Assets/icon.png"
         ExtendClientAreaToDecorationsHint="True"
         Background="{DynamicResource BrushBackground}">
+
+  <Window.Styles>
+    <!-- Windows: Avalonia draws a title bar over the top row (the caption buttons right, the window title left —
+         over the search field). The title is left out of it; the taskbar still names the window. macOS draws its own
+         buttons and no title here. -->
+    <Style Selector="chrome|WindowDrawnDecorations TextBlock">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+  </Window.Styles>
 
   <Panel>
   <Grid ColumnDefinitions="Auto,*,Auto">
@@ -37,6 +47,13 @@
               Background="{DynamicResource BrushSurfaceContainerLow}"
               BorderBrush="{DynamicResource BrushOutlineVariant}"
               BorderThickness="0,1,1,0" />
+      <!-- The app icon in the top corner where a title bar would name the app — not on macOS, whose window buttons sit
+           here. Transparent to the mouse: the corner still drags the window. -->
+      <Border Height="{StaticResource TopBarHeight}" VerticalAlignment="Top" IsHitTestVisible="False"
+              IsVisible="{OnPlatform Default=True, macOS=False}">
+        <Image Source="avares://UltrastarDJ/Assets/icon.png" Width="{StaticResource IconXl}" Height="{StaticResource IconXl}"
+               RenderOptions.BitmapInterpolationMode="HighQuality" HorizontalAlignment="Center" VerticalAlignment="Center" />
+      </Border>
       <DockPanel Margin="{StaticResource SidebarPad}">
         <StackPanel DockPanel.Dock="Bottom" Spacing="{StaticResource Space5}">
           <Button Classes="sidebar" Classes.active="{Binding ActivePanel, Converter={x:Static vm:SidebarPanelConverters.Is}, ConverterParameter=Settings}"
