@@ -724,6 +724,11 @@ Only a first start changes; saved settings stay as they are.
       lowered to the screen; the language screen's list scrolls, so OK stays visible on a low window
 - [ ] Verified live (fresh settings folder on the Mac; first start on the Windows PC)
 
+## Sprint 29 — Small UI fixes  *(in progress)*
+
+- [x] Song details → Problems: warning icons centred with their text (were at the top of the row), 12 px to the text
+- [ ] Verified live
+
 ---
 
 ## Later / ideas

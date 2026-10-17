@@ -170,9 +170,9 @@
               <ItemsControl ItemsSource="{Binding Problems}">
                 <ItemsControl.ItemTemplate>
                   <DataTemplate x:DataType="x:String">
-                    <Grid ColumnDefinitions="30,*" Margin="0,2">
-                      <c:Icon Glyph="warning" FontSize="{StaticResource IconLg}" Foreground="{DynamicResource BrushError}" VerticalAlignment="Top" />
-                      <TextBlock Grid.Column="1" Text="{Binding}" FontSize="{StaticResource TextSm}" TextWrapping="Wrap" />
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="{StaticResource Space3}" Margin="0,2">
+                      <c:Icon Glyph="warning" FontSize="{StaticResource IconLg}" Foreground="{DynamicResource BrushError}" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="1" Text="{Binding}" FontSize="{StaticResource TextSm}" TextWrapping="Wrap" VerticalAlignment="Center" />
                     </Grid>
                   </DataTemplate>
                 </ItemsControl.ItemTemplate>
