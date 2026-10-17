@@ -2,6 +2,7 @@ using Avalonia.Data;
 using Avalonia.Data.Converters;
 using Avalonia.Input;
 using Avalonia.Markup.Xaml;
+using System.Text.RegularExpressions;
 
 namespace UltrastarDJ.App.Localization;
 
@@ -11,14 +12,21 @@ namespace UltrastarDJ.App.Localization;
 /// </summary>
 public static class Shortcuts
 {
-    /// <summary>"Cmd+P" → "⌘P" / "Ctrl+P", "Shift+Q" → "⇧Q" / "Shift+Q"; a single key stays as written.</summary>
+    /// <summary>
+    /// "Cmd+P" → "⌘P" / "Ctrl+P", "Shift+Q" → "⇧Q" / "Shift+Q". Key names as the keyboard says them in the app's
+    /// language — "Strg" and "Leertaste" on a German one; macOS keeps its symbols (⌘ ⇧, Enter as ↩).
+    /// </summary>
     public static string Show(string keys)
     {
-        string text = keys.Replace("Plus", "+", StringComparison.Ordinal).Replace("Minus", "−", StringComparison.Ordinal)
-            .Replace("Period", ".", StringComparison.Ordinal);
-        return OperatingSystem.IsMacOS()
-            ? text.Replace("Cmd+", "⌘", StringComparison.Ordinal).Replace("Shift+", "⇧", StringComparison.Ordinal)
-            : text.Replace("Cmd+", "Ctrl+", StringComparison.Ordinal);
+        string text = Regex.Replace(keys, @"\bSpace\b", L.T("keys.space"));
+        if (OperatingSystem.IsMacOS())
+        {
+            return Regex.Replace(text, @"\bEnter\b", "↩").Replace("Cmd+", "⌘", StringComparison.Ordinal).Replace("Shift+", "⇧", StringComparison.Ordinal);
+        }
+
+        return Regex.Replace(text, @"\bEnter\b", L.T("keys.enter"))
+            .Replace("Cmd+", L.T("keys.ctrl") + "+", StringComparison.Ordinal)
+            .Replace("Shift+", L.T("keys.shift") + "+", StringComparison.Ordinal);
     }
 
     /// <summary>The command key is held: ⌘ on macOS, Ctrl elsewhere (and not the other one).</summary>

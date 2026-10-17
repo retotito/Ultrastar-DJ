@@ -764,7 +764,7 @@ Goal: a DJ with one screen (a laptop alone) plays without juggling windows.
       the game starts
 - [x] Verified live on the Mac (2026-10-17)
 
-## Sprint 31  *(in progress)*
+## Sprint 31 — Search and keyboard  *(done)*
 
 - [x] `.sng` song files: checked, nothing to do — UltraStar Deluxe scans `*.txt` only (`src/base/USongs.pas`); the
       claim came from an auto-made "how to open .sng files" ad video. (`.sng` elsewhere: Clone Hero / YARG song
@@ -774,6 +774,9 @@ Goal: a DJ with one screen (a laptop alone) plays without juggling windows.
 - [x] Keyboard shortcuts: single keys for search, songs, preview and panels; ⌘ / Ctrl for the game; shown in tooltips
       and menus; an overview (?, status bar, macOS app menu); stop is ⌘E (macOS never passes ⌘. on); preview player
       ⇧↑ / ⇧↓, ⇧Q, ⇧G (verified live 2026-10-17)
+- [x] Key names in the app's language on Windows / Linux ("Strg", "Leertaste"…), ↩ for Enter on macOS; translations
+      checked: all 13 languages complete, today's texts translated, placeholders match
+- [x] Released as 0.2.0-beta.4
 
 ---
 
