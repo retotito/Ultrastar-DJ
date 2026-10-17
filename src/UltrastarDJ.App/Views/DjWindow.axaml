@@ -26,6 +26,10 @@
         <Style Selector="Button.sidebar c|Icon">
           <Setter Property="FontSize" Value="{StaticResource IconNav}" />
         </Style>
+        <!-- Game Displays while single-screen mode is in effect (the panel's badge has the same orange). -->
+        <Style Selector="Button.sidebar c|Icon.single">
+          <Setter Property="Foreground" Value="{DynamicResource BrushSingleScreen}" />
+        </Style>
       </Border.Styles>
       <Panel>
       <Border Margin="{StaticResource SidebarBodyMargin}"
@@ -74,7 +78,7 @@
                   IsEnabled="{Binding !AudioLocked}"
                   Command="{Binding TogglePanelCommand}" CommandParameter="{x:Static vm:SidebarPanel.Displays}"
                   ToolTip.Tip="{l:T window.game_displays}">
-            <c:Icon Glyph="tv" />
+            <c:Icon Glyph="tv" Classes.single="{Binding IsSingleScreen}" />
           </Button>
           <Button Classes="sidebar" Classes.active="{Binding ActivePanel, Converter={x:Static vm:SidebarPanelConverters.Is}, ConverterParameter=Songbook}"
                   Command="{Binding TogglePanelCommand}" CommandParameter="{x:Static vm:SidebarPanel.Songbook}"
@@ -221,6 +225,31 @@
         </ListBox>
         <Button Grid.Row="3" Classes="tonal go" HorizontalAlignment="Right" Padding="20,8" Command="{Binding ConfirmLanguageCommand}" Content="{l:T language.ok}" />
       </Grid>
+    </Border>
+  </Border>
+
+  <!-- Single-screen mode explained (Game Displays → ⓘ): two screens and one, each in a sentence and a picture.
+       A press on the dimmed area closes it; the Game Displays panel stays open behind it. -->
+  <Border x:Name="SingleScreenInfoLayer" Background="#99000000" IsVisible="{Binding SingleScreenInfoOpen}" ZIndex="9"
+          PointerPressed="OnSingleScreenInfoBackdropPressed">
+    <Border Classes="card floating" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="{StaticResource Pad6}"
+            Margin="{StaticResource Pad6}" Width="560">
+      <StackPanel Spacing="{StaticResource Space3}">
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBlock Classes="title" Text="{l:T single.multi_title}" VerticalAlignment="Center" />
+          <Button Grid.Column="1" Classes="sidebar small" Command="{Binding CloseSingleScreenInfoCommand}" ToolTip.Tip="{l:T window.close}">
+            <c:Icon Glyph="close" FontSize="{StaticResource IconMd}" />
+          </Button>
+        </Grid>
+        <TextBlock TextWrapping="Wrap" Text="{l:T single.multi_text}" />
+        <c:ScreensPicture Single="False" Margin="0,4,0,8" />
+        <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space2}">
+          <c:Icon Glyph="tv" Foreground="{DynamicResource BrushSingleScreen}" VerticalAlignment="Center" />
+          <TextBlock Classes="title" Text="{l:T single.title}" VerticalAlignment="Center" />
+        </StackPanel>
+        <TextBlock TextWrapping="Wrap" Text="{l:T single.single_text}" />
+        <c:ScreensPicture Single="True" Margin="0,4,0,0" />
+      </StackPanel>
     </Border>
   </Border>
 

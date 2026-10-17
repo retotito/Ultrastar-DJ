@@ -14,8 +14,11 @@ public sealed partial class DisplaysPanelViewModel : ViewModelBase
     private readonly IDisplayService _displays;
     private readonly PlayersService _players;
 
-    public DisplaysPanelViewModel(IDisplayService displays, PlayersService players)
+    private readonly DjWindowViewModel _window;
+
+    public DisplaysPanelViewModel(IDisplayService displays, PlayersService players, DjWindowViewModel window)
     {
+        _window = window;
         _displays = displays;
         _players = players;
         Beamer1 = new DisplayRowViewModel(DisplayId.Beamer1, _displays, _players, this);
@@ -44,24 +47,29 @@ public sealed partial class DisplaysPanelViewModel : ViewModelBase
         }
     }
 
-    /// <summary>"1 screen connected — in use" / "… — after this song" / "2 screens connected — off".</summary>
+    /// <summary>"1 screen connected", plus "— changes after this song" while a change waits (the badge shows the state).</summary>
     public string SingleScreenStatus
     {
         get
         {
             string screens = L.F(_displays.ScreenCount == 1 ? "single.one_screen" : "single.screens", _displays.ScreenCount);
             bool wanted = Core.Displays.SingleScreen.IsActive(SingleScreenMode, _displays.ScreenCount);
-            string state = _displays.IsSingleScreen == wanted
-                ? L.T(_displays.IsSingleScreen ? "single.in_use" : "single.not_in_use")
-                : L.T("single.after_song");
-            return $"{screens} — {state}";
+            return _displays.IsSingleScreen == wanted ? screens : $"{screens} — {L.T("single.after_song")}";
         }
     }
+
+    /// <summary>The card's badge: Active (orange) / Off (grey).</summary>
+    public bool IsSingleScreenActive => _displays.IsSingleScreen;
+
+    /// <summary>The ⓘ button: the explanation with its step-by-step picture (shown by the DJ window).</summary>
+    [RelayCommand]
+    private void ShowSingleScreenInfo() => _window.SingleScreenInfoOpen = true;
 
     private void OnSingleScreenChanged()
     {
         SingleScreenMode = _displays.SingleScreenMode;
         OnPropertyChanged(nameof(SingleScreenStatus));
+        OnPropertyChanged(nameof(IsSingleScreenActive));
         Beamer1.RefreshSingleScreen();
         Beamer2.RefreshSingleScreen();
     }
@@ -118,16 +126,23 @@ public sealed partial class DisplayRowViewModel : ObservableObject
     public bool IsUnused => _displays.IsSingleScreen && Id == DisplayId.Beamer2;
     public bool CanOpen => !IsUnused;
 
+    /// <summary>Display 1 while single-screen mode is on: it opens by itself for each song — no Open / Fullscreen.</summary>
+    public bool IsAutomatic => _displays.IsSingleScreen && Id == DisplayId.Beamer1;
+    public bool ShowsButtons => !IsAutomatic;
+    public bool ShowsScreen => !IsAutomatic && !IsUnused;
+
     internal void RefreshSingleScreen()
     {
         OnPropertyChanged(nameof(IsUnused));
         OnPropertyChanged(nameof(CanOpen));
-        OnPropertyChanged(nameof(ScreenText));
+        OnPropertyChanged(nameof(IsAutomatic));
+        OnPropertyChanged(nameof(ShowsButtons));
+        OnPropertyChanged(nameof(ShowsScreen));
         ToggleOpenCommand.NotifyCanExecuteChanged();
     }
 
     /// <summary>The screen it is on, or where a closed one will open.</summary>
-    public string ScreenText => Screen ?? (_displays.IsSingleScreen ? L.T("single.display1_opens") : L.T("displays.opens_next"));
+    public string ScreenText => Screen ?? L.T("displays.opens_next");
 
     partial void OnScreenChanged(string? value) => OnPropertyChanged(nameof(ScreenText));
 

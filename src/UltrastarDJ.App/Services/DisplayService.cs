@@ -93,6 +93,8 @@ public sealed class DisplayService : IDisplayService
         owner.Screens.Changed += (_, _) => OnScreensChanged();
         _single = SingleScreen.IsActive(_doc.SingleScreen, _screens.Count);
         _log.LogInformation("Screens: {Count}; single-screen mode {Mode} → {State}", _screens.Count, _doc.SingleScreen, _single ? "on" : "off");
+        // The DJ window was built before the screens were known (its sidebar icon reads this).
+        SingleScreenChanged?.Invoke();
         // Resolved here, not injected: PlaybackService depends on IDisplayService.
         Playback.StateChanged += s => Dispatcher.UIThread.Post(() => OnPlaybackStateChanged(s));
         owner.Closing += (_, _) =>

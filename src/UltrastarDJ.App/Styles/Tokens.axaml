@@ -100,6 +100,8 @@
       <Color x:Key="ColorOnButton">#D6EAF8</Color>
       <!-- The search box's clear X on hover: the 10 % hover tint, made opaque over the box's own background. -->
       <Color x:Key="ColorSearchClearHover">#323232</Color>
+      <!-- Single-screen mode in effect (Game Displays badge and text, the sidebar's displays icon). -->
+      <Color x:Key="ColorSingleScreen">#FFA24C</Color>
     </ResourceDictionary>
 
     <ResourceDictionary x:Key="Light">
@@ -188,6 +190,7 @@
       <Color x:Key="ColorButtonBorder">#C2D5F2</Color>
       <Color x:Key="ColorOnButton">#0B2A55</Color>
       <Color x:Key="ColorSearchClearHover">#E9E9E9</Color>
+      <Color x:Key="ColorSingleScreen">#E8710A</Color>
     </ResourceDictionary>
 
   </ResourceDictionary.ThemeDictionaries>
@@ -247,6 +250,7 @@
   <SolidColorBrush x:Key="BrushGateZone" Color="{StaticResource ColorMeterClip}" Opacity="0.3" />
   <SolidColorBrush x:Key="BrushGateHandle" Color="{StaticResource ColorMeterClip}" />
   <SolidColorBrush x:Key="BrushGo" Color="{DynamicResource ColorGo}" />
+  <SolidColorBrush x:Key="BrushSingleScreen" Color="{DynamicResource ColorSingleScreen}" />
   <SolidColorBrush x:Key="BrushGoHover" Color="{DynamicResource ColorGoHover}" />
   <SolidColorBrush x:Key="BrushStop" Color="{DynamicResource ColorStop}" />
   <SolidColorBrush x:Key="BrushStopHover" Color="{DynamicResource ColorStopHover}" />

@@ -54,11 +54,15 @@
           <!-- Which screen it is on — always one line (also while closed), so opening does not shift the buttons.
                Single-screen mode: Display 2 says why it is not used. -->
           <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Classes="muted" FontSize="{StaticResource TextXs}" Margin="0,2,0,0"
-                     TextTrimming="CharacterEllipsis" Text="{Binding ScreenText}" IsVisible="{Binding !IsUnused}" />
+                     TextTrimming="CharacterEllipsis" Text="{Binding ScreenText}" IsVisible="{Binding ShowsScreen}" />
+          <TextBlock Grid.Row="1" Grid.ColumnSpan="2" FontSize="{StaticResource TextXs}" Margin="0,2,0,0" TextWrapping="Wrap"
+                     Foreground="{DynamicResource BrushSingleScreen}" FontWeight="{StaticResource WeightSemibold}"
+                     Text="{l:T single.display1_opens}" IsVisible="{Binding IsAutomatic}" />
           <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Classes="muted" FontSize="{StaticResource TextXs}" Margin="0,2,0,0"
                      TextWrapping="Wrap" Text="{l:T single.display2_unused}" IsVisible="{Binding IsUnused}" />
 
-          <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="{StaticResource Space2}" Margin="0,12,0,0">
+          <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="{StaticResource Space2}" Margin="0,12,0,0"
+                      IsVisible="{Binding ShowsButtons}">
             <Button Classes="tonal" Classes.go="{Binding !IsOpen}" Classes.stop="{Binding IsOpen}" Command="{Binding ToggleOpenCommand}">
               <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space1}">
                 <c:Icon Glyph="{Binding IsOpen, Converter={x:Static vm:BoolConverters.Glyph}, ConverterParameter='close|open_in_new'}" FontSize="{StaticResource IconMd}" />
@@ -101,10 +105,36 @@
   </UserControl.Resources>
 
   <StackPanel Spacing="{StaticResource Space2}">
-    <!-- Single-screen mode: one screen for the DJ and the singers (DisplayService). -->
+    <!-- Single-screen mode: one screen for the DJ and the singers (DisplayService). Its badge and Display 1's note are
+         orange (BrushSingleScreen), like the sidebar's displays icon while it is in effect. -->
     <Border Classes="card" Margin="0,0,0,8">
       <StackPanel Spacing="{StaticResource Space1}">
-        <TextBlock Classes="title" Text="{l:T single.title}" />
+        <Grid ColumnDefinitions="Auto,*,Auto">
+          <TextBlock Classes="title" Text="{l:T single.title}" VerticalAlignment="Center" />
+          <Button Grid.Column="1" Classes="sidebar small" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="4,0,0,0"
+                  Command="{Binding ShowSingleScreenInfoCommand}" ToolTip.Tip="{l:T single.info_tip}">
+            <c:Icon Glyph="info" FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushSingleScreen}" />
+          </Button>
+          <Border Grid.Column="2" CornerRadius="{StaticResource RadiusFull}" Padding="10,2" VerticalAlignment="Center"
+                  Classes.on="{Binding IsSingleScreenActive}">
+            <Border.Styles>
+              <Style Selector="Border">
+                <Setter Property="Background" Value="{DynamicResource BrushSurfaceContainerHighest}" />
+              </Style>
+              <Style Selector="Border.on">
+                <Setter Property="Background" Value="{DynamicResource BrushSingleScreen}" />
+              </Style>
+              <Style Selector="Border TextBlock">
+                <Setter Property="Foreground" Value="{DynamicResource BrushOnSurfaceVariant}" />
+              </Style>
+              <Style Selector="Border.on TextBlock">
+                <Setter Property="Foreground" Value="{DynamicResource BrushOnGoStop}" />
+              </Style>
+            </Border.Styles>
+            <TextBlock Text="{l:Pick IsSingleScreenActive, True=single.active, False=single.inactive}"
+                       FontSize="{StaticResource TextXs}" FontWeight="{StaticResource WeightSemibold}" />
+          </Border>
+        </Grid>
         <ComboBox ItemsSource="{Binding SingleScreenModes}" SelectedItem="{Binding SingleScreenMode}" HorizontalAlignment="Stretch" Margin="0,4,0,0">
           <ComboBox.ItemTemplate>
             <DataTemplate>
@@ -112,14 +142,9 @@
             </DataTemplate>
           </ComboBox.ItemTemplate>
         </ComboBox>
-        <TextBlock FontSize="{StaticResource TextSm}" Text="{Binding SingleScreenStatus}" Margin="0,4,0,0" />
-        <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap" MaxWidth="{StaticResource PopoverTextWidth}"
-                   HorizontalAlignment="Left" Text="{l:T single.hint}" />
+        <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="{Binding SingleScreenStatus}" Margin="0,2,0,0" />
       </StackPanel>
     </Border>
-
-    <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap" MaxWidth="{StaticResource PopoverTextWidth}" HorizontalAlignment="Left"
-               Text="{l:T displays.display_opens_next_window}" />
 
     <ContentControl Content="{Binding Beamer1}" ContentTemplate="{StaticResource DisplayRow}" />
     <ContentControl Content="{Binding Beamer2}" ContentTemplate="{StaticResource DisplayRow}" />

@@ -116,6 +116,7 @@ public sealed partial class DjWindowViewModel : ViewModelBase
             OnPropertyChanged(nameof(ShowUpdate));
         };
         Updates = services.GetRequiredService<UpdateService>();
+        services.GetRequiredService<IDisplayService>().SingleScreenChanged += () => OnPropertyChanged(nameof(IsSingleScreen));
         Updates.PropertyChanged += (_, _) => OnPropertyChanged(nameof(ShowUpdate));
         nowPlaying.DuetSingersRequested += () => OpenDuetSingers(thenPlay: null);
         nowPlaying.SingersToConfirmBeforePlay += play => AskForDuetSingers(play);
@@ -189,6 +190,17 @@ public sealed partial class DjWindowViewModel : ViewModelBase
     }
 
     partial void OnChooseLanguageChanged(bool value) => OnPropertyChanged(nameof(ShowUpdate));
+
+    // ── Single-screen mode ──
+
+    /// <summary>In effect: the sidebar's displays icon is orange.</summary>
+    public bool IsSingleScreen => _services.GetRequiredService<IDisplayService>().IsSingleScreen;
+
+    /// <summary>The explanation opened from Game Displays (ⓘ).</summary>
+    [ObservableProperty] private bool _singleScreenInfoOpen;
+
+    [RelayCommand]
+    private void CloseSingleScreenInfo() => SingleScreenInfoOpen = false;
 
     // ── Slow computer? ──
     // Once per run: after a song the displays could not draw smoothly, a hint offers Settings → Reduce effects.

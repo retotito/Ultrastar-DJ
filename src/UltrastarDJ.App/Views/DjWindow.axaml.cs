@@ -77,6 +77,15 @@ public sealed partial class DjWindow : Window
         }
     }
 
+    // The single-screen explanation closes on a press on its dimmed backdrop.
+    private void OnSingleScreenInfoBackdropPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (ReferenceEquals(e.Source, SingleScreenInfoLayer) && DataContext is DjWindowViewModel vm)
+        {
+            vm.SingleScreenInfoOpen = false;
+        }
+    }
+
     // Only a press on the dimmed backdrop itself closes; presses inside the popup bubble up with another source.
     private void OnDetailsBackdropPressed(object? sender, PointerPressedEventArgs e)
     {
@@ -100,6 +109,13 @@ public sealed partial class DjWindow : Window
         }
 
         List<Visual> path = source.GetSelfAndVisualAncestors().ToList();
+        // The single-screen explanation sits over the panel it was opened from: a press on it, or outside it, is its
+        // own (OnSingleScreenInfoBackdropPressed) — the panel stays open behind it.
+        if (path.Any(v => ReferenceEquals(v, SingleScreenInfoLayer)))
+        {
+            return;
+        }
+
         // A press in a drop-down list or menu is never "outside": it is a pick (or a scroll) in what the panel opened.
         // Such lists live in a popup (their own window, or the overlay layer) — no need to trace them back to the panel.
         if (path.Any(v => v is PopupRoot or OverlayPopupHost) || !ReferenceEquals(TopLevel.GetTopLevel(source), this))

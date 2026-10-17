@@ -751,6 +751,9 @@ Goal: a DJ with one screen (a laptop alone) plays without juggling windows.
 - [x] During the song: control bar on the display when the mouse moves (Pause / Continue, Stop, Back to DJ window),
       hidden with the pointer after ~3 s; Space pauses / continues, Esc pauses and shows the DJ window
 - [x] Song end: score screen in front until a click / key, or by itself ~10 s after the count-up → DJ window
+- [x] Panel polish: orange (`BrushSingleScreen`) Active badge, Display 1 without Open / Fullscreen ("Opens fullscreen
+      when a song starts"), the sidebar icon orange while in effect; the long hints replaced by an ⓘ explanation with
+      two pictures (multiple screens / one laptop, `ScreensPicture`); it closes on a press outside, the panel stays
 - [ ] Verified live (Mac alone; Mac with a second screen: Automatic switches back)
 
 ---
