@@ -764,6 +764,14 @@ Goal: a DJ with one screen (a laptop alone) plays without juggling windows.
       the game starts
 - [x] Verified live on the Mac (2026-10-17)
 
+## Sprint 31  *(in progress)*
+
+- [x] `.sng` song files: checked, nothing to do — UltraStar Deluxe scans `*.txt` only (`src/base/USongs.pas`); the
+      claim came from an auto-made "how to open .sng files" ad video. (`.sng` elsewhere: Clone Hero / YARG song
+      packages, old MIDI-tool formats — not UltraStar.)
+- [x] Forgiving search, library and songbook (`SongSearch`): accents and punctuation ignored, words in any order
+      across title and artist, typos forgiven when few songs are found (verified live 2026-10-17)
+
 ---
 
 ## Later / ideas

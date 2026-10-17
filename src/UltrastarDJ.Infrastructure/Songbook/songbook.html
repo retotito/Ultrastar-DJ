@@ -231,7 +231,8 @@
     var d = await res.json();
     d.songs.forEach(function (s, i) {
       s.i = i;
-      s.key = (s[2] + ' ' + s[1]).toLowerCase();
+      var folded = fold(s[2] + ' ' + s[1]);
+      s.key = compact(folded); s.words = words(folded);
       s.decade = s[3] ? Math.floor(s[3] / 10) * 10 + 's' : t('unknown_year');
     });
     lib = d; libVersion = d.v;
@@ -247,9 +248,52 @@
     if (kind === 'voices') return [s[9] ? t('duet_two') : t('solo')];
     return [];
   }
+  // The library's search rules (Core SongSearch): accents, punctuation and word order do not matter; with few songs
+  // found, a typo per word from 4 letters (two from 8) is forgiven too.
+  var SPELLED = { 'ß': 'ss', 'æ': 'ae', 'œ': 'oe', 'ø': 'o', 'ł': 'l', 'đ': 'd', 'ð': 'd', 'þ': 'th', 'ı': 'i', '&': ' and ', "'": '', '’': '', '`': '', '´': '' };
+  function fold(text) {
+    var out = '';
+    var plain = String(text).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    for (var i = 0; i < plain.length; i++) {
+      var c = plain[i];
+      if (SPELLED[c] !== undefined) out += SPELLED[c];
+      else out += /[\p{L}\p{N}]/u.test(c) ? c : ' ';
+    }
+    return out;
+  }
+  function words(folded) { return folded.split(' ').filter(function (w) { return w; }); }
+  function compact(folded) { return folded.replace(/[^\p{L}\p{N}]/gu, ''); }
+  function allowedTypos(n) { return n >= 8 ? 2 : n >= 4 ? 1 : 0; }
+  // Typing distance: a wrong, missing or extra letter, or two swapped ones, is one step.
+  function distance(a, b, max) {
+    if (Math.abs(a.length - b.length) > max) return max + 1;
+    var before = [], prev = [], cur = [];
+    for (var j = 0; j <= b.length; j++) prev[j] = j;
+    for (var i = 1; i <= a.length; i++) {
+      cur = [i]; var rowMin = i;
+      for (j = 1; j <= b.length; j++) {
+        var d = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+        if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) d = Math.min(d, before[j - 2] + 1);
+        cur[j] = d; rowMin = Math.min(rowMin, d);
+      }
+      if (rowMin > max) return max + 1;
+      before = prev; prev = cur;
+    }
+    return prev[b.length];
+  }
+  function close(typed, word) {
+    var k = allowedTypos(typed.length);
+    return k > 0 && (distance(typed, word, k) <= k || (word.length > typed.length && distance(typed, word.slice(0, typed.length), k) <= k));
+  }
   function searchMatches() {
-    var q = document.getElementById('q').value.trim().toLowerCase();
-    return q ? lib.songs.filter(function (s) { return s.key.indexOf(q) >= 0; }) : lib.songs;
+    var tokens = words(fold(document.getElementById('q').value)).map(compact).filter(function (t) { return t; });
+    if (!tokens.length) return lib.songs;
+    function plain(s) { return tokens.every(function (t) { return s.key.indexOf(t) >= 0; }); }
+    var found = lib.songs.filter(plain);
+    if (found.length >= 10) return found;
+    return found.concat(lib.songs.filter(function (s) {
+      return !plain(s) && tokens.every(function (t) { return s.key.indexOf(t) >= 0 || s.words.some(function (w) { return close(t, w); }); });
+    }));
   }
 
   // Values of the chosen kind with how many search matches each would show; the current value is kept.
