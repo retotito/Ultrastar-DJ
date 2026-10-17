@@ -733,6 +733,10 @@ Only a first start changes; saved settings stay as they are.
 - [x] Settings → Reduce effects (slow computers): no glows, sparkles, star bursts, golden shimmer or star shower;
       never switched on by itself — after a stuttering song (≥ 1 frame in 20 over 50 ms) a 10 s hint with
       Open Settings / Ignore, once per run
+- [x] DJ window without a title bar: content up to the top edge, search and filters where the title was, sidebar
+      icons 10 px below the top row, the sidebar's grey and divider start there too (no line under the macOS buttons);
+      search bar and preview header one height (`TopBarHeight`); popovers 30 px from the top (just below the macOS buttons);
+      empty spots of the top row drag the window, double-click maximises
 - [ ] Verified live
 
 ---

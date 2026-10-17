@@ -341,6 +341,15 @@
 
   <!-- ── Layout constants ─────────────────────────────────────────────── -->
   <x:Double x:Key="SidebarWidth">56</x:Double>
+  <!-- The window's top row (search / filters, preview header) — also where the title bar used to be. Padding 12 +
+       a 32 px drop-down + 12 + the 1 px line. -->
+  <x:Double x:Key="TopBarHeight">57</x:Double>
+  <!-- Sidebar icons start 10 px below the top row (TopBarHeight + 10), clear of the macOS window buttons. -->
+  <Thickness x:Key="SidebarPad">8,67,8,8</Thickness>
+  <!-- The sidebar's grey and its lines start at the top row's bottom line (TopBarHeight − 1). -->
+  <Thickness x:Key="SidebarBodyMargin">0,56,0,0</Thickness>
+  <!-- Sidebar popovers: 8 px from the edges, 30 px from the top — just below the macOS window buttons (≈ 22 px). -->
+  <Thickness x:Key="PopoverMargin">8,30,8,8</Thickness>
   <x:Double x:Key="RightPanelWidth">340</x:Double>
   <!-- The floating Game Player card: its minimum width (it grows with longer labels, e.g. translations) -->
   <x:Double x:Key="GamePlayerWidth">420</x:Double>

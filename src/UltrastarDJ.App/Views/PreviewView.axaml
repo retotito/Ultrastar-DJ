@@ -8,8 +8,9 @@
 
   <StackPanel>
   <!-- Section title, same style as QUEUE below it -->
-  <Border Padding="{StaticResource Pad3}" BorderBrush="{DynamicResource BrushOutlineVariant}" BorderThickness="0,0,0,1">
-    <TextBlock Classes="label" Text="{l:T preview.preview_player}" />
+  <!-- As high as the library's search row next to it: one line across the window's top. -->
+  <Border Classes="titlebar" Padding="{StaticResource Pad3}" Height="{StaticResource TopBarHeight}" BorderBrush="{DynamicResource BrushOutlineVariant}" BorderThickness="0,0,0,1">
+    <TextBlock Classes="label" Text="{l:T preview.preview_player}" VerticalAlignment="Center" />
   </Border>
 
   <StackPanel Spacing="{StaticResource Space2}" Margin="{StaticResource Pad3}">

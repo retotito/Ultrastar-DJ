@@ -18,7 +18,40 @@ public sealed partial class DjWindow : Window
         InitializeComponent();
         AddHandler(PointerPressedEvent, OnPointerPressedAnywhere, RoutingStrategies.Tunnel, handledEventsToo: true);
         AddHandler(KeyDownEvent, OnKeyDownAnywhere, RoutingStrategies.Tunnel);
+        PointerPressed += OnTitleAreaPressed;
     }
+
+    // ── Title bar: the content reaches the window's top edge (ExtendClientAreaToDecorationsHint) ──
+    // macOS draws its three buttons over the sidebar's top (its icons start below the top row, SidebarPad). Windows
+    // puts its buttons top right over the preview header; Linux desktops that cannot do it keep their own title bar.
+
+    /// <summary>The strip along the top that moves the window: the search and filter row (TopBarHeight).</summary>
+    private const double DragStripHeight = 57;
+    // A press on an empty spot of the top row (the bars marked "titlebar", the sidebar's top) drags the window, a
+    // double-click maximises or restores it — as the title bar did. Buttons, the search field and drop-downs handle
+    // their presses first, so they never get here; popovers and cards reaching up there are not part of the row.
+    private void OnTitleAreaPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (!IsExtendedIntoWindowDecorations || e.GetPosition(this).Y > DragStripHeight || !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed
+            || !InTitleRow(e.Source as Visual))
+        {
+            return;
+        }
+
+        if (e.ClickCount == 2)
+        {
+            WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+        }
+        else
+        {
+            BeginMoveDrag(e);
+        }
+
+        e.Handled = true;
+    }
+
+    private bool InTitleRow(Visual? source)
+        => source?.GetSelfAndVisualAncestors().Any(v => ReferenceEquals(v, Sidebar) || (v is StyledElement { Classes: var c } && c.Contains("titlebar"))) == true;
 
     // Esc closes the Details popup before anything else sees the key.
     private void OnKeyDownAnywhere(object? sender, KeyEventArgs e)

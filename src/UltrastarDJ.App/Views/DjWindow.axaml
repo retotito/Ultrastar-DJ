@@ -10,23 +10,29 @@
         Width="1420" Height="860"
         MinWidth="1100" MinHeight="700"
         Icon="avares://UltrastarDJ/Assets/icon.png"
+        ExtendClientAreaToDecorationsHint="True"
         Background="{DynamicResource BrushBackground}">
 
   <Panel>
   <Grid ColumnDefinitions="Auto,*,Auto">
 
     <!-- ── Sidebar ─────────────────────────────────────────────────────── -->
+    <!-- Its grey starts below the top row: the corner with the macOS buttons belongs to the row (no divider under the
+         buttons), and the row's bottom line runs on across it. Transparent, not empty, so the corner drags the window. -->
     <Border Grid.Column="0" x:Name="Sidebar"
             Width="{StaticResource SidebarWidth}"
-            Background="{DynamicResource BrushSurfaceContainerLow}"
-            BorderBrush="{DynamicResource BrushOutlineVariant}"
-            BorderThickness="0,0,1,0">
+            Background="Transparent">
       <Border.Styles>
         <Style Selector="Button.sidebar c|Icon">
           <Setter Property="FontSize" Value="{StaticResource IconNav}" />
         </Style>
       </Border.Styles>
-      <DockPanel Margin="{StaticResource Pad2}">
+      <Panel>
+      <Border Margin="{StaticResource SidebarBodyMargin}"
+              Background="{DynamicResource BrushSurfaceContainerLow}"
+              BorderBrush="{DynamicResource BrushOutlineVariant}"
+              BorderThickness="0,1,1,0" />
+      <DockPanel Margin="{StaticResource SidebarPad}">
         <StackPanel DockPanel.Dock="Bottom" Spacing="{StaticResource Space5}">
           <Button Classes="sidebar" Classes.active="{Binding ActivePanel, Converter={x:Static vm:SidebarPanelConverters.Is}, ConverterParameter=Settings}"
                   Command="{Binding TogglePanelCommand}" CommandParameter="{x:Static vm:SidebarPanel.Settings}"
@@ -77,6 +83,7 @@
           </Button>
         </StackPanel>
       </DockPanel>
+      </Panel>
     </Border>
 
     <!-- ── Centre: library + popover overlay ─────────────────────────────────────── -->
@@ -117,7 +124,7 @@
          Closes on a press anywhere outside it and the sidebar (DjWindow.axaml.cs). -->
     <Border Grid.Column="1" ZIndex="2" Classes="popover" x:Name="Popover" Classes.bottom="{Binding PanelAtBottom}" Classes.fit="{Binding PanelFitsContent}"
             HorizontalAlignment="Left"
-            Margin="{StaticResource Pad2}"
+            Margin="{StaticResource PopoverMargin}"
             IsVisible="{Binding PanelContent, Converter={x:Static ObjectConverters.IsNotNull}}">
       <DockPanel>
         <Border DockPanel.Dock="Top" BorderBrush="{DynamicResource BrushOutlineVariant}" BorderThickness="0,0,0,1"
