@@ -33,6 +33,10 @@ function showTab(name) {
 for (const b of help.querySelectorAll('[data-tab]')) b.addEventListener('click', () => showTab(b.dataset.tab));
 for (const a of document.querySelectorAll('.dl')) {
   a.addEventListener('click', () => {
+    // Counted as an event in GoatCounter ("download-mac-arm64" …), so downloads per system show up next to visits.
+    const file = a.getAttribute('href').split('/').pop();
+    const name = /arm64/.test(file) ? 'mac-arm64' : /x64\.dmg/.test(file) ? 'mac-intel' : /\.exe$/.test(file) ? 'windows' : 'linux';
+    window.goatcounter?.count?.({ path: 'download-' + name, title: 'Download ' + name, event: true });
     title.textContent = 'Your download has started';
     showTab(a.dataset.help);
     help.showModal();

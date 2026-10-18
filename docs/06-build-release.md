@@ -154,7 +154,9 @@ One static page — plain HTML, CSS and JavaScript, no build step — published 
 git. Feedback buttons open the issue forms in `.github/ISSUE_TEMPLATE/` (problem / idea). Preview locally:
 `python3 -m http.server -d website` → http://localhost:8000. For search engines: `robots.txt`, `sitemap.xml`, a
 canonical address, the share preview (`img/og-image.jpg`, 1200 × 630) and a `SoftwareApplication` description in the
-page head. No cookies, no tracking, nothing loaded from other sites — so no cookie banner (the footer says so).
+page head. Visitors are counted anonymously by GoatCounter (ultrastardj.goatcounter.com — no cookies, no personal data,
+so no cookie banner; the footer says so); download clicks count as events `download-<system>`. Release download totals:
+`gh api repos/retotito/Ultrastar-DJ/releases`. Nothing else is loaded from other sites.
 
 ---
 
