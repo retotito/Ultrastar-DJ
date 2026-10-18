@@ -233,7 +233,7 @@ public sealed partial class DjWindow : Window
         switch (e.KeySymbol)
         {
             case "/":
-                this.FindDescendantOfType<LibraryView>()?.FocusSearch();
+                FocusSearch(vm);
                 return true;
             case "?":
                 vm.ShortcutsOpen = true;
@@ -286,7 +286,7 @@ public sealed partial class DjWindow : Window
         switch (e.Key)
         {
             case Key.F:
-                this.FindDescendantOfType<LibraryView>()?.FocusSearch();
+                FocusSearch(vm);
                 return true;
             case Key.P:
                 Run(game.PlayPauseCommand);
@@ -326,6 +326,26 @@ public sealed partial class DjWindow : Window
             default:
                 return false;
         }
+    }
+
+    // "/" and ⌘F: what lies over the library goes (panel, Details, duet pick, overviews) so the search is free to type
+    // in and its results visible. The Game Player card stays — it is not in the way of the search.
+    private void FocusSearch(DjWindowViewModel vm)
+    {
+        vm.ShortcutsOpen = false;
+        vm.SingleScreenInfoOpen = false;
+        vm.SongDetails = null;
+        if (vm.DuetSingers is not null)
+        {
+            vm.CloseDuetSingers(ok: false);
+        }
+
+        if (vm.PanelContent is not null)
+        {
+            vm.ClosePanelCommand.Execute(null);
+        }
+
+        this.FindDescendantOfType<LibraryView>()?.FocusSearch();
     }
 
     // 1 – 6 the sidebar panels in their order, 7 Settings.
