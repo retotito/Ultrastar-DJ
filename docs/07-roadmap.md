@@ -467,7 +467,7 @@ Drawn directly (meter rate, allocation-free), not a templated Slider.
 - [x] Fix: leaving fullscreen on a display went back to the small first window, not to maximised / the size it had — it now returns to what it was before fullscreen
 - [x] Displays open where they were last closed: screen (by name, then position — survives a changed monitor arrangement), position, size, maximised / fullscreen; screen not connected → next to the DJ window (`WindowPlacement.Fit`, tested)
 - [x] Fix: after quitting the app, displays reopened on the main screen — a window closing with the app reports position (0, 0); placement is now taken from what was tracked while the window lived (verified with a probe run on a second monitor: normal and fullscreen, quit, restart, open)
-- [x] Verified live
+- [ ] Verified live
 
 ---
 
@@ -540,7 +540,7 @@ USDB marks them "[DUET]" in the title). The format has no third voice.
 - [x] Game Player in a duet: "Duet" (bold) with an "Assign voices" button (⚠ next to it while the players changed); the
       voice each singer sings ("Bradley Cooper", "Both voices") under their mic slider; players sitting out get no slider
 - [x] Displays: the mic meter sits before "Name  score" — after it, it moved left and right as the score changed width
-- [x] Verified live
+- [ ] Verified live
 - [x] Duet marker: `Song.IsDuet` — local files: a `P2` line (scan, stored: library schema 2, older libraries rescan their
       connected folders once); USDB: "[DUET]" in the title (903 in the catalog). Library: icon before the title, rating
       filter "Duets" with its count (violet icon; Favourites / Broken got coloured icons too instead of emoji); songbook: 👥 before the title, "Voices" in the dialog, "Duet / solo" filter (tested)
