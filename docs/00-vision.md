@@ -4,7 +4,7 @@
 laptop; singers see lyrics, note bars and scores on one or two projectors ("beamers"). Songs come
 from local UltraStar folders, the USDB community database, and YouTube.
 
-This is the second implementation. The first (Tauri 2 + Svelte, repo `retotito/UltraStarDJ`) is a
+This is the second implementation. The first (Tauri 2 + Svelte, no longer published) was a
 working prototype whose architecture could not solve two problems — see [Why a rewrite](#why-a-rewrite).
 Everything that was learned there is preserved in these docs; the *behaviour* described here is
 the behaviour to reproduce.
