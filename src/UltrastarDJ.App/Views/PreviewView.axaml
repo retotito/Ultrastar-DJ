@@ -53,7 +53,7 @@
           <TextBlock Text="{l:T preview.queue}" />
         </StackPanel>
       </Button>
-      <Button Classes="tonal" Command="{Binding LoadIntoGameCommand}" VerticalAlignment="Center" ToolTip.Tip="{Binding LoadSongTip, Converter={x:Static l:Shortcuts.Append}, ConverterParameter=Shift+G}">
+      <Button Classes="tonal" Command="{Binding LoadIntoGameCommand}" VerticalAlignment="Center" ToolTip.Tip="{Binding LoadSongTip, Converter={x:Static l:Shortcuts.Append}, ConverterParameter=Shift+L}">
         <StackPanel Orientation="Horizontal" Spacing="6">
           <c:Icon Glyph="play_circle" FontSize="{StaticResource IconMd}" />
           <TextBlock Text="{l:T preview.load}" />

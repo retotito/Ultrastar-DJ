@@ -256,7 +256,7 @@
                     <MenuItem Header="{l:T library.add_queue}" InputGesture="Q" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).AddToQueueCommand}" CommandParameter="{Binding}" ToolTip.Tip="{Binding UnavailableTip}" ToolTip.ShowOnDisabled="True">
                       <MenuItem.Icon><c:Icon Glyph="queue_music" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
                     </MenuItem>
-                    <MenuItem Header="{l:T library.load_into_game}" InputGesture="G" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).LoadIntoGameCommand}" CommandParameter="{Binding}"
+                    <MenuItem Header="{l:T library.load_into_game}" InputGesture="L" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).LoadIntoGameCommand}" CommandParameter="{Binding}"
                               ToolTip.ShowOnDisabled="True">
                     <ToolTip.Tip>
                       <MultiBinding Converter="{x:Static vm:PlayerConverters.FirstText}">
@@ -338,7 +338,7 @@
                       <MenuItem Header="{l:T library.add_queue}" InputGesture="Q" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).AddToQueueCommand}" CommandParameter="{Binding}" ToolTip.Tip="{Binding UnavailableTip}" ToolTip.ShowOnDisabled="True">
                         <MenuItem.Icon><c:Icon Glyph="queue_music" FontSize="{StaticResource IconLg}" /></MenuItem.Icon>
                       </MenuItem>
-                      <MenuItem Header="{l:T library.load_into_game}" InputGesture="G" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).LoadIntoGameCommand}" CommandParameter="{Binding}"
+                      <MenuItem Header="{l:T library.load_into_game}" InputGesture="L" Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).LoadIntoGameCommand}" CommandParameter="{Binding}"
                               ToolTip.ShowOnDisabled="True">
                     <ToolTip.Tip>
                       <MultiBinding Converter="{x:Static vm:PlayerConverters.FirstText}">

@@ -37,6 +37,12 @@
         <Style Selector="Button.sidebar c|Icon">
           <Setter Property="FontSize" Value="{StaticResource IconNav}" />
         </Style>
+        <Style Selector="Button.sidebar c|Icon.hidden">
+          <Setter Property="Foreground" Value="{DynamicResource BrushPrimary}" />
+        </Style>
+        <Style Selector="Button.sidebar.active c|Icon.player">
+          <Setter Property="Foreground" Value="White" />
+        </Style>
         <!-- Game Displays while single-screen mode is in effect (the panel's badge has the same orange). -->
         <Style Selector="Button.sidebar c|Icon.single">
           <Setter Property="Foreground" Value="{DynamicResource BrushSingleScreen}" />
@@ -64,10 +70,12 @@
         </StackPanel>
 
         <StackPanel Spacing="{StaticResource Space5}">
+          <!-- Open: the blue background of an open panel, the icon white. Closed: the icon itself blue — one click (or G)
+               brings it back. -->
           <Button Classes="sidebar" Classes.active="{Binding NowPlaying.IsVisible}"
                   Command="{Binding ToggleNowPlayingCommand}"
-                  ToolTip.Tip="{l:T window.game_player_transport_song}">
-            <c:Icon Glyph="play_circle" />
+                  ToolTip.Tip="{l:TK window.game_player_transport_song, Keys=G}">
+            <c:Icon Glyph="play_circle" Classes="player" Classes.hidden="{Binding !NowPlaying.IsVisible}" />
           </Button>
           <Button Classes="sidebar" Classes.active="{Binding ActivePanel, Converter={x:Static vm:SidebarPanelConverters.Is}, ConverterParameter=Layout}"
                   Command="{Binding TogglePanelCommand}" CommandParameter="{x:Static vm:SidebarPanel.Layout}"

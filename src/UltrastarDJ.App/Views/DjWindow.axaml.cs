@@ -255,8 +255,11 @@ public sealed partial class DjWindow : Window
             case Key.Space:
                 Run(vm.Preview.TogglePlayCommand);
                 return true;
-            case Key.G when song is not null:
+            case Key.L when song is not null:
                 Run(vm.Library.LoadIntoGameCommand, song);
+                return true;
+            case Key.G:
+                Run(vm.ToggleNowPlayingCommand);
                 return true;
             case Key.Q when song is not null:
                 Run(vm.Library.AddToQueueCommand, song);
@@ -317,7 +320,7 @@ public sealed partial class DjWindow : Window
             case Key.Q:
                 Run(preview.AddToQueueCommand);
                 return true;
-            case Key.G:
+            case Key.L:
                 Run(preview.LoadIntoGameCommand);
                 return true;
             default:

@@ -496,6 +496,7 @@
   "shortcuts.display_leave": "Leave fullscreen",
   "shortcuts.game_home": "Start view",
   "shortcuts.game_play": "Start / pause / continue",
+  "shortcuts.game_player": "Show / hide the Game Player",
   "shortcuts.game_ready": "“Get ready” view",
   "shortcuts.game_stop": "Stop and show the scores",
   "shortcuts.game_volume": "Song volume",

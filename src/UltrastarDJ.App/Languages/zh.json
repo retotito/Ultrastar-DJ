@@ -495,6 +495,7 @@
   "shortcuts.display_leave": "退出全屏",
   "shortcuts.game_home": "起始画面",
   "shortcuts.game_play": "开始 / 暂停 / 继续",
+  "shortcuts.game_player": "显示 / 隐藏游戏播放器",
   "shortcuts.game_ready": "“准备”画面",
   "shortcuts.game_stop": "停止并显示得分",
   "shortcuts.game_volume": "歌曲音量",

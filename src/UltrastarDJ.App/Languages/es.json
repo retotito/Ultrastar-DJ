@@ -495,6 +495,7 @@
   "shortcuts.display_leave": "Salir de pantalla completa",
   "shortcuts.game_home": "Vista de inicio",
   "shortcuts.game_play": "Iniciar / pausa / continuar",
+  "shortcuts.game_player": "Mostrar / ocultar el reproductor del juego",
   "shortcuts.game_ready": "Vista «Prepárate»",
   "shortcuts.game_stop": "Detener y mostrar las puntuaciones",
   "shortcuts.game_volume": "Volumen de la canción",

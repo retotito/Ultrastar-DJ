@@ -495,6 +495,7 @@
   "shortcuts.display_leave": "전체 화면 나가기",
   "shortcuts.game_home": "시작 화면",
   "shortcuts.game_play": "시작 / 일시정지 / 계속",
+  "shortcuts.game_player": "게임 플레이어 표시 / 숨기기",
   "shortcuts.game_ready": "‘준비’ 화면",
   "shortcuts.game_stop": "정지하고 점수 보기",
   "shortcuts.game_volume": "노래 볼륨",
