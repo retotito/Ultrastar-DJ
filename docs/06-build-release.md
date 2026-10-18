@@ -165,7 +165,7 @@ page head. No cookies, no tracking, nothing loaded from other sites — so no co
   something.
 - **CodeQL** (`.github/workflows/codeql.yml`): GitHub's code security check for the C# code and the workflows, on
   push and every Monday; findings under Security → Code scanning.
-- **Dependabot** (`.github/dependabot.yml`): weekly pull requests for newer NuGet packages and GitHub Actions (one
+- **Dependabot** (`.github/dependabot.yml`): monthly pull requests for newer NuGet packages and GitHub Actions (one
   grouped PR each), security fixes at once. Merge only after CI is green and a live check.
 - **Secret scanning** with push protection (GitHub, on for public repos) and **private vulnerability reporting**
   (`SECURITY.md`).

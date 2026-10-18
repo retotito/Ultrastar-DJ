@@ -1,18 +1,18 @@
-# Dependabot: a pull request when a NuGet package or a GitHub Action has a new version (weekly, grouped, so it stays a
+# Dependabot: a pull request when a NuGet package or a GitHub Action has a new version (monthly, grouped, so it stays a
 # handful); security fixes come as soon as they are known.
 version: 2
 updates:
   - package-ecosystem: nuget
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
     groups:
       nuget:
         patterns: ["*"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
     groups:
       actions:
         patterns: ["*"]
