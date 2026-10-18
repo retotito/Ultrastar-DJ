@@ -4,7 +4,8 @@ Desktop karaoke DJ app for parties. The DJ runs the show from a laptop; singers 
 and scores on one or two projectors. Songs come from local UltraStar folders, USDB and YouTube.
 
 **Stack:** C# / .NET 10 · Avalonia 12 · libmpv · PortAudio · SQLite · ASP.NET Core (guest songbook).
-**Platforms:** macOS (Apple Silicon + Intel), Windows x64.
+**Platforms:** macOS (Apple Silicon + Intel), Windows x64, Linux x64.
+**Website and downloads:** <https://retotito.github.io/Ultrastar-DJ>
 
 This is the second implementation. The first (Tauri + Svelte, [retotito/UltraStarDJ](https://github.com/retotito/UltraStarDJ))
 is a working prototype whose browser-based media stack could not route YouTube audio to a chosen device nor
@@ -45,3 +46,8 @@ Sprints 0–5 done on macOS: skeleton, media engine (libmpv, YouTube once → N 
 ## License
 
 MIT
+
+## License
+
+[GPL-3.0](LICENSE) — free to use, change and share; what is built from it stays open source under the same license.
+Security problems: see [SECURITY.md](SECURITY.md).

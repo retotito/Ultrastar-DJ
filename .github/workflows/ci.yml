@@ -1,0 +1,28 @@
+# Builds and tests every push to main (and pull requests), so a change from another machine that breaks the build or
+# a test shows a red ✗ on GitHub. Releases are built by build.yml.
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["website/**", "docs/**", "**.md"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: Native parts (yt-dlp, ffmpeg, cloudflared; libmpv comes from the system)
+        run: bash scripts/fetch-natives-linux.sh
+      - name: Build
+        run: dotnet build --nologo -v q
+      - name: Tests
+        run: dotnet test --nologo -v q --no-build

@@ -1,0 +1,30 @@
+# GitHub's code security check (CodeQL) for the C# code and the workflows; findings appear under Security → Code scanning.
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["website/**", "docs/**", "**.md"]
+  pull_request:
+  schedule:
+    - cron: "0 4 * * 1"   # Mondays: new checks also run on unchanged code
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [csharp, actions]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+      - uses: github/codeql-action/analyze@v3
