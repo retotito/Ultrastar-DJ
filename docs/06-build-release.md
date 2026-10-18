@@ -140,7 +140,36 @@ Update now downloads with progress and restarts into the new version (`ApplyUpda
 are in the user's data folder and stay. Later: asked again at the next start. A failed download keeps the offer with
 the reason. Offline / GitHub unreachable: logged, nothing shown.
 
+**After publishing:** update the download section of `website/index.html` (version, and the version in the four links
+— the dmg names contain it), commit, push. GitHub's "latest release" link skips pre-releases, so the page links each
+file of one release directly.
+
 ---
+
+## Website (`website/`, `.github/workflows/pages.yml`)
+
+One static page — plain HTML, CSS and JavaScript, no build step — published to GitHub Pages
+(retotito.github.io/Ultrastar-DJ) by the `Website` workflow on every push that changes `website/`. Pictures are
+`.webp` in `website/img/` (made with `cwebp` from the screenshots; personal paths blurred). Videos are not kept in
+git. Feedback buttons open the issue forms in `.github/ISSUE_TEMPLATE/` (problem / idea). Preview locally:
+`python3 -m http.server -d website` → http://localhost:8000. For search engines: `robots.txt`, `sitemap.xml`, a
+canonical address, the share preview (`img/og-image.jpg`, 1200 × 630) and a `SoftwareApplication` description in the
+page head. No cookies, no tracking, nothing loaded from other sites — so no cookie banner (the footer says so).
+
+---
+
+## Checks on every push
+
+- **CI** (`.github/workflows/ci.yml`): build + tests on Ubuntu for every push to `main` and every pull request (not
+  for changes to `website/`, `docs/` or Markdown only) — a red ✗ on GitHub when a change from another machine broke
+  something.
+- **CodeQL** (`.github/workflows/codeql.yml`): GitHub's code security check for the C# code and the workflows, on
+  push and every Monday; findings under Security → Code scanning.
+- **Dependabot** (`.github/dependabot.yml`): weekly pull requests for newer NuGet packages and GitHub Actions (one
+  grouped PR each), security fixes at once. Merge only after CI is green and a live check.
+- **Secret scanning** with push protection (GitHub, on for public repos) and **private vulnerability reporting**
+  (`SECURITY.md`).
+- License: GPL-3.0 (`LICENSE`) — fits the GPL libmpv the app ships.
 
 ## CI (`.github/workflows/build.yml`)
 

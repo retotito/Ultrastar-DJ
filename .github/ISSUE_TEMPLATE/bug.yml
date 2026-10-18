@@ -1,0 +1,40 @@
+name: Report a problem
+description: Something does not work as it should.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: dropdown
+    id: system
+    attributes:
+      label: Your computer
+      options:
+        - Mac with Apple Silicon
+        - Mac with Intel
+        - Windows
+        - Linux
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      description: Settings (gear icon, bottom left) shows it.
+      placeholder: 0.9.0-beta.1
+  - type: textarea
+    id: setup
+    attributes:
+      label: Speakers, microphones, screens
+      description: Only if it matters — e.g. "Bluetooth speaker, 2 USB mics, one TV over HDMI".
+  - type: textarea
+    id: log
+    attributes:
+      label: Log file
+      description: |
+        If the app crashed or got stuck, attach today's log (drag the file in here):
+        Mac `~/Library/Application Support/UltrastarDJ/logs/`, Windows `%APPDATA%\UltrastarDJ\logs\`, Linux `~/.config/UltrastarDJ/logs/`.

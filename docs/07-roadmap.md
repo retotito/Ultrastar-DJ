@@ -839,6 +839,19 @@ Acer Aspire V3-772G, built-in audio + Logitech H340 USB headset).
 - [x] Verified live
 ---
 
+## Sprint 35 — Website  *(in progress)*
+
+- [x] One page in `website/`: opening with the 3-screen mockup turning into the bar photo while scrolling (stacked on
+      phones), what it is, features (screens, preview, songbook in 4 steps, duets, USDB, .txt + YouTube, light / dark
+      slider), setup in 7 steps, download (own system highlighted), first-start help popup, feedback
+- [x] Feedback: issue forms "Report a problem" / "Suggest an idea"
+- [x] Published by the `Website` workflow to GitHub Pages
+- [x] License GPL-3.0; checks: CI (build + tests on every push), CodeQL, Dependabot, SECURITY.md with private
+      vulnerability reporting
+- [ ] Verified live
+
+---
+
 ## Later / ideas
 
 - **Goal: a cleaned-up USDB list for every user** (brainstormed 2026-10-17, not started). Measured: no YouTube link
