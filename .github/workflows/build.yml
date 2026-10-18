@@ -30,8 +30,8 @@ jobs:
             runner: macos-15-intel    # Intel
     runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
       - name: Version from the tag
@@ -48,7 +48,7 @@ jobs:
         run: vpk download github --repoUrl "$REPO_URL" --token "${{ github.token }}" --channel ${{ matrix.rid }} --pre -o out/Releases || echo "no previous release"
       - name: App + dmg + update packages
         run: zsh scripts/publish-macos.sh ${{ matrix.rid }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: Ultrastar-DJ-${{ matrix.rid }}
           path: out/Releases/*
@@ -57,8 +57,8 @@ jobs:
   windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
       - name: Version from the tag
@@ -81,7 +81,7 @@ jobs:
       - name: App + Setup.exe + update packages
         shell: pwsh
         run: ./scripts/publish-windows.ps1
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: Ultrastar-DJ-win-x64
           path: out/Releases/*
@@ -92,8 +92,8 @@ jobs:
     # Linux Mint 21 and later).
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
       - name: Version from the tag
@@ -110,7 +110,7 @@ jobs:
         run: vpk download github --repoUrl "$REPO_URL" --token "${{ github.token }}" --channel linux --pre -o out/Releases || echo "no previous release"
       - name: App + AppImage + update packages
         run: bash scripts/publish-linux.sh
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: Ultrastar-DJ-linux-x64
           path: out/Releases/*
@@ -124,8 +124,8 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           path: packages
           merge-multiple: true
