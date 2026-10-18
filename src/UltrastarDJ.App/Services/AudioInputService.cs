@@ -206,6 +206,14 @@ public sealed class AudioInputService : IDisposable
     private static bool IsHidden(AudioDeviceInfo d)
     {
         string n = d.Name.ToLowerInvariant();
+        // Linux: PortAudio lists ALSA's names — each card ("… (hw:2,0)", its own channels, so a SingStar dongle's
+        // left and right stay apart) and virtual ones (sysdefault, pipewire, default …: the sound server's default mic
+        // again, with 64 or 128 channels). Only the cards are offered.
+        if (OperatingSystem.IsLinux() && !d.Name.Contains("(hw:", StringComparison.Ordinal))
+        {
+            return true;
+        }
+
         // "Stereo Mix" is Windows' recording of what the speakers play: picked as a mic it scores the song itself.
         return n.Contains("blackhole") || n.Contains("loopback") || n.Contains("audio recorder") || n.Contains("screen recorder") || n.Contains("stereo mix");
     }

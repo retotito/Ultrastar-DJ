@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 
@@ -6,11 +7,42 @@ namespace UltrastarDJ.Media;
 /// <summary>
 /// The output the system plays "System default" on right now, as mpv's id — asked from the OS, because PortAudio's list
 /// is only re-read while no stream is open. Windows: the multimedia default endpoint (its id ends in the same
-/// <c>{guid}</c> as mpv's <c>wasapi/{guid}</c>). Elsewhere null: the caller falls back to PortAudio's default by name.
+/// <c>{guid}</c> as mpv's <c>wasapi/{guid}</c>). Linux: the sound server's default sink as mpv's <c>pulse/&lt;sink&gt;</c>
+/// (PortAudio's default there is ALSA's "default", which names no speaker). Elsewhere null: the caller falls back to
+/// PortAudio's default by name.
 /// </summary>
 public static class SystemDefaultOutput
 {
-    public static string? CurrentId() => OperatingSystem.IsWindows() ? WindowsDefault() : null;
+    public static string? CurrentId()
+        => OperatingSystem.IsWindows() ? WindowsDefault()
+            : OperatingSystem.IsLinux() ? LinuxDefault()
+            : null;
+
+    // pactl ships with PulseAudio and with PipeWire's PulseAudio server; without it there is no pulse/ route either.
+    private static string? LinuxDefault()
+    {
+        try
+        {
+            using Process pactl = Process.Start(new ProcessStartInfo("pactl", "get-default-sink")
+            {
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+            })!;
+            if (!pactl.WaitForExit(TimeSpan.FromSeconds(1)))
+            {
+                pactl.Kill();
+                return null;
+            }
+
+            string sink = pactl.StandardOutput.ReadToEnd().Trim();
+            return pactl.ExitCode == 0 && sink.Length > 0 && !sink.Contains('\n') ? "pulse/" + sink : null;
+        }
+        catch (Exception e) when (e is System.ComponentModel.Win32Exception or InvalidOperationException)
+        {
+            return null;
+        }
+    }
 
     [SupportedOSPlatform("windows")]
     private static string? WindowsDefault()

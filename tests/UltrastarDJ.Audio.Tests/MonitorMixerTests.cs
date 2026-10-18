@@ -14,6 +14,7 @@ public class MonitorMixerTests
         public IReadOnlyList<AudioDeviceInfo> Devices { get; } = [new("out", "out", 0, 2, outRate, false, true)];
         public bool RefreshDevices() => true;
         public AudioDeviceInfo? Find(string id) => Devices.FirstOrDefault(d => d.Id == id);
+        public string? SinkOutputId(string sinkName) => null;
         public IAudioLine OpenInput(string deviceId, int channels, double? rate, AudioInputCallback cb) => throw new NotSupportedException();
         public IAudioLine OpenOutput(string deviceId, int channelOffset, double? rate, AudioOutputCallback cb)
         {

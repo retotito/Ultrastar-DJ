@@ -355,12 +355,56 @@ public sealed class MpvPlayer : IMediaPlayer
 
     /// <summary>
     /// mpv lists every audio API it was built with, so the same speakers appear again through a second one: OpenAL's
-    /// "Default (openal)" (Windows, macOS), AVFoundation next to CoreAudio (macOS). Only the native route is offered.
+    /// "Default (openal)" (Windows, macOS), AVFoundation next to CoreAudio (macOS), JACK's default (Linux, a server
+    /// a DJ does not run). Only the native route is offered.
     /// </summary>
     internal static bool IsSecondRoute(string id)
         => id == "openal" || id.StartsWith("openal/", StringComparison.Ordinal)
             || id.StartsWith("avfoundation/", StringComparison.Ordinal)
-            || id == "sdl" || id.StartsWith("sdl/", StringComparison.Ordinal);
+            || id == "sdl" || id.StartsWith("sdl/", StringComparison.Ordinal)
+            || id == "jack" || id.StartsWith("jack/", StringComparison.Ordinal);
+
+    // In order of preference. PulseAudio first: PipeWire serves it too, with the same sink names.
+    private static readonly string[] LinuxRoutes = ["pulse", "pipewire", "alsa"];
+
+    /// <summary>
+    /// The ids worth offering, in mpv's order. Linux: mpv reaches each speaker through PulseAudio, PipeWire and a dozen
+    /// ALSA names (sysdefault, front, surround51, dmix …) — one route is kept, and its "Default (pulse)" left out ("auto"
+    /// is the same). ALSA's own names only without a sound server (they go around it and hold the card): each card's
+    /// default and HDMI.
+    /// </summary>
+    internal static List<string> Offered(IEnumerable<string> ids)
+    {
+        List<string> all = [.. ids.Where(id => !IsSecondRoute(id))];
+        string? route = LinuxRoutes.FirstOrDefault(r => all.Any(id => id.StartsWith(r + "/", StringComparison.Ordinal)));
+        if (route is null)
+        {
+            return all;
+        }
+
+        return [.. all.Where(id =>
+        {
+            int slash = id.IndexOf('/');
+            string api = slash < 0 ? id : id[..slash];
+            return !LinuxRoutes.Contains(api)
+                || (slash > 0 && api == route
+                    && (api != "alsa" || id.Contains("/sysdefault:", StringComparison.Ordinal) || id.Contains("/hdmi:", StringComparison.Ordinal)));
+        })];
+    }
+
+    /// <summary>The PulseAudio / PipeWire sink behind an output ("pulse/alsa_output.usb-…" → "alsa_output.usb-…"), else null.</summary>
+    public static string? SoundServerSink(string mpvId)
+    {
+        foreach (string route in (ReadOnlySpan<string>)["pulse/", "pipewire/"])
+        {
+            if (mpvId.StartsWith(route, StringComparison.Ordinal) && mpvId.Length > route.Length)
+            {
+                return mpvId[route.Length..];
+            }
+        }
+
+        return null;
+    }
 
     /// <summary>Audio outputs known to mpv (<c>audio-device-list</c>), native route only.</summary>
     public IReadOnlyList<AudioOutputDevice> ListAudioDevices()
@@ -371,21 +415,19 @@ public sealed class MpvPlayer : IMediaPlayer
             return [AudioOutputDevice.Auto];
         }
 
-        List<AudioOutputDevice> list = [];
+        List<string> ids = [];
+        Dictionary<string, string> descriptions = [];
         using JsonDocument doc = JsonDocument.Parse(json);
         foreach (JsonElement e in doc.RootElement.EnumerateArray())
         {
             string id = e.GetProperty("name").GetString() ?? "";
-            if (IsSecondRoute(id))
+            if (descriptions.TryAdd(id, e.TryGetProperty("description", out JsonElement d) ? d.GetString() ?? id : id))
             {
-                continue;
+                ids.Add(id);
             }
-
-            string desc = e.TryGetProperty("description", out JsonElement d) ? d.GetString() ?? id : id;
-            list.Add(id == "auto" ? AudioOutputDevice.Auto : new AudioOutputDevice(id, desc) { Kind = OutputKinds.Of(id) });
         }
 
-        return list;
+        return [.. Offered(ids).Select(id => id == "auto" ? AudioOutputDevice.Auto : new AudioOutputDevice(id, descriptions[id]) { Kind = OutputKinds.Of(id) })];
     }
 
     // ── Event loop ────────────────────────────────────────────────────────

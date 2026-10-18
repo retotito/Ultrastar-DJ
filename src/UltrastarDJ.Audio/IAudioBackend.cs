@@ -42,6 +42,12 @@ public interface IAudioBackend : IDisposable
 
     AudioDeviceInfo? Find(string deviceId);
 
+    /// <summary>
+    /// The output id that plays on a sound-server sink (Linux: PipeWire / PulseAudio, by sink name) — not in
+    /// <see cref="Devices"/>, but <see cref="Find"/> and <see cref="OpenOutput"/> take it. Null where there is none.
+    /// </summary>
+    string? SinkOutputId(string sinkName);
+
     /// <summary>Opens all input channels of a device at its default rate. Callback delivers interleaved frames.</summary>
     IAudioLine OpenInput(string deviceId, int channels, double? sampleRateHz, AudioInputCallback callback);
 

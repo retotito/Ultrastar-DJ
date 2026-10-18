@@ -221,6 +221,9 @@ public sealed partial class App : Application
             return;
         }
 
+        // Who asked (the DJ window, the OS, a session manager): an app that "closed by itself" names its cause here.
+        _services?.GetRequiredService<ILogger<App>>().LogInformation("Shutdown requested{NewLine}{Stack}", Environment.NewLine, Environment.StackTrace);
+
         // Native players and audio streams are torn down on a worker while the dispatcher keeps pumping:
         // frame/state callbacks post to the UI thread, so blocking it here would deadlock the teardown.
         _shuttingDown = true;

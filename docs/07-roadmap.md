@@ -789,6 +789,38 @@ Goal: a DJ with one screen (a laptop alone) plays without juggling windows.
 
 ---
 
+## Sprint 33 — Linux fixes  *(done)*
+
+Goal: the developer build set up and tested on a Linux laptop (Linux Mint 22 Cinnamon, X11, PipeWire 1.0.5;
+Acer Aspire V3-772G, built-in audio + Logitech H340 USB headset).
+
+- [x] Setup: .NET 10, `fetch-natives-linux.sh`, system libmpv2; build, all tests and the smoke start pass
+- [x] Audio Output listed each speaker about fifteen times: mpv offers it through `pipewire/`, `pulse/` and every
+      ALSA variant (`sysdefault`, `front`, `surround*`, `dmix`, `plughw`, `iec958`, `hdmi`), plus "Default (pipewire /
+      alsa / jack)" → one route: `pulse/`, else `pipewire/`, else ALSA's card defaults; the raw ALSA ones also took
+      the card away from PipeWire
+- [x] "(default)" never shown: `SystemDefaultOutput` asked Windows only, and PortAudio's default is named "default",
+      which matches no mpv name → the sound server's default sink (`pactl get-default-sink`)
+- [x] Bluetooth / HDMI estimate (`OutputKinds`: `bluez` / `hdmi` in the id) worked for `pipewire/` and `pulse/` ids,
+      not for the `alsa/sysdefault:CARD=…` id this machine had saved — those are no longer offered
+- [x] Mic monitor and sync clicks followed the game output by name (PortAudio ↔ mpv): no name matches on Linux, so they
+      played on the system default speaker whatever the game output was → opened by sink name through PipeWire's
+      ALSA plugin (`pipewire:NODE=<sink>`)
+- [x] Audio Input listed ALSA's virtual devices (`sysdefault`, `pipewire`, `default` with 64–128 channels) next to the
+      real cards (`… (hw:2,0)`) → cards only
+- [x] SingStar dongle: left and right separate (the `hw:` device reads the card's own channels)
+- [x] DJ window: Cinnamon keeps its own title bar (Avalonia cannot extend into it on X11) → move, maximise, close and
+      double-click are the desktop's own; library filters open; drag cursors (open hand / fist) shown
+- [x] Mic monitor sounded distorted ("overdrive"): the SingStar dongle's own capture volume was at 100 % = +24 dB, so
+      the signal clipped in the dongle before the app read it (the `hw:` device bypasses PipeWire, the card's mixer
+      still applies); the app's input gain only turned the distorted signal down → set to 0 dB in the system
+      (Sound settings → Input, or `amixer -c <card> sset Mic 0dB`) — a machine setting, nothing in the app
+- [x] Notes not drawn: no player was assigned to a game display on this machine (fresh display settings) — not a
+      Linux bug
+- [x] Owner test on Linux: speakers, mics, game and monitor output, SingStar left / right, clean mic sound
+
+---
+
 ## Later / ideas
 
 - **Goal: a cleaned-up USDB list for every user** (brainstormed 2026-10-17, not started). Measured: no YouTube link

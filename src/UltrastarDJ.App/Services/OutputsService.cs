@@ -313,6 +313,12 @@ public sealed class OutputsService : IDisposable
             return outs.FirstOrDefault(d => d.IsDefaultOutput)?.Id ?? (outs.Count > 0 ? outs[0].Id : null);
         }
 
+        // Linux: PortAudio's list names no PipeWire / PulseAudio speaker; the sink is reached through ALSA's plugin.
+        if (MpvPlayer.SoundServerSink(mpvId) is { } sink && _backend.SinkOutputId(sink) is { } sinkOutput)
+        {
+            return sinkOutput;
+        }
+
         try
         {
             string? name = _media.Game.ListAudioDevicesAsync().GetAwaiter().GetResult().FirstOrDefault(d => d.Id == mpvId)?.Name;

@@ -37,7 +37,48 @@ public sealed class PortAudioBackend : IAudioBackend
 
     public IReadOnlyList<AudioDeviceInfo> Devices => _devices;
 
-    public AudioDeviceInfo? Find(string deviceId) => _devices.FirstOrDefault(d => d.Id == deviceId);
+    public AudioDeviceInfo? Find(string deviceId)
+        => _devices.FirstOrDefault(d => d.Id == deviceId) ?? (IsSinkPcm(deviceId) && PluginOf(deviceId) is { } plugin
+            ? new AudioDeviceInfo(deviceId, deviceId, 0, 2, plugin.DefaultSampleRateHz, false, false)
+            : null);
+
+    public string? SinkOutputId(string sinkName) => OperatingSystem.IsLinux() ? SinkPcm(sinkName, _devices.Select(d => d.Name)) : null;
+
+    // ── Linux: sound-server sinks ──
+    // PortAudio here talks to ALSA only, where PipeWire / PulseAudio is one device ("pipewire", "pulse") that plays on
+    // the default speaker. Their ALSA plugins take a sink as argument; such a name is opened directly (PaAlsaStreamInfo),
+    // so the mic monitor plays on the speaker the song plays on.
+    private static readonly (string Plugin, string Argument)[] SinkPlugins = [("pipewire", "NODE"), ("pulse", "DEVICE")];
+
+    /// <summary>"pipewire:NODE=&lt;sink&gt;" (or PulseAudio's), with the first plugin listed; null without one, or for a
+    /// name ALSA would split (",", quotes, spaces).</summary>
+    internal static string? SinkPcm(string sinkName, IEnumerable<string> deviceNames)
+    {
+        if (sinkName.Length == 0 || sinkName.AsSpan().IndexOfAny(",\" '") >= 0)
+        {
+            return null;
+        }
+
+        List<string> names = [.. deviceNames];
+        return SinkPlugins.Where(p => names.Contains(p.Plugin)).Select(p => $"{p.Plugin}:{p.Argument}={sinkName}").FirstOrDefault();
+    }
+
+    internal static bool IsSinkPcm(string deviceId) => SinkPlugins.Any(p => deviceId.StartsWith($"{p.Plugin}:{p.Argument}=", StringComparison.Ordinal));
+
+    private AudioDeviceInfo? PluginOf(string sinkPcm) => _devices.FirstOrDefault(d => d.Name == sinkPcm[..sinkPcm.IndexOf(':')]);
+
+    private const int PaAlsa = 8; // PaHostApiTypeId.paALSA
+    private const int PaUseHostApiSpecificDeviceSpecification = -2;
+
+    /// <summary>PaAlsaStreamInfo (pa_linux_alsa.h), version 1; the device string is read during Pa_OpenStream.</summary>
+    [StructLayout(LayoutKind.Sequential)]
+    private struct PaAlsaStreamInfo
+    {
+        public nuint Size;
+        public int HostApiType;
+        public nuint Version;
+        public nint DeviceString;
+    }
 
     public bool RefreshDevices()
     {
@@ -209,6 +250,11 @@ public sealed class PortAudioBackend : IAudioBackend
 
     private PaStream OpenOutputLocked(string deviceId, int channelOffset, double? sampleRateHz, AudioOutputCallback callback)
     {
+        if (IsSinkPcm(deviceId))
+        {
+            return OpenSinkOutputLocked(deviceId, sampleRateHz, callback);
+        }
+
         (int index, DeviceInfo info) = Resolve(deviceId);
         int channels = Math.Clamp(channelOffset + 2, 2, Math.Max(2, info.maxOutputChannels));
         double rate = sampleRateHz ?? info.defaultSampleRate;
@@ -225,6 +271,35 @@ public sealed class PortAudioBackend : IAudioBackend
         stream.Open(null, p, null, callback, OutputBlockFrames);
         _log.LogInformation("Output opened: {Device} (ch {From}-{To} of {Channels} @ {Rate} Hz)", deviceId, channelOffset + 1, channelOffset + 2, channels, rate);
         return stream;
+    }
+
+    private unsafe PaStream OpenSinkOutputLocked(string deviceId, double? sampleRateHz, AudioOutputCallback callback)
+    {
+        AudioDeviceInfo plugin = PluginOf(deviceId) ?? throw new AudioBackendException(Text.F("audio.device_missing", "Audio device not found: {0}", deviceId));
+        DeviceInfo info = PortAudioSharp.PortAudio.GetDeviceInfo(_indexById[plugin.Id]);
+        double rate = sampleRateHz ?? info.defaultSampleRate;
+        nint name = Marshal.StringToHGlobalAnsi(deviceId);
+        try
+        {
+            PaAlsaStreamInfo alsa = new() { Size = (nuint)sizeof(PaAlsaStreamInfo), HostApiType = PaAlsa, Version = 1, DeviceString = name };
+            StreamParameters p = new()
+            {
+                device = PaUseHostApiSpecificDeviceSpecification,
+                channelCount = 2,
+                sampleFormat = SampleFormat.Float32,
+                suggestedLatency = info.defaultLowOutputLatency,
+                hostApiSpecificStreamInfo = (nint)(&alsa),
+            };
+
+            PaStream stream = new(this, deviceId, rate, 2, channelOffset: 0);
+            stream.Open(null, p, null, callback, OutputBlockFrames);
+            _log.LogInformation("Output opened: {Device} (2 ch @ {Rate} Hz)", deviceId, rate);
+            return stream;
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(name);
+        }
     }
 
     private (int, DeviceInfo) Resolve(string deviceId)

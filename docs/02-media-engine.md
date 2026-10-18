@@ -211,7 +211,11 @@ This gives YouTube a real readiness signal — the prototype had none.
 - Device list: union of mpv `audio-device-list` (for output names/ids mpv understands) and PortAudio outputs
   (for channel counts). Matched by name; expose `OutputDeviceInfo { Id, Name, MaxChannels }`. mpv lists every audio
   API it was built with, so `MpvPlayer.ListAudioDevices` keeps the native route only (drops `openal` — "Default
-  (openal)" on Windows —, `avfoundation/…`, `sdl`). Each speaker appears once; the one the system plays on now is
+  (openal)" on Windows —, `avfoundation/…`, `sdl`, `jack`). **Linux:** mpv reaches each speaker through PulseAudio,
+  PipeWire and a dozen ALSA names (`sysdefault`, `front`, `surround51`, `dmix` …); `MpvPlayer.Offered` (tested) keeps
+  one route — `pulse/<sink>` (PipeWire serves it too, same sink names), else `pipewire/<sink>`, else ALSA's
+  `sysdefault:` / `hdmi:` names — and drops its "Default (pulse)" (same as `auto`). Raw ALSA names would go around the
+  sound server and hold the card. Each speaker appears once; the one the system plays on now is
   marked "(default)". "System default" is not offered next to it (it was the same speaker twice): older settings
   holding it are pinned to that speaker once it is known (`OutputsService.PinSystemDefault`); it stays only as the
   fallback while no speaker can be named.
@@ -222,11 +226,17 @@ This gives YouTube a real readiness signal — the prototype had none.
   "Sound Mapper" / "Primary Sound Driver" entries. `PortAudioBackend` keeps WASAPI's only, with WASAPI's own defaults:
   full names (MME cuts at 31 characters) that match mpv's `wasapi/…` list by name. Shared mode accepts only the
   device's mix rate, so streams open at `DefaultSampleRateHz`. macOS / Linux have one host API and are unfiltered.
+- **Linux:** PortAudio talks to ALSA only: each card (`Logi USB Headset H340: Audio (hw:2,0)`) plus virtual names
+  (`sysdefault`, `pipewire`, `default` …, with 64–128 channels). Audio Input offers the cards only (their own channels:
+  a SingStar dongle's left and right stay apart). PipeWire / PulseAudio is one ALSA device on the default speaker, so
+  an output on a chosen speaker is opened by sink name through the plugin's argument (`pipewire:NODE=<sink>`, else
+  `pulse:DEVICE=<sink>`, `PortAudioBackend.SinkOutputId`; PortAudio opens it via `PaAlsaStreamInfo`).
 - Hot-plug: poll `audio-device-list` every 3 s while a routing view is open; if the selected device vanishes → reset to default and notify.
 - **Output hot-plug** (`OutputsService`): mpv's device list is checked every 3 s (it works while a song plays; PortAudio's
   refresh does not). A chosen output that is unplugged (or not there at start) is replaced for good by **the speaker
   the system plays on now**, chosen explicitly (`Core.Playback.OutputPresence.Replacement`, tested; asked from the OS
-  via `Media.SystemDefaultOutput` — Windows' default endpoint — else PortAudio's default by name; neither known →
+  via `Media.SystemDefaultOutput` — Windows' default endpoint, Linux's default sink (`pactl get-default-sink` →
+  `pulse/<sink>`) — else PortAudio's default by name; neither known →
   System default). Not "System default" itself: the OS makes a returning Bluetooth speaker its default again and the
   game followed it. Warning toast naming both. When it is back, an info toast says so and the DJ chooses it again —
   it never switches back by itself (that happened mid-song and confused more than it helped).
@@ -237,12 +247,14 @@ This gives YouTube a real readiness signal — the prototype had none.
 - **The speaker the game really plays on** (`OutputsService.GameOutputKey`, the latency and calibration key): the
   chosen output, or for System default the device that is the default now (`SystemDefaultOutput`, else PortAudio's
   default output by name → mpv's id; only a present one counts, PortAudio's list is stale while a stream is open).
-  macOS / Linux use the PortAudio fallback for now (CoreAudio's default device uid would match `coreaudio/<uid>`). Shown as "System default ·
+  macOS uses the PortAudio fallback for now (CoreAudio's default device uid would match `coreaudio/<uid>`). Shown as "System default ·
   Speakers (Realtek(R) Audio)". It changing (chosen, replaced, a new system default) raises `GameOutputChanged`.
 - **Speaker kind** (`Media.OutputKinds`, tested): Bluetooth / display / other, for the latency estimate of an unmeasured
   speaker. Windows: the endpoint's registry entry (enumerator `BTH…` → Bluetooth, form factor 9 → display); macOS: a
   Bluetooth device's uid is its address; PulseAudio / PipeWire: `bluez` / `hdmi` in the sink name.
 - Mic monitoring uses a **separate PortAudio output stream** on the game device (see `03-game-engine.md`). Two streams on one device are mixed by the OS; that is acceptable and much simpler than routing mpv PCM through our own mixer.
+  `OutputsService.GamePortAudioDeviceId` finds it by name (mpv's description = PortAudio's name on macOS / Windows);
+  on Linux by sink (`pulse/<sink>` → `pipewire:NODE=<sink>`), as no PortAudio name matches there.
 
 ### Known fallback
 If `pan`-based channel-pair routing or `astats` metering proves unreliable on a platform, the fallback is to

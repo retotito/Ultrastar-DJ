@@ -16,6 +16,10 @@ internal static class Program
     public static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()
+            // Linux (X11): Avalonia answers the desktop session manager's "save yourself" with a shutdown request —
+            // on Linux Mint (cinnamon-session) the app closed by itself mid-song. Settings are saved as they change,
+            // so nothing is lost at a real log-out.
+            .With(new X11PlatformOptions { EnableSessionManagement = false })
             .WithInterFont()
             .LogToTrace();
 }
