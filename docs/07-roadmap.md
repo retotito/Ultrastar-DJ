@@ -851,6 +851,9 @@ Acer Aspire V3-772G, built-in audio + Logitech H340 USB headset).
 - [x] CodeQL findings: release workflow jobs read-only except the release job; songbook log line writes the library's
       song id, not the request's; "Zip Slip" in settings restore dismissed as a false positive (only plain *.json names
       are extracted)
+- [x] Dependabot updates: GitHub Actions (release build checked by hand first); app libraries (Avalonia 12.1.4,
+      QRCoder 1.8, Microsoft.Extensions / Sqlite 10.0.13, test tools) — without the extra DependencyInjection
+      references Dependabot added to Audio and Media; checks monthly
 - [ ] Verified live
 
 ---
