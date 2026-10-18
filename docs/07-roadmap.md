@@ -839,7 +839,7 @@ Acer Aspire V3-772G, built-in audio + Logitech H340 USB headset).
 - [x] Verified live
 ---
 
-## Sprint 35 — Website  *(in progress)*
+## Sprint 35 — Website, license, repo checks  *(closed)*
 
 - [x] One page in `website/`: opening with the 3-screen mockup turning into the bar photo while scrolling (stacked on
       phones), what it is, features (screens, preview, songbook in 4 steps, duets, USDB, .txt + YouTube, light / dark
@@ -854,7 +854,8 @@ Acer Aspire V3-772G, built-in audio + Logitech H340 USB headset).
 - [x] Dependabot updates: GitHub Actions (release build checked by hand first); app libraries (Avalonia 12.1.4,
       QRCoder 1.8, Microsoft.Extensions / Sqlite 10.0.13, test tools) — without the extra DependencyInjection
       references Dependabot added to Audio and Media; checks monthly
-- [ ] Verified live
+- [x] Website: languages section — a line globe with "Sing!" in eight of the app's languages, the 13 language names
+- [x] Verified live
 
 ---
 

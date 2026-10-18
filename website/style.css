@@ -190,6 +190,20 @@ button.link { background: none; border: 0; padding: 0; color: var(--brand); font
   padding: 6px 10px; border-radius: 999px; background: #fff; color: var(--text); font-size: 13px; white-space: nowrap; box-shadow: var(--shadow);
 }
 
+/* Languages: a line globe with speech bubbles around it (static) */
+.globe { position: relative; width: min(80%, 352px); aspect-ratio: 1; margin: 0 auto; }
+.globe-earth { position: absolute; inset: 20%; width: 60%; height: 60%; fill: none; stroke: var(--brand); stroke-width: 1.4; opacity: .85; }
+.globe-earth circle { fill: var(--brand-soft); }
+.globe-words { list-style: none; margin: 0; padding: 0; position: absolute; inset: 0; }
+.globe-words li {
+  position: absolute; transform: translate(-50%, -50%); padding: 5px 11px; border-radius: 12px; white-space: nowrap;
+  background: #fff; box-shadow: 0 6px 18px rgba(20, 30, 60, .14); font-weight: 600; font-size: clamp(12px, 2.9vw, 15px);
+  border-bottom: 3px solid var(--c);
+}
+.globe-words .p1 { --c: var(--p1); } .globe-words .p2 { --c: var(--p2); } .globe-words .p3 { --c: var(--p3); } .globe-words .p4 { --c: var(--p4); }
+.lang-list { list-style: none; padding: 0; margin: 8px 0 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.lang-list li { padding: 4px 12px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line); font-size: 15px; }
+
 /* Photo break */
 .band { height: 46vh; min-height: 260px; overflow: hidden; }
 .band img { width: 100%; height: 100%; object-fit: cover; object-position: center 40%; }
