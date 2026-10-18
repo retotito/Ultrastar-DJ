@@ -36,6 +36,8 @@
   "audio_output.game_sub": "Alto-falantes principais",
   "audio_output.how_much_later_speakers": "Quanto mais tarde os alto-falantes tocam em relação ao envio do som pelo app (cabo ~15 ms, TV/HDMI 50–150 ms, Bluetooth 150–300 ms). Letra e notas aparecem com esse mesmo atraso. Salvo por dispositivo.",
   "audio_output.latency": "LATÊNCIA",
+  "audio_output.lyrics_ahead": "A letra vem antes da música?",
+  "audio_output.lyrics_ahead_hint": "Só para altifalantes que tocam com atraso, como algumas TVs e colunas Bluetooth: se a letra e as notas aparecem antes da música que ouves, inicia o teste de sincronia e move o controlo até o flash e o clique coincidirem. A pontuação é definida de qualquer forma pela calibração do microfone (Entrada de áudio).",
   "audio_output.multichannel_interfaces_are_listed": "Interfaces multicanal aparecem uma vez por par estéreo. O retorno dos microfones segue a saída do jogo. Os microfones são calibrados para cada saída do jogo (Entrada de áudio).",
   "audio_output.only_system": "Só a saída do sistema foi encontrada — conecte um dispositivo USB ou Bluetooth e atualize",
   "audio_output.output_device": "DISPOSITIVO DE SAÍDA",

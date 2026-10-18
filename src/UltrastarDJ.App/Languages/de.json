@@ -36,6 +36,8 @@
   "audio_output.game_sub": "Hauptlautsprecher",
   "audio_output.how_much_later_speakers": "Wie viel später die Lautsprecher spielen, als die App den Ton sendet (Kabel ~15 ms, TV/HDMI 50–150 ms, Bluetooth 150–300 ms). Text und Noten erscheinen um so viel später. Pro Ausgabegerät gespeichert.",
   "audio_output.latency": "LATENZ",
+  "audio_output.lyrics_ahead": "Text vor der Musik?",
+  "audio_output.lyrics_ahead_hint": "Nur für Lautsprecher, die spät spielen, etwa manche Fernseher und Bluetooth-Lautsprecher: Kommen Text und Noten vor der Musik, die du hörst, starte «Sync testen» und schiebe den Regler, bis Blitz und Klick zusammenfallen. Die Wertung stellt so oder so die Mikrofon-Kalibrierung ein (Audio-Eingang).",
   "audio_output.multichannel_interfaces_are_listed": "Mehrkanal-Interfaces erscheinen einmal pro Stereopaar. Das Mikrofon-Monitoring folgt dem Spiel-Ausgang. Mikrofone werden pro Spiel-Ausgang kalibriert (Audio-Eingang).",
   "audio_output.only_system": "Nur der Systemausgang gefunden — ein USB- oder Bluetooth-Gerät verbinden und aktualisieren",
   "audio_output.output_device": "AUSGABEGERÄT",

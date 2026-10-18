@@ -31,23 +31,36 @@
           </ComboBox>
 
           <!-- No volume here: the Game Player and the preview player have the faders, where the music plays. -->
-          <!-- Game only: how much later the audience hears this output; lyrics, notes and scoring follow it. -->
+          <!-- Game only: how much later the audience hears this output; lyrics and notes follow it. Folded away: the mic
+               calibration already sets the scoring, this only matters for speakers that play late (TV, Bluetooth).
+               The closed row still shows the value. -->
           <Panel IsVisible="{Binding Latency, Converter={x:Static ObjectConverters.IsNotNull}}">
             <StackPanel Spacing="{StaticResource Space2}" DataContext="{Binding Latency}" x:DataType="vm:GameSyncViewModel">
-              <TextBlock Classes="label" Text="{l:T audio_output.latency}" Margin="0,4,0,0"
-                         ToolTip.Tip="{l:T audio_output.how_much_later_speakers}" />
-              <Grid ColumnDefinitions="*,60">
-                <c:Fader Minimum="{Binding MinLatencyMs}" Maximum="{Binding MaxLatencyMs}" ResetValue="0" TickFrequency="5" IsSnapToTickEnabled="True" Value="{Binding LatencyMs}" />
-                <TextBlock Grid.Column="1" Classes="muted" Text="{Binding LatencyMs, StringFormat='{}{0:F0} ms'}" VerticalAlignment="Center" TextAlignment="Right" />
-              </Grid>
-              <Button Classes="tonal" Classes.go="{Binding !IsRunning}" Classes.stop="{Binding IsRunning}" Command="{Binding ToggleCommand}" IsEnabled="{Binding CanToggle}" HorizontalAlignment="Left" Padding="12,4"
-                      ToolTip.Tip="{Binding ToggleTip}" ToolTip.ShowOnDisabled="True">
-                <StackPanel Orientation="Horizontal" Spacing="4">
-                  <c:Icon Glyph="graphic_eq" FontSize="{StaticResource IconSm}" />
-                  <TextBlock Text="{l:T audio_output.test_sync}" FontSize="{StaticResource TextSm}" IsVisible="{Binding !IsRunning}" />
-                  <TextBlock Text="{l:T audio_output.stop_test}" FontSize="{StaticResource TextSm}" IsVisible="{Binding IsRunning}" />
-                </StackPanel>
+              <Button Classes="text" Command="{Binding ToggleOpenCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                      Padding="4,4" Margin="-4,4,-4,0" ToolTip.Tip="{l:T audio_output.how_much_later_speakers}">
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                  <c:Icon Glyph="{Binding OpenGlyph}" FontSize="{StaticResource IconSm}" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="1" Text="{l:T audio_output.lyrics_ahead}" FontSize="{StaticResource TextSm}" Margin="4,0,0,0" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="2" Classes="muted" FontSize="{StaticResource TextXs}" Text="{Binding LatencyMs, StringFormat='{}{0:F0} ms'}" VerticalAlignment="Center" />
+                </Grid>
               </Button>
+              <StackPanel Spacing="{StaticResource Space2}" IsVisible="{Binding IsOpen}">
+                <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap" Text="{l:T audio_output.lyrics_ahead_hint}" />
+                <TextBlock Classes="label" Text="{l:T audio_output.latency}" Margin="0,4,0,0"
+                           ToolTip.Tip="{l:T audio_output.how_much_later_speakers}" />
+                <Grid ColumnDefinitions="*,60">
+                  <c:Fader Minimum="{Binding MinLatencyMs}" Maximum="{Binding MaxLatencyMs}" ResetValue="0" TickFrequency="5" IsSnapToTickEnabled="True" Value="{Binding LatencyMs}" />
+                  <TextBlock Grid.Column="1" Classes="muted" Text="{Binding LatencyMs, StringFormat='{}{0:F0} ms'}" VerticalAlignment="Center" TextAlignment="Right" />
+                </Grid>
+                <Button Classes="tonal" Classes.go="{Binding !IsRunning}" Classes.stop="{Binding IsRunning}" Command="{Binding ToggleCommand}" IsEnabled="{Binding CanToggle}" HorizontalAlignment="Left" Padding="12,4"
+                        ToolTip.Tip="{Binding ToggleTip}" ToolTip.ShowOnDisabled="True">
+                  <StackPanel Orientation="Horizontal" Spacing="4">
+                    <c:Icon Glyph="graphic_eq" FontSize="{StaticResource IconSm}" />
+                    <TextBlock Text="{l:T audio_output.test_sync}" FontSize="{StaticResource TextSm}" IsVisible="{Binding !IsRunning}" />
+                    <TextBlock Text="{l:T audio_output.stop_test}" FontSize="{StaticResource TextSm}" IsVisible="{Binding IsRunning}" />
+                  </StackPanel>
+                </Button>
+              </StackPanel>
             </StackPanel>
           </Panel>
         </StackPanel>

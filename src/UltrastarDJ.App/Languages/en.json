@@ -36,6 +36,8 @@
   "audio_output.game_sub": "Main speakers",
   "audio_output.how_much_later_speakers": "How much later the speakers play than the app sends the sound (cable ~15 ms, TV/HDMI 50–150 ms, Bluetooth 150–300 ms). Lyrics and notes are shown this much later. Saved per output device.",
   "audio_output.latency": "LATENCY",
+  "audio_output.lyrics_ahead": "Lyrics ahead of the music?",
+  "audio_output.lyrics_ahead_hint": "Only for speakers that play late, such as some TVs and Bluetooth speakers: if lyrics and notes come before the music you hear, start Test sync and move the slider until flash and click come together. Scoring is set by the mic calibration (Audio Input) either way.",
   "audio_output.multichannel_interfaces_are_listed": "Multichannel interfaces are listed once per stereo pair. Mic monitoring follows the game output. Mics are calibrated per game output (Audio Input).",
   "audio_output.only_system": "Only the system output was found — connect a USB or Bluetooth device and refresh",
   "audio_output.output_device": "OUTPUT DEVICE",

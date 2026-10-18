@@ -36,6 +36,8 @@
   "audio_output.game_sub": "Główne głośniki",
   "audio_output.how_much_later_speakers": "O ile później grają głośniki, niż aplikacja wysyła dźwięk (kabel ~15 ms, TV/HDMI 50–150 ms, Bluetooth 150–300 ms). Tekst i nuty pojawiają się z takim samym opóźnieniem. Zapisywane dla każdego urządzenia.",
   "audio_output.latency": "OPÓŹNIENIE",
+  "audio_output.lyrics_ahead": "Tekst przed muzyką?",
+  "audio_output.lyrics_ahead_hint": "Tylko dla głośników, które grają z opóźnieniem, np. niektóre telewizory i głośniki Bluetooth: jeśli tekst i nuty pojawiają się przed muzyką, którą słyszysz, uruchom test synchronizacji i przesuń suwak, aż błysk i klik zbiegną się. Punktację i tak ustawia kalibracja mikrofonu (Wejście audio).",
   "audio_output.multichannel_interfaces_are_listed": "Interfejsy wielokanałowe są wymienione raz na parę stereo. Odsłuch mikrofonów podąża za wyjściem gry. Mikrofony kalibruje się osobno dla każdego wyjścia gry (Wejście audio).",
   "audio_output.only_system": "Znaleziono tylko wyjście systemowe — podłącz urządzenie USB lub Bluetooth i odśwież",
   "audio_output.output_device": "URZĄDZENIE WYJŚCIOWE",

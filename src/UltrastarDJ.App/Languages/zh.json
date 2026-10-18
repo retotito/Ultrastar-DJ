@@ -36,6 +36,8 @@
   "audio_output.game_sub": "主音箱",
   "audio_output.how_much_later_speakers": "音箱比应用发出声音晚多少播放（线缆约 15 ms，电视/HDMI 50–150 ms，蓝牙 150–300 ms）。歌词和音符会相应延后显示。按输出设备保存。",
   "audio_output.latency": "延迟",
+  "audio_output.lyrics_ahead": "歌词比音乐快？",
+  "audio_output.lyrics_ahead_hint": "仅适用于声音延迟的扬声器，例如部分电视和蓝牙音箱：如果歌词和音符比你听到的音乐先出现，请开始同步测试并移动滑块，直到闪光和咔嗒声同时出现。评分无论如何都由麦克风校准（音频输入）决定。",
   "audio_output.multichannel_interfaces_are_listed": "多声道接口按每个立体声对列出一次。麦克风监听跟随游戏输出。麦克风需按每个游戏输出分别校准（音频输入）。",
   "audio_output.only_system": "只找到系统输出 — 请连接 USB 或蓝牙设备后刷新",
   "audio_output.output_device": "输出设备",

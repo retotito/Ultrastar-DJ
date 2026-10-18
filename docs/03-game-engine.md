@@ -119,7 +119,8 @@ counted in the callbacks, logged once.
 - **Output latency** per game output (device + stereo pair, `OutputsService`, 0–800 ms): the app plays a sound →
   the audience hears it (cable ~15 ms, TV/HDMI 50–150 ms, Bluetooth 150–300 ms). The beamers and the scorer use
   `display = clock − latency`, so lyrics and notes appear when the audience hears the song. Set in Audio Output →
-  Game → **LATENCY** with **Test sync**: a click every second on the game output (`Audio.Monitor.SyncClicks`,
+  Game → **Lyrics ahead of the music?** (a closed row showing the value; opened it holds **LATENCY** and
+  **Test sync** — most speakers never need it, the mic calibration sets the scoring either way): a click every second on the game output (`Audio.Monitor.SyncClicks`,
   sample-exact) and a disc on every open beamer at first click + k s + latency (`SyncTestService`,
   `Controls.SyncFlash`, per display frame). Flash and click together ⇔ the value is right; the flash goes through
   the same render path and projector as the lyrics. Needs an open beamer and no running song. Replaces the old

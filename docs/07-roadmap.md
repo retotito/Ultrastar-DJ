@@ -467,7 +467,7 @@ Drawn directly (meter rate, allocation-free), not a templated Slider.
 - [x] Fix: leaving fullscreen on a display went back to the small first window, not to maximised / the size it had — it now returns to what it was before fullscreen
 - [x] Displays open where they were last closed: screen (by name, then position — survives a changed monitor arrangement), position, size, maximised / fullscreen; screen not connected → next to the DJ window (`WindowPlacement.Fit`, tested)
 - [x] Fix: after quitting the app, displays reopened on the main screen — a window closing with the app reports position (0, 0); placement is now taken from what was tracked while the window lived (verified with a probe run on a second monitor: normal and fullscreen, quit, restart, open)
-- [ ] Verified live
+- [x] Verified live
 
 ---
 
@@ -540,7 +540,7 @@ USDB marks them "[DUET]" in the title). The format has no third voice.
 - [x] Game Player in a duet: "Duet" (bold) with an "Assign voices" button (⚠ next to it while the players changed); the
       voice each singer sings ("Bradley Cooper", "Both voices") under their mic slider; players sitting out get no slider
 - [x] Displays: the mic meter sits before "Name  score" — after it, it moved left and right as the score changed width
-- [ ] Verified live
+- [x] Verified live
 - [x] Duet marker: `Song.IsDuet` — local files: a `P2` line (scan, stored: library schema 2, older libraries rescan their
       connected folders once); USDB: "[DUET]" in the title (903 in the catalog). Library: icon before the title, rating
       filter "Duets" with its count (violet icon; Favourites / Broken got coloured icons too instead of emoji); songbook: 👥 before the title, "Voices" in the dialog, "Duet / solo" filter (tested)
@@ -822,7 +822,7 @@ Acer Aspire V3-772G, built-in audio + Logitech H340 USB headset).
 
 ---
 
-## Sprint 34 — Game Player keys, stuck loads  *(in progress)*
+## Sprint 34 — Game Player keys, stuck loads, late speakers  *(closed)*
 
 - [x] Keys: L loads the selected song into the game player, ⇧L the preview's; G shows / hides the Game Player — its
       sidebar icon white on blue while open, blue while hidden
@@ -834,7 +834,9 @@ Acer Aspire V3-772G, built-in audio + Logitech H340 USB headset).
 - [x] High mic delay (Bluetooth, 340 ms): the note lane turned the page before the last note was filled (it held a
       fixed 250 ms, at most half the pause) → it holds for the player's mic delay + 100 ms, at most until the next
       phrase starts; page turns logged for measuring
-- [ ] Verified live
+- [x] Audio Output → Game: LATENCY and Test sync folded under a closed "Lyrics ahead of the music?" row (value shown
+      on it) — only TVs and Bluetooth speakers need it, the mic calibration sets the scoring either way
+- [x] Verified live
 ---
 
 ## Later / ideas

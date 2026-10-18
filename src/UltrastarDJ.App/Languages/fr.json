@@ -36,6 +36,8 @@
   "audio_output.game_sub": "Haut-parleurs principaux",
   "audio_output.how_much_later_speakers": "Le retard des haut-parleurs par rapport à l'envoi du son par l'app (câble ~15 ms, TV/HDMI 50–150 ms, Bluetooth 150–300 ms). Paroles et notes s'affichent avec ce même retard. Enregistré par sortie.",
   "audio_output.latency": "LATENCE",
+  "audio_output.lyrics_ahead": "Paroles en avance sur la musique ?",
+  "audio_output.lyrics_ahead_hint": "Seulement pour les haut-parleurs qui jouent en retard, comme certaines TV et enceintes Bluetooth : si paroles et notes arrivent avant la musique que vous entendez, lancez le test de synchro et déplacez le curseur jusqu'à ce que flash et clic coïncident. Le score dépend de toute façon de l'étalonnage du micro (Entrée audio).",
   "audio_output.multichannel_interfaces_are_listed": "Les interfaces multicanaux apparaissent une fois par paire stéréo. Le retour des micros suit la sortie du jeu. Les micros se calibrent pour chaque sortie du jeu (Entrée audio).",
   "audio_output.only_system": "Seule la sortie système a été trouvée — branchez un appareil USB ou Bluetooth et actualisez",
   "audio_output.output_device": "PÉRIPHÉRIQUE DE SORTIE",

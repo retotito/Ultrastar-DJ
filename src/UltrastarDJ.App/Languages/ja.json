@@ -36,6 +36,8 @@
   "audio_output.game_sub": "メインスピーカー",
   "audio_output.how_much_later_speakers": "アプリが音を送ってからスピーカーが鳴るまでの遅れ（ケーブル約 15 ms、テレビ/HDMI 50–150 ms、Bluetooth 150–300 ms）。歌詞と音符はその分遅れて表示されます。出力デバイスごとに保存。",
   "audio_output.latency": "遅延",
+  "audio_output.lyrics_ahead": "歌詞が音楽より早い？",
+  "audio_output.lyrics_ahead_hint": "一部のテレビやBluetoothスピーカーなど、音が遅れて鳴るスピーカーのみ：歌詞とノートが聞こえる音楽より先に出る場合は、同期テストを開始し、フラッシュとクリックが一致するまでスライダーを動かしてください。採点はいずれにしてもマイクのキャリブレーション（オーディオ入力）で決まります。",
   "audio_output.multichannel_interfaces_are_listed": "マルチチャンネルインターフェースはステレオペアごとに表示されます。マイクのモニターはゲーム出力に従います。マイクはゲーム出力ごとにキャリブレーションします（オーディオ入力）。",
   "audio_output.only_system": "システム出力しか見つかりません — USB か Bluetooth の機器を接続して更新してください",
   "audio_output.output_device": "出力デバイス",

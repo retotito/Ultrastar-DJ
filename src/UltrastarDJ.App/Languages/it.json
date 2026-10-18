@@ -36,6 +36,8 @@
   "audio_output.game_sub": "Altoparlanti principali",
   "audio_output.how_much_later_speakers": "Quanto più tardi suonano gli altoparlanti rispetto a quando l'app invia il suono (cavo ~15 ms, TV/HDMI 50–150 ms, Bluetooth 150–300 ms). Testi e note compaiono con lo stesso ritardo. Salvato per dispositivo.",
   "audio_output.latency": "LATENZA",
+  "audio_output.lyrics_ahead": "Testo in anticipo sulla musica?",
+  "audio_output.lyrics_ahead_hint": "Solo per altoparlanti che suonano in ritardo, come alcune TV e casse Bluetooth: se testo e note arrivano prima della musica che senti, avvia il test di sincronia e sposta il cursore finché lampo e clic coincidono. Il punteggio dipende comunque dalla calibrazione del microfono (Ingresso audio).",
   "audio_output.multichannel_interfaces_are_listed": "Le interfacce multicanale compaiono una volta per coppia stereo. L'ascolto dei microfoni segue l'uscita del gioco. I microfoni si calibrano per ogni uscita del gioco (Ingresso audio).",
   "audio_output.only_system": "Trovata solo l'uscita di sistema — collega un dispositivo USB o Bluetooth e aggiorna",
   "audio_output.output_device": "DISPOSITIVO DI USCITA",

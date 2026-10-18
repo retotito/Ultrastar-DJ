@@ -82,6 +82,11 @@ public sealed partial class GameSyncViewModel : ObservableObject, IDisposable
 
     [ObservableProperty] private double _latencyMs;
 
+    // Closed each time the panel opens: most speakers never need it.
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(OpenGlyph))]
+    private bool _isOpen;
+
     public GameSyncViewModel(OutputsService outputs, SyncTestService sync)
     {
         _outputs = outputs;
@@ -97,6 +102,11 @@ public sealed partial class GameSyncViewModel : ObservableObject, IDisposable
     public string ToggleTip => _sync.Blocker ?? (_sync.IsRunning
         ? L.T("audio_output.stop_clicks")
         : L.T("audio_output.test_sync_tip"));
+
+    public string OpenGlyph => IsOpen ? "expand_more" : "chevron_right";
+
+    [RelayCommand]
+    private void ToggleOpen() => IsOpen = !IsOpen;
 
     [RelayCommand]
     private void Toggle()
