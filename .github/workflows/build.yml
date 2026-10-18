@@ -11,6 +11,10 @@ on:
   push:
     tags: ["v*"]
 
+# Building only reads the code and earlier releases; the release job alone may write (it creates the Release).
+permissions:
+  contents: read
+
 env:
   REPO_URL: https://github.com/${{ github.repository }}
 

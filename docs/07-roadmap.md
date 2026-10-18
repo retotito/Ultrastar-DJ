@@ -848,6 +848,9 @@ Acer Aspire V3-772G, built-in audio + Logitech H340 USB headset).
 - [x] Published by the `Website` workflow to GitHub Pages
 - [x] License GPL-3.0; checks: CI (build + tests on every push), CodeQL, Dependabot, SECURITY.md with private
       vulnerability reporting
+- [x] CodeQL findings: release workflow jobs read-only except the release job; songbook log line writes the library's
+      song id, not the request's; "Zip Slip" in settings restore dismissed as a false positive (only plain *.json names
+      are extracted)
 - [ ] Verified live
 
 ---

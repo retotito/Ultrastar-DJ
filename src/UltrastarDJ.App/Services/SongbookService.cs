@@ -394,7 +394,8 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
         }
         catch (Exception ex) when (ex is UsdbException or HttpRequestException or IOException)
         {
-            _log.LogInformation("Songbook preview: no YouTube id for {Song} ({Error})", songId, ex.Message);
+            // The library's id, not the one the phone sent (same value, but nothing from a request reaches the log).
+            _log.LogInformation("Songbook preview: no YouTube id for {Song} ({Error})", song.Id, ex.Message);
             return null;
         }
     }
