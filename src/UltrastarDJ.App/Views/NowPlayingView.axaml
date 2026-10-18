@@ -69,13 +69,24 @@
             <c:LevelMeter Grid.Row="1" Height="4" Level="{Binding Progress}" Fill="{DynamicResource BrushStageProgress}" Track="{DynamicResource BrushStageTrack}" />
           </Grid>
           <c:Spinner IsVisible="{Binding Loading}" />
+          <!-- ✕ while loading: a slow connection may never deliver — the DJ stops it (another song takes over too). -->
+          <Button Classes="sidebar small" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="6" Background="#99000000"
+                  IsVisible="{Binding Loading}" Command="{Binding CancelLoadCommand}" ToolTip.Tip="{l:T player.cancel_loading}">
+            <c:Icon Glyph="close" FontSize="{StaticResource IconMd}" Foreground="White" />
+          </Button>
         </Panel>
       </Border>
       <!-- Title / artist, and the DJ's marks on the loaded song: in the game is where a bad song shows. -->
       <Grid ColumnDefinitions="*,Auto">
         <StackPanel>
-          <TextBlock Classes="title" Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
-          <TextBlock Classes="muted" Text="{Binding Artist}" TextTrimming="CharacterEllipsis" />
+          <!-- Greyed while the song is still loading. -->
+          <StackPanel Classes.pending="{Binding TitlePending}">
+            <StackPanel.Styles>
+              <Style Selector="StackPanel.pending"><Setter Property="Opacity" Value="{StaticResource OpacityDisabled}" /></Style>
+            </StackPanel.Styles>
+            <TextBlock Classes="title" Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
+            <TextBlock Classes="muted" Text="{Binding Artist}" TextTrimming="CharacterEllipsis" />
+          </StackPanel>
           <!-- A duet: "Duet" and the button to assign the voices; who sings which voice shows under each mic slider.
                ⚠ while the players changed since the voices were assigned. -->
           <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space2}" IsVisible="{Binding IsDuet}" Margin="0,16,0,0">

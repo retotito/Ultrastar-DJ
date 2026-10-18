@@ -107,12 +107,9 @@ public sealed class MediaChannel : IAsyncDisposable
 
     public Task<IReadOnlyList<AudioOutputDevice>> ListAudioDevicesAsync()
     {
-        if (_audio is not null)
-        {
-            return Task.FromResult(_audio.ListAudioDevices());
-        }
-
-        // No player yet: ask the idle one kept for this.
+        // Always the idle player kept for this, never the song's: that one is destroyed on the UI thread whenever a
+        // song is cleared (stopped, its speaker gone), and the 3-second device check asking it at that moment read
+        // freed memory — the app crashed when a Bluetooth speaker switched itself off.
         IMediaPlayer probe;
         lock (_probeLock)
         {

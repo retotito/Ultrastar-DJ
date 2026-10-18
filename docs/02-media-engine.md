@@ -191,7 +191,16 @@ The DJ window may show a small monitor of the game visual using the same bus. Th
 `PlaybackService` may enable **Play** only when:
 - GameAudio `State == Ready`: file loaded and, for **network sources only**, `demuxer-cache-duration ≥ 2 s`
   (or the rest of the file is cached). mpv does not cache local files (`cache=auto`), so they are ready at
-  `FILE_LOADED`. If a network cache never reaches the threshold, the player starts anyway after 8 s.
+  `FILE_LOADED`. If a network cache never reaches the threshold, the player starts anyway after 8 s. No `FILE_LOADED`
+  at all within 60 s (yt-dlp or the stream stuck on a slow connection) → the load gives up (`MpvPlayer.TooSlowMessage`,
+  "took too long" — not a song problem, the song is not marked). A cancelled load (`CancellationToken`) stops mpv at
+  once. The Game Player and the preview player show ✕ on the spinner; loading another song cancels the one still
+  loading (`PlaybackService.LoadAsync`, `PreviewViewModel.LoadAsync`) — before, a stuck load blocked every song. Every
+  way in (library, preview, queue, Details) is an `AllowConcurrentExecutions` command: a running one must not refuse
+  the next song. While loading, title and artist show greyed (Game Player `TitlePending`, preview `Loading`).
+- The device check (every 3 s) asks only each channel's idle probe player, never the song's: the song's player is
+  destroyed on the UI thread whenever a song is cleared, and a query at that moment read freed memory (crash when a
+  Bluetooth speaker switched itself off mid-load). `MpvPlayer.ListAudioDevices` also refuses once disposal began.
 - GameVisual (if any) `State == Ready`,
 - every open beamer has reported `BeamerReady` (window laid out, surfaces subscribed).
 

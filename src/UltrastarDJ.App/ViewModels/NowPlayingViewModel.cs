@@ -263,8 +263,10 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
     {
         Song? song = _playback.Song;
         RefreshBox();
-        Title = song?.Title ?? L.T("game_player.no_song");
-        Artist = song?.Artist ?? "";
+        TitlePending = song is null && _pendingSong is not null;
+        Song? shown = song ?? _pendingSong;
+        Title = shown?.Title ?? L.T("game_player.no_song");
+        Artist = shown?.Artist ?? "";
         SyncRows();
         Status = _playback.State switch
         {
@@ -329,8 +331,11 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
         return $"{s / 60}:{s % 60:00}";
     }
 
-    /// <summary>Called by the library (double-click / Load button).</summary>
-    [RelayCommand(CanExecute = nameof(CanLoad))]
+    /// <summary>
+    /// Called by the library (double-click / Load button). While a song is still loading another may come: it takes
+    /// over (PlaybackService cancels the first), so a stuck load never blocks the player.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanLoad), AllowConcurrentExecutions = true)]
     public async Task LoadAsync(Song? song)
     {
         if (song is null)
@@ -338,8 +343,11 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
             return;
         }
 
+        int load = ++_loadNumber;
+        _pendingSong = song;
         Loading = true;
         IsVisible = true;
+        Refresh();
         Status = L.F("game_player.loading_song", song.Title);
         try
         {
@@ -352,22 +360,38 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
         }
         finally
         {
-            Loading = false;
+            // Only the latest load ends the spinner (an earlier, cancelled one finishes while the next is loading).
+            if (load == _loadNumber)
+            {
+                Loading = false;
+                _pendingSong = null;
+            }
+
             Refresh();
         }
     }
 
+    private int _loadNumber;
+    // The song being loaded: its title and artist show at once, greyed until it is ready (TitlePending).
+    private Song? _pendingSong;
+
+    /// <summary>Title and artist are those of a song still loading: shown greyed.</summary>
+    [ObservableProperty] private bool _titlePending;
+
+    /// <summary>The ✕ on the spinner: the song stops loading, the player is empty.</summary>
+    [RelayCommand]
+    private void CancelLoad() => _playback.CancelLoad();
+
     private bool CanLoad(Song? song) => CanLoadSong;
 
     /// <summary>
-    /// Whether a song can be loaded into the game now. Every "Load" entry point (library menus, preview Load,
-    /// queue Load / Load next) disables itself with this and shows <see cref="LoadSongTip"/>.
+    /// Whether a song can be loaded into the game now (also while another is still loading — it takes over). Every
+    /// "Load" entry point (library menus, preview Load, queue Load / Load next) disables itself with this and shows
+    /// <see cref="LoadSongTip"/>.
     /// </summary>
-    public bool CanLoadSong => _playback.CanLoad && !Loading;
+    public bool CanLoadSong => _playback.CanLoad;
 
-    public string LoadSongTip => Loading
-        ? L.T("game_player.song_loading")
-        : _playback.CanLoad ? L.T("game_player.load_tip") : L.T("game_player.load_blocked");
+    public string LoadSongTip => _playback.CanLoad ? L.T("game_player.load_tip") : L.T("game_player.load_blocked");
 
     /// <summary>Raised when <see cref="CanLoadSong"/> may have changed.</summary>
     public event Action? LoadAvailabilityChanged;

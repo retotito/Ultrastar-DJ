@@ -819,6 +819,19 @@ Acer Aspire V3-772G, built-in audio + Logitech H340 USB headset).
       Linux bug
 - [x] Owner test on Linux: speakers, mics, game and monitor output, SingStar left / right, clean mic sound
 
+
+---
+
+## Sprint 34 — Game Player keys, stuck loads  *(in progress)*
+
+- [x] Keys: L loads the selected song into the game player, ⇧L the preview's; G shows / hides the Game Player — its
+      sidebar icon white on blue while open, blue while hidden
+- [x] A song that never finished loading (slow internet) blocked the player for every other song: loads give up after
+      60 s with "took too long" (song not marked broken); ✕ on the spinner cancels (Game Player and preview); loading
+      another song cancels the one still loading; title and artist show greyed while loading
+- [x] Crash when a Bluetooth speaker switched itself off during a load: the device check asked the song's player while
+      it was being destroyed → it asks only the idle probe player
+- [ ] Verified live
 ---
 
 ## Later / ideas

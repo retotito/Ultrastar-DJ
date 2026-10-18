@@ -82,7 +82,8 @@ public sealed partial class QueueViewModel : ViewModelBase
         }
     }
 
-    [RelayCommand(CanExecute = nameof(CanLoadNext))]
+    // Concurrent, as every way into the Game Player: a song still loading never blocks the next one.
+    [RelayCommand(CanExecute = nameof(CanLoadNext), AllowConcurrentExecutions = true)]
     private Task LoadNextAsync() => _playlist.Next is { } next ? LoadAsync(next) : Task.CompletedTask;
     private bool CanLoadNext() => _playlist.Next is not null && _nowPlaying.CanLoadSong;
 
@@ -108,7 +109,7 @@ public sealed partial class QueueRowViewModel(Song song, int number, bool isActi
     public string Title => Song.Title;
     public string Artist => Song.Artist;
 
-    [RelayCommand(CanExecute = nameof(CanLoad))] private Task LoadAsync() => owner.LoadAsync(Song);
+    [RelayCommand(CanExecute = nameof(CanLoad), AllowConcurrentExecutions = true)] private Task LoadAsync() => owner.LoadAsync(Song);
     private bool CanLoad() => owner.CanLoadSong;
     [RelayCommand] private void Remove() => owner.Remove(Song);
     [RelayCommand] private void MoveUp() => owner.MoveUp(Song);

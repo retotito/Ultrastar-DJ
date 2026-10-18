@@ -109,7 +109,8 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
         }
     }
 
-    [RelayCommand]
+    /// <summary>A new song while one is still loading takes over: the first is cancelled, so nothing stays stuck.</summary>
+    [RelayCommand(AllowConcurrentExecutions = true)]
     public async Task LoadAsync(Song? song)
     {
         if (song is null)
@@ -117,11 +118,15 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
             return;
         }
 
+        _loadCts?.Cancel();
+        using CancellationTokenSource cts = new();
+        _loadCts = cts;
+        CancellationToken ct = cts.Token;
         Loading = true;
         MediaPlan? plan = null;
         try
         {
-            Song resolved = await _resolver.ResolveAsync(song);
+            Song resolved = await _resolver.ResolveAsync(song, ct);
             Song = resolved;
             Cover = null;
             _ = ShowPictureAsync(resolved);
@@ -134,9 +139,19 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
                 CoverPath = resolved.CoverPath,
                 VideoGapSec = resolved.VideoGapSec ?? 0,
             }, maxHeight: 360);
-            await _media.Preview.LoadAsync(plan);
+            await _media.Preview.LoadAsync(plan, ct);
             _media.Preview.Play();
             _failures.Loaded(song);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            // ✕ or another song: this one is dropped; with nothing after it the player is empty again.
+            if (ReferenceEquals(_loadCts, cts))
+            {
+                await _media.Preview.UnloadAsync();
+                Song = null;
+                Cover = null;
+            }
         }
         catch (SongLoadException ex)
         {
@@ -160,9 +175,19 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
         }
         finally
         {
-            Loading = false;
+            if (ReferenceEquals(_loadCts, cts))
+            {
+                _loadCts = null;
+                Loading = false;
+            }
         }
     }
+
+    private CancellationTokenSource? _loadCts;
+
+    /// <summary>The ✕ on the spinner: the song stops loading.</summary>
+    [RelayCommand]
+    private void CancelLoad() => _loadCts?.Cancel();
 
     /// <summary>Thumbnail / cover in parallel with loading the media; ignored if another song came meanwhile.</summary>
     private async Task ShowPictureAsync(Song song)
@@ -190,7 +215,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
     [RelayCommand(CanExecute = nameof(HasSong))]
     private void AddToQueue() => _queue.Add(Song!);
 
-    [RelayCommand(CanExecute = nameof(CanLoadIntoGame))]
+    [RelayCommand(CanExecute = nameof(CanLoadIntoGame), AllowConcurrentExecutions = true)]
     private Task LoadIntoGameAsync() => _nowPlaying.LoadCommand.ExecuteAsync(Song);
 
     private bool CanLoadIntoGame() => HasSong && _nowPlaying.CanLoadSong;

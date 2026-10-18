@@ -21,6 +21,11 @@ public sealed class MpvPlayer : IMediaPlayer
     private const double ReadyCacheSec = 2.0;
     // If the cache never reaches the threshold (short clips, throttled CDN), start anyway after this.
     private static readonly TimeSpan ReadyTimeout = TimeSpan.FromSeconds(8);
+    // Nothing of the song after this long (yt-dlp or the stream stuck on a slow connection): the load gives up instead
+    // of waiting for ever — the player was blocked for every other song.
+    private static readonly TimeSpan LoadTimeout = TimeSpan.FromSeconds(60);
+    /// <summary>The message <see cref="PlaybackError"/> knows as "took too long".</summary>
+    public const string TooSlowMessage = "load took too long: nothing arrived within 60 s";
     private const int MaxRenderWidth = 1280;
     private const int MaxRenderHeight = 720;
 
@@ -38,6 +43,7 @@ public sealed class MpvPlayer : IMediaPlayer
     private Thread? _renderThread;
     private readonly AutoResetEvent _renderSignal = new(false);
     private volatile bool _disposing;
+    private readonly Lock _disposeLock = new();
 
     private readonly object _stateLock = new();
     private TaskCompletionSource? _loadTcs;
@@ -293,7 +299,12 @@ public sealed class MpvPlayer : IMediaPlayer
         _log.LogInformation("{Player}: loading {Source} (audio:{Audio} video:{Video} start:{Start:F2}s)",
             Name, source, options.Audio, options.Video && _video, options.StartAt.TotalSeconds);
 
-        using CancellationTokenRegistration reg = ct.Register(() => tcs.TrySetCanceled(ct));
+        // Cancelled (the DJ pressed ✕, or loaded another song): mpv stops fetching, the load ends at once.
+        using CancellationTokenRegistration reg = ct.Register(() =>
+        {
+            Command("stop");
+            tcs.TrySetCanceled(ct);
+        });
         Task done = await Task.WhenAny(tcs.Task, Task.Delay(ReadyTimeout, ct)).ConfigureAwait(false);
         if (done != tcs.Task)
         {
@@ -305,8 +316,13 @@ public sealed class MpvPlayer : IMediaPlayer
 
             if (!loaded)
             {
-                // Still no FILE_LOADED: keep waiting for mpv's verdict (error or load).
-                await tcs.Task.ConfigureAwait(false);
+                // Still no FILE_LOADED: wait for mpv's verdict (error or load) — but not for ever.
+                if (await Task.WhenAny(tcs.Task, Task.Delay(LoadTimeout - ReadyTimeout, ct)).ConfigureAwait(false) != tcs.Task)
+                {
+                    _log.LogWarning("{Player}: nothing after {Timeout}s — the load gives up", Name, LoadTimeout.TotalSeconds);
+                    Command("stop");
+                    tcs.TrySetException(new MediaException(TooSlowMessage));
+                }
             }
             else
             {
@@ -409,7 +425,18 @@ public sealed class MpvPlayer : IMediaPlayer
     /// <summary>Audio outputs known to mpv (<c>audio-device-list</c>), native route only.</summary>
     public IReadOnlyList<AudioOutputDevice> ListAudioDevices()
     {
-        string? json = TakeString(GetPropertyString(_handle, "audio-device-list"));
+        // Called from other threads: never into a player being destroyed (DisposeAsync waits for a call in progress).
+        string? json;
+        lock (_disposeLock)
+        {
+            if (_disposing)
+            {
+                return [AudioOutputDevice.Auto];
+            }
+
+            json = TakeString(GetPropertyString(_handle, "audio-device-list"));
+        }
+
         if (json is null)
         {
             return [AudioOutputDevice.Auto];
@@ -880,7 +907,11 @@ public sealed class MpvPlayer : IMediaPlayer
             return ValueTask.CompletedTask;
         }
 
-        _disposing = true;
+        lock (_disposeLock)
+        {
+            _disposing = true;
+        }
+
         lock (_stateLock)
         {
             _loadTcs?.TrySetCanceled(CancellationToken.None);

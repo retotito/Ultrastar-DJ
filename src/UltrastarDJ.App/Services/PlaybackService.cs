@@ -183,7 +183,17 @@ public sealed class PlaybackService : IDisposable
     public string? LastError { get; private set; }
     public bool IsBusy { get; private set; }
 
-    public bool CanLoad => State is PlaybackState.Idle or PlaybackState.Loaded or PlaybackState.Preview or PlaybackState.Score && !IsBusy;
+    // A song still loading never blocks the next one: loading another cancels it (LoadAsync).
+    public bool CanLoad => State is PlaybackState.Idle or PlaybackState.Loaded or PlaybackState.Preview or PlaybackState.Score && (!IsBusy || IsLoadingSong);
+
+    /// <summary>A song is being loaded (the ✕ in the Game Player cancels it).</summary>
+    public bool IsLoadingSong => _loadCts is not null;
+
+    private CancellationTokenSource? _loadCts;
+    private Task _loading = Task.CompletedTask;
+
+    /// <summary>The ✕ while loading: the load stops, the player is empty again.</summary>
+    public void CancelLoad() => _loadCts?.Cancel();
     // Single-screen mode opens Display 1 itself when the song starts.
     public bool AnyDisplayOpen => _displays.IsSingleScreen || _displays.IsOpen(DisplayId.Beamer1) || _displays.IsOpen(DisplayId.Beamer2);
 
@@ -214,11 +224,51 @@ public sealed class PlaybackService : IDisposable
     /// <summary>Validates, parses notes, resolves media and loads the game channel. Ends in Loaded (or throws).</summary>
     public async Task LoadAsync(Song song, CancellationToken ct = default)
     {
+        // A song still loading (a slow connection, a stuck stream) gives way to this one.
+        if (_loadCts is { } running)
+        {
+            running.Cancel();
+            try
+            {
+                await _loading;
+            }
+            catch (Exception)
+            {
+                // Its own caller reports how it ended.
+            }
+        }
+
         if (!CanLoad)
         {
             return;
         }
 
+        using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        _loadCts = cts;
+        Task loading = LoadCoreAsync(song, cts.Token);
+        _loading = loading;
+        try
+        {
+            await loading;
+        }
+        catch (OperationCanceledException) when (cts.IsCancellationRequested)
+        {
+            // Cancelled (✕, or another song): nothing half-loaded stays — the player is empty.
+            _log.LogInformation("Load of {Song} cancelled", song.Title);
+            await ClearCoreAsync();
+            State = PlaybackState.Idle;
+        }
+        finally
+        {
+            if (ReferenceEquals(_loadCts, cts))
+            {
+                _loadCts = null;
+            }
+        }
+    }
+
+    private async Task LoadCoreAsync(Song song, CancellationToken ct)
+    {
         IsBusy = true;
         LastError = null;
         MediaPlan? plan = null;

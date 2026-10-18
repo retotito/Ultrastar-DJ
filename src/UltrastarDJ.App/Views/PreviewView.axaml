@@ -20,6 +20,11 @@
         <c:VideoSurface Source="{Binding Frames}" IsVisible="{Binding HasVideo}" />
         <c:Icon Glyph="music_note" FontSize="{StaticResource IconXl}" IsVisible="{Binding !HasSong}" />
         <c:Spinner IsVisible="{Binding Loading}" />
+        <!-- ✕ while loading: a slow connection may never deliver — the DJ stops it (another song takes over too). -->
+        <Button Classes="sidebar small" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="6" Background="#99000000"
+                IsVisible="{Binding Loading}" Command="{Binding CancelLoadCommand}" ToolTip.Tip="{l:T player.cancel_loading}">
+          <c:Icon Glyph="close" FontSize="{StaticResource IconMd}" Foreground="White" />
+        </Button>
         <!-- Elapsed / remaining and the progress line, as in the Game Player and on the beamer — but seekable. -->
         <Grid RowDefinitions="Auto,Auto" VerticalAlignment="Bottom" IsVisible="{Binding HasTimes}">
           <Grid ColumnDefinitions="Auto,*,Auto" Margin="8,0,8,2">
@@ -37,8 +42,14 @@
     </Border>
 
     <StackPanel>
-      <TextBlock Classes="title" Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
-      <TextBlock Classes="muted" FontSize="{StaticResource TextSm}" Text="{Binding Artist}" TextTrimming="CharacterEllipsis" />
+      <!-- Greyed while the song is still loading. -->
+      <StackPanel Classes.pending="{Binding Loading}">
+        <StackPanel.Styles>
+          <Style Selector="StackPanel.pending"><Setter Property="Opacity" Value="{StaticResource OpacityDisabled}" /></Style>
+        </StackPanel.Styles>
+        <TextBlock Classes="title" Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
+        <TextBlock Classes="muted" FontSize="{StaticResource TextSm}" Text="{Binding Artist}" TextTrimming="CharacterEllipsis" />
+      </StackPanel>
     </StackPanel>
 
     <!-- One row under the picture: play / pause, then Queue and Load (short labels, so it fits the panel width). -->

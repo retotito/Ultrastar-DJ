@@ -252,8 +252,8 @@ public sealed partial class LibraryViewModel : ViewModelBase
         Refresh();
     }
 
-    /// <summary>Double-click / Enter.</summary>
-    [RelayCommand(CanExecute = nameof(IsPlayable))]
+    /// <summary>Double-click / Enter. Concurrent: a new song while one still loads takes over (never blocked).</summary>
+    [RelayCommand(CanExecute = nameof(IsPlayable), AllowConcurrentExecutions = true)]
     private Task PreviewAsync(LibraryRow? row) => row is not { IsAvailable: true } ? Task.CompletedTask : _preview.LoadCommand.ExecuteAsync(row.Song);
 
     // Greyed rows (drive unplugged, USDB offline) can't be previewed, queued or loaded; Details stays.
@@ -298,7 +298,7 @@ public sealed partial class LibraryViewModel : ViewModelBase
         }
     }
 
-    [RelayCommand(CanExecute = nameof(CanLoadIntoGame))]
+    [RelayCommand(CanExecute = nameof(CanLoadIntoGame), AllowConcurrentExecutions = true)]
     private Task LoadIntoGameAsync(LibraryRow? row) => row is null ? Task.CompletedTask : _nowPlaying.LoadCommand.ExecuteAsync(row.Song);
 
     private bool CanLoadIntoGame(LibraryRow? row) => _nowPlaying.CanLoadSong && IsPlayable(row);
