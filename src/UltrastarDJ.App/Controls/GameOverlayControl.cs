@@ -28,6 +28,8 @@ public sealed class GameOverlayControl : Control
     private static readonly Typeface Regular = new(Font, FontStyle.Normal, FontWeight.SemiBold);
     private static readonly Typeface Bold = new(Font, FontStyle.Normal, FontWeight.Bold);
     private const double LaneLeadInMs = 3000;
+    // How long after its beat a sung pitch still settles in the mic pipeline's smoothing.
+    private const double PitchSettleMs = 100;
     private static readonly IBrush LyricsBackdrop = new SolidColorBrush(Color.FromArgb(0x8C, 0, 0, 0));
     private static readonly IBrush LyricsText = Brushes.White;
     private static readonly IBrush LyricsNext = new SolidColorBrush(Color.FromArgb(0x99, 0xFF, 0xFF, 0xFF));
@@ -71,12 +73,13 @@ public sealed class GameOverlayControl : Control
     // frames land evenly on vsync, so the gliding fill and lyrics sweep move without judder.
     private bool _animating;
     private readonly Dictionary<int, PhraseCache> _phraseCache = [];
+    private readonly Dictionary<int, LyricLine?> _shownLine = [];
 
     static GameOverlayControl()
     {
         AffectsRender<GameOverlayControl>(SceneProperty, ReduceEffectsProperty);
         IsRunningProperty.Changed.AddClassHandler<GameOverlayControl>((c, _) => c.UpdateTimer());
-        SceneProperty.Changed.AddClassHandler<GameOverlayControl>((c, _) => { c._phraseCache.Clear(); c.UpdateTimer(); });
+        SceneProperty.Changed.AddClassHandler<GameOverlayControl>((c, _) => { c._phraseCache.Clear(); c._shownLine.Clear(); c.UpdateTimer(); });
     }
 
     public GameOverlayControl()
@@ -246,11 +249,16 @@ public sealed class GameOverlayControl : Control
     {
         LaneState state = scene.Lanes[player.Id];
         bool plain = ReduceEffects;
-        double extend = BeatMath.MsToBeats(scene.Session.Song.Bpm, 250); // keep the phrase while late mic data arrives
+        // What this player's mic is singing now (song beat − mic delay): the sung fill grows up to it, like the scorer.
+        double sungBeat = scene.Session.SungBeatAt(pos, player.Id);
+        // The page stays until the mic has caught up with its last note (plus the pitch smoothing), so a Bluetooth
+        // speaker's long delay still fills it — or until the next phrase's first note, whichever comes first.
+        double extend = beat - sungBeat + BeatMath.MsToBeats(scene.Session.Song.Bpm, PitchSettleMs);
         // A phrase appears 3 s before it is sung (like the lyrics' lead-in bar); a voice with nothing to sing for
         // longer has an empty lane — in a duet the other voice's turn, in a solo song a long instrumental.
         double leadIn = BeatMath.MsToBeats(scene.Session.Song.Bpm, LaneLeadInMs);
         LyricLine? line = NoteLaneGeometry.ActiveLine(state.Track, beat, extend, leadIn);
+        LogPageTurn(scene, player.Id, line, sungBeat);
         if (line is null)
         {
             return;
@@ -264,8 +272,6 @@ public sealed class GameOverlayControl : Control
         double radius = playersOnScreen <= 2 ? 8 : 4;
         BarLook look = NoteBarStyle == NoteBarStyle.Black ? BlackBars : WhiteBars;
         PlayerPaint paint = Paint(player.Color);
-        // What this player's mic is singing now (song beat − mic delay): the sung fill grows up to it, like the scorer.
-        double sungBeat = scene.Session.SungBeatAt(pos, player.Id);
 
         // Player label + score
         PlayerScorer scorer = scene.Session.Scorer(player.Id);
@@ -682,6 +688,21 @@ public sealed class GameOverlayControl : Control
 
     private static Rect BoxRect(NoteBox box, Rect lane, double rowH, double barH)
         => new(lane.X + lane.Width * box.X, lane.Y + box.Row * rowH + (rowH - barH) / 2, Math.Max(3, lane.Width * box.Width), barH);
+
+    // One line per page turn: how much of the last note the mic had not delivered yet (0 = the page was complete).
+    private void LogPageTurn(GameScene scene, int playerId, LyricLine? line, double sungBeat)
+    {
+        if (_shownLine.TryGetValue(playerId, out LyricLine? before) && !ReferenceEquals(before, line) && before is not null)
+        {
+            double bpm = scene.Session.Song.Bpm;
+            double missingMs = Math.Max(0, BeatMath.BeatsToMs(bpm, before.EndBeat - sungBeat));
+            string gap = line is null ? "-" : $"{BeatMath.BeatsToMs(bpm, line.FirstNoteBeat - before.EndBeat):F0} ms";
+            Serilog.Log.Debug("Page turn P{Player}: phrase ending at beat {End}, mic at beat {Sung:F1} → {Missing:F0} ms of the last note not shown, pause to the next phrase {Gap}",
+                playerId, before.EndBeat, sungBeat, missingMs, gap);
+        }
+
+        _shownLine[playerId] = line;
+    }
 
     private PhraseCache GetPhraseCache(int playerId, LyricLine line, int rows)
     {

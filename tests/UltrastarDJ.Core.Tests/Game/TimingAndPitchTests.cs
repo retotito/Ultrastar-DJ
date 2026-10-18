@@ -156,15 +156,15 @@ public class NoteLaneGeometryTests
     }
 
     [Fact]
-    public void ActiveLine_ExtensionIsCappedAtHalfTheGap()
+    public void ActiveLine_ExtensionEndsWhenTheNextPhraseStarts()
     {
         LyricLine l1 = new(0, [new Note(NoteType.Normal, 0, 4, 0, "a")]);
         LyricLine l2 = new(8, [new Note(NoteType.Normal, 8, 4, 0, "b")]);
         NoteTrack t = new(0, [l1, l2]);
 
-        // gap = 4 beats → extension capped at 2 even though 10 requested
-        Assert.Same(l1, NoteLaneGeometry.ActiveLine(t, 5.9, extendBeats: 10));
-        Assert.Same(l2, NoteLaneGeometry.ActiveLine(t, 6.1, extendBeats: 10));
+        // gap = 4 beats → the whole gap of the 10 requested; the next phrase shows by its first note at the latest
+        Assert.Same(l1, NoteLaneGeometry.ActiveLine(t, 7.9, extendBeats: 10));
+        Assert.Same(l2, NoteLaneGeometry.ActiveLine(t, 8.1, extendBeats: 10));
     }
 
     // Duets: a voice that is silent for a long stretch must not show its next phrase the whole time (in "Shallow" the

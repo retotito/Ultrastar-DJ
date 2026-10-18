@@ -302,8 +302,15 @@ engine for state.
 ```
 activeLine = the LyricLine whose [firstNote.startBeat, lastNote.end] contains currentBeat,
              else the next upcoming line.            (use firstNote.startBeat, not line.startBeat)
-activeLine is extended by min(micDelayBeats, gapToNextPhrase/2) so late mic data still lands in it.
+activeLine is extended by min(micDelayBeats + 100 ms, gapToNextPhrase) so late mic data still lands in it.
 ```
+
+The extension is per player (their own mic delay; 100 ms for the pitch smoothing). It never runs past the next
+phrase's first note — the singer must see a note before singing it. Measured on the library with a 340 ms Bluetooth
+delay: the old cap (250 ms, at most half the pause) turned every page before its last note was filled (median
+190 ms missing); with this one 46 % of phrase ends are complete, the rest are phrases that follow without a pause.
+The scorer is not affected either way — it judges every beat, shown or not. Each page turn logs
+"Page turn P1: … ms of the last note not shown" (Debug) for measuring.
 
 ### Note lane geometry (per phrase, recomputed only on phrase change)
 

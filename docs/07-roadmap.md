@@ -831,6 +831,9 @@ Acer Aspire V3-772G, built-in audio + Logitech H340 USB headset).
       another song cancels the one still loading; title and artist show greyed while loading
 - [x] Crash when a Bluetooth speaker switched itself off during a load: the device check asked the song's player while
       it was being destroyed → it asks only the idle probe player
+- [x] High mic delay (Bluetooth, 340 ms): the note lane turned the page before the last note was filled (it held a
+      fixed 250 ms, at most half the pause) → it holds for the player's mic delay + 100 ms, at most until the next
+      phrase starts; page turns logged for measuring
 - [ ] Verified live
 ---
 
