@@ -217,8 +217,9 @@ the audio thread), rises at once and falls at 2.5 heights per second. Silent or 
 ## Elapsed / remaining (beamer)
 
 `Core.Timing.SongTimeline` (tested) is the playing span in game time (0 = audio start; `#VIDEOGAP` already taken
-out when the video is the audio): **start** = `#START`; **end** = earliest of `#END`, last note + 4 s tail (where the
-app stops by itself) and the media length minus `#VIDEOGAP` (video-is-audio cases). `#GAP` moves the last note.
+out when the video is the audio): **start** = `#START`; **end** = earlier of `#END` and the media length minus `#VIDEOGAP` (video-is-audio cases), where
+the app stops by itself — the whole song plays, outro included, as in UltraStar Deluxe; Stop or Esc leads to the score
+sooner. Only with neither known (a stream without a length): last note + 4 s.
 Elapsed = clock − start, remaining = end − clock, progress = elapsed / (end − start), all clamped. Built once in
 `PlaybackService.StartSong` (media length known); the auto-stop uses the same end. The beamer shows it in the bottom strip:
 the progress bar flush with the bottom edge (first player's colour, lead-in blue without players), elapsed /

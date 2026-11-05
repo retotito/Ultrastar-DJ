@@ -26,8 +26,8 @@ public readonly record struct GameTickInfo(double PositionSec, double Beat);
 public sealed class PlaybackService : IDisposable
 {
     private static readonly TimeSpan TickPeriod = TimeSpan.FromMilliseconds(16);
-    // Songs (esp. YouTube) often run on after the last note; stop this long after it.
-    private const double TailAfterLastNoteSec = 4.0;
+    // Songs play to #END or the end of the media; this only applies when neither is known.
+    private const double TailWithoutKnownEndSec = 4.0;
 
     private readonly MediaService _media;
     private readonly AudioInputService _audio;
@@ -457,7 +457,7 @@ public sealed class PlaybackService : IDisposable
         Session = new GameSession(Song, singers.Select(s => new GamePlayer(s.PlayerId, s.Voice, MicDelayMs(_players.Get(s.PlayerId)))).ToList(), Difficulty);
         // Media length in game time: when the video is the audio, its #VIDEOGAP intro is not part of the song.
         double? mediaLengthSec = _media.Game.Duration is { } d ? d.TotalSeconds - (Plan?.AudioOriginSec ?? 0) : null;
-        Timeline = SongTimeline.For(Song, Session.LastBeat, TailAfterLastNoteSec, mediaLengthSec);
+        Timeline = SongTimeline.For(Song, Session.LastBeat, TailWithoutKnownEndSec, mediaLengthSec);
 
         StartMics(active);
         BeginLowLatencyGc();
@@ -651,7 +651,7 @@ public sealed class PlaybackService : IDisposable
     private async Task TickLoopAsync(CancellationToken ct)
     {
         using PeriodicTimer timer = new(TickPeriod);
-        // Same end as the beamers' remaining time (last note + tail, #END, media length).
+        // Same end as the beamers' remaining time (#END or the media's length).
         double stopAfterSec = Timeline?.EndSec ?? double.MaxValue;
         try
         {

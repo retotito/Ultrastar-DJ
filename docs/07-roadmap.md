@@ -859,6 +859,15 @@ Acer Aspire V3-772G, built-in audio + Logitech H340 USB headset).
 
 ---
 
+## Sprint 36 — Songs play to their end  *(in progress)*
+
+- [x] A song stopped 4 s after its last note, cutting the outro (a 3:31 video ended at 3:10), and `#END` could only
+      shorten it → it plays to `#END` or the end of the media, like UltraStar Deluxe; 4 s after the last note only when
+      neither is known
+- [x] Verified live
+
+---
+
 ## Later / ideas
 
 - **Goal: a cleaned-up USDB list for every user** (brainstormed 2026-10-17, not started). Measured: no YouTube link

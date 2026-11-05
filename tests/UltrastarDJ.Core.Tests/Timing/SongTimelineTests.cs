@@ -13,7 +13,7 @@ public class SongTimelineTests
     private const double Tail = 4;
 
     [Fact]
-    public void Plain_EndsTailAfterLastNote()
+    public void LengthUnknown_EndsTailAfterLastNote()
     {
         SongTimeline t = SongTimeline.For(S(), LastBeat, Tail, mediaLengthSec: null);
 
@@ -48,6 +48,31 @@ public class SongTimelineTests
     {
         // e.g. a YouTube-only song: video 160 s, #VIDEOGAP 70 s → 90 s of game time (the caller subtracts the gap).
         Assert.Equal(90, SongTimeline.For(S(), LastBeat, Tail, mediaLengthSec: 90).EndSec, 3);
+    }
+
+    [Fact]
+    public void LongerMedia_PlaysToItsEnd()
+    {
+        // The outro after the last note belongs to the song (a 3:31 video whose last note ends at 3:06).
+        Assert.Equal(211, SongTimeline.For(S(), LastBeat, Tail, mediaLengthSec: 211).EndSec, 3);
+    }
+
+    [Fact]
+    public void End_AfterLastNote_Wins()
+    {
+        Assert.Equal(150, SongTimeline.For(S(endMs: 150000), LastBeat, Tail, mediaLengthSec: 211).EndSec, 3);
+    }
+
+    [Fact]
+    public void End_WithUnknownLength_Wins()
+    {
+        Assert.Equal(150, SongTimeline.For(S(endMs: 150000), LastBeat, Tail, mediaLengthSec: null).EndSec, 3);
+    }
+
+    [Fact]
+    public void End_AfterTheMedia_StopsWithTheMedia()
+    {
+        Assert.Equal(120, SongTimeline.For(S(endMs: 150000), LastBeat, Tail, mediaLengthSec: 120).EndSec, 3);
     }
 
     [Fact]
