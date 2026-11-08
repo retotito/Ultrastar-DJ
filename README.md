@@ -82,6 +82,7 @@ dotnet run --project src/UltrastarDJ.App
 | [docs/05-conventions.md](docs/05-conventions.md) | Coding standards, threading, tests, definition of done |
 | [docs/06-build-release.md](docs/06-build-release.md) | Native parts, packaging, releases, website, CI |
 | [docs/07-roadmap.md](docs/07-roadmap.md) | Sprints — what is done and what is next |
+| [docs/commands.md](docs/commands.md) | The everyday commands: run, test, git, logs, releases, website |
 
 AI coding agents: start with [.github/copilot-instructions.md](.github/copilot-instructions.md).
 
