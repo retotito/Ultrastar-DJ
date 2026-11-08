@@ -12,6 +12,13 @@ public class LatencyModelTests
     }
 
     [Fact]
+    public void DisplaySec_SlowedDown_TheSpeakerDelayCoversLessOfTheSong()
+    {
+        // 250 ms of real time at 0.5× is 125 ms of the song.
+        Assert.Equal(9.875, LatencyModel.DisplaySec(10.0, outputLatencyMs: 250, speed: 0.5), 6);
+    }
+
+    [Fact]
     public void MicDelay_CalibratedTotalMinusTheOutputLatency()
     {
         // Measured tone → note: 400 ms on a speaker whose latency is 250 ms → 150 ms are mic + analysis.

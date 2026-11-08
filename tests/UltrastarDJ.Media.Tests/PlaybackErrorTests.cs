@@ -14,6 +14,7 @@ public class PlaybackErrorTests
     [InlineData("ERROR: [youtube] abc: Requested format is not available. Use --list-formats", "refused")]
     [InlineData("ERROR: unable to download video data: HTTP Error 403: Forbidden", "refused")]
     [InlineData("youtube-dl failed: not found or not enough permissions", "yt-dlp is missing")]
+    [InlineData("no audio or video data played\nmpv[stream] Failed to open https://rr1---sn-n5au-9anz.googlevideo.com/videoplayback?expire=1", "refused")]
     public void Explain_KnownYouTubeErrors_GivesPlainReason(string raw, string expectedPart)
     {
         PlaybackError e = PlaybackError.Explain(raw);

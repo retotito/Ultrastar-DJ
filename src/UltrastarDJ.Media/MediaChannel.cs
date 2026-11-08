@@ -54,6 +54,19 @@ public sealed class MediaChannel : IAsyncDisposable
     public MediaState State => _audio?.State ?? MediaState.Idle;
     public TimeSpan Position => _audio?.Position ?? TimeSpan.Zero;
     public TimeSpan? Duration => _audio?.Duration;
+
+    /// <summary>Playback speed of the loaded song (mpv keeps the pitch); the clock and any following visual go along.</summary>
+    public double Speed
+    {
+        get => _audio?.Speed ?? 1.0;
+        set
+        {
+            if (_audio is not null)
+            {
+                _audio.Speed = value;
+            }
+        }
+    }
     public double LevelRms => _audio?.LevelRms ?? 0;
     public double VisualDriftSec => _follower?.LastDriftSec ?? 0;
 

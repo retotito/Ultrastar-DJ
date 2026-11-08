@@ -179,7 +179,35 @@ public sealed class PlaybackService : IDisposable
     /// What the audience hears now: the clock minus the game output's latency (Bluetooth speakers play 200+ ms
     /// later than mpv decodes). Beamers draw this and the scorer judges against it (Core.Timing.LatencyModel).
     /// </summary>
-    public double GamePositionSec => LatencyModel.DisplaySec(Clock?.PositionSec ?? 0, _outputs.GameLatencyMs);
+    public double GamePositionSec => LatencyModel.DisplaySec(Clock?.PositionSec ?? 0, _outputs.GameLatencyMs, Speed);
+
+    /// <summary>"0.75×" — the speed button's label and the displays' badge.</summary>
+    public static string SpeedLabel(double speed) => speed.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + "×";
+
+    /// <summary>Playback speed of the song (1 = normal; slower to practise, the pitch stays). Back to 1 for every new song.</summary>
+    public double Speed { get; private set; } = 1.0;
+
+    /// <summary>The speed changed (UI thread).</summary>
+    public event Action? SpeedChanged;
+
+    public void SetSpeed(double speed)
+    {
+        speed = Math.Clamp(speed, 0.5, 2.0);
+        if (Math.Abs(speed - Speed) < 0.001)
+        {
+            return;
+        }
+
+        Speed = speed;
+        _media.Game.Speed = speed;
+        if (Session is { } session)
+        {
+            session.Speed = speed;
+        }
+
+        _log.LogInformation("Speed {Speed}×", speed);
+        SpeedChanged?.Invoke();
+    }
     public string? LastError { get; private set; }
     public bool IsBusy { get; private set; }
 
@@ -224,6 +252,8 @@ public sealed class PlaybackService : IDisposable
     /// <summary>Validates, parses notes, resolves media and loads the game channel. Ends in Loaded (or throws).</summary>
     public async Task LoadAsync(Song song, CancellationToken ct = default)
     {
+        // Every song starts at normal speed: the next guest must not sing in slow motion after a practice round.
+        SetSpeed(1.0);
         // A song still loading (a slow connection, a stuck stream) gives way to this one.
         if (_loadCts is { } running)
         {
@@ -310,7 +340,7 @@ public sealed class PlaybackService : IDisposable
         catch (MediaException ex)
         {
             LastError = ex.Message;
-            SongLoadException explained = Explain(ex, plan);
+            SongLoadException explained = Explain(ex, plan, _ytDlp.CurrentVersion);
             if (explained.SongProblem)
             {
                 _failures.Failed(song, explained.Reasons[0]);
@@ -328,14 +358,28 @@ public sealed class PlaybackService : IDisposable
     /// mpv's error in plain words. A local file that does not play is the song's problem; a YouTube failure only when
     /// the video itself is gone or blocked (<see cref="PlaybackError.SongProblem"/>).
     /// </summary>
-    public static SongLoadException Explain(MediaException ex, MediaPlan? plan)
+    public static SongLoadException Explain(MediaException ex, MediaPlan? plan, string? ytDlpVersion)
     {
         PlaybackError e = PlaybackError.Explain(ex.Message);
         bool local = plan is not null && plan.Audio.Source is not MediaSource.YouTube;
         // An unexplained YouTube failure (e.g. still refused after the retries) is the typical outdated-yt-dlp case too.
         bool unexplainedYouTube = !local && plan is not null && e.Reason == PlaybackError.Explain("").Reason;
-        return new SongLoadException(e.Reason, e.Details, e.SongProblem || local, e.YtDlpMayHelp || unexplainedYouTube);
+        return new SongLoadException(e.Reason, ReportDetails(e.Details, plan, ytDlpVersion), e.SongProblem || local, e.YtDlpMayHelp || unexplainedYouTube);
     }
+
+    /// <summary>
+    /// "Show details" / "Copy details": what a DJ pastes into a bug report — versions, system, the media and the time,
+    /// then mpv's and yt-dlp's own words.
+    /// </summary>
+    private static string ReportDetails(string raw, MediaPlan? plan, string? ytDlpVersion)
+        => $"""
+            Ultrastar DJ {BuildInfo.Version} · {System.Runtime.InteropServices.RuntimeInformation.OSDescription} ({System.Runtime.InteropServices.RuntimeInformation.OSArchitecture})
+            yt-dlp {ytDlpVersion ?? "?"}
+            Media: {plan?.Audio.Source.ToString() ?? "?"}
+            Time: {DateTime.Now:yyyy-MM-dd HH:mm:ss}
+
+            {raw}
+            """;
 
     /// <summary>Thumbnail download must not hold up the load: pictures follow; ignored if another song came meanwhile.</summary>
     private async Task LoadPicturesAsync(Song song)
@@ -409,7 +453,7 @@ public sealed class PlaybackService : IDisposable
         }
         catch (MediaException ex)
         {
-            SongLoadException explained = Explain(ex, plan);
+            SongLoadException explained = Explain(ex, plan, _ytDlp.CurrentVersion);
             _notifications.ShowError(L.T("playback.cannot_replay"), _ytDlp.WithHint(explained.Reasons, explained.YtDlpMayHelp), explained.Details);
             return false;
         }
@@ -454,7 +498,8 @@ public sealed class PlaybackService : IDisposable
         // two set up — the others sit out (no lane, no score, no mic in the mix); one player alone sings both voices.
         IReadOnlyList<(int PlayerId, int Voice)> singers = Singers();
         IReadOnlyList<PlayerConfig> active = [.. singers.Select(s => _players.Get(s.PlayerId))];
-        Session = new GameSession(Song, singers.Select(s => new GamePlayer(s.PlayerId, s.Voice, MicDelayMs(_players.Get(s.PlayerId)))).ToList(), Difficulty);
+        Session = new GameSession(Song, singers.Select(s => new GamePlayer(s.PlayerId, s.Voice, MicDelayMs(_players.Get(s.PlayerId)))).ToList(), Difficulty) { Speed = Speed };
+        _media.Game.Speed = Speed;
         // Media length in game time: when the video is the audio, its #VIDEOGAP intro is not part of the song.
         double? mediaLengthSec = _media.Game.Duration is { } d ? d.TotalSeconds - (Plan?.AudioOriginSec ?? 0) : null;
         Timeline = SongTimeline.For(Song, Session.LastBeat, TailWithoutKnownEndSec, mediaLengthSec);
@@ -664,7 +709,7 @@ public sealed class PlaybackService : IDisposable
                     continue;
                 }
 
-                double pos = LatencyModel.DisplaySec(clock.PositionSec, _outputs.GameLatencyMs);
+                double pos = LatencyModel.DisplaySec(clock.PositionSec, _outputs.GameLatencyMs, Speed);
                 Ticked?.Invoke(new GameTickInfo(pos, session.BeatAt(pos)));
 
                 if (State == PlaybackState.Playing)

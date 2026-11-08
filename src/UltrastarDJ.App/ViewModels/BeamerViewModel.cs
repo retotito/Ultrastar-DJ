@@ -343,9 +343,12 @@ public sealed partial class BeamerViewModel : ViewModelBase, IDisposable
         // Stopped early: each score as a share of what was possible until then, not of the whole song.
         double stoppedAt = _playback.GamePositionSec;
         bool finished = standings.All(s => session.PossibleScoreAt(stoppedAt, s.PlayerId) >= s.MaxScore);
-        ScoreNote = finished || _playback.Timeline is not { } timeline
+        string stopped = finished || _playback.Timeline is not { } timeline
             ? ""
             : L.F("display.stopped_at", TimeSpan.FromSeconds(timeline.Elapsed(_playback.Clock?.PositionSec ?? 0)));
+        // Sung slowed down: said with the scores, so they are not taken for a normal round.
+        string speed = Math.Abs(session.Speed - 1) > 0.001 ? L.F("display.sung_at_speed", PlaybackService.SpeedLabel(session.Speed)) : "";
+        ScoreNote = string.Join("  ·  ", new[] { stopped, speed }.Where(s => s.Length > 0));
         WinnerId = standings.Count > 0 && standings[0].Score > 0 ? standings[0].PlayerId : -1;
         WinnerBrush = WinnerId > 0 ? PlayerBrush(WinnerId) : null;
         List<(int PlayerId, int Score, int MaxScore)> rows = [.. standings.OrderBy(s => s.PlayerId)];

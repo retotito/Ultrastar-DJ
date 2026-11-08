@@ -31,7 +31,8 @@ public sealed record PlaybackError(string Reason, string Details, bool SongProbl
             Text.T("error.no_connection", "No connection to YouTube — check the internet connection."), false, false),
         ([MpvPlayer.TooSlowMessage], Text.T("error.too_slow",
             "The song took too long to load — the internet connection may be slow. Try again or pick another song."), false, false),
-        (["requested format is not available", "http error 403"], Text.T("error.refused", "YouTube refused the stream."), false, true),
+        (["requested format is not available", "http error 403", "googlevideo.com"], Text.T("error.refused",
+            "YouTube refused this video right now. A newer yt-dlp usually fixes that within a few days — the app updates it by itself."), false, true),
         (["unable to extract", "nsig extraction failed", "signature extraction failed"], Text.T("error.cannot_read", "yt-dlp could not read YouTube's page."), false, true),
         (["youtube-dl failed: not found"], Text.T("error.ytdlp_missing", "yt-dlp is missing — run scripts/fetch-natives."), false, false),
     ];

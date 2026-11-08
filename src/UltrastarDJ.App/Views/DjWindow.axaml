@@ -308,6 +308,22 @@
             <TextBlock Foreground="White" FontSize="{StaticResource TextSm}" VerticalAlignment="Center" MinWidth="36" TextAlignment="Right"
                        Text="{Binding $parent[Window].((vm:DjWindowViewModel)DataContext).NowPlaying.Gain, StringFormat='{}{0:P0}'}" />
           </StackPanel>
+          <!-- The song's speed — the Game Player's speed button (one setting). -->
+          <Button Classes="sidebar" IsVisible="{Binding IsGame}" VerticalAlignment="Center" Width="48" ToolTip.Tip="{l:T game_player.speed_tip}">
+            <TextBlock Text="{Binding $parent[Window].((vm:DjWindowViewModel)DataContext).NowPlaying.SpeedText}" Foreground="White" FontWeight="{StaticResource WeightSemibold}" />
+            <Button.Flyout>
+              <MenuFlyout>
+                <MenuItem Header="1×" ToggleType="Radio" Command="{Binding $parent[Window].((vm:DjWindowViewModel)DataContext).NowPlaying.SetSpeedCommand}" CommandParameter="1"
+                          IsChecked="{Binding $parent[Window].((vm:DjWindowViewModel)DataContext).NowPlaying.SpeedText, Mode=OneWay, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=1×}" />
+                <MenuItem Header="0.9×" ToggleType="Radio" Command="{Binding $parent[Window].((vm:DjWindowViewModel)DataContext).NowPlaying.SetSpeedCommand}" CommandParameter="0.9"
+                          IsChecked="{Binding $parent[Window].((vm:DjWindowViewModel)DataContext).NowPlaying.SpeedText, Mode=OneWay, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=0.9×}" />
+                <MenuItem Header="0.8×" ToggleType="Radio" Command="{Binding $parent[Window].((vm:DjWindowViewModel)DataContext).NowPlaying.SetSpeedCommand}" CommandParameter="0.8"
+                          IsChecked="{Binding $parent[Window].((vm:DjWindowViewModel)DataContext).NowPlaying.SpeedText, Mode=OneWay, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=0.8×}" />
+                <MenuItem Header="0.7×" ToggleType="Radio" Command="{Binding $parent[Window].((vm:DjWindowViewModel)DataContext).NowPlaying.SetSpeedCommand}" CommandParameter="0.7"
+                          IsChecked="{Binding $parent[Window].((vm:DjWindowViewModel)DataContext).NowPlaying.SpeedText, Mode=OneWay, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=0.7×}" />
+              </MenuFlyout>
+            </Button.Flyout>
+          </Button>
           <Button Classes="tonal" Command="{Binding BackToDjCommand}" VerticalAlignment="Center" Padding="16,10" IsVisible="{Binding IsScore}"
                 ToolTip.Tip="{l:T single.tip_back}">
             <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space2}">
@@ -536,7 +552,7 @@
 
         <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="{StaticResource Space2}" Margin="0,16,0,0">
           <Button Classes="text" Content="{l:T window.show_details}" Command="{Binding ToggleDialogDetailsCommand}" IsVisible="{Binding Dialog.HasDetails}" />
-          <Button Classes="text" Content="{l:T window.copy_details}" Click="OnCopyDialogDetails" IsVisible="{Binding Dialog.IsBug}" />
+          <Button Classes="text" Content="{l:T window.copy_details}" Click="OnCopyDialogDetails" IsVisible="{Binding Dialog.HasDetails}" />
           <Button Classes="text" Content="{l:T window.open_log_folder}" Click="OnOpenLogFolder" IsVisible="{Binding Dialog.IsBug}" />
           <Button Classes="tonal" Content="OK" Command="{Binding DismissDialogCommand}" IsDefault="True" />
         </StackPanel>

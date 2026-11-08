@@ -5,7 +5,7 @@ namespace UltrastarDJ.Media;
 
 /// <summary>
 /// Keeps a muted visual player aligned with the game clock (Mode A: visual position = clock + videoGap).
-/// Large drift → seek; small drift → speed nudge; play/pause mirrored from the clock.
+/// Large drift → seek; small drift → speed nudge around the clock's own speed; play/pause mirrored from the clock.
 /// </summary>
 public sealed class ClockFollower : IAsyncDisposable
 {
@@ -22,6 +22,7 @@ public sealed class ClockFollower : IAsyncDisposable
     private readonly CancellationTokenSource _cts = new();
     private readonly Task _loop;
     private bool _nudging;
+    private double _baseSpeed = 1.0;
 
     public ClockFollower(IMediaPlayer visual, IGameClock clock, double offsetSec, ILogger<ClockFollower> log)
     {
@@ -74,6 +75,15 @@ public sealed class ClockFollower : IAsyncDisposable
             return;
         }
 
+        // Slowed down (practising): the visual runs at the clock's speed, nudged around it.
+        double clockSpeed = _clock.Speed;
+        if (Math.Abs(clockSpeed - _baseSpeed) > 0.001)
+        {
+            _baseSpeed = clockSpeed;
+            _visual.Speed = clockSpeed;
+            _nudging = false;
+        }
+
         double target = _clock.PositionSec + _offsetSec;
         double drift = _visual.Position.TotalSeconds - target;
         LastDriftSec = drift;
@@ -86,7 +96,7 @@ public sealed class ClockFollower : IAsyncDisposable
         }
         else if (Math.Abs(drift) > NudgeThresholdSec)
         {
-            double speed = 1.0 - Math.Sign(drift) * NudgeSpeed;
+            double speed = _baseSpeed * (1.0 - Math.Sign(drift) * NudgeSpeed);
             if (!_nudging || Math.Abs(_visual.Speed - speed) > 0.001)
             {
                 _visual.Speed = speed;
@@ -103,7 +113,7 @@ public sealed class ClockFollower : IAsyncDisposable
     {
         if (_nudging)
         {
-            _visual.Speed = 1.0;
+            _visual.Speed = _baseSpeed;
             _nudging = false;
         }
     }

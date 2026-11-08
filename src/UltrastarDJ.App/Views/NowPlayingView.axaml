@@ -149,6 +149,30 @@
         <Button Classes="transport stop" Command="{Binding StopCommand}" ToolTip.Tip="{l:TK game_player.stop_show_scores, Keys=Cmd+E}" IsVisible="{Binding ShowsStop}">
           <c:Icon Glyph="stop" FontSize="{StaticResource IconLg}" />
         </Button>
+        <!-- Speed: slower to practise (the pitch stays), back to 1× with every new song. Blue while not 1×. -->
+        <Panel IsVisible="{Binding HasSong}" VerticalAlignment="Center">
+          <Button Classes="sidebar" IsVisible="{Binding !NoBeamerOpen}" ToolTip.Tip="{l:T game_player.speed_tip}" Width="48">
+            <TextBlock Text="{Binding SpeedText}" FontWeight="{StaticResource WeightSemibold}" Classes.changed="{Binding IsSpeedChanged}">
+              <TextBlock.Styles>
+                <Style Selector="TextBlock.changed">
+                  <Setter Property="Foreground" Value="{DynamicResource BrushPrimary}" />
+                </Style>
+              </TextBlock.Styles>
+            </TextBlock>
+            <Button.Flyout>
+              <MenuFlyout>
+                <MenuItem Header="1×" ToggleType="Radio" Command="{Binding SetSpeedCommand}" CommandParameter="1"
+                          IsChecked="{Binding SpeedText, Mode=OneWay, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=1×}" />
+                <MenuItem Header="0.9×" ToggleType="Radio" Command="{Binding SetSpeedCommand}" CommandParameter="0.9"
+                          IsChecked="{Binding SpeedText, Mode=OneWay, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=0.9×}" />
+                <MenuItem Header="0.8×" ToggleType="Radio" Command="{Binding SetSpeedCommand}" CommandParameter="0.8"
+                          IsChecked="{Binding SpeedText, Mode=OneWay, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=0.8×}" />
+                <MenuItem Header="0.7×" ToggleType="Radio" Command="{Binding SetSpeedCommand}" CommandParameter="0.7"
+                          IsChecked="{Binding SpeedText, Mode=OneWay, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=0.7×}" />
+              </MenuFlyout>
+            </Button.Flyout>
+          </Button>
+        </Panel>
 
         <!-- Nothing to play on yet: one clear action instead of four dead buttons -->
         <Button Classes="tonal" Command="{Binding SelectDisplaysCommand}" IsVisible="{Binding NoBeamerOpen}"

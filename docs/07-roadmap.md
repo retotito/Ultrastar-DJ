@@ -878,6 +878,16 @@ Acer Aspire V3-772G, built-in audio + Logitech H340 USB headset).
       in "…" (full name on hover) instead of running under the buttons
 - [x] Requests: "Load into the Game Player" next to "Add to queue" — straight past the queue; accepted once loaded, so
       the guest's phone goes from "waiting" to "you're up" (a failed / cancelled load leaves it waiting) (tested)
+- [x] Practice speed: 1× / 0.9× / 0.8× / 0.7× in the Game Player and the single-screen bar (pitch kept); notes,
+      lyrics, scoring and the second display follow; mic and speaker delays scaled by the speed (tested); back to 1×
+      per song; "0.75×" on the displays and "Sung at 0.75×" on the score screen
+- [ ] Practice speed verified live (a freeze seen once after switching speed — waiting for a second try with a sample)
+- [x] YouTube 403 on every song on the developer's Mac: yt-dlp used Homebrew's Deno and reached YouTube another way →
+      `no-js-runtimes` (same behaviour on every computer); the refusal is recognised ("YouTube refused this video right
+      now — a newer yt-dlp usually fixes that …", 13 languages, tested) and retried; error details start with a report
+      head (versions, system, media, time) plus mpv's lines; "Copy details" on every error dialog with details
+- [x] Connectivity calmer on an unstable router: offline only after 3 failed probes ~2 s apart (a blink shows no toast,
+      USDB stays); while offline a probe every 3 s instead of 15, so "back online" comes within seconds
 
 ---
 

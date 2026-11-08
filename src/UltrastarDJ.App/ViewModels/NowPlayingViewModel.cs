@@ -86,6 +86,11 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
 
         _playback.StateChanged += OnStateChanged;
         _playback.DuetChoiceChanged += () => OnPropertyChanged(nameof(VoicesUnconfirmed));
+        _playback.SpeedChanged += () =>
+        {
+            OnPropertyChanged(nameof(SpeedText));
+            OnPropertyChanged(nameof(IsSpeedChanged));
+        };
         _displays.PlayersChanged += () => OnPropertyChanged(nameof(VoicesUnconfirmed));
         _countdown = new DispatcherTimer(TimeSpan.FromSeconds(1), DispatcherPriority.Normal, (_, _) => CountdownTick());
         _playback.PicturesChanged += RefreshBox;
@@ -140,6 +145,20 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
         }
     }
     public bool HasSong => _playback.Song is not null;
+
+    /// <summary>The song's speed, "1×" / "0.75×" (the speed button's label; the menu's entries are compared with it).</summary>
+    public string SpeedText => PlaybackService.SpeedLabel(_playback.Speed);
+    public bool IsSpeedChanged => Math.Abs(_playback.Speed - 1) > 0.001;
+
+    /// <summary>From the speed menu: "1", "0.9", "0.8", "0.7".</summary>
+    [RelayCommand]
+    private void SetSpeed(string? speed)
+    {
+        if (double.TryParse(speed, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double value))
+        {
+            _playback.SetSpeed(value);
+        }
+    }
     /// <summary>The DJ's marks on the loaded song — set right here, where a bad song shows (SongMarksService).</summary>
     public bool IsFavourite => _playback.Song is { } s && _marks.FavouriteIds.Contains(s.Id);
     public bool IsBroken => _playback.Song is { } s && _marks.BrokenIds.Contains(s.Id);

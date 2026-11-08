@@ -112,6 +112,16 @@ callbacks interleaved in time, with drift). Crackling evidence in the log when a
 fell behind, largest mic block) and the drop-outs PortAudio reported per device (input/output under- and overflows) —
 counted in the callbacks, logged once.
 
+### Practice speed
+
+The Game Player's speed button (and the single-screen bar's) plays a song at 1× / 0.9× / 0.8× / 0.7×
+(`PlaybackService.SetSpeed` → mpv `speed`, which keeps the pitch). Game time runs at the media's speed
+(`MediaGameClock` advances by the player's speed; a following visual player is nudged around the clock's speed,
+`ClockFollower`), so notes and lyrics stay with the music. The two delays below are real time, so they shrink with the
+speed: display = clock − output latency × speed, sung beat = beat − mic delay × speed (`LatencyModel.DisplaySec`,
+`GameSession.SungBeatAt`, tested). Every load resets the speed to 1× — the next singer never starts in slow motion.
+Not 1×: "0.8×" next to the elapsed time on the displays, and "Sung at 0.8×" with the scores.
+
 ### Latency and sync
 
 `Core.Timing.LatencyModel` (tested). Two measured quantities, after USDX / Tune Perfect:

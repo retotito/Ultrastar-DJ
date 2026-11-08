@@ -15,8 +15,11 @@ public static class LatencyModel
     /// <summary>Uncalibrated players: a typical USB mic plus the pitch analysis (USDX's default MicDelay is 140 ms too).</summary>
     public const double DefaultInputDelayMs = 140;
 
-    /// <summary>Game time the audience is hearing now: the clock minus the output latency.</summary>
-    public static double DisplaySec(double clockSec, double outputLatencyMs) => clockSec - outputLatencyMs / 1000.0;
+    /// <summary>
+    /// Game time the audience is hearing now: the clock minus the output latency. The latency is real time; slowed down
+    /// (<paramref name="speed"/> 0.5) it covers only half as much of the song.
+    /// </summary>
+    public static double DisplaySec(double clockSec, double outputLatencyMs, double speed = 1.0) => clockSec - outputLatencyMs / 1000.0 * speed;
 
     /// <summary>A speaker nobody measured: what such outputs typically add (Bluetooth 150–300 ms, TV / monitor over HDMI 40–150 ms).</summary>
     public static double TypicalOutputLatencyMs(OutputKind kind) => kind switch

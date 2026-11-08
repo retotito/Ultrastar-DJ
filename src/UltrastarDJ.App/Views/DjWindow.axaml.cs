@@ -479,9 +479,10 @@ public sealed partial class DjWindow : Window
     // Clipboard and file manager are view concerns: the bug dialog's two extra buttons live here.
     private async void OnCopyDialogDetails(object? sender, RoutedEventArgs e)
     {
-        if (DataContext is DjWindowViewModel { Dialog.Details: { } details } && Clipboard is { } clipboard)
+        // Title and reasons first, so a pasted report reads on its own.
+        if (DataContext is DjWindowViewModel { Dialog: { Details: { } details } dialog } && Clipboard is { } clipboard)
         {
-            await clipboard.SetTextAsync(details);
+            await clipboard.SetTextAsync($"{dialog.Title}\n{string.Join("\n", dialog.Reasons)}\n\n{details}");
         }
     }
 

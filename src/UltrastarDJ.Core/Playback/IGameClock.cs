@@ -10,4 +10,7 @@ public interface IGameClock
     double PositionSec { get; }
 
     bool IsRunning { get; }
+
+    /// <summary>How fast game time runs against real time (1 = normal, 0.5 = half speed to practise).</summary>
+    double Speed { get; }
 }

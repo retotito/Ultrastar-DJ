@@ -59,6 +59,8 @@ public sealed class MediaGameClock : IGameClock
 
     public bool IsRunning => _readPlaying();
 
+    public double Speed => _readSpeed();
+
     /// <summary>Thread-safe: read by the game ticker and the beamers' render loop.</summary>
     public double PositionSec
     {

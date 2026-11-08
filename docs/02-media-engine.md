@@ -49,7 +49,7 @@ public interface IMediaPlayer : IAsyncDisposable
 | Output device | `audio-device=<id>`; device list from `audio-device-list` property |
 | Video off (audio-only role) | `vid=no` |
 | Audio off (visual-only role) | `aid=no` (no audio stream is downloaded for YouTube either) |
-| YouTube | `ytdl=yes`, `script-opts=ytdl_hook-ytdl_path=<sidecar yt-dlp>`, `ytdl-format=bestvideo[height<=720]+bestaudio/best[height<=720]` (or `bestaudio` when `Video=false`) |
+| YouTube | `ytdl=yes`, `ytdl-raw-options=no-js-runtimes=` (yt-dlp ignores a JavaScript runtime installed on the computer — with Homebrew's Deno it reached YouTube another way and every stream failed with 403; now every computer behaves the same), `script-opts=ytdl_hook-ytdl_path=<sidecar yt-dlp>`, `ytdl-format=bestvideo[height<=720]+bestaudio/best[height<=720]` (or `bestaudio` when `Video=false`) |
 | Hardware decode | `hwdec=auto-safe` |
 | Range | `start=<sec>`, `end=<sec>` |
 | External video for Case 2/3 | after load: `video-add <file-or-ytdl://ID>` then `vid=1`; plus `audio-delay` for `#VIDEOGAP` (see below) |
@@ -286,7 +286,7 @@ Do **not** start there — measure first.
 | Failure | Behaviour |
 |---|---|
 | yt-dlp missing / outdated | `SidecarLocator` finds it (app data `sidecars/` first, then the bundle); `YtDlpService` runs `yt-dlp --version` once at start (logs it, absorbs macOS's first-run scan) and checks GitHub for a newer release (toast). Settings → YouTube updates it: downloads the folder-build zip (`yt-dlp -U` cannot update folder builds) into `sidecars/yt-dlp/`; new players use it at once. Errors an update usually fixes get a hint in the dialog (`PlaybackError.YtDlpMayHelp`) |
-| YouTube refuses the resolved stream (HTTP 403 / 5xx on googlevideo.com, intermittent) | `MpvPlayer.LoadAsync` loads again with a fresh yt-dlp run, up to 2 retries 0.5 s apart, staying "Loading"; only then the error is reported. Rule: `StreamRetry.IsRejectedStream` (tested). Logged as "retry n/2" |
+| YouTube refuses the resolved stream (HTTP 403 / 5xx on googlevideo.com, intermittent) | `MpvPlayer.LoadAsync` loads again with a fresh yt-dlp run, up to 2 retries 0.5 s apart, staying "Loading"; only then the error is reported. Rule: `StreamRetry.IsRejectedStream` (tested) — also "[stream] Failed to open …googlevideo.com…", since ffmpeg logs globally and the 403 line can land in another player's log. Logged as "retry n/2". The error then carries this load's mpv lines (`MpvPlayer`, last 25), so `PlaybackError` says "YouTube refused this video right now …" and the details show the cause |
 | YouTube video unavailable / geo-blocked | `ErrorOccurred` → `PlaybackService` stops, DJ sees dialog with mpv's message; on load, the song is marked in the library (`LoadFailureService`, cleared when it loads again or changes) |
 | Output device disappears during song | mpv falls back to default automatically; we show a toast and reset the stored device |
 | Local file unsupported | libmpv/FFmpeg decode nearly everything; if it fails the validator error dialog shows the mpv error |

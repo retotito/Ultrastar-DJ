@@ -34,6 +34,10 @@ public sealed class GameSession
 
     public Song Song { get; }
     public Difficulty Difficulty { get; }
+
+    /// <summary>Playback speed (1 = normal, 0.5 = half, to practise). The mic delay is real time: slowed down it covers
+    /// less of the song.</summary>
+    public double Speed { get; set; } = 1.0;
     public IEnumerable<int> PlayerIds => _players.Keys;
 
     public PlayerScorer Scorer(int playerId) => _players[playerId].Scorer;
@@ -63,7 +67,7 @@ public sealed class GameSession
     /// so the fill edge always matches the score.
     /// </summary>
     public double SungBeatAt(double positionSec, int playerId)
-        => BeatAt(positionSec) - BeatMath.MsToBeats(Song.Bpm, _players[playerId].Player.MicDelayMs);
+        => BeatAt(positionSec) - BeatMath.MsToBeats(Song.Bpm, _players[playerId].Player.MicDelayMs * Speed);
 
     /// <summary>Final standings, highest first.</summary>
     public IReadOnlyList<(int PlayerId, int Score, int MaxScore)> Standings()

@@ -36,6 +36,15 @@ public class GameSessionTests
     }
 
     [Fact]
+    public void SungBeatAt_SlowedDown_TheMicDelayCoversLessOfTheSong()
+    {
+        // At half speed 250 ms of real time is 125 ms of the song = 1 beat, not 2.
+        GameSession s = new(Song(), [new GamePlayer(1, 0, 250)], Difficulty.Medium) { Speed = 0.5 };
+
+        Assert.Equal(7, s.SungBeatAt(2.0, 1), 6);
+    }
+
+    [Fact]
     public void Tick_ScoresEachPlayerOnItsOwnTrack()
     {
         GameSession s = new(Song(), [new GamePlayer(1, 0, 0), new GamePlayer(2, 1, 0)], Difficulty.Hard);

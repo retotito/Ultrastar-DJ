@@ -5,15 +5,21 @@ using UltrastarDJ.App.Localization;
 namespace UltrastarDJ.App.Services;
 
 /// <summary>
-/// Is YouTube reachable? Probed at start, when the OS reports a network change, and every 15 s — "network up" is not
-/// enough (Wi-Fi without internet). Toasts on every change (and at start when offline); <see cref="Changed"/> lets
-/// USDB grey out and reconnect.
+/// Is YouTube reachable? Probed at start, when the OS reports a network change, every 15 s while online and every 3 s
+/// while offline — "network up" is not enough (Wi-Fi without internet). Offline only once two more probes, 2 s apart,
+/// failed too: a router that blinks for a second shows no toast and greys out nothing. Toasts on every change (and at
+/// start when offline); <see cref="Changed"/> lets USDB grey out and reconnect.
 /// </summary>
 public sealed class ConnectivityService : IDisposable
 {
     // Google's no-content endpoint on the YouTube host: tiny, and exactly the host the app needs.
     private static readonly Uri Probe = new("https://www.youtube.com/generate_204");
-    private static readonly TimeSpan Interval = TimeSpan.FromSeconds(15);
+    private static readonly TimeSpan OnlineInterval = TimeSpan.FromSeconds(15);
+    // Offline: back as soon as the connection is.
+    private static readonly TimeSpan OfflineInterval = TimeSpan.FromSeconds(3);
+    // A failed probe is checked again this often before the app calls itself offline.
+    private const int ConfirmProbes = 2;
+    private static readonly TimeSpan ConfirmDelay = TimeSpan.FromSeconds(2);
 
     private readonly NotificationService _notifications;
     private readonly ILogger<ConnectivityService> _log;
@@ -52,6 +58,14 @@ public sealed class ConnectivityService : IDisposable
         {
             bool online = await ProbeAsync().ConfigureAwait(false);
             bool? before = IsOnline;
+            // Was online (or unknown): one failed probe is not enough — a blink of the router passes unnoticed.
+            for (int i = 0; !online && before is not false && i < ConfirmProbes; i++)
+            {
+                _log.LogDebug("Connectivity: no answer from YouTube, checking again ({Try}/{Of})", i + 1, ConfirmProbes);
+                await Task.Delay(ConfirmDelay, _cts.Token).ConfigureAwait(false);
+                online = await ProbeAsync().ConfigureAwait(false);
+            }
+
             if (before == online)
             {
                 return;
@@ -72,6 +86,10 @@ public sealed class ConnectivityService : IDisposable
             {
                 Changed?.Invoke(online);
             }
+        }
+        catch (OperationCanceledException)
+        {
+            // The app is closing while a probe was being confirmed.
         }
         finally
         {
@@ -97,11 +115,11 @@ public sealed class ConnectivityService : IDisposable
 
     private async Task PollAsync(CancellationToken ct)
     {
-        using PeriodicTimer timer = new(Interval);
         try
         {
-            while (await timer.WaitForNextTickAsync(ct).ConfigureAwait(false))
+            while (true)
             {
+                await Task.Delay(IsOnline is false ? OfflineInterval : OnlineInterval, ct).ConfigureAwait(false);
                 await CheckAsync().ConfigureAwait(false);
             }
         }

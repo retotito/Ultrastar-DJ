@@ -58,6 +58,9 @@ public sealed class MpvPlayer : IMediaPlayer
     // yt-dlp's own error line for the current load. mpv reports a failed YouTube load only as
     // "unrecognized file format"; this is what the user needs to see (see PlaybackError).
     private volatile string? _ytdlError;
+    // This load's mpv warnings, for the error details (what a DJ copies into a bug report).
+    private readonly System.Collections.Concurrent.ConcurrentQueue<string> _loadLog = new();
+    private const int LoadLogLines = 25;
     private bool _isNetwork;
     // Stream refusal (StreamRetry): seen in this attempt's log, and whether this attempt may still be retried.
     private volatile bool _streamRejected;
@@ -124,6 +127,10 @@ public sealed class MpvPlayer : IMediaPlayer
         Set("vo", _video ? "libmpv" : "null");
         Set("audio-client-name", "Ultrastar DJ");
         Set("ytdl", "yes");
+        // yt-dlp would use a JavaScript runtime it finds on the computer (Deno, Node): then it reaches YouTube another
+        // way than on a computer without one — a Deno from Homebrew made every YouTube stream fail with 403. Same
+        // behaviour everywhere: none.
+        Set("ytdl-raw-options", "no-js-runtimes=");
         if (!string.IsNullOrEmpty(options.YtDlpPath))
         {
             Set("script-opts", $"ytdl_hook-ytdl_path={options.YtDlpPath}");
@@ -277,6 +284,7 @@ public sealed class MpvPlayer : IMediaPlayer
             _eof = false;
             _cacheSec = 0;
             _ytdlError = null;
+            _loadLog.Clear();
             _streamRejected = false;
             _retryAllowed = retryAllowed;
             _isNetwork = source is MediaSource.YouTube;
@@ -497,6 +505,11 @@ public sealed class MpvPlayer : IMediaPlayer
                     string? prefix = Utf8(m->Prefix);
                     string? text = Utf8(m->Text)?.TrimEnd();
                     _log.LogWarning("{Player}: mpv[{Prefix}] {Text}", Name, prefix, text);
+                    _loadLog.Enqueue($"mpv[{prefix}] {text}");
+                    while (_loadLog.Count > LoadLogLines && _loadLog.TryDequeue(out _))
+                    {
+                    }
+
                     if (StreamRetry.IsRejectedStream(prefix, text))
                     {
                         _streamRejected = true;
@@ -610,6 +623,11 @@ public sealed class MpvPlayer : IMediaPlayer
         }
 
         string? error = e->Reason == MpvEndFileReason.Error ? _ytdlError ?? ErrorMessage(e->Error) : null;
+        if (error is not null && !_loadLog.IsEmpty)
+        {
+            // The first line stays the message; mpv's own lines follow for the details (and the explanation).
+            error = error + "\n" + string.Join("\n", _loadLog);
+        }
         TaskCompletionSource? pendingLoad;
         lock (_stateLock)
         {

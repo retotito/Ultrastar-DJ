@@ -165,7 +165,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
         catch (MediaException ex)
         {
             _log.LogWarning("Preview failed: {Error}", ex.Message);
-            SongLoadException explained = PlaybackService.Explain(ex, plan);
+            SongLoadException explained = PlaybackService.Explain(ex, plan, _ytDlp.CurrentVersion);
             if (explained.SongProblem)
             {
                 _failures.Failed(song, explained.Reasons[0]);

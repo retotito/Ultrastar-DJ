@@ -213,9 +213,29 @@ public sealed class GameOverlayControl : Control
 
         const double side = 24;
         double y = bar.Y - AboveBar - size * 1.6;
-        DrawPill(ctx, Pill(ref _elapsedText, timeline.Elapsed(t), size), size, new Point(lyricsArea.X + side, y), alignRight: false);
+        FormattedText elapsed = Pill(ref _elapsedText, timeline.Elapsed(t), size);
+        DrawPill(ctx, elapsed, size, new Point(lyricsArea.X + side, y), alignRight: false);
         DrawPill(ctx, Pill(ref _remainingText, timeline.Remaining(t), size), size, new Point(lyricsArea.Right - side, y), alignRight: true);
+        // Slowed down to practise: the singers see why ("0.75×" next to the elapsed time).
+        if (Math.Abs(scene.Session.Speed - 1) > 0.001)
+        {
+            double elapsedWidth = elapsed.Width + size * 1.2;
+            DrawPill(ctx, SpeedPill(scene.Session.Speed, size), size, new Point(lyricsArea.X + side + elapsedWidth + size * 0.5, y), alignRight: false);
+        }
     }
+
+    private (double Speed, double Size, FormattedText Text)? _speedText;
+
+    private FormattedText SpeedPill(double speed, double size)
+    {
+        if (_speedText is not { } c || c.Speed != speed || c.Size != size)
+        {
+            _speedText = c = (speed, size, new FormattedText(Services.PlaybackService.SpeedLabel(speed), System.Globalization.CultureInfo.InvariantCulture, FlowDirection.LeftToRight, Regular, size, LyricsText));
+        }
+
+        return c.Text;
+    }
+
 
     // Time pill texts change once a second: rebuilt only then.
     private (int Sec, double Size, FormattedText Text)? _elapsedText;
