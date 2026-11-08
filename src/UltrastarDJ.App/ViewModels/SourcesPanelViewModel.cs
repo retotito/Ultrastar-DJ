@@ -280,6 +280,18 @@ public sealed partial class SourcesPanelViewModel : ViewModelBase, IDisposable
 
     public void Remove(string sourceId) => _library.RemoveSource(sourceId);
 
+    public void ShowFolder(string folder)
+    {
+        try
+        {
+            FileReveal.OpenFolder(folder);
+        }
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or IOException)
+        {
+            Status = L.F("sources.open_failed", ex.Message);
+        }
+    }
+
     public void SetEnabled(string sourceId, bool enabled) => _library.SetEnabled(sourceId, enabled);
 
     partial void OnUsdbEnabledChanged(bool value) => _library.SetUsdbEnabled(value);
@@ -324,4 +336,5 @@ public sealed partial class SourceRowViewModel(SongSource source, int count, boo
 
     [RelayCommand] private Task RescanAsync() => owner.RescanAsync(source.Id);
     [RelayCommand] private void Remove() => owner.Remove(source.Id);
+    [RelayCommand] private void ShowFolder() => owner.ShowFolder(Path);
 }

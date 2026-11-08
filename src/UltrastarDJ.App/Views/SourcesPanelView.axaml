@@ -20,21 +20,25 @@
       <ItemsControl.ItemTemplate>
         <DataTemplate x:DataType="vm:SourceRowViewModel">
           <Border Classes="card" Margin="0,0,0,8">
-            <Grid ColumnDefinitions="Auto,*,Auto,Auto" RowDefinitions="Auto,Auto">
+            <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto" RowDefinitions="Auto,Auto">
               <ToggleSwitch Grid.Row="0" Grid.RowSpan="2" Grid.Column="0" IsChecked="{Binding Enabled}" OnContent="" OffContent="" VerticalAlignment="Center"
                             Margin="0,0,8,0" ToolTip.Tip="{l:T sources.off_folder_s_songs}" />
-              <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="{StaticResource Space2}" Opacity="{Binding Opacity}">
-                <TextBlock Classes="title" Text="{Binding Label}" VerticalAlignment="Center" />
-                <c:Icon Glyph="usb_off" FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushError}" VerticalAlignment="Center"
-                        IsVisible="{Binding IsMissing}" ToolTip.Tip="{l:T sources.folder_not_found_drive}" />
-              </StackPanel>
-              <Button Grid.Row="0" Grid.Column="2" Classes="sidebar" Command="{Binding RescanCommand}" ToolTip.Tip="{l:T sources.rescan}" IsEnabled="{Binding !IsMissing}">
+              <!-- A long folder name ends in "…" (full name on hover) instead of running under the buttons. -->
+              <Grid Grid.Row="0" Grid.Column="1" ColumnDefinitions="*,Auto" HorizontalAlignment="Left" Opacity="{Binding Opacity}" Margin="0,0,4,0">
+                <TextBlock Classes="title" Text="{Binding Label}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Label}" />
+                <c:Icon Grid.Column="1" Glyph="usb_off" FontSize="{StaticResource IconMd}" Foreground="{DynamicResource BrushError}" VerticalAlignment="Center"
+                        Margin="8,0,0,0" IsVisible="{Binding IsMissing}" ToolTip.Tip="{l:T sources.folder_not_found_drive}" />
+              </Grid>
+              <Button Grid.Row="0" Grid.Column="2" Classes="sidebar" Command="{Binding ShowFolderCommand}" ToolTip.Tip="{l:T sources.show_finder}" IsEnabled="{Binding !IsMissing}">
+                <c:Icon Glyph="folder_open" FontSize="{StaticResource IconMd}" />
+              </Button>
+              <Button Grid.Row="0" Grid.Column="3" Classes="sidebar" Command="{Binding RescanCommand}" ToolTip.Tip="{l:T sources.rescan}" IsEnabled="{Binding !IsMissing}">
                 <c:Icon Glyph="refresh" FontSize="{StaticResource IconMd}" />
               </Button>
-              <Button Grid.Row="0" Grid.Column="3" Classes="sidebar" Command="{Binding RemoveCommand}" ToolTip.Tip="{l:T sources.remove_source}">
+              <Button Grid.Row="0" Grid.Column="4" Classes="sidebar" Command="{Binding RemoveCommand}" ToolTip.Tip="{l:T sources.remove_source}">
                 <c:Icon Glyph="delete" FontSize="{StaticResource IconMd}" />
               </Button>
-              <Grid Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3" ColumnDefinitions="*,Auto" Opacity="{Binding Opacity}">
+              <Grid Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="4" ColumnDefinitions="*,Auto" Opacity="{Binding Opacity}">
                 <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="{Binding Path}" TextTrimming="CharacterEllipsis" />
                 <TextBlock Grid.Column="1" Classes="muted" FontSize="{StaticResource TextXs}" Text="{Binding CountText}" Margin="8,0,0,0" />
               </Grid>

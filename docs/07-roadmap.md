@@ -874,6 +874,8 @@ Acer Aspire V3-772G, built-in audio + Logitech H340 USB headset).
       "Songbook inactive"
 - [x] Shortcuts overview on Windows / Linux: spelled-out keys ("Umschalt+↑  ·  Umschalt+↓") were cut off by the fixed
       110 px key column → the column fits the widest key, alternatives stack as separate chips
+- [x] Song Sources: a local folder has a "Show in Finder" button (folder icon, before Rescan); a long folder name ends
+      in "…" (full name on hover) instead of running under the buttons
 
 ---
 
