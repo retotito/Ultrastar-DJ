@@ -175,7 +175,8 @@ so no cookie banner; the footer says so); download clicks count as events `downl
 
 ## CI (`.github/workflows/build.yml`)
 
-GitHub Actions (free for this public repository): `macos-14` (Apple Silicon), `macos-15-intel` (Intel),
+GitHub Actions (free for this public repository): `macos-15` (Apple Silicon — `macos-14` was retired in Nov. 2026; the minimum macOS 14 comes from the app's Info.plist, not
+the build machine), `macos-15-intel` (Intel),
 `windows-latest`, `ubuntu-22.04`. Each job: setup-dotnet (from `global.json`) → fetch-natives → `dotnet test` →
 publish + Velopack pack (`vpk`, pinned to the SDK's version) → upload `out/Releases/*` as an artifact. Runs by hand
 (Actions → Build → Run workflow, or `gh workflow run build.yml`; artifacts are downloadable when signed in) and on a

@@ -25,7 +25,7 @@ jobs:
       matrix:
         include:
           - rid: osx-arm64
-            runner: macos-14          # Apple Silicon
+            runner: macos-15          # Apple Silicon (macos-14 is retired; the app still needs only macOS 14, Info.plist)
           - rid: osx-x64
             runner: macos-15-intel    # Intel
     runs-on: ${{ matrix.runner }}
