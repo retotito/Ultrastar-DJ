@@ -331,6 +331,9 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
         return $"{s / 60}:{s % 60:00}";
     }
 
+    /// <summary>Asked before a blacklisted song is loaded; true = load it anyway. Set by the DJ window.</summary>
+    public Func<Song, Task<bool>>? ConfirmBlacklisted { get; set; }
+
     /// <summary>
     /// Called by the library (double-click / Load button). While a song is still loading another may come: it takes
     /// over (PlaybackService cancels the first), so a stuck load never blocks the player.
@@ -339,6 +342,12 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
     public async Task LoadAsync(Song? song)
     {
         if (song is null)
+        {
+            return;
+        }
+
+        // Every way into the Game Player comes here (library, preview, queue, requests, keys): a blacklisted song asks first.
+        if (_marks.BlacklistedIds.Contains(song.Id) && ConfirmBlacklisted is { } ask && !await ask(song))
         {
             return;
         }

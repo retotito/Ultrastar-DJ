@@ -91,6 +91,13 @@ public class SongFacetsTests
     }
 
     [Fact]
+    public void Blacklisted_AreCountedUnderTheOtherFilters()
+    {
+        SongQuery q = new() { Language = "French", BlacklistedIds = new HashSet<string> { "a::One", "b::Three" } };
+        Assert.Equal(1, SongFacets.Of(Songs, q).Blacklisted);   // only One lists French
+    }
+
+    [Fact]
     public void Duets_AreCountedUnderTheOtherFilters()
     {
         Song[] songs = [.. Songs.Select(s => s.Title is "One" or "Three" ? s with { IsDuet = true } : s)];

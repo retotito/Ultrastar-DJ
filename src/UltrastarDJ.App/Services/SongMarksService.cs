@@ -6,7 +6,7 @@ using UltrastarDJ.Core.Songs;
 namespace UltrastarDJ.App.Services;
 
 /// <summary>
-/// The DJ's marks on songs — favourite, broken (with a note) — kept in <c>settings/marks.json</c>, so a backup of the
+/// The DJ's marks on songs — favourite, broken (with a note), blacklisted — kept in <c>settings/marks.json</c>, so a backup of the
 /// settings folder carries them. Follows local songs whose folder moved (<see cref="SongMarks.Reattach"/>). UI thread.
 /// </summary>
 public sealed class SongMarksService
@@ -35,9 +35,11 @@ public sealed class SongMarksService
     public SongMark? For(Song song) => _marks.For(song);
     public IReadOnlySet<string> FavouriteIds => _marks.FavouriteIds;
     public IReadOnlySet<string> BrokenIds => _marks.BrokenIds;
+    public IReadOnlySet<string> BlacklistedIds => _marks.BlacklistedIds;
 
     public void SetFavourite(Song song, bool favourite) => Change(song, m => m with { Favourite = favourite });
     public void SetBroken(Song song, bool broken) => Change(song, m => m with { Broken = broken });
+    public void SetBlacklisted(Song song, bool blacklisted) => Change(song, m => m with { Blacklisted = blacklisted });
     public void SetNote(Song song, string? note) => Change(song, m => m with { Note = string.IsNullOrWhiteSpace(note) ? null : note.Trim() });
 
     private void Change(Song song, Func<SongMark, SongMark> change)
@@ -51,10 +53,10 @@ public sealed class SongMarksService
 
         Save();
         // Typing a note changes the mark per key: log only what the DJ switched.
-        if (before?.Favourite != after?.Favourite || before?.Broken != after?.Broken)
+        if (before?.Favourite != after?.Favourite || before?.Broken != after?.Broken || before?.Blacklisted != after?.Blacklisted)
         {
             _log.LogInformation("{Song}: {Marks}", song.Id, after is null ? "marks removed"
-                : $"{(after.Favourite ? "favourite " : "")}{(after.Broken ? "broken" : "")}".Trim());
+                : $"{(after.Favourite ? "favourite " : "")}{(after.Broken ? "broken " : "")}{(after.Blacklisted ? "blacklisted" : "")}".Trim());
         }
 
         Changed?.Invoke();

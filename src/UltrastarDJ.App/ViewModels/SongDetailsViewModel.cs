@@ -47,6 +47,7 @@ public sealed partial class SongDetailsViewModel : ViewModelBase
     // The DJ's marks (SongMarksService): saved as they change.
     [ObservableProperty] private bool _isFavourite;
     [ObservableProperty] private bool _isBroken;
+    [ObservableProperty] private bool _isBlacklisted;
     [ObservableProperty] private string _note = "";
 
     public SongDetailsViewModel(LibraryRow row, LibraryViewModel library, UsdbService usdb, ThumbnailService thumbnails,
@@ -56,6 +57,7 @@ public sealed partial class SongDetailsViewModel : ViewModelBase
         _marks = marks;
         _isFavourite = row.IsFavourite;
         _isBroken = row.IsBroken;
+        _isBlacklisted = row.IsBlacklisted;
         _note = row.Mark?.Note ?? "";
         _library = library;
         _usdb = usdb;
@@ -79,6 +81,8 @@ public sealed partial class SongDetailsViewModel : ViewModelBase
         _marks.SetBroken(Row.Song, value);
         OnPropertyChanged(nameof(ShowNote));
     }
+
+    partial void OnIsBlacklistedChanged(bool value) => _marks.SetBlacklisted(Row.Song, value);
 
     partial void OnNoteChanged(string value)
     {

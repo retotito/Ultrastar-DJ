@@ -117,10 +117,12 @@ public sealed partial class DjWindowViewModel : ViewModelBase
         };
         Updates = services.GetRequiredService<UpdateService>();
         services.GetRequiredService<IDisplayService>().SingleScreenChanged += () => OnPropertyChanged(nameof(IsSingleScreen));
+        services.GetRequiredService<SongbookService>().Changed += () => OnPropertyChanged(nameof(IsSongbookOnline));
         services.GetRequiredService<IDisplayService>().GameLayerChanged += () => OnPropertyChanged(nameof(GameLayer));
         Updates.PropertyChanged += (_, _) => OnPropertyChanged(nameof(ShowUpdate));
         nowPlaying.DuetSingersRequested += () => OpenDuetSingers(thenPlay: null);
         nowPlaying.SingersToConfirmBeforePlay += play => AskForDuetSingers(play);
+        nowPlaying.ConfirmBlacklisted = AskLoadBlacklisted;
         nowPlaying.DisplaysRequested += () =>
         {
             if (ActivePanel != SidebarPanel.Displays)
@@ -212,6 +214,9 @@ public sealed partial class DjWindowViewModel : ViewModelBase
     /// <summary>Single-screen mode during a song: the game over the whole window (null otherwise).</summary>
     public BeamerViewModel? GameLayer => _services.GetRequiredService<IDisplayService>().GameLayer;
 
+    /// <summary>The songbook server runs (guests can open it): the sidebar's songbook icon is green.</summary>
+    public bool IsSongbookOnline => _services.GetRequiredService<SongbookService>().IsRunning;
+
     /// <summary>In effect: the sidebar's displays icon is orange.</summary>
     public bool IsSingleScreen => _services.GetRequiredService<IDisplayService>().IsSingleScreen;
 
@@ -302,6 +307,33 @@ public sealed partial class DjWindowViewModel : ViewModelBase
 
     /// <summary>The "who sings which voice" popup of a loaded duet; null when closed.</summary>
     [ObservableProperty] private DuetSingersViewModel? _duetSingers;
+
+    // A blacklisted song is about to be loaded: its title while the question shows ("… is blacklisted — Load anyway?").
+    [ObservableProperty] private string? _blacklistedToLoad;
+    private TaskCompletionSource<bool>? _blacklistAnswer;
+
+    private Task<bool> AskLoadBlacklisted(Core.Songs.Song song)
+    {
+        _blacklistAnswer?.TrySetResult(false);   // an earlier question still open: that load is dropped
+        _blacklistAnswer = new TaskCompletionSource<bool>();
+        BlacklistedToLoad = song.Title;
+        return _blacklistAnswer.Task;
+    }
+
+    [RelayCommand]
+    private void LoadBlacklistedAnyway() => AnswerBlacklisted(load: true);
+
+    /// <summary>Cancel, Esc or the dimmed area: the song is not loaded.</summary>
+    [RelayCommand]
+    public void CancelBlacklisted() => AnswerBlacklisted(load: false);
+
+    private void AnswerBlacklisted(bool load)
+    {
+        BlacklistedToLoad = null;
+        TaskCompletionSource<bool>? answer = _blacklistAnswer;
+        _blacklistAnswer = null;
+        answer?.TrySetResult(load);
+    }
     private Core.Songs.Song? _askedFor;
 
     // Play waiting for the duet popup: started on OK.

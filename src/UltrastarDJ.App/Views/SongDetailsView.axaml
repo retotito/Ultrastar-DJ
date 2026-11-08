@@ -37,7 +37,7 @@
         <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center" Spacing="{StaticResource Space1}">
           <SelectableTextBlock Text="{Binding Title}" FontSize="{StaticResource Text2Xl}" FontWeight="{StaticResource WeightBold}" TextWrapping="Wrap" />
           <SelectableTextBlock Text="{Binding Artist}" Classes="muted" FontSize="{StaticResource TextLg}" TextWrapping="Wrap" />
-          <!-- Source, then the DJ's marks: favourite, broken (with a note below). -->
+          <!-- Source, then the DJ's marks: favourite, broken (with a note below), blacklisted. -->
           <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space2}" Margin="0,4,0,0">
             <Border Background="{DynamicResource BrushSecondaryContainer}" CornerRadius="{StaticResource RadiusFull}" Padding="8,2"
                     VerticalAlignment="Center" Classes.usdb="{Binding IsUsdb}">
@@ -60,6 +60,13 @@
               <StackPanel Orientation="Horizontal" Spacing="4">
                 <c:Icon Glyph="report" FontSize="{StaticResource IconSm}" Foreground="{DynamicResource BrushError}" />
                 <TextBlock Text="{l:T details.broken}" FontSize="{StaticResource TextXs}" />
+              </StackPanel>
+            </ToggleButton>
+            <ToggleButton IsChecked="{Binding IsBlacklisted}" Padding="10,2" CornerRadius="{StaticResource RadiusFull}" VerticalAlignment="Center"
+                          ToolTip.Tip="{l:T details.blacklist_tip}">
+              <StackPanel Orientation="Horizontal" Spacing="4">
+                <c:Icon Glyph="block" FontSize="{StaticResource IconSm}" Foreground="{DynamicResource BrushError}" />
+                <TextBlock Text="{l:T details.blacklist}" FontSize="{StaticResource TextXs}" />
               </StackPanel>
             </ToggleButton>
           </StackPanel>

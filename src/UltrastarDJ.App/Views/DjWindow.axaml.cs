@@ -190,6 +190,11 @@ public sealed partial class DjWindow : Window
             help.ShortcutsOpen = false;
             e.Handled = true;
         }
+        else if (e.Key == Key.Escape && DataContext is DjWindowViewModel { BlacklistedToLoad: not null } blacklisted)
+        {
+            blacklisted.CancelBlacklisted();
+            e.Handled = true;
+        }
         else if (e.Key == Key.Escape && DataContext is DjWindowViewModel { DuetSingers: not null } duet)
         {
             duet.CloseDuetSingers(ok: false);
@@ -387,6 +392,14 @@ public sealed partial class DjWindow : Window
         if (ReferenceEquals(e.Source, DuetLayer) && DataContext is DjWindowViewModel vm)
         {
             vm.CloseDuetSingers(ok: false);
+        }
+    }
+
+    private void OnBlacklistBackdropPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (ReferenceEquals(e.Source, BlacklistLayer) && DataContext is DjWindowViewModel vm)
+        {
+            vm.CancelBlacklisted();
         }
     }
 

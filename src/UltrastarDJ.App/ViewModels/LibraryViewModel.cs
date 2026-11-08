@@ -19,6 +19,8 @@ public sealed record LibraryRow(Song Song, string Source, bool IsAvailable, Load
     /// <summary>Marked broken by the DJ (bad notes / timing) — still playable, never offered on the songbook.</summary>
     public bool IsBroken => Mark?.Broken == true;
     public string? BrokenTip => IsBroken ? (Mark!.Note is { } n ? L.F("library.marked_broken_note", n) : L.T("library.marked_broken")) : null;
+    /// <summary>Blacklisted by the DJ: never offered to guests, hidden unless Layout shows it, loading asks first.</summary>
+    public bool IsBlacklisted => Mark?.Blacklisted == true;
     public string FavouriteMenuText => IsFavourite ? L.T("library.remove_favourite") : L.T("library.favourite_menu");
     public string BrokenMenuText => IsBroken ? L.T("library.not_broken") : L.T("library.mark_broken");
     /// <summary>The last load failed for a reason of the song's own (<see cref="LoadFailureService"/>).</summary>
@@ -49,13 +51,13 @@ public sealed record LibraryRow(Song Song, string Source, bool IsAvailable, Load
 }
 
 /// <summary>An entry of the rating filter: exactly <see cref="Stars"/> stars, the DJ's favourites or broken songs, or no filter.</summary>
-public sealed record RatingOption(int? Stars, string Label, bool Favourites = false, bool Broken = false, bool Duets = false)
+public sealed record RatingOption(int? Stars, string Label, bool Favourites = false, bool Broken = false, bool Duets = false, bool Blacklisted = false)
 {
     /// <summary>Stars stay stars; the named entries ("Rating", "Favourites", …) are language-file keys.</summary>
     public string Text => Stars is null ? L.T(Label) : Label;
 
     /// <summary>The coloured icon of a special entry (favourites, duets, broken) — emoji could not take a colour.</summary>
-    public string? Glyph => Favourites ? "favorite" : Duets ? "group" : Broken ? "report" : null;
+    public string? Glyph => Favourites ? "favorite" : Duets ? "group" : Broken ? "report" : Blacklisted ? "block" : null;
     public string GlyphBrushKey => Favourites ? "BrushFavourite" : Duets ? "BrushDuet" : "BrushError";
     public bool HasGlyph => Glyph is not null;
 
@@ -94,6 +96,7 @@ public sealed partial class LibraryViewModel : ViewModelBase
     private readonly SongMarksService _marks;
     private readonly AppSettingsService _settings;
     private bool _showBroken;
+    private bool _showBlacklisted;
     private readonly PreviewViewModel _preview;
     private readonly QueueViewModel _queue;
     private readonly NowPlayingViewModel _nowPlaying;
@@ -124,9 +127,10 @@ public sealed partial class LibraryViewModel : ViewModelBase
         _settings = settings;
         failures.Changed += () => Dispatcher.UIThread.Post(Refresh);
         marks.Changed += Refresh;
-        // Layout → Show broken songs (the other app settings do not touch the rows; Refresh is cheap enough anyway).
+        // Layout → Show broken / blacklisted songs (the other app settings do not touch the rows).
         settings.Changed += OnSettingsChanged;
         _showBroken = settings.ShowBrokenSongs;
+        _showBlacklisted = settings.ShowBlacklistedSongs;
         Table = new LibraryTableLayout(settings);
         _library = library;
         _preview = preview;
@@ -172,7 +176,7 @@ public sealed partial class LibraryViewModel : ViewModelBase
     public ObservableCollection<string> Languages { get; } = [AnyLanguage];
     public ObservableCollection<string> Genres { get; } = [AnyGenre];
     /// <summary>A search or any of rating/language/genre/source set: Clear is active (it clears them all).</summary>
-    public bool HasActiveFilters => Search.Length > 0 || Rating?.Stars is not null || Rating?.Favourites == true || Rating?.Broken == true || Rating?.Duets == true || Language != AnyLanguage || Genre != AnyGenre
+    public bool HasActiveFilters => Search.Length > 0 || Rating?.Stars is not null || Rating?.Favourites == true || Rating?.Broken == true || Rating?.Blacklisted == true || Rating?.Duets == true || Language != AnyLanguage || Genre != AnyGenre
         || Source?.Key is not (null or SourceOption.AllKey);
 
     [RelayCommand]
@@ -190,20 +194,24 @@ public sealed partial class LibraryViewModel : ViewModelBase
 
     private static readonly RatingOption[] BaseRatings = [AnyRating, new(null, "library.filter_favourites", Favourites: true), new(null, "library.filter_duets", Duets: true), new(1, "★"), new(2, "★★"), new(3, "★★★"), new(4, "★★★★")];
     private static readonly RatingOption BrokenRating = new(null, "library.filter_broken", Broken: true);
+    private static readonly RatingOption BlacklistedRating = new(null, "library.filter_blacklisted", Blacklisted: true);
 
-    /// <summary>"Broken" only while broken songs are shown (Layout): hidden songs cannot be filtered on.</summary>
-    public IReadOnlyList<RatingOption> Ratings => _showBroken ? [.. BaseRatings, BrokenRating] : BaseRatings;
+    /// <summary>"Broken" / "Blacklisted" only while those songs are shown (Layout): hidden songs cannot be filtered on.</summary>
+    public IReadOnlyList<RatingOption> Ratings =>
+        [.. BaseRatings, .. _showBroken ? [BrokenRating] : Array.Empty<RatingOption>(), .. _showBlacklisted ? [BlacklistedRating] : Array.Empty<RatingOption>()];
 
     private void OnSettingsChanged()
     {
-        if (_showBroken == _settings.ShowBrokenSongs)
+        if (_showBroken == _settings.ShowBrokenSongs && _showBlacklisted == _settings.ShowBlacklistedSongs)
         {
             return;
         }
 
-        // Swapping the list makes the ComboBox drop its selection: keep it, unless it was "Broken" and that is gone.
+        // Swapping the list makes the ComboBox drop its selection: keep it, unless its entry is gone.
         _showBroken = _settings.ShowBrokenSongs;
-        RatingOption keep = Rating is { Broken: true } && !_showBroken ? AnyRating : Rating ?? AnyRating;
+        _showBlacklisted = _settings.ShowBlacklistedSongs;
+        RatingOption keep = (Rating is { Broken: true } && !_showBroken) || (Rating is { Blacklisted: true } && !_showBlacklisted)
+            ? AnyRating : Rating ?? AnyRating;
         OnPropertyChanged(nameof(Ratings));
         Rating = keep;
         OnPropertyChanged(nameof(Rating));
@@ -280,6 +288,15 @@ public sealed partial class LibraryViewModel : ViewModelBase
         }
     }
 
+    // Layout → Show broken / blacklisted songs off: those marks leave the list, its filters and counts.
+    private IReadOnlySet<string>? HiddenIds() => (_showBroken, _showBlacklisted) switch
+    {
+        (true, true) => null,
+        (false, true) => _marks.BrokenIds,
+        (true, false) => _marks.BlacklistedIds,
+        _ => new HashSet<string>([.. _marks.BrokenIds, .. _marks.BlacklistedIds]),
+    };
+
     [RelayCommand]
     private void ToggleBroken(LibraryRow? row)
     {
@@ -350,7 +367,9 @@ public sealed partial class LibraryViewModel : ViewModelBase
             BrokenOnly = Rating?.Broken == true,
             DuetsOnly = Rating?.Duets == true,
             BrokenIds = _marks.BrokenIds,
-            Hidden = _showBroken ? null : _marks.BrokenIds,
+            BlacklistedOnly = Rating?.Blacklisted == true,
+            BlacklistedIds = _marks.BlacklistedIds,
+            Hidden = HiddenIds(),
             SourceIds = SelectedSourceIds(),
             SortBy = Sort,
             Descending = Descending,

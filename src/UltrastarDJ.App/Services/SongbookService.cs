@@ -345,7 +345,7 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
     private int _libraryVersion = 1;
     private readonly SongMarksService _marks;
     private readonly LoadFailureService _failures;
-    // Broken (DJ's mark) or not loadable: never offered to guests. Swapped whole on the UI thread, read by the server.
+    // Broken or blacklisted (DJ's marks) or not loadable: never offered to guests, requests for them refused. Swapped whole on the UI thread, read by the server.
     private volatile IReadOnlySet<string> _notOffered = new HashSet<string>();
 
     public int LibraryVersion => Volatile.Read(ref _libraryVersion);
@@ -355,13 +355,13 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
 
     /// <summary>
     /// Only what can be played now — no songs from unplugged drives, no USDB while offline — and plays well: no songs
-    /// marked broken or that could not be loaded.
+    /// marked broken or blacklisted, or that could not be loaded.
     /// </summary>
     public SongbookCatalog Catalog() => SongbookCatalog.Build(_library.Songs.Where(s => _library.IsAvailable(s.SourceId)), _notOffered);
 
     private void UpdateNotOffered()
     {
-        HashSet<string> ids = [.. _marks.BrokenIds, .. _failures.SongIds];
+        HashSet<string> ids = [.. _marks.BrokenIds, .. _marks.BlacklistedIds, .. _failures.SongIds];
         if (!ids.SetEquals(_notOffered))
         {
             _notOffered = ids;

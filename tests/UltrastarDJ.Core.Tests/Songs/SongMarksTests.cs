@@ -22,6 +22,21 @@ public class SongMarksTests
     }
 
     [Fact]
+    public void Set_Blacklisted_IsKeptAndListed()
+    {
+        SongMarks marks = new([]);
+        Song song = Usdb(7);
+        marks.Set(song, m => m with { Blacklisted = true });
+
+        Assert.True(marks.For(song)?.Blacklisted);
+        Assert.Contains(song.Id, marks.BlacklistedIds);
+
+        marks.Set(song, m => m with { Blacklisted = false });
+        Assert.Null(marks.For(song));   // nothing left worth keeping
+        Assert.Empty(marks.BlacklistedIds);
+    }
+
+    [Fact]
     public void Set_BrokenWithNote_KeepsTheNote()
     {
         SongMarks marks = new([]);

@@ -2,12 +2,14 @@ namespace UltrastarDJ.Core.Songs;
 
 /// <summary>
 /// What the DJ marked on a song. <see cref="Artist"/> / <see cref="Title"/> are kept so a local song's mark finds it
-/// again after its folder moved (a local song's id contains its path).
+/// again after its folder moved (a local song's id contains its path). <see cref="Blacklisted"/>: never offered to
+/// guests, hidden from the DJ's library unless shown, and loading it asks first.
 /// </summary>
-public sealed record SongMark(string SongId, string Artist, string Title, bool Favourite = false, bool Broken = false, string? Note = null)
+public sealed record SongMark(string SongId, string Artist, string Title, bool Favourite = false, bool Broken = false, string? Note = null,
+    bool Blacklisted = false)
 {
     /// <summary>Nothing left worth keeping.</summary>
-    public bool IsEmpty => !Favourite && !Broken && string.IsNullOrWhiteSpace(Note);
+    public bool IsEmpty => !Favourite && !Broken && !Blacklisted && string.IsNullOrWhiteSpace(Note);
 }
 
 /// <summary>All marks, by song id. Not thread-safe: the app uses it on the UI thread.</summary>
@@ -24,6 +26,7 @@ public sealed class SongMarks
     public IReadOnlyCollection<SongMark> All => _byId.Values;
     public IReadOnlySet<string> FavouriteIds { get; private set; } = new HashSet<string>();
     public IReadOnlySet<string> BrokenIds { get; private set; } = new HashSet<string>();
+    public IReadOnlySet<string> BlacklistedIds { get; private set; } = new HashSet<string>();
 
     public SongMark? For(Song song) => _byId.GetValueOrDefault(song.Id);
 
@@ -91,5 +94,6 @@ public sealed class SongMarks
     {
         FavouriteIds = _byId.Values.Where(m => m.Favourite).Select(m => m.SongId).ToHashSet();
         BrokenIds = _byId.Values.Where(m => m.Broken).Select(m => m.SongId).ToHashSet();
+        BlacklistedIds = _byId.Values.Where(m => m.Blacklisted).Select(m => m.SongId).ToHashSet();
     }
 }

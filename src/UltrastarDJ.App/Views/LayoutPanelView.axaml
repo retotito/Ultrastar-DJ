@@ -40,5 +40,16 @@
         <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowBrokenSongs}" OnContent="" OffContent="" VerticalAlignment="Center" />
       </Grid>
     </Border>
+
+    <Border Classes="card" ToolTip.Tip="{l:T layout.show_blacklisted_tip}">
+      <Grid ColumnDefinitions="*,Auto">
+        <StackPanel Margin="0,0,12,0">
+          <TextBlock Text="{l:T layout.show_blacklisted_songs}" />
+          <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap"
+                     Text="{l:T layout.songs_you_blacklisted}" />
+        </StackPanel>
+        <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowBlacklistedSongs}" OnContent="" OffContent="" VerticalAlignment="Center" />
+      </Grid>
+    </Border>
   </StackPanel>
 </UserControl>

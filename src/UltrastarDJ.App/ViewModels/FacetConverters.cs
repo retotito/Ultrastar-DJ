@@ -70,7 +70,7 @@ public static class FacetConverters
         {
             ("language", string s) => s == LibraryViewModel.AnyLanguage ? f.LanguageTotal : f.Languages.GetValueOrDefault(s),
             ("genre", string s) => s == LibraryViewModel.AnyGenre ? f.GenreTotal : f.Genres.GetValueOrDefault(s),
-            ("rating", RatingOption r) => r.Favourites ? f.Favourites : r.Broken ? f.Broken : r.Duets ? f.Duets : r.Stars is { } n ? f.Stars.GetValueOrDefault(n) : f.StarsTotal,
+            ("rating", RatingOption r) => r.Favourites ? f.Favourites : r.Broken ? f.Broken : r.Blacklisted ? f.Blacklisted : r.Duets ? f.Duets : r.Stars is { } n ? f.Stars.GetValueOrDefault(n) : f.StarsTotal,
             ("source", SourceOption o) => o.Key switch
             {
                 SourceOption.AllKey => f.SourcesTotal,

@@ -52,6 +52,10 @@ public sealed class AppSettingsService
     public bool ShowBrokenSongs => _doc.ShowBrokenSongs;
     public void SetShowBrokenSongs(bool show) => Update(_doc with { ShowBrokenSongs = show });
 
+    /// <summary>Layout → Show blacklisted songs (on by default): off leaves blacklisted songs out of the library.</summary>
+    public bool ShowBlacklistedSongs => !_doc.HideBlacklistedSongs;
+    public void SetShowBlacklistedSongs(bool show) => Update(_doc with { HideBlacklistedSongs = !show });
+
     /// <summary>Where the DJ window was when the app last closed (null: first start → centred).</summary>
     public WindowPlacement? DjWindowPlacement => _doc.DjWindow;
     public void SetDjWindowPlacement(WindowPlacement placement) => Update(_doc with { DjWindow = placement });
@@ -113,6 +117,8 @@ public sealed class AppSettingsService
         /// <summary>Null = <see cref="LibraryColumns.DefaultVisible"/> (files written before the Layout panel).</summary>
         public IReadOnlyList<LibraryColumn>? VisibleColumns { get; init; }
         public bool ShowBrokenSongs { get; init; }
+        /// <summary>Stored inverted, like <see cref="HideGridLines"/>: settings files without it show them.</summary>
+        public bool HideBlacklistedSongs { get; init; }
         public WindowPlacement? DjWindow { get; init; }
         public string? Language { get; init; }
 

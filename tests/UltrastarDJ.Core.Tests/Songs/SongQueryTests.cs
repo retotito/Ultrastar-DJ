@@ -141,6 +141,13 @@ public class SongQueryTests
     }
 
     [Fact]
+    public void Apply_BlacklistedOnly_KeepsTheBlacklistedSongs()
+    {
+        SongQuery q = new() { BlacklistedOnly = true, BlacklistedIds = new HashSet<string> { "b::Lovefool" } };
+        Assert.Equal(["Lovefool"], Titles(q));
+    }
+
+    [Fact]
     public void Apply_DuetsOnly_KeepsTheDuets()
     {
         Song[] songs = [S("Roxanne", "The Police", "a"), S("Shallow [DUET]", "Cooper & Gaga", "usdb") with { IsDuet = true }];

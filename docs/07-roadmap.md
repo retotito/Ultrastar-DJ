@@ -865,6 +865,13 @@ Acer Aspire V3-772G, built-in audio + Logitech H340 USB headset).
       shorten it → it plays to `#END` or the end of the media, like UltraStar Deluxe; 4 s after the last note only when
       neither is known
 - [x] Verified live
+- [x] Blacklist (GitHub issue #3, a request from a karaoke host): Details toggle; never offered on the songbook,
+      requests refused; hidden in the library when Layout → Show blacklisted songs is off (on by default; shown: a red block
+      icon before the title and "Blacklisted" in the rating filter); loading one asks "… is blacklisted — Cancel / Load
+      anyway"; texts in all 13 languages (tested: mark, filter, count)
+- [x] Blacklist verified live
+- [x] Songbook sidebar icon green while the songbook runs (guests can open it); its tooltip says "Songbook active" /
+      "Songbook inactive"
 
 ---
 

@@ -47,6 +47,10 @@
         <Style Selector="Button.sidebar c|Icon.single">
           <Setter Property="Foreground" Value="{DynamicResource BrushSingleScreen}" />
         </Style>
+        <!-- Songbook while its server runs: guests can open it (the Start button's green). -->
+        <Style Selector="Button.sidebar c|Icon.online">
+          <Setter Property="Foreground" Value="{DynamicResource BrushGo}" />
+        </Style>
       </Border.Styles>
       <Panel>
       <Border Margin="{StaticResource SidebarBodyMargin}"
@@ -108,8 +112,8 @@
           </Button>
           <Button Classes="sidebar" Classes.active="{Binding ActivePanel, Converter={x:Static vm:SidebarPanelConverters.Is}, ConverterParameter=Songbook}"
                   Command="{Binding TogglePanelCommand}" CommandParameter="{x:Static vm:SidebarPanel.Songbook}"
-                  ToolTip.Tip="{l:TK window.songbook_guests_phone, Keys=6}">
-            <c:Icon Glyph="phone_iphone" />
+                  ToolTip.Tip="{l:Pick IsSongbookOnline, True=window.songbook_active, False=window.songbook_inactive}">
+            <c:Icon Glyph="phone_iphone" Classes.online="{Binding IsSongbookOnline}" />
           </Button>
         </StackPanel>
       </DockPanel>
@@ -231,6 +235,23 @@
 
   <!-- A duet was loaded: who sings voice 1 and who voice 2 (DuetSingersViewModel). A press on the dimmed area or
        Esc keeps the current pick. -->
+  <!-- Loading a blacklisted song asks first (NowPlayingViewModel.ConfirmBlacklisted). Esc or the dimmed area cancels. -->
+  <Border x:Name="BlacklistLayer" Background="#99000000" IsVisible="{Binding BlacklistedToLoad, Converter={x:Static ObjectConverters.IsNotNull}}"
+          PointerPressed="OnBlacklistBackdropPressed">
+    <Border Classes="card floating" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="{StaticResource Pad6}" MinWidth="420" MaxWidth="520">
+      <StackPanel Spacing="{StaticResource Space4}">
+        <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space2}">
+          <c:Icon Glyph="block" Foreground="{DynamicResource BrushError}" />
+          <TextBlock Classes="title" Text="{l:Format BlacklistedToLoad, window.blacklisted_title}" TextWrapping="Wrap" MaxWidth="440" VerticalAlignment="Center" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="{StaticResource Space2}">
+          <Button Classes="text" Content="{l:T window.cancel}" Command="{Binding CancelBlacklistedCommand}" />
+          <Button Classes="tonal" Content="{l:T window.load_anyway}" Command="{Binding LoadBlacklistedAnywayCommand}" />
+        </StackPanel>
+      </StackPanel>
+    </Border>
+  </Border>
+
   <!-- First start: which language? Picking one switches the app at once (the window behind follows); OK keeps it. -->
   <Border Background="#99000000" IsVisible="{Binding ChooseLanguage}" ZIndex="10">
     <!-- The list scrolls when the window is low (small laptop screens), so OK always stays visible. -->

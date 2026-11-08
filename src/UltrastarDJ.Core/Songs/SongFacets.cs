@@ -16,7 +16,8 @@ public sealed record SongFacets(
     int SourcesTotal,
     int Favourites = 0,
     int Broken = 0,
-    int Duets = 0)
+    int Duets = 0,
+    int Blacklisted = 0)
 {
     public static SongFacets Of(IEnumerable<Song> songs, SongQuery query)
     {
@@ -24,7 +25,7 @@ public sealed record SongFacets(
         Dictionary<string, int> genres = new(StringComparer.OrdinalIgnoreCase);
         Dictionary<int, int> stars = [];
         Dictionary<string, int> sources = new(StringComparer.Ordinal);
-        int languageTotal = 0, genreTotal = 0, starsTotal = 0, sourcesTotal = 0, favourites = 0, broken = 0, duets = 0;
+        int languageTotal = 0, genreTotal = 0, starsTotal = 0, sourcesTotal = 0, favourites = 0, broken = 0, duets = 0, blacklisted = 0;
         HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
 
         foreach (Song s in songs)
@@ -65,6 +66,11 @@ public sealed record SongFacets(
                     broken++;
                 }
 
+                if (query.BlacklistedIds.Contains(s.Id))
+                {
+                    blacklisted++;
+                }
+
                 if (s.IsDuet)
                 {
                     duets++;
@@ -78,7 +84,7 @@ public sealed record SongFacets(
             }
         }
 
-        return new SongFacets(languages, languageTotal, genres, genreTotal, stars, starsTotal, sources, sourcesTotal, favourites, broken, duets);
+        return new SongFacets(languages, languageTotal, genres, genreTotal, stars, starsTotal, sources, sourcesTotal, favourites, broken, duets, blacklisted);
     }
 
     // A song listing "English, english" counts once for English.
