@@ -311,6 +311,17 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
         RefreshRequests();
     }
 
+    /// <summary>
+    /// The request went straight into the Game Player (not the queue): accepted only now that it is loaded, so a load
+    /// that failed or was cancelled leaves it waiting — the guest's phone goes from "waiting" to "you're up".
+    /// </summary>
+    public void AcceptLoaded(SongRequest request)
+    {
+        _requests.Accept(request.Id);
+        _requests.Observe(LoadedId);
+        RefreshRequests();
+    }
+
     /// <summary>The guest who asked for a queued or on-stage song — the queue shows it so the DJ can call them up.</summary>
     public string? RequesterOf(string songId) => _requests.RequesterOf(songId, QueueIds(), _playlist.ActiveIndex, LoadedId);
 

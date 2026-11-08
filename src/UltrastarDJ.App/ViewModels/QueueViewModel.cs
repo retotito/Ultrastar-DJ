@@ -24,6 +24,7 @@ public sealed partial class QueueViewModel : ViewModelBase
         _nowPlaying.LoadAvailabilityChanged += () =>
         {
             LoadNextCommand.NotifyCanExecuteChanged();
+            LoadRequestCommand.NotifyCanExecuteChanged();
             foreach (QueueRowViewModel row in Items)
             {
                 row.LoadCommand.NotifyCanExecuteChanged();
@@ -53,6 +54,24 @@ public sealed partial class QueueViewModel : ViewModelBase
 
     [RelayCommand] private void AcceptRequest(SongRequest? r) { if (r is not null) { _songbook.Accept(r); } }
     [RelayCommand] private void DismissRequest(SongRequest? r) { if (r is not null) { _songbook.Dismiss(r); } }
+
+    /// <summary>A request straight into the Game Player, past the queue; accepted once it really loaded.</summary>
+    [RelayCommand(CanExecute = nameof(CanLoadRequest), AllowConcurrentExecutions = true)]
+    private async Task LoadRequestAsync(SongRequest? r)
+    {
+        if (r is null)
+        {
+            return;
+        }
+
+        await _nowPlaying.LoadCommand.ExecuteAsync(r.Song);
+        if (_nowPlaying.LoadedSongId == r.Song.Id)
+        {
+            _songbook.AcceptLoaded(r);
+        }
+    }
+
+    private bool CanLoadRequest(SongRequest? r) => _nowPlaying.CanLoadSong;
 
     private void Refresh()
     {

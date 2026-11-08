@@ -113,5 +113,19 @@ public class GuestRequestsTests
         Assert.Null(g.RequesterOf("song1", queue, 0, "fromLibrary"));
     }
 
+    [Fact]
+    public void LoadedStraightIntoThePlayer_OnStageThenSung_WithoutTheQueue()
+    {
+        // The DJ loads a request directly (not via the queue): accepted once it is loaded.
+        GuestRequests g = new();
+        GuestRequest r = g.Add("song1", "Reto", "phoneA", Now, [], -1, Loaded([], -1)).Request!;
+        g.Accept(r.Id);
+        g.Observe("song1");
+
+        Assert.Equal(GuestRequestStatus.OnStage, GuestRequests.StatusOf(r, [], -1, "song1", out _));
+        Assert.Equal("Reto", g.RequesterOf("song1", [], -1, "song1"));
+        Assert.Equal(GuestRequestStatus.Sung, GuestRequests.StatusOf(r, [], -1, "next", out _));
+    }
+
     private static string? Loaded(IReadOnlyList<string> queue, int active) => active >= 0 && active < queue.Count ? queue[active] : null;
 }

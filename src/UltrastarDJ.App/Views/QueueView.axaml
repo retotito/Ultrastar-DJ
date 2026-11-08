@@ -16,7 +16,7 @@
           <ItemsControl ItemsSource="{Binding Requests}" Margin="4,0,4,4">
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="svc:SongRequest">
-              <Grid ColumnDefinitions="*,Auto,Auto" Margin="8,4">
+              <Grid ColumnDefinitions="*,Auto,Auto,Auto" Margin="8,4">
                 <StackPanel VerticalAlignment="Center">
                   <TextBlock Text="{Binding Song.Title}" TextTrimming="CharacterEllipsis" />
                   <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextTrimming="CharacterEllipsis">
@@ -27,7 +27,11 @@
                         Command="{Binding $parent[UserControl].((vm:QueueViewModel)DataContext).AcceptRequestCommand}" CommandParameter="{Binding}">
                   <c:Icon Glyph="playlist_add" FontSize="{StaticResource IconSm}" />
                 </Button>
-                <Button Grid.Column="2" Classes="sidebar" Width="26" Height="26" ToolTip.Tip="{l:T queue.dismiss}"
+                <Button Grid.Column="2" Classes="sidebar" Width="26" Height="26" ToolTip.Tip="{l:T game_player.load_tip}"
+                        Command="{Binding $parent[UserControl].((vm:QueueViewModel)DataContext).LoadRequestCommand}" CommandParameter="{Binding}">
+                  <c:Icon Glyph="play_circle" FontSize="{StaticResource IconSm}" />
+                </Button>
+                <Button Grid.Column="3" Classes="sidebar" Width="26" Height="26" ToolTip.Tip="{l:T queue.dismiss}"
                         Command="{Binding $parent[UserControl].((vm:QueueViewModel)DataContext).DismissRequestCommand}" CommandParameter="{Binding}">
                   <c:Icon Glyph="close" FontSize="{StaticResource IconSm}" />
                 </Button>

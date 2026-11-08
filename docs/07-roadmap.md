@@ -876,6 +876,8 @@ Acer Aspire V3-772G, built-in audio + Logitech H340 USB headset).
       110 px key column → the column fits the widest key, alternatives stack as separate chips
 - [x] Song Sources: a local folder has a "Show in Finder" button (folder icon, before Rescan); a long folder name ends
       in "…" (full name on hover) instead of running under the buttons
+- [x] Requests: "Load into the Game Player" next to "Add to queue" — straight past the queue; accepted once loaded, so
+      the guest's phone goes from "waiting" to "you're up" (a failed / cancelled load leaves it waiting) (tested)
 
 ---
 
