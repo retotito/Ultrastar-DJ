@@ -345,14 +345,29 @@
               <DataTemplate x:DataType="vm:ShortcutGroup">
                 <StackPanel Width="300" Margin="0,0,24,16" Spacing="6">
                   <TextBlock Classes="label" Text="{Binding Title}" />
-                  <ItemsControl ItemsSource="{Binding Rows}">
+                  <!-- The key column is as wide as the group's widest key (Windows / Linux spell keys out — "Umschalt+↑"),
+                       so nothing is cut; alternatives stack, one key chip each. -->
+                  <ItemsControl ItemsSource="{Binding Rows}" Grid.IsSharedSizeScope="True">
                     <ItemsControl.ItemTemplate>
                       <DataTemplate x:DataType="vm:ShortcutRow">
-                        <Grid ColumnDefinitions="110,*" Margin="0,2">
-                          <Border Background="{DynamicResource BrushSurfaceContainerHighest}" CornerRadius="{StaticResource RadiusSm}"
-                                  Padding="6,1" HorizontalAlignment="Left" VerticalAlignment="Top">
-                            <TextBlock Text="{Binding Keys}" FontSize="{StaticResource TextSm}" FontWeight="{StaticResource WeightSemibold}" />
-                          </Border>
+                        <Grid Margin="0,2">
+                          <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" MinWidth="110" SharedSizeGroup="Keys" />
+                            <ColumnDefinition Width="*" />
+                          </Grid.ColumnDefinitions>
+                          <ItemsControl ItemsSource="{Binding Keys}" VerticalAlignment="Top">
+                            <ItemsControl.ItemsPanel>
+                              <ItemsPanelTemplate><StackPanel Spacing="3" /></ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                              <DataTemplate x:DataType="x:String">
+                                <Border Background="{DynamicResource BrushSurfaceContainerHighest}" CornerRadius="{StaticResource RadiusSm}"
+                                        Padding="6,1" HorizontalAlignment="Left">
+                                  <TextBlock Text="{Binding}" FontSize="{StaticResource TextSm}" FontWeight="{StaticResource WeightSemibold}" />
+                                </Border>
+                              </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                          </ItemsControl>
                           <TextBlock Grid.Column="1" Text="{Binding Text}" FontSize="{StaticResource TextSm}" TextWrapping="Wrap" Margin="8,1,0,0" />
                         </Grid>
                       </DataTemplate>

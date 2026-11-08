@@ -2,7 +2,8 @@ using UltrastarDJ.App.Localization;
 
 namespace UltrastarDJ.App.ViewModels;
 
-public sealed record ShortcutRow(string Keys, string Text);
+/// <summary>One action; <see cref="Keys"/> holds each way to do it ("Cmd+P  ·  Cmd+E" → two), shown one below the other.</summary>
+public sealed record ShortcutRow(IReadOnlyList<string> Keys, string Text);
 
 public sealed record ShortcutGroup(string Title, IReadOnlyList<ShortcutRow> Rows);
 
@@ -53,5 +54,6 @@ public static class ShortcutList
     ];
 
     private static ShortcutGroup Group(string title, params (string Keys, string Text)[] rows)
-        => new(L.T(title), [.. rows.Select(r => new ShortcutRow(Shortcuts.Show(r.Keys), L.T(r.Text)))]);
+        => new(L.T(title), [.. rows.Select(r => new ShortcutRow(
+            [.. r.Keys.Split('·', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).Select(Shortcuts.Show)], L.T(r.Text)))]);
 }

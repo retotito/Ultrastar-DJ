@@ -872,6 +872,8 @@ Acer Aspire V3-772G, built-in audio + Logitech H340 USB headset).
 - [x] Blacklist verified live
 - [x] Songbook sidebar icon green while the songbook runs (guests can open it); its tooltip says "Songbook active" /
       "Songbook inactive"
+- [x] Shortcuts overview on Windows / Linux: spelled-out keys ("Umschalt+↑  ·  Umschalt+↓") were cut off by the fixed
+      110 px key column → the column fits the widest key, alternatives stack as separate chips
 
 ---
 
