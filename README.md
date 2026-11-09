@@ -10,6 +10,7 @@ A karaoke DJ booth on your laptop — free for Mac, Windows and Linux.</p>
 <p align="center">
   <a href="https://retotito.github.io/Ultrastar-DJ/"><b>Website</b></a> ·
   <a href="https://retotito.github.io/Ultrastar-DJ/#download"><b>Download</b></a> ·
+  <a href="https://github.com/retotito/Ultrastar-DJ/releases">What's new</a> ·
   <a href="https://github.com/retotito/Ultrastar-DJ/issues/new/choose">Report a problem or idea</a>
 </p>
 
@@ -48,7 +49,8 @@ More pictures and a setup guide: **[retotito.github.io/Ultrastar-DJ](https://ret
 | Windows 10 / 11 | `UltrastarDJ-win-Setup.exe` |
 | Linux x64 | `UltrastarDJ.AppImage` (needs `libmpv2`, on older systems `libmpv1`) |
 
-All files are on the [releases page](https://github.com/retotito/Ultrastar-DJ/releases). The app is not signed by
+All files are on the [releases page](https://github.com/retotito/Ultrastar-DJ/releases), where each version also lists
+**what's new** (the changelog). The app is not signed by
 Apple or Microsoft, so the first start needs one extra click — the
 [website](https://retotito.github.io/Ultrastar-DJ/#download) and each release explain how.
 
