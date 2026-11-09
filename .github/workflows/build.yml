@@ -53,6 +53,7 @@ jobs:
           name: Ultrastar-DJ-${{ matrix.rid }}
           path: out/Releases/*
           if-no-files-found: error
+          retention-days: 7   # the release keeps its own copies; these only feed the release job
 
   windows:
     runs-on: windows-latest
@@ -86,6 +87,7 @@ jobs:
           name: Ultrastar-DJ-win-x64
           path: out/Releases/*
           if-no-files-found: error
+          retention-days: 7   # the release keeps its own copies; these only feed the release job
 
   linux:
     # 22.04: an AppImage runs on systems as new as or newer than the one it was built on (Ubuntu 22.04,
@@ -115,6 +117,7 @@ jobs:
           name: Ultrastar-DJ-linux-x64
           path: out/Releases/*
           if-no-files-found: error
+          retention-days: 7   # the release keeps its own copies; these only feed the release job
 
   release:
     # Only for a v* tag, after every system built: one GitHub Release with all packages.

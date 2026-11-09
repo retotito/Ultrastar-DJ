@@ -179,7 +179,7 @@ GitHub Actions (free for this public repository): `macos-15` (Apple Silicon — 
 the build machine), `macos-15-intel` (Intel),
 `windows-latest`, `ubuntu-22.04`. Each job: setup-dotnet (from `global.json`) → fetch-natives → `dotnet test` →
 publish + Velopack pack (`vpk`, pinned to the SDK's version) → upload `out/Releases/*` as an artifact. Runs by hand
-(Actions → Build → Run workflow, or `gh workflow run build.yml`; artifacts are downloadable when signed in) and on a
+(Actions → Build → Run workflow, or `gh workflow run build.yml`; artifacts are downloadable when signed in, and kept 7 days — the release has its own copies) and on a
 `v*` tag, which also publishes the Release (above). `VelopackApp.Build().Run()` is the first line of `Main`
 (install / update hooks).
 
