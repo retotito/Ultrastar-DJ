@@ -59,7 +59,10 @@ Releases are built by GitHub Actions, not on a machine.
    git push origin v0.9.0-beta.2
    ```
 3. Watch the build: `gh run list --workflow build.yml --limit 3` (or the Actions tab on GitHub).
-4. Then update the version and the download links in `website/index.html`, commit, `git push`.
+4. Add a "What's new" list to the release text (GitHub → Releases → the version → Edit, or
+   `gh release edit v0.9.0-beta.2 --notes-file notes.md`) — what users notice, in plain words.
+5. Test the update: open the installed app on each machine; it offers the new version after a few seconds.
+6. Then update the version and the download links in `website/index.html`, commit, `git push`.
 
 Download counts per file: `gh api repos/retotito/Ultrastar-DJ/releases --jq '.[0].assets[] | "\(.name) \(.download_count)"'`
 
