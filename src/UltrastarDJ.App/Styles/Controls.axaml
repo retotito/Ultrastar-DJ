@@ -322,6 +322,11 @@
     <Setter Property="BorderBrush" Value="{DynamicResource BrushOutlineVariant}" />
     <Setter Property="BorderThickness" Value="1" />
   </Style>
+  <!-- Settings' YouTube cards (yt-dlp, login): a slight red background and border. -->
+  <Style Selector="Border.card.youtube">
+    <Setter Property="Background" Value="{DynamicResource BrushYouTubeContainer}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BrushYouTubeOutline}" />
+  </Style>
   <!-- One look for everything that floats above the layout: sidebar popovers and the Now Playing card.
        No shadow spread: Avalonia draws a spread shadow with square corners. -->
   <Style Selector="Border.popover, Border.card.floating">

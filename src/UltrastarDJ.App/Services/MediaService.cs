@@ -9,7 +9,9 @@ public sealed class MediaService : IAsyncDisposable
 {
     private readonly MpvPlayerFactory _factory;
 
-    public MediaService(SidecarLocator sidecars, ILoggerFactory loggers)
+    private readonly AppSettingsService _settings;
+
+    public MediaService(SidecarLocator sidecars, AppSettingsService settings, ILoggerFactory loggers)
     {
         ILogger log = loggers.CreateLogger<MediaService>();
         string? ytdlp = sidecars.YtDlp;
@@ -22,7 +24,10 @@ public sealed class MediaService : IAsyncDisposable
             log.LogInformation("yt-dlp: {Path}", ytdlp);
         }
 
-        _factory = new MpvPlayerFactory(new MpvOptions(ytdlp), loggers);
+        _settings = settings;
+        _factory = new MpvPlayerFactory(new MpvOptions(ytdlp, LoginBrowser(settings)), loggers);
+        // Settings → YouTube login: every song loaded from now on uses it, no restart needed.
+        settings.Changed += RefreshYouTubeLogin;
         Game = new MediaChannel(MediaChannelKind.Game, _factory, loggers);
         Preview = new MediaChannel(MediaChannelKind.Preview, _factory, loggers);
     }
@@ -35,6 +40,12 @@ public sealed class MediaService : IAsyncDisposable
 
     /// <summary>After a yt-dlp update: every song loaded from now on uses the new copy, no restart needed.</summary>
     public void SetYtDlpPath(string path) => _factory.Options = _factory.Options with { YtDlpPath = path };
+
+    /// <summary>The setting changed, or Firefox may have come (or gone) since: songs loaded from now on follow.</summary>
+    public void RefreshYouTubeLogin() => _factory.Options = _factory.Options with { YouTubeLoginBrowser = LoginBrowser(_settings) };
+
+    // Switched on but no Firefox on this computer: songs play without a login instead of all failing.
+    private static string? LoginBrowser(AppSettingsService settings) => settings.YouTubeLoginFirefox && FirefoxYouTubeLogin.HasProfile() ? "firefox" : null;
 
     public async ValueTask DisposeAsync()
     {

@@ -83,7 +83,7 @@
     </Border>
 
     <!-- YouTube songs need a current yt-dlp: YouTube changes often, yt-dlp follows within days. -->
-    <Border Classes="card">
+    <Border Classes="card youtube">
       <StackPanel Spacing="{StaticResource Space2}">
         <TextBlock Text="YouTube" />
         <Grid ColumnDefinitions="*,Auto">
@@ -102,6 +102,50 @@
         </Grid>
         <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap"
                    Text="{l:T settings.yt_dlp_fetches_every}" />
+      </StackPanel>
+    </Border>
+
+    <!-- A card of its own: the login is a separate decision from keeping yt-dlp current. -->
+    <Border Classes="card youtube">
+      <StackPanel Spacing="{StaticResource Space2}">
+        <TextBlock Text="{l:T settings.youtube_login_title}" />
+        <!-- The YouTube login from Firefox (yt-dlp cookies-from-browser): long parties without YouTube's "not a bot"
+             pause, and 18+ videos. Firefox only — the same on every system: Chrome and Edge on Windows lock their logins
+             away, Safari would need Full Disk Access. -->
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel Margin="0,0,12,0">
+            <TextBlock Text="{l:T settings.youtube_login_firefox}" />
+            <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap" Text="{l:T settings.youtube_login_hint}" />
+            <!-- The explanation is the way in (account, Firefox, steps): a real button, not a small ⓘ. -->
+            <Button Classes="tonal go" Command="{Binding ShowYouTubeLoginInfoCommand}" HorizontalAlignment="Left" Padding="12,4" Margin="0,6,0,0">
+              <StackPanel Orientation="Horizontal" Spacing="4">
+                <c:Icon Glyph="info" FontSize="{StaticResource IconSm}" VerticalAlignment="Center" />
+                <TextBlock Text="{l:T settings.youtube_login_info_tip}" FontSize="{StaticResource TextSm}" VerticalAlignment="Center" />
+              </StackPanel>
+            </Button>
+          </StackPanel>
+          <ToggleSwitch Grid.Column="1" IsChecked="{Binding YouTubeLoginFirefox}" OnContent="" OffContent="" VerticalAlignment="Center" />
+        </Grid>
+        <!-- Is Firefox logged in to YouTube? Only whether, never which account: "Check account" shows that in Firefox. -->
+        <Grid ColumnDefinitions="Auto,*,Auto,Auto" IsVisible="{Binding HasYouTubeLoginState}">
+          <c:Icon Glyph="{Binding YouTubeLoginOk, Converter={x:Static vm:BoolConverters.Glyph}, ConverterParameter='check_circle|warning'}"
+                  FontSize="{StaticResource IconMd}" VerticalAlignment="Center" Margin="0,0,6,0" Classes.ok="{Binding YouTubeLoginOk}">
+            <c:Icon.Styles>
+              <Style Selector="c|Icon">
+                <Setter Property="Foreground" Value="{DynamicResource BrushSingleScreen}" />
+              </Style>
+              <Style Selector="c|Icon.ok">
+                <Setter Property="Foreground" Value="{DynamicResource BrushGo}" />
+              </Style>
+            </c:Icon.Styles>
+          </c:Icon>
+          <TextBlock Grid.Column="1" Text="{Binding YouTubeLoginText}" FontSize="{StaticResource TextSm}" TextWrapping="Wrap" VerticalAlignment="Center" />
+          <Button Grid.Column="2" Classes="text" Content="{l:T settings.ytlogin_check_account}" Command="{Binding CheckYouTubeAccountCommand}"
+                  IsVisible="{Binding YouTubeLoginOk}" ToolTip.Tip="{l:T settings.ytlogin_check_account_tip}" Padding="8,2" Margin="4,0,0,0" />
+          <Button Grid.Column="3" Classes="sidebar small" Command="{Binding RefreshYouTubeLoginCommand}" ToolTip.Tip="{l:T settings.ytlogin_refresh}" VerticalAlignment="Center">
+            <c:Icon Glyph="refresh" FontSize="{StaticResource IconMd}" />
+          </Button>
+        </Grid>
       </StackPanel>
     </Border>
 

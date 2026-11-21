@@ -859,7 +859,7 @@ Acer Aspire V3-772G, built-in audio + Logitech H340 USB headset).
 
 ---
 
-## Sprint 36 — Songs play to their end  *(in progress)*
+## Sprint 36 — Songs play to their end, blacklist, practice speed  *(closed — released in 0.9.0-beta.3)*
 
 - [x] A song stopped 4 s after its last note, cutting the outro (a 3:31 video ended at 3:10), and `#END` could only
       shorten it → it plays to `#END` or the end of the media, like UltraStar Deluxe; 4 s after the last note only when
@@ -881,13 +881,49 @@ Acer Aspire V3-772G, built-in audio + Logitech H340 USB headset).
 - [x] Practice speed: 1× / 0.9× / 0.8× / 0.7× in the Game Player and the single-screen bar (pitch kept); notes,
       lyrics, scoring and the second display follow; mic and speaker delays scaled by the speed (tested); back to 1×
       per song; "0.75×" on the displays and "Sung at 0.75×" on the score screen
-- [ ] Practice speed verified live (a freeze seen once after switching speed — waiting for a second try with a sample)
+- [x] Practice speed verified live on Mac, Windows and Linux (beta.3); the freeze seen once after switching speed did
+      not come back — carried over to Sprint 37 as a watch item
 - [x] YouTube 403 on every song on the developer's Mac: yt-dlp used Homebrew's Deno and reached YouTube another way →
       `no-js-runtimes` (same behaviour on every computer); the refusal is recognised ("YouTube refused this video right
       now — a newer yt-dlp usually fixes that …", 13 languages, tested) and retried; error details start with a report
       head (versions, system, media, time) plus mpv's lines; "Copy details" on every error dialog with details
 - [x] Connectivity calmer on an unstable router: offline only after 3 failed probes ~2 s apart (a blink shows no toast,
       USDB stays); while offline a probe every 3 s instead of 15, so "back online" comes within seconds
+
+---
+
+## Sprint 37 — YouTube at long parties  *(in progress)*
+
+From GitHub issue #5 (a bar): after ~2 h YouTube answers "confirm you're not a bot", 18+ videos need a login, and a
+restart lost the guests' requests.
+
+- [x] Setting "YouTube login: Firefox" (yt-dlp `cookies-from-browser`) — a login for long parties and 18+ videos,
+      with the advice to use a separate Google account (Settings → YouTube, 13 languages; applies to the next song
+      loaded; an unreadable login gets its own message, tested); ⓘ next to the switch opens an explanation over the window
+      (why, four steps — separate account, log in in Firefox, close it, switch on — and what to know)
+- [x] YouTube login verified live (macOS, Firefox installed and logged in after switching on)
+- [x] Under the switch: is Firefox logged in to YouTube? (`FirefoxYouTubeLogin`, tested — on this computer only, in the
+      profile yt-dlp picks, whether a YouTube login cookie exists, never its value, never asking YouTube) ✓ logged in /
+      ⚠ not logged in / ⚠ no Firefox, ↻ to check again; "Check account" opens youtube.com/account in Firefox, where the
+      profile picture shows which account it is. Switched on without Firefox: songs play without a login instead of all
+      failing. Fixed after the first live test ("not logged in" although logged in): Firefox locks its
+      open cookie database and .NET refused to copy it — copied with the system's cp (macOS / Linux) or shared read
+      (Windows), as yt-dlp does; newer Firefox stores expiry dates in milliseconds (tested)
+- [x] Settings: the login in a card of its own ("YouTube login"), next to the yt-dlp card; both slightly red
+      (`Border.card.youtube`, `BrushYouTubeContainer` / `BrushYouTubeOutline`, light and dark); "How it works" a green
+      button instead of a small ⓘ
+- [ ] YouTube pausing ("not a bot"): no retries, one clear message (YouTube pauses for a while, local songs still work,
+      a login helps) instead of an error per song
+- [ ] Guest requests and the queue kept across a restart
+- [ ] Fewer YouTube requests: a song is looked up once and the result reused for preview, game and repeats
+- [ ] Watch: the freeze after switching the practice speed (seen once in Sprint 36)
+- [ ] Before the release: the update dialog shows what's new (today only "Ultrastar DJ x is available" / "You have y")
+      — e.g. the release's "What's new" packed with the update (Velopack `vpk pack --releaseNotes`) and shown in the
+      dialog, or a "What's new" link to the release page
+- [ ] Verified live; released; reply to Kayert (#5)
+- [ ] After the release: website, section "YouTube or your own files / A .txt and a YouTube link — that's a song" —
+      add an explanation (e.g. a "Long parties?" link opening a popup like "Create your own songs"): YouTube may pause
+      after many songs, the Firefox login in Settings helps (separate account), 18+ videos need it
 
 ---
 

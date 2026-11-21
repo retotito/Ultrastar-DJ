@@ -49,7 +49,9 @@ public interface IMediaPlayer : IAsyncDisposable
 | Output device | `audio-device=<id>`; device list from `audio-device-list` property |
 | Video off (audio-only role) | `vid=no` |
 | Audio off (visual-only role) | `aid=no` (no audio stream is downloaded for YouTube either) |
-| YouTube | `ytdl=yes`, `ytdl-raw-options=no-js-runtimes=` (yt-dlp ignores a JavaScript runtime installed on the computer — with Homebrew's Deno it reached YouTube another way and every stream failed with 403; now every computer behaves the same), `script-opts=ytdl_hook-ytdl_path=<sidecar yt-dlp>`, `ytdl-format=bestvideo[height<=720]+bestaudio/best[height<=720]` (or `bestaudio` when `Video=false`) |
+| YouTube | `ytdl=yes`, `ytdl-raw-options=no-js-runtimes=` (yt-dlp ignores a JavaScript runtime installed on the computer — with Homebrew's Deno it reached YouTube another way and every stream failed with 403; now every computer behaves the same; with Settings → YouTube → "Use the YouTube login from Firefox" also
+`cookies-from-browser=firefox`, `MpvPlayer.YtdlRawOptions`, tested — Firefox only, as Chrome and Edge on Windows lock their
+logins away), `script-opts=ytdl_hook-ytdl_path=<sidecar yt-dlp>`, `ytdl-format=bestvideo[height<=720]+bestaudio/best[height<=720]` (or `bestaudio` when `Video=false`) |
 | Hardware decode | `hwdec=auto-safe` |
 | Range | `start=<sec>`, `end=<sec>` |
 | External video for Case 2/3 | after load: `video-add <file-or-ytdl://ID>` then `vid=1`; plus `audio-delay` for `#VIDEOGAP` (see below) |

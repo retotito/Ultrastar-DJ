@@ -21,6 +21,8 @@ public sealed record PlaybackError(string Reason, string Details, bool SongProbl
     private static readonly (string[] Patterns, string Reason, bool SongProblem, bool YtDlpMayHelp)[] Known =
     [
         (["confirm your age"], Text.T("error.age", "This video is age-restricted on YouTube and cannot be played without a YouTube login."), true, false),
+        (["cookies database", "could not copy chrome cookie", "failed to decrypt"], Text.T("error.login_unreadable",
+            "The YouTube login from Firefox could not be read. Is Firefox installed and logged in to YouTube? (Settings → YouTube)"), false, false),
         (["not a bot"], Text.T("error.bot", "YouTube is blocking playback right now."), false, true),
         (["private video", "this video is private"], Text.T("error.private", "This video is private on YouTube."), true, false),
         (["in your country", "geo restrict"], Text.T("error.country", "This video is blocked in your country."), true, false),

@@ -9,7 +9,9 @@ using static UltrastarDJ.Media.Native.LibMpv;
 namespace UltrastarDJ.Media;
 
 /// <summary>Process-wide settings for every <see cref="MpvPlayer"/>.</summary>
-public sealed record MpvOptions(string? YtDlpPath);
+/// <param name="YtDlpPath">The yt-dlp mpv runs for YouTube.</param>
+/// <param name="YouTubeLoginBrowser">yt-dlp uses the YouTube login of this browser ("firefox"), null = none.</param>
+public sealed record MpvOptions(string? YtDlpPath, string? YouTubeLoginBrowser = null);
 
 /// <summary>
 /// <see cref="IMediaPlayer"/> over one libmpv handle. All mpv option/property names live here and nowhere else.
@@ -130,7 +132,9 @@ public sealed class MpvPlayer : IMediaPlayer
         // yt-dlp would use a JavaScript runtime it finds on the computer (Deno, Node): then it reaches YouTube another
         // way than on a computer without one — a Deno from Homebrew made every YouTube stream fail with 403. Same
         // behaviour everywhere: none.
-        Set("ytdl-raw-options", "no-js-runtimes=");
+        // With a login (Settings → YouTube): yt-dlp reads it from the browser — long parties without YouTube's "not a bot"
+        // pause, and 18+ videos.
+        Set("ytdl-raw-options", YtdlRawOptions(options));
         if (!string.IsNullOrEmpty(options.YtDlpPath))
         {
             Set("script-opts", $"ytdl_hook-ytdl_path={options.YtDlpPath}");
@@ -839,6 +843,10 @@ public sealed class MpvPlayer : IMediaPlayer
     }
 
     // ── Plumbing ──────────────────────────────────────────────────────────
+
+    /// <summary>mpv's <c>ytdl-raw-options</c>: yt-dlp flags as key=value, comma separated (an empty value is a bare flag).</summary>
+    public static string YtdlRawOptions(MpvOptions o)
+        => o.YouTubeLoginBrowser is { } browser ? $"no-js-runtimes=,cookies-from-browser={browser}" : "no-js-runtimes=";
 
     private static string YtdlFormat(MediaLoadOptions o)
     {

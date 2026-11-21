@@ -53,6 +53,9 @@
       <Color x:Key="ColorTableRowAlt">#0AFFFFFF</Color>
       <!-- Songbook requests: a light green wash, so guests' wishes stand out (REQUESTS, request toasts). -->
       <Color x:Key="ColorRequest">#1F3A2A</Color>
+      <!-- Settings' YouTube cards: a slight red, so the YouTube settings are easy to find. -->
+      <Color x:Key="ColorYouTubeContainer">#3A2224</Color>
+      <Color x:Key="ColorYouTubeOutline">#7A3A3E</Color>
       <!-- Plain sliders (latency) like the toggle switches: filled part in the selected blue, knob in the text colour. -->
       <SolidColorBrush x:Key="SliderTrackValueFill" Color="{DynamicResource SystemAccentColor}" Opacity="0.6" />
       <SolidColorBrush x:Key="SliderTrackValueFillDisabled" Color="{DynamicResource SystemAccentColor}" Opacity="0.6" />
@@ -145,6 +148,8 @@
       <SolidColorBrush x:Key="BrushStatePressed" Color="{DynamicResource SystemAccentColor}" Opacity="0.7" />
       <Color x:Key="ColorTableRowAlt">#0A000000</Color>
       <Color x:Key="ColorRequest">#E6F4EA</Color>
+      <Color x:Key="ColorYouTubeContainer">#FCECEC</Color>
+      <Color x:Key="ColorYouTubeOutline">#F0B8B8</Color>
       <!-- Plain sliders (latency) like the toggle switches: filled part in the selected blue, knob in the text colour. -->
       <SolidColorBrush x:Key="SliderTrackValueFill" Color="{DynamicResource SystemAccentColor}" Opacity="0.4" />
       <SolidColorBrush x:Key="SliderTrackValueFillDisabled" Color="{DynamicResource SystemAccentColor}" Opacity="0.4" />
@@ -242,6 +247,8 @@
   <SolidColorBrush x:Key="BrushOutlineVariant" Color="{DynamicResource ColorOutlineVariant}" />
   <SolidColorBrush x:Key="BrushTableRowAlt" Color="{DynamicResource ColorTableRowAlt}" />
   <SolidColorBrush x:Key="BrushRequest" Color="{DynamicResource ColorRequest}" />
+  <SolidColorBrush x:Key="BrushYouTubeContainer" Color="{DynamicResource ColorYouTubeContainer}" />
+  <SolidColorBrush x:Key="BrushYouTubeOutline" Color="{DynamicResource ColorYouTubeOutline}" />
   <!-- Mic gate on a MeterFader: shade over the range that counts as silence, and its drag handle -->
   <!-- Favourite songs: the heart in the library and the song details -->
   <SolidColorBrush x:Key="BrushFavourite" Color="#E91E63" />

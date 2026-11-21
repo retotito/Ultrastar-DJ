@@ -122,6 +122,7 @@ public sealed partial class DjWindowViewModel : ViewModelBase
         Updates.PropertyChanged += (_, _) => OnPropertyChanged(nameof(ShowUpdate));
         nowPlaying.DuetSingersRequested += () => OpenDuetSingers(thenPlay: null);
         nowPlaying.SingersToConfirmBeforePlay += play => AskForDuetSingers(play);
+        services.GetRequiredService<SettingsPanelViewModel>().YouTubeLoginInfoRequested += () => YouTubeLoginInfoOpen = true;
         nowPlaying.ConfirmBlacklisted = AskLoadBlacklisted;
         nowPlaying.DisplaysRequested += () =>
         {
@@ -225,6 +226,20 @@ public sealed partial class DjWindowViewModel : ViewModelBase
 
     [RelayCommand]
     private void CloseSingleScreenInfo() => SingleScreenInfoOpen = false;
+
+    // Settings opened: Firefox's YouTube login may have changed since (logged in or out meanwhile).
+    private SettingsPanelViewModel OpenSettings()
+    {
+        SettingsPanelViewModel settings = _services.GetRequiredService<SettingsPanelViewModel>();
+        settings.RefreshYouTubeLogin();
+        return settings;
+    }
+
+    /// <summary>The YouTube login explained (Settings → YouTube → ⓘ): why, the steps, what to know.</summary>
+    [ObservableProperty] private bool _youTubeLoginInfoOpen;
+
+    [RelayCommand]
+    private void CloseYouTubeLoginInfo() => YouTubeLoginInfoOpen = false;
 
     // ── Slow computer? ──
     // Once per run: after a song the displays could not draw smoothly, a hint offers Settings → Reduce effects.
@@ -437,7 +452,7 @@ public sealed partial class DjWindowViewModel : ViewModelBase
             SidebarPanel.AudioInput => _services.GetRequiredService<PlayersPanelViewModel>(),
             SidebarPanel.AudioOutput => _services.GetRequiredService<AudioOutputPanelViewModel>(),
             SidebarPanel.Songbook => _services.GetRequiredService<SongbookPanelViewModel>(),
-            SidebarPanel.Settings => _services.GetRequiredService<SettingsPanelViewModel>(),
+            SidebarPanel.Settings => OpenSettings(),
             SidebarPanel.Layout => _services.GetRequiredService<LayoutPanelViewModel>(),
             _ => new PlaceholderPanelViewModel(panel.ToString()),
         };

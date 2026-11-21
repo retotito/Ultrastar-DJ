@@ -14,6 +14,7 @@ public class PlaybackErrorTests
     [InlineData("ERROR: [youtube] abc: Requested format is not available. Use --list-formats", "refused")]
     [InlineData("ERROR: unable to download video data: HTTP Error 403: Forbidden", "refused")]
     [InlineData("youtube-dl failed: not found or not enough permissions", "yt-dlp is missing")]
+    [InlineData("ERROR: could not find firefox cookies database in '/home/x/.mozilla/firefox'", "login from Firefox")]
     [InlineData("no audio or video data played\nmpv[stream] Failed to open https://rr1---sn-n5au-9anz.googlevideo.com/videoplayback?expire=1", "refused")]
     public void Explain_KnownYouTubeErrors_GivesPlainReason(string raw, string expectedPart)
     {
@@ -65,5 +66,12 @@ public class PlaybackErrorTests
     public void YtDlpMayHelp_OnlyWhereANewerYtDlpUsuallyFixesIt(string raw, bool mayHelp)
     {
         Assert.Equal(mayHelp, PlaybackError.Explain(raw).YtDlpMayHelp);
+    }
+
+    [Fact]
+    public void YtdlRawOptions_WithFirefoxLogin_AddsTheBrowserCookies()
+    {
+        Assert.Equal("no-js-runtimes=", MpvPlayer.YtdlRawOptions(new MpvOptions("yt-dlp")));
+        Assert.Equal("no-js-runtimes=,cookies-from-browser=firefox", MpvPlayer.YtdlRawOptions(new MpvOptions("yt-dlp", "firefox")));
     }
 }

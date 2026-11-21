@@ -17,6 +17,7 @@ namespace UltrastarDJ.App.ViewModels;
 
 public sealed partial class SettingsPanelViewModel : ViewModelBase
 {
+    private readonly MediaService _media;
     private readonly AppSettingsService _settings;
     private readonly AppPaths _paths;
     private readonly PlaybackService _playback;
@@ -65,6 +66,7 @@ public sealed partial class SettingsPanelViewModel : ViewModelBase
     [ObservableProperty] private NoteBarStyle _noteBarStyle;
     [ObservableProperty] private bool _showGridLines;
     [ObservableProperty] private bool _reduceEffects;
+    [ObservableProperty] private bool _youTubeLoginFirefox;
     [ObservableProperty] private Difficulty _difficulty;
 
     [ObservableProperty] private string _crashReportsText = "";
@@ -89,11 +91,12 @@ public sealed partial class SettingsPanelViewModel : ViewModelBase
         }
     }
 
-    public SettingsPanelViewModel(AppSettingsService settings, AppPaths paths, PlaybackService playback, YtDlpService ytDlp)
+    public SettingsPanelViewModel(AppSettingsService settings, AppPaths paths, PlaybackService playback, YtDlpService ytDlp, MediaService media)
     {
         _ytDlp = ytDlp;
         ytDlp.Changed += OnYtDlpChanged;
         _settings = settings;
+        _media = media;
         _paths = paths;
         _playback = playback;
         playback.StateChanged += _ => OnPropertyChanged(nameof(DifficultyLocked));
@@ -104,6 +107,7 @@ public sealed partial class SettingsPanelViewModel : ViewModelBase
         NoteBarStyle = settings.NoteBarStyle;
         ShowGridLines = settings.ShowGridLines;
         ReduceEffects = settings.ReduceEffects;
+        YouTubeLoginFirefox = settings.YouTubeLoginFirefox;
         Difficulty = settings.Difficulty;
         _loading = false;
     }
@@ -277,6 +281,68 @@ public sealed partial class SettingsPanelViewModel : ViewModelBase
         if (!_loading)
         {
             _settings.SetReduceEffects(value);
+        }
+    }
+
+    /// <summary>ⓘ next to the YouTube login: the explanation opens over the DJ window (DjWindowViewModel).</summary>
+    public event Action? YouTubeLoginInfoRequested;
+
+    [RelayCommand]
+    private void ShowYouTubeLoginInfo() => YouTubeLoginInfoRequested?.Invoke();
+
+    partial void OnYouTubeLoginFirefoxChanged(bool value)
+    {
+        if (!_loading)
+        {
+            _settings.SetYouTubeLoginFirefox(value);
+        }
+
+        RefreshYouTubeLogin();
+    }
+
+    // ── Is Firefox logged in to YouTube? Checked on this computer only (FirefoxYouTubeLogin): when the switch goes on,
+    // when the panel opens, and on the ↻ next to the status. ──
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(YouTubeLoginText), nameof(YouTubeLoginOk), nameof(HasYouTubeLoginState))]
+    private FirefoxYouTubeLogin.State? _youTubeLoginState;
+
+    public bool HasYouTubeLoginState => YouTubeLoginState is not null;
+    public bool YouTubeLoginOk => YouTubeLoginState == FirefoxYouTubeLogin.State.LoggedIn;
+    public string YouTubeLoginText => YouTubeLoginState switch
+    {
+        FirefoxYouTubeLogin.State.LoggedIn => L.T("settings.ytlogin_ok"),
+        FirefoxYouTubeLogin.State.NotLoggedIn => L.T("settings.ytlogin_none"),
+        FirefoxYouTubeLogin.State.FirefoxNotFound => L.T("settings.ytlogin_no_firefox"),
+        _ => "",
+    };
+
+    [RelayCommand]
+    public void RefreshYouTubeLogin()
+    {
+        if (!YouTubeLoginFirefox)
+        {
+            YouTubeLoginState = null;
+            return;
+        }
+
+        _ = Task.Run(FirefoxYouTubeLogin.Check).ContinueWith(t => Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            YouTubeLoginState = t.Result;
+            _media.RefreshYouTubeLogin();   // Firefox installed or removed meanwhile
+        }), TaskContinuationOptions.OnlyOnRanToCompletion);
+    }
+
+    /// <summary>YouTube's account page in Firefox: its profile picture shows which account is logged in.</summary>
+    [RelayCommand]
+    private void CheckYouTubeAccount()
+    {
+        try
+        {
+            FirefoxYouTubeLogin.OpenAccountPage();
+        }
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
+        {
+            YouTubeLoginState = FirefoxYouTubeLogin.State.FirefoxNotFound;
         }
     }
 

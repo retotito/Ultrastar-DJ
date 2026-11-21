@@ -423,6 +423,50 @@
     </Border>
   </Border>
 
+  <!-- The YouTube login explained (Settings → YouTube → ⓘ): why, four steps, what to know. A press on the dimmed area,
+       ✕ or Esc closes it; the Settings panel stays open behind it. -->
+  <Border x:Name="YouTubeLoginInfoLayer" Background="#99000000" IsVisible="{Binding YouTubeLoginInfoOpen}" ZIndex="9"
+          PointerPressed="OnYouTubeLoginInfoBackdropPressed">
+    <Border Classes="card floating" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="{StaticResource Pad6}"
+            Margin="{StaticResource Pad6}" Width="560">
+      <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+      <StackPanel Spacing="{StaticResource Space3}">
+        <Grid ColumnDefinitions="Auto,*,Auto">
+          <c:Icon Glyph="smart_display" VerticalAlignment="Center" Margin="0,0,8,0" />
+          <TextBlock Grid.Column="1" Classes="title" Text="{l:T ytlogin.title}" VerticalAlignment="Center" TextWrapping="Wrap" />
+          <Button Grid.Column="2" Classes="sidebar small" Command="{Binding CloseYouTubeLoginInfoCommand}" ToolTip.Tip="{l:TK window.close, Keys=Esc}">
+            <c:Icon Glyph="close" FontSize="{StaticResource IconMd}" />
+          </Button>
+        </Grid>
+        <TextBlock TextWrapping="Wrap" Text="{l:T ytlogin.why}" />
+        <TextBlock Classes="label" Text="{l:T ytlogin.steps_title}" Margin="0,4,0,0" />
+        <Grid ColumnDefinitions="Auto,*">
+          <TextBlock Text="1." FontWeight="{StaticResource WeightSemibold}" Margin="0,0,8,0" />
+          <TextBlock Grid.Column="1" TextWrapping="Wrap" Text="{l:T ytlogin.step1}" />
+        </Grid>
+        <Grid ColumnDefinitions="Auto,*">
+          <TextBlock Text="2." FontWeight="{StaticResource WeightSemibold}" Margin="0,0,8,0" />
+          <TextBlock Grid.Column="1" TextWrapping="Wrap" Text="{l:T ytlogin.step2}" />
+        </Grid>
+        <Grid ColumnDefinitions="Auto,*">
+          <TextBlock Text="3." FontWeight="{StaticResource WeightSemibold}" Margin="0,0,8,0" />
+          <TextBlock Grid.Column="1" TextWrapping="Wrap" Text="{l:T ytlogin.step3}" />
+        </Grid>
+        <Grid ColumnDefinitions="Auto,*">
+          <TextBlock Text="4." FontWeight="{StaticResource WeightSemibold}" Margin="0,0,8,0" />
+          <TextBlock Grid.Column="1" TextWrapping="Wrap" Text="{l:T ytlogin.step4}" />
+        </Grid>
+        <TextBlock Classes="label" Text="{l:T ytlogin.notes_title}" Margin="0,4,0,0" />
+        <TextBlock Classes="muted" FontSize="{StaticResource TextSm}" TextWrapping="Wrap" Text="{l:T ytlogin.note_firefox}" />
+        <TextBlock Classes="muted" FontSize="{StaticResource TextSm}" TextWrapping="Wrap" Text="{l:T ytlogin.note_accounts}" />
+        <TextBlock Classes="muted" FontSize="{StaticResource TextSm}" TextWrapping="Wrap" Text="{l:T ytlogin.note_profiles}" />
+        <TextBlock Classes="muted" FontSize="{StaticResource TextSm}" TextWrapping="Wrap" Text="{l:T ytlogin.note_history}" />
+        <TextBlock Classes="muted" FontSize="{StaticResource TextSm}" TextWrapping="Wrap" Text="{l:T ytlogin.note_relogin}" />
+      </StackPanel>
+      </ScrollViewer>
+    </Border>
+  </Border>
+
   <!-- A newer version on GitHub Releases (UpdateService): Update now downloads with progress and restarts into it. -->
   <Border Background="#99000000" IsVisible="{Binding ShowUpdate}" ZIndex="9">
     <Border Classes="card floating" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="{StaticResource Pad6}" Width="420">
