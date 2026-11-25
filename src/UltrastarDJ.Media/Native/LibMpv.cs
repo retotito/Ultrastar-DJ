@@ -44,6 +44,10 @@ internal static unsafe partial class LibMpv
     [LibraryImport(LibraryName, EntryPoint = "mpv_set_property", StringMarshalling = StringMarshalling.Utf8)]
     public static partial int SetProperty(nint handle, string name, MpvFormat format, void* data);
 
+    /// <summary>As <see cref="SetProperty"/> without waiting for the player; the data is copied at once, the result comes as a SetPropertyReply event.</summary>
+    [LibraryImport(LibraryName, EntryPoint = "mpv_set_property_async", StringMarshalling = StringMarshalling.Utf8)]
+    public static partial int SetPropertyAsync(nint handle, ulong replyUserdata, string name, MpvFormat format, void* data);
+
     [LibraryImport(LibraryName, EntryPoint = "mpv_observe_property", StringMarshalling = StringMarshalling.Utf8)]
     public static partial int ObserveProperty(nint handle, ulong replyUserdata, string name, MpvFormat format);
 
@@ -129,6 +133,7 @@ internal static unsafe partial class LibMpv
         None = 0,
         Shutdown = 1,
         LogMessage = 2,
+        SetPropertyReply = 4,
         StartFile = 6,
         EndFile = 7,
         FileLoaded = 8,

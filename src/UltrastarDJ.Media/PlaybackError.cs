@@ -18,10 +18,19 @@ namespace UltrastarDJ.Media;
 /// </param>
 public sealed record PlaybackError(string Reason, string Details, bool SongProblem = false, bool YtDlpMayHelp = false)
 {
+    /// <summary>
+    /// YouTube's "not a bot" check: it pauses this computer's YouTube for a while after many songs. Not the song's fault,
+    /// and a newer yt-dlp does not end it; the app shows it once instead of an error per song.
+    /// </summary>
+    public static string YouTubePausedReason { get; } = Text.T("error.bot",
+        "YouTube has paused playback from this computer for a while (a \"not a bot\" check after many songs). It passes by itself, usually within an hour or two — the app tries again every few minutes. Songs from your own folders still work.");
+
+    public bool YouTubePaused => Reason == YouTubePausedReason;
+
     private static readonly (string[] Patterns, string Reason, bool SongProblem, bool YtDlpMayHelp)[] Known =
     [
         (["confirm your age"], Text.T("error.age", "This video is age-restricted on YouTube and cannot be played without a YouTube login."), true, false),
-        (["not a bot"], Text.T("error.bot", "YouTube is blocking playback right now."), false, true),
+        (["not a bot"], YouTubePausedReason, false, false),
         (["private video", "this video is private"], Text.T("error.private", "This video is private on YouTube."), true, false),
         (["in your country", "geo restrict"], Text.T("error.country", "This video is blocked in your country."), true, false),
         (["copyright"], "This video was blocked on YouTube for copyright reasons.", true, false),

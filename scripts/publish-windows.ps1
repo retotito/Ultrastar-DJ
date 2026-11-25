@@ -30,5 +30,6 @@ if (-not $vpk) {
 Write-Host "→ vpk pack"
 & $vpk.Source pack -u UltrastarDJ -v $Version -p $Out -e UltrastarDJ.exe `
   --packTitle 'Ultrastar DJ' --packAuthors 'Reto Küpfer' `
-  --icon "$Root\src\UltrastarDJ.App\Assets\icon.ico" --noPortable -o "$Root\out\Releases"
+  --icon "$Root\src\UltrastarDJ.App\Assets\icon.ico" --noPortable -o "$Root\out\Releases" `
+  --releaseNotes "$Root\.github\whats-new.md"
 Write-Host "✓ out\Releases\UltrastarDJ-win-Setup.exe"

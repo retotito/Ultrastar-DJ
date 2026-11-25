@@ -34,7 +34,8 @@ if command -v vpk >/dev/null; then
   echo "→ vpk pack (channel $RID)"
   vpk pack -u UltrastarDJ -v "$VERSION" -p "$APP" -e UltrastarDJ --channel "$RID" \
     --packTitle 'Ultrastar DJ' --packAuthors 'Reto Küpfer' --icon "$ROOT/src/UltrastarDJ.App/Assets/icon.icns" \
-    --signAppIdentity - --signDisableDeep --signEntitlements "$ROOT/scripts/macos.entitlements" --noInst -o "$RELEASES"
+    --signAppIdentity - --signDisableDeep --signEntitlements "$ROOT/scripts/macos.entitlements" --noInst -o "$RELEASES" \
+    --releaseNotes "$ROOT/.github/whats-new.md"
   rm -rf "$APP"
   ditto -x -k "$RELEASES/UltrastarDJ-$RID-Portable.zip" "$ROOT/out"
   # The portable zip is the same app as the dmg; one download per Mac is enough on the Releases page.

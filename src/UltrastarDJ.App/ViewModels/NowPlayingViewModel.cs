@@ -386,7 +386,7 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
         catch (SongLoadException ex)
         {
             _log.LogWarning("Load failed: {Error}", ex.Message);
-            _notifications.ShowError(L.T("game_player.cannot_load"), _ytDlp.WithHint(ex.Reasons, ex.YtDlpMayHelp), ex.Details);
+            _ytDlp.ShowError(L.T("game_player.cannot_load"), ex.Reasons, ex.YtDlpMayHelp, ex.Details);
         }
         finally
         {

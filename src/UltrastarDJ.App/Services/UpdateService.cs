@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.Logging;
 using UltrastarDJ.App.Localization;
 using UltrastarDJ.App.Views;
+using UltrastarDJ.Core.Updates;
 using Velopack;
 using Velopack.Sources;
 
@@ -37,6 +38,13 @@ public sealed partial class UpdateService : ObservableObject
     [NotifyPropertyChangedFor(nameof(IsAvailable))]
     private bool _postponed;
 
+    /// <summary>The new version's "What's new" (its release notes, `.github/whats-new.md`), one line per point; empty if it has none.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasWhatsNew))]
+    private IReadOnlyList<string> _whatsNew = [];
+
+    public bool HasWhatsNew => WhatsNew.Count > 0;
+
     [ObservableProperty] private bool _isDownloading;
     [ObservableProperty] private int _progress;
     [ObservableProperty] private string? _error;
@@ -64,10 +72,12 @@ public sealed partial class UpdateService : ObservableObject
             }
 
             string version = update.TargetFullRelease.Version.ToString();
+            IReadOnlyList<string> notes = ReleaseNotes.Lines(update.TargetFullRelease.NotesMarkdown);
             _log.LogInformation("Updates: {New} available (running {Current})", version, BuildInfo.Version);
             Dispatcher.UIThread.Post(() =>
             {
                 _update = update;
+                WhatsNew = notes;
                 NewVersion = version;
             });
         }

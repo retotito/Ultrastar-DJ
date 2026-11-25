@@ -140,5 +140,6 @@ jobs:
           PRE=""; [[ "$VERSION" == *-* ]] && PRE="--prerelease"
           # The previous release's packages were only downloaded to build the small update package.
           find packages -name "*.nupkg" ! -name "*-$VERSION-*" -delete
-          sed "s/{VERSION}/$VERSION/g" .github/release-notes.md > notes.md
+          # What's new (also inside the update packages: the app's update dialog shows it), then how to install.
+          { echo "### What's new"; echo; cat .github/whats-new.md; echo; sed "s/{VERSION}/$VERSION/g" .github/release-notes.md; } > notes.md
           gh release create "$GITHUB_REF_NAME" packages/* $PRE --title "Ultrastar DJ $VERSION" --notes-file notes.md

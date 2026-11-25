@@ -30,5 +30,6 @@ fi
 echo "→ vpk pack"
 vpk pack -u UltrastarDJ -v "$VERSION" -p "$OUT" -e UltrastarDJ \
   --packTitle 'Ultrastar DJ' --packAuthors 'Reto Küpfer' \
-  --icon "$ROOT/src/UltrastarDJ.App/Assets/icon.png" -o "$ROOT/out/Releases"
+  --icon "$ROOT/src/UltrastarDJ.App/Assets/icon.png" -o "$ROOT/out/Releases" \
+  --releaseNotes "$ROOT/.github/whats-new.md"
 echo "✓ out/Releases/$(cd "$ROOT/out/Releases" && ls *.AppImage)"

@@ -434,6 +434,22 @@
         <TextBlock TextWrapping="Wrap" Text="{l:Format Updates.NewVersion, update.text}" />
         <TextBlock Classes="muted" FontSize="{StaticResource TextSm}" TextWrapping="Wrap"
                    Text="{l:Format Updates.CurrentVersion, update.current}" />
+        <!-- What's new: the release's notes, so the DJ knows what the update brings -->
+        <StackPanel Spacing="{StaticResource Space1}" IsVisible="{Binding Updates.HasWhatsNew}">
+          <TextBlock Classes="label" Text="{l:T update.whats_new}" />
+          <ScrollViewer MaxHeight="{StaticResource UpdateNotesMaxHeight}">
+            <ItemsControl ItemsSource="{Binding Updates.WhatsNew}" Margin="0,0,12,0">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="x:String">
+                  <Grid ColumnDefinitions="Auto,*" Margin="0,2">
+                    <TextBlock Text="•" Margin="0,0,8,0" />
+                    <TextBlock Grid.Column="1" Text="{Binding}" TextWrapping="Wrap" FontSize="{StaticResource TextSm}" />
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+        </StackPanel>
         <StackPanel Spacing="{StaticResource Space1}" IsVisible="{Binding Updates.IsDownloading}">
           <TextBlock FontSize="{StaticResource TextSm}" Text="{l:Format Updates.Progress, update.downloading}" />
           <ProgressBar Minimum="0" Maximum="100" Value="{Binding Updates.Progress}" />

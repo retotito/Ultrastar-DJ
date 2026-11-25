@@ -900,8 +900,9 @@ restart lost the guests' requests.
 - [x] ~~YouTube login from Firefox~~ — built (setting, guide, logged-in check), then **removed**: logged in, YouTube's
       addresses need Deno to decode, and with Deno the lookup works but YouTube refuses the streams (SABR, tokens) —
       docs/02-media-engine.md "YouTube lookups". Settings keeps one red YouTube card (yt-dlp)
-- [ ] YouTube pausing ("not a bot"): no retries, one clear message (YouTube pauses for a while, local songs still work,
-      it passes after a while) instead of an error per song
+- [x] YouTube pausing ("not a bot"): no lookups for 5 minutes after it (asking again keeps the pause going), one
+      dialog (YouTube pauses for a while, local songs still work, it passes by itself), then a toast per song; no
+      yt-dlp update hint for it (`docs/02-media-engine.md` → YouTube lookups)
 - [x] Guest requests and the queue kept across a restart: queue (with requester names) and waiting requests saved on
       every change and restored silently; restored ones no longer connected to the songbook (grey / slanted name,
       tooltip), unavailable songs greyed, gone songs skipped. Phones: "paused" banner when the app can't be reached,
@@ -914,10 +915,11 @@ restart lost the guests' requests.
 - [x] Fewer YouTube requests: a song is looked up once (`YouTubeResolver`) and kept until shortly before its addresses
       expire (~6 h); preview, game and repeats play from it — verified in a real run: preview + Game Player = one
       lookup (was two), the game load ready in ~1 s; a refused kept address is forgotten and looked up anew (tested)
-- [ ] Watch: the freeze after switching the practice speed (seen once in Sprint 36)
-- [ ] Before the release: the update dialog shows what's new (today only "Ultrastar DJ x is available" / "You have y")
-      — e.g. the release's "What's new" packed with the update (Velopack `vpk pack --releaseNotes`) and shown in the
-      dialog, or a "What's new" link to the release page
+- [x] The freeze after switching the practice speed (seen once in Sprint 36, not reproduced): the speed now goes to mpv
+      without waiting (a busy player held the UI thread — likely cause), and `UiHangLog` logs any UI hang over 2 s
+      with its length, so a return shows in the log with what happened before
+- [x] Before the release: the update dialog shows what's new — `.github/whats-new.md` goes into the update packages
+      (`vpk pack --releaseNotes`) and on top of the GitHub Release; apps from beta.4 on show it
 - [ ] Verified live; released; reply to Kayert (#5)
 - [ ] After the release: website, section "YouTube or your own files / A .txt and a YouTube link — that's a song" —
       add an explanation (e.g. a "Long parties?" link opening a popup like "Create your own songs"): YouTube may pause

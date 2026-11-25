@@ -160,7 +160,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
                 _failures.Failed(song, ex.Reasons[0]);
             }
 
-            _notifications.ShowError(L.T("preview.cannot_preview"), _ytDlp.WithHint(ex.Reasons, ex.YtDlpMayHelp), ex.Details);
+            _ytDlp.ShowError(L.T("preview.cannot_preview"), ex.Reasons, ex.YtDlpMayHelp, ex.Details);
         }
         catch (MediaException ex)
         {
@@ -171,7 +171,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
                 _failures.Failed(song, explained.Reasons[0]);
             }
 
-            _notifications.ShowError(L.T("preview.cannot_preview"), _ytDlp.WithHint(explained.Reasons, explained.YtDlpMayHelp), explained.Details);
+            _ytDlp.ShowError(L.T("preview.cannot_preview"), explained.Reasons, explained.YtDlpMayHelp, explained.Details);
         }
         finally
         {

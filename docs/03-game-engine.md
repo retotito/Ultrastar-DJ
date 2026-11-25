@@ -120,6 +120,9 @@ The Game Player's speed button (and the single-screen bar's) plays a song at 1×
 `ClockFollower`), so notes and lyrics stay with the music. The two delays below are real time, so they shrink with the
 speed: display = clock − output latency × speed, sung beat = beat − mic delay × speed (`LatencyModel.DisplaySec`,
 `GameSession.SungBeatAt`, tested). Every load resets the speed to 1× — the next singer never starts in slow motion.
+The speed goes to mpv without waiting for its answer (`mpv_set_property_async`): mpv rebuilds its tempo filter, and a
+busy player would otherwise hold the UI thread (the freeze seen once in Sprint 36). `Diagnostics.UiHangLog` writes
+"UI not responding for … s" / "UI responding again after … s" when the UI thread stops answering for over 2 s.
 Not 1×: "0.8×" next to the elapsed time on the displays, and "Sung at 0.8×" with the scores.
 
 ### Latency and sync

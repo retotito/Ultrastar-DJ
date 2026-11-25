@@ -123,9 +123,13 @@ without its `v`) wins over it; the scripts pass it to `dotnet publish` (`BuildIn
 
 ## Releases and updates
 
-**Publishing a version:** bump `<Version>`, commit, then `git tag v0.2.0-beta.2 && git push origin v0.2.0-beta.2`.
+**Publishing a version:** write the version's points in `.github/whats-new.md` (a short bullet list in plain words,
+replacing the previous one), bump `<Version>`, commit, then `git tag v0.2.0-beta.2 && git push origin v0.2.0-beta.2`.
 The workflow builds all four packages and its `release` job creates the GitHub Release (title "Ultrastar DJ
-<version>", text from `.github/release-notes.md` with the download table and the first-start steps). A version with
+<version>", text: "What's new" from `.github/whats-new.md`, then `.github/release-notes.md` with the download table and
+the first-start steps). The same list goes into the update packages (`vpk pack --releaseNotes`); the app's update
+dialog shows it (`UpdateService.WhatsNew`, `Core.Updates.ReleaseNotes`, tested) — from the version after the one that
+added it, as the installed app shows the dialog. A version with
 `-` is a pre-release. Before packing, each job fetches the previous release (`vpk download github`, with the job's token — anonymous calls hit GitHub's rate limit on shared runners), so Velopack
 also builds a small delta package; the old full package itself is not re-uploaded.
 

@@ -87,7 +87,7 @@ public sealed class PlaybackService : IDisposable
 
             PlaybackError explained = PlaybackError.Explain(error);
             bool youTube = Plan?.Audio.Source is MediaSource.YouTube;
-            _notifications.ShowError(L.T("playback.stopped"), _ytDlp.WithHint([explained.Reason], explained.YtDlpMayHelp || youTube && explained.Reason == PlaybackError.Explain("").Reason), explained.Details);
+            _ytDlp.ShowError(L.T("playback.stopped"), [explained.Reason], explained.YtDlpMayHelp || youTube && explained.Reason == PlaybackError.Explain("").Reason, explained.Details);
         }
     }
 
@@ -454,7 +454,7 @@ public sealed class PlaybackService : IDisposable
         catch (MediaException ex)
         {
             SongLoadException explained = Explain(ex, plan, _ytDlp.CurrentVersion);
-            _notifications.ShowError(L.T("playback.cannot_replay"), _ytDlp.WithHint(explained.Reasons, explained.YtDlpMayHelp), explained.Details);
+            _ytDlp.ShowError(L.T("playback.cannot_replay"), explained.Reasons, explained.YtDlpMayHelp, explained.Details);
             return false;
         }
         finally

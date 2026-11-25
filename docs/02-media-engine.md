@@ -85,6 +85,13 @@ directly — two joined as an EDL with UTF-8 byte lengths, since the addresses h
 one is not kept, its yt-dlp `ERROR:` line goes to `PlaybackError`. A refused kept address (the router got a new IP,
 or it expired early) → `Forget` and the retry looks it up anew. Without yt-dlp, mpv's own `ytdl_hook` path remains.
 
+**"Not a bot" pause.** After many lookups YouTube may answer "Sign in to confirm you're not a bot" for a while
+(minutes to a few hours). The resolver then asks nothing for `BotPause` (5 min) — every YouTube load fails at once with
+the same explanation, local songs play — and tries again with the next load after that. Not retried, never the song's
+fault (not marked), no yt-dlp update hint (`PlaybackError.YouTubePaused`). The DJ gets one dialog ("YouTube is paused
+for a while", local songs still work, it passes by itself), then for 30 minutes only a toast per further song
+(`YtDlpService.ShowError`, the one place every load and playback error goes through).
+
 **No YouTube login.** Tried in Sprint 37 and removed: with a browser's login yt-dlp acts as a logged-in browser,
 whose addresses need a JavaScript runtime (Deno) to decode — without one only pictures; with one the lookup works but
 YouTube refuses the streams themselves (its SABR delivery for logged-in users wants tokens that exist to stop

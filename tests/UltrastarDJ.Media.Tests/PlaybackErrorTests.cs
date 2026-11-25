@@ -6,7 +6,7 @@ public class PlaybackErrorTests
 {
     [Theory]
     [InlineData("ERROR: [youtube] OPXUeeFXc90: Sign in to confirm your age. Use --cookies-from-browser", "age-restricted")]
-    [InlineData("ERROR: [youtube] abc: Sign in to confirm you’re not a bot. Use --cookies", "blocking")]
+    [InlineData("ERROR: [youtube] abc: Sign in to confirm you’re not a bot. Use --cookies", "paused")]
     [InlineData("ERROR: [youtube] abc: Video unavailable. This video has been removed by the uploader", "no longer available")]
     [InlineData("ERROR: [youtube] abc: Private video. Sign in if you've been granted access", "private")]
     [InlineData("ERROR: [youtube] abc: The uploader has not made this video available in your country", "your country")]
@@ -55,7 +55,7 @@ public class PlaybackErrorTests
     }
 
     [Theory]
-    [InlineData("ERROR: [youtube] abc: Sign in to confirm you’re not a bot.", true)]
+    [InlineData("ERROR: [youtube] abc: Sign in to confirm you’re not a bot.", false)]   // a newer yt-dlp does not end the pause
     [InlineData("ERROR: unable to download video data: HTTP Error 403: Forbidden", true)]
     [InlineData("ERROR: [youtube] abc: Requested format is not available.", true)]
     [InlineData("ERROR: [youtube] abc: Unable to extract nsig function code", true)]
@@ -65,5 +65,16 @@ public class PlaybackErrorTests
     public void YtDlpMayHelp_OnlyWhereANewerYtDlpUsuallyFixesIt(string raw, bool mayHelp)
     {
         Assert.Equal(mayHelp, PlaybackError.Explain(raw).YtDlpMayHelp);
+    }
+
+    [Theory]
+    [InlineData("ERROR: [youtube] abc: Sign in to confirm you’re not a bot. Use --cookies", true)]
+    [InlineData("YouTube paused (\"not a bot\" check) — the app waits a few minutes before asking again", true)]   // YouTubeResolver while waiting
+    [InlineData("ERROR: unable to download video data: HTTP Error 403: Forbidden", false)]
+    [InlineData("ERROR: [youtube] abc: Video unavailable", false)]
+    public void YouTubePaused_ForTheNotABotCheck(string raw, bool paused)
+    {
+        // The app shows this once, not one error dialog per song (YtDlpService.ShowError).
+        Assert.Equal(paused, PlaybackError.Explain(raw).YouTubePaused);
     }
 }

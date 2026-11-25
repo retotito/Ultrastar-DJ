@@ -3,6 +3,7 @@ using Avalonia.Threading;
 using Microsoft.Extensions.Logging;
 using UltrastarDJ.Core.Sidecars;
 using UltrastarDJ.Infrastructure;
+using UltrastarDJ.Media;
 using UltrastarDJ.App.Localization;
 
 namespace UltrastarDJ.App.Services;
@@ -109,7 +110,7 @@ public sealed class YtDlpService : IDisposable
     /// The error dialog's reasons, plus a pointer to the update when a newer yt-dlp would likely fix the failure
     /// (PlaybackError.YtDlpMayHelp) — a DJ cannot know that YouTube changed something.
     /// </summary>
-    public IReadOnlyList<string> WithHint(IReadOnlyList<string> reasons, bool ytDlpMayHelp)
+    private IReadOnlyList<string> WithHint(IReadOnlyList<string> reasons, bool ytDlpMayHelp)
     {
         if (!ytDlpMayHelp)
         {
@@ -122,6 +123,32 @@ public sealed class YtDlpService : IDisposable
                 ? L.F("ytdlp.hint_old", days)
                 : L.T("ytdlp.hint_check");
         return [.. reasons, hint];
+    }
+
+    // YouTube's "not a bot" pause: one dialog, then a short toast per song while it lasts (not a dialog per song).
+    private static readonly TimeSpan PausedDialogAgain = TimeSpan.FromMinutes(30);
+    private DateTime _pausedDialogShown = DateTime.MinValue;
+
+    /// <summary>
+    /// A song failed to load or play: the error dialog with its reasons (plus the yt-dlp hint where it helps). YouTube's
+    /// "not a bot" pause is explained once, then only a toast for each further song for a while.
+    /// </summary>
+    public void ShowError(string title, IReadOnlyList<string> reasons, bool ytDlpMayHelp, string? details)
+    {
+        if (reasons.Count > 0 && reasons[0] == PlaybackError.YouTubePausedReason)
+        {
+            if (DateTime.UtcNow - _pausedDialogShown < PausedDialogAgain)
+            {
+                _notifications.Warn(L.T("youtube.paused_toast"), L.T("youtube.paused_toast_detail"));
+                return;
+            }
+
+            _pausedDialogShown = DateTime.UtcNow;
+            _notifications.ShowError(L.T("youtube.paused_title"), reasons, details);
+            return;
+        }
+
+        _notifications.ShowError(title, WithHint(reasons, ytDlpMayHelp), details);
     }
 
     private void SetBusy(bool busy, string status)

@@ -168,6 +168,14 @@ public sealed class YouTubeResolver
     private readonly Func<DateTime> _now;
     private readonly ConcurrentDictionary<string, Task<YouTubeInfo>> _lookups = new();
 
+    /// <summary>
+    /// After YouTube's "not a bot" check, how long no song is looked up. Asking again with every song keeps the pause
+    /// going; it passes on its own (minutes to a few hours). The first lookup after this asks again.
+    /// </summary>
+    public static readonly TimeSpan BotPause = TimeSpan.FromMinutes(5);
+    private const string BotMarker = "not a bot";
+    private long _pausedUntilTicks;
+
     /// <param name="options">yt-dlp's path, read for every lookup (an update replaces it).</param>
     /// <param name="log">Lookups and their failures.</param>
     /// <param name="run">Test seam: runs yt-dlp with the arguments, returns exit code, stdout and stderr.</param>
@@ -183,8 +191,17 @@ public sealed class YouTubeResolver
 
     public bool IsAvailable => !string.IsNullOrEmpty(_options().YtDlpPath);
 
+    /// <summary>YouTube answered "not a bot" less than <see cref="BotPause"/> ago: lookups fail at once without asking.</summary>
+    public bool IsPaused => _now().Ticks < Interlocked.Read(ref _pausedUntilTicks);
+
     public async Task<YouTubeInfo> ResolveAsync(string videoId, CancellationToken ct)
     {
+        if (IsPaused)
+        {
+            // Worded like yt-dlp's own line, so PlaybackError explains it as the same pause.
+            throw new MediaException($"YouTube paused (\"{BotMarker}\" check) — the app waits a few minutes before asking again");
+        }
+
         string key = videoId;
         while (true)
         {
@@ -239,6 +256,12 @@ public sealed class YouTubeResolver
             string[] lines = stderr.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             string error = lines.FirstOrDefault(l => l.StartsWith("ERROR:", StringComparison.Ordinal)) ?? (lines.LastOrDefault() ?? $"yt-dlp exited with {exit}");
             _log.LogWarning("YouTube lookup {Video} failed after {Ms} ms: {Error}", videoId, sw.ElapsedMilliseconds, error);
+            if (error.Contains(BotMarker, StringComparison.OrdinalIgnoreCase))
+            {
+                Interlocked.Exchange(ref _pausedUntilTicks, (_now() + BotPause).Ticks);
+                _log.LogWarning("YouTube paused (\"not a bot\"): no lookups for {Minutes} minutes", BotPause.TotalMinutes);
+            }
+
             throw new MediaException(string.Join('\n', [error, .. lines.Where(l => l != error).TakeLast(15)]));
         }
 

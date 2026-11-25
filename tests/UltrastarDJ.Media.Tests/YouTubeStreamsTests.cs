@@ -119,6 +119,7 @@ public class YouTubeStreamsTests
         public int Runs;
         public string Json = YouTubeStreamsTests.Json(ExpireIn6h);
         public bool Fail;
+        public string Error = "ERROR: [youtube] abc: Sign in to confirm you're not a bot";
         public TaskCompletionSource? Gate;
 
         public async Task<(int, string, string)> RunAsync(IReadOnlyList<string> args, CancellationToken ct)
@@ -129,7 +130,7 @@ public class YouTubeStreamsTests
                 await Gate.Task;
             }
 
-            return Fail ? (1, "", "WARNING: x\nERROR: [youtube] abc: Sign in to confirm you're not a bot") : (0, Json, "");
+            return Fail ? (1, "", "WARNING: x\n" + Error) : (0, Json, "");
         }
     }
 
@@ -181,12 +182,47 @@ public class YouTubeStreamsTests
     [Fact]
     public async Task FailedLookup_SaysWhy_AndIsNotKept()
     {
-        FakeYtDlp yt = new() { Fail = true };
+        FakeYtDlp yt = new() { Fail = true, Error = "ERROR: [youtube] abc: Unable to download webpage" };
         YouTubeResolver r = Resolver(yt, () => Now);
 
         MediaException ex = await Assert.ThrowsAsync<MediaException>(() => r.ResolveAsync("abc", CancellationToken.None));
-        Assert.StartsWith("ERROR: [youtube] abc: Sign in to confirm you're not a bot", ex.Message);
+        Assert.StartsWith("ERROR: [youtube] abc: Unable to download webpage", ex.Message);
         await Assert.ThrowsAsync<MediaException>(() => r.ResolveAsync("abc", CancellationToken.None));
+        Assert.Equal(2, yt.Runs);
+    }
+
+    // ── YouTube's "not a bot" pause: wait instead of asking again with every song ──
+
+    [Fact]
+    public async Task NotABot_NoMoreLookupsForAWhile_ThenTriesAgain()
+    {
+        FakeYtDlp yt = new() { Fail = true };
+        DateTime now = Now;
+        YouTubeResolver r = Resolver(yt, () => now);
+
+        await Assert.ThrowsAsync<MediaException>(() => r.ResolveAsync("abc", CancellationToken.None));
+        now = Now.AddMinutes(4);
+        MediaException waiting = await Assert.ThrowsAsync<MediaException>(() => r.ResolveAsync("other", CancellationToken.None));
+        Assert.Equal(1, yt.Runs);                      // another song: not asked
+        Assert.Contains("not a bot", waiting.Message);   // explained as the same pause (PlaybackError)
+        Assert.True(r.IsPaused);
+
+        now = Now.AddMinutes(5);
+        yt.Fail = false;
+        await r.ResolveAsync("other", CancellationToken.None);
+        Assert.Equal(2, yt.Runs);
+        Assert.False(r.IsPaused);
+    }
+
+    [Fact]
+    public async Task OtherFailures_DoNotPause()
+    {
+        FakeYtDlp yt = new() { Fail = true, Error = "ERROR: [youtube] abc: Video unavailable" };
+        YouTubeResolver r = Resolver(yt, () => Now);
+
+        await Assert.ThrowsAsync<MediaException>(() => r.ResolveAsync("abc", CancellationToken.None));
+        await Assert.ThrowsAsync<MediaException>(() => r.ResolveAsync("other", CancellationToken.None));
+
         Assert.Equal(2, yt.Runs);
     }
 

@@ -1,0 +1,6 @@
+- Fewer YouTube requests: each song is looked up once and reused, so YouTube's "not a bot" pause comes much later at long parties.
+- If YouTube pauses anyway, the app explains it once, waits a few minutes before asking again, and your own songs keep playing.
+- The queue and waiting guest requests survive a restart or crash, with the guests' names.
+- Guests' phones say when the songbook is paused, when the public link has ended, and when the app was restarted.
+- The party PIN stays as you set it, also with the public link.
+- The update dialog now shows what's new.

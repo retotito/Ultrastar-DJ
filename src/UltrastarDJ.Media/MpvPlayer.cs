@@ -208,7 +208,9 @@ public sealed class MpvPlayer : IMediaPlayer
     public double Speed
     {
         get => _speed;
-        set { _speed = Math.Clamp(value, 0.5, 2.0); SetDouble("speed", _speed); }
+        // Not waited for: mpv rebuilds its tempo filter for a new speed, and a busy player (a stream catching up) would
+        // hold the caller — the UI thread — meanwhile. A failure is logged from the reply (event loop).
+        set { _speed = Math.Clamp(value, 0.5, 2.0); SetDoubleNoWait("speed", _speed); }
     }
 
     /// <summary>
@@ -555,6 +557,9 @@ public sealed class MpvPlayer : IMediaPlayer
                     break;
                 case MpvEventId.PropertyChange:
                     OnPropertyChange((MpvEventProperty*)ev->Data);
+                    break;
+                case MpvEventId.SetPropertyReply when ev->Error < 0:
+                    _log.LogWarning("{Player}: a setting was refused: {Error}", Name, ErrorMessage(ev->Error));
                     break;
                 case MpvEventId.FileLoaded:
                     OnFileLoaded();
@@ -931,6 +936,15 @@ public sealed class MpvPlayer : IMediaPlayer
     private unsafe void SetDouble(string name, double value)
     {
         int err = SetProperty(_handle, name, MpvFormat.Double, &value);
+        if (err < 0)
+        {
+            _log.LogWarning("{Player}: set {Name}={Value} failed: {Error}", Name, name, value, ErrorMessage(err));
+        }
+    }
+
+    private unsafe void SetDoubleNoWait(string name, double value)
+    {
+        int err = SetPropertyAsync(_handle, 0, name, MpvFormat.Double, &value);
         if (err < 0)
         {
             _log.LogWarning("{Player}: set {Name}={Value} failed: {Error}", Name, name, value, ErrorMessage(err));
