@@ -920,6 +920,13 @@ restart lost the guests' requests.
       with its length, so a return shows in the log with what happened before
 - [x] Before the release: the update dialog shows what's new — `.github/whats-new.md` goes into the update packages
       (`vpk pack --releaseNotes`) and on top of the GitHub Release; apps from beta.4 on show it
+- [x] Soak test for #5 (`Diagnostics.SoakTest`, `USDJ_SOAK=<hours>`): preview every 30 s, a game song every 3.5 min,
+      logged per step with YouTube lookup counts; 4-minute trial: 7 previews, 1 game song, 7 lookups (the game load of
+      the previewed song asked none), no errors
+- [x] Long soak run (3 h on the Mac, 2026-11-25): 299 previews, 46 game songs, 328 lookups — no "not a bot" pause.
+  Failures: 6 videos gone from YouTube, 2 USDB songs without a link, 6 in a 15-min stretch where YouTube's video
+  servers sent nothing (lookups slow, then fine again by themselves). .NET heap flat (145–158 MB). Idea for later:
+  one automatic retry with a fresh lookup after "took too long".
 - [ ] Verified live; released; reply to Kayert (#5)
 - [ ] After the release: website, section "YouTube or your own files / A .txt and a YouTube link — that's a song" —
       add an explanation (e.g. a "Long parties?" link opening a popup like "Create your own songs"): YouTube may pause

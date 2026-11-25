@@ -175,6 +175,10 @@ public sealed class YouTubeResolver
     public static readonly TimeSpan BotPause = TimeSpan.FromMinutes(5);
     private const string BotMarker = "not a bot";
     private long _pausedUntilTicks;
+    private int _lookupCount;
+
+    /// <summary>How often YouTube was actually asked (cache hits and waits during a pause not counted) — for the logs.</summary>
+    public int LookupCount => Volatile.Read(ref _lookupCount);
 
     /// <param name="options">yt-dlp's path, read for every lookup (an update replaces it).</param>
     /// <param name="log">Lookups and their failures.</param>
@@ -248,6 +252,7 @@ public sealed class YouTubeResolver
         List<string> args = ["-J", "--no-playlist", "--no-js-runtimes", "-f", "bv*+ba/b/ba/bv*"];
         args.Add($"https://www.youtube.com/watch?v={videoId}");
         Stopwatch sw = Stopwatch.StartNew();
+        Interlocked.Increment(ref _lookupCount);
         using CancellationTokenSource timeout = new(LookupTimeout);
         (int exit, string stdout, string stderr) = await _run(args, timeout.Token).ConfigureAwait(false);
         if (exit != 0 || string.IsNullOrWhiteSpace(stdout))

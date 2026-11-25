@@ -92,6 +92,12 @@ fault (not marked), no yt-dlp update hint (`PlaybackError.YouTubePaused`). The D
 for a while", local songs still work, it passes by itself), then for 30 minutes only a toast per further song
 (`YtDlpService.ShowError`, the one place every load and playback error goes through).
 
+**Soak test** (developer builds, `Diagnostics.SoakTest`): uses YouTube like a busy DJ for hours — a random YouTube
+song into the preview every 30 s, every 3.5 min a song into the Game Player and played (every second time the one just
+previewed). `caffeinate -dims env USDJ_SOAK=3 dotnet run --project src/UltrastarDJ.App` (hours; `caffeinate` keeps the
+Mac awake while it runs). The log gets a `Soak:` line per step (ok/FAILED, ms, how often YouTube was asked), every
+error dialog (then closed), the first "not a bot" pause with the lookup count, and a summary every 15 min.
+
 **No YouTube login.** Tried in Sprint 37 and removed: with a browser's login yt-dlp acts as a logged-in browser,
 whose addresses need a JavaScript runtime (Deno) to decode — without one only pictures; with one the lookup works but
 YouTube refuses the streams themselves (its SABR delivery for logged-in users wants tokens that exist to stop

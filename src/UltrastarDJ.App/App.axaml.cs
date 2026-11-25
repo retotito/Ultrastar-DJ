@@ -56,6 +56,7 @@ public sealed partial class App : Application
         Diagnostics.MemoryLog.Start(_services.GetRequiredService<ILogger<App>>());
         Diagnostics.UiHangLog.Start(_services.GetRequiredService<ILogger<App>>());
 #if DEBUG
+        Diagnostics.SoakTest.StartIfAsked(_services);
         Diagnostics.UiInspector.Attach(paths.Logs, _services.GetRequiredService<ILogger<App>>(), _services.GetRequiredService<NotificationService>());
 #endif
         desktop.ShutdownMode = ShutdownMode.OnMainWindowClose;

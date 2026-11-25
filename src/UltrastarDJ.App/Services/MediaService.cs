@@ -27,6 +27,9 @@ public sealed class MediaService : IAsyncDisposable
         Preview = new MediaChannel(MediaChannelKind.Preview, _factory, loggers);
     }
 
+    /// <summary>The YouTube lookups both channels share (cache, "not a bot" pause, count).</summary>
+    public YouTubeResolver YouTube => _factory.YouTube;
+
     public MediaChannel Game { get; }
     public MediaChannel Preview { get; }
 
