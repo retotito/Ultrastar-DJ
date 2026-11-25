@@ -185,12 +185,7 @@ public sealed partial class DjWindow : Window
             return;
         }
 
-        if (e.Key == Key.Escape && DataContext is DjWindowViewModel { YouTubeLoginInfoOpen: true } login)
-        {
-            login.YouTubeLoginInfoOpen = false;
-            e.Handled = true;
-        }
-        else if (e.Key == Key.Escape && DataContext is DjWindowViewModel { ShortcutsOpen: true } help)
+        if (e.Key == Key.Escape && DataContext is DjWindowViewModel { ShortcutsOpen: true } help)
         {
             help.ShortcutsOpen = false;
             e.Handled = true;
@@ -344,7 +339,6 @@ public sealed partial class DjWindow : Window
     {
         vm.ShortcutsOpen = false;
         vm.SingleScreenInfoOpen = false;
-        vm.YouTubeLoginInfoOpen = false;
         vm.SongDetails = null;
         if (vm.DuetSingers is not null)
         {
@@ -418,14 +412,6 @@ public sealed partial class DjWindow : Window
     }
 
     // The single-screen explanation closes on a press on its dimmed backdrop.
-    private void OnYouTubeLoginInfoBackdropPressed(object? sender, PointerPressedEventArgs e)
-    {
-        if (ReferenceEquals(e.Source, YouTubeLoginInfoLayer) && DataContext is DjWindowViewModel vm)
-        {
-            vm.YouTubeLoginInfoOpen = false;
-        }
-    }
-
     private void OnSingleScreenInfoBackdropPressed(object? sender, PointerPressedEventArgs e)
     {
         if (ReferenceEquals(e.Source, SingleScreenInfoLayer) && DataContext is DjWindowViewModel vm)
@@ -459,7 +445,7 @@ public sealed partial class DjWindow : Window
         List<Visual> path = source.GetSelfAndVisualAncestors().ToList();
         // The single-screen explanation sits over the panel it was opened from: a press on it, or outside it, is its
         // own (OnSingleScreenInfoBackdropPressed) — the panel stays open behind it.
-        if (path.Any(v => ReferenceEquals(v, SingleScreenInfoLayer) || ReferenceEquals(v, YouTubeLoginInfoLayer) || ReferenceEquals(v, ShortcutsLayer)))
+        if (path.Any(v => ReferenceEquals(v, SingleScreenInfoLayer) || ReferenceEquals(v, ShortcutsLayer)))
         {
             return;
         }

@@ -13,9 +13,12 @@ public sealed partial class SongbookPanelViewModel : ViewModelBase, IDisposable
     private readonly NotificationService _notifications;
     private bool _loading;
 
-    [ObservableProperty] private bool _isRunning;
-    [ObservableProperty] private bool _busy;
-    [ObservableProperty] private bool _pinEnabled;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(CanChangeConnect))] private bool _isRunning;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(CanChangeConnect))] private bool _busy;
+
+    /// <summary>Wi-Fi or public link is chosen while the songbook is stopped: switching under running guests' phones would cut them off.</summary>
+    public bool CanChangeConnect => !Busy && !IsRunning;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(PublicWithoutPin))] private bool _pinEnabled;
     [ObservableProperty] private bool _autoStart;
     [ObservableProperty] private bool _requestsOpen;
     [ObservableProperty] private string _connectVia = WifiChoice;
@@ -86,11 +89,13 @@ public sealed partial class SongbookPanelViewModel : ViewModelBase, IDisposable
     public IReadOnlyList<string> ConnectChoices { get; } = [WifiChoice, PublicChoice];
     public bool IsPublic => ConnectVia == PublicChoice;
     public bool IsWifi => !IsPublic;
+    public bool PublicWithoutPin => IsPublic && !PinEnabled;
 
     partial void OnConnectViaChanged(string value)
     {
         OnPropertyChanged(nameof(IsPublic));
         OnPropertyChanged(nameof(IsWifi));
+        OnPropertyChanged(nameof(PublicWithoutPin));
         if (!_loading && value is not null)
         {
             _ = SwitchAsync(value == PublicChoice);

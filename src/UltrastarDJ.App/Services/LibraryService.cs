@@ -99,6 +99,10 @@ public sealed class LibraryService : IDisposable
     public bool IsReachableNow(string sourceId)
         => sourceId == UsdbCatalogEntry.SourceId || _doc.Sources.FirstOrDefault(s => s.Id == sourceId)?.Path is not { } p || Directory.Exists(p);
 
+    /// <summary>Why a song that is not available right now cannot be played (USDB offline, drive not connected).</summary>
+    public string UnavailableTip(Song song)
+        => song.UsdbId is not null ? L.T("library.usdb_offline") : SourceAvailability.NotConnected(SourceLabel(song.SourceId));
+
     public string SourceLabel(string sourceId) => sourceId == UsdbCatalogEntry.SourceId ? "USDB" : _doc.Sources.FirstOrDefault(s => s.Id == sourceId)?.Label ?? sourceId;
 
     /// <summary>USDB songs need a live session to fetch their txt; offline/disconnected greys them like an unplugged drive.</summary>

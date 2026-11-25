@@ -16,6 +16,7 @@ public sealed class SettingsBackupTests : IDisposable
         File.WriteAllText(Path.Combine(Settings, "marks.json"), "{\"marks\":[]}");
         File.WriteAllText(Path.Combine(Settings, "usdb.json"), "{\"username\":\"dj\",\"password\":\"secret\"}");
         File.WriteAllText(Path.Combine(Settings, "app.json.tmp"), "half written");
+        File.WriteAllText(Path.Combine(Settings, "party.json"), "{\"queue\":[],\"requests\":[]}");
     }
 
     public void Dispose()
@@ -24,7 +25,7 @@ public sealed class SettingsBackupTests : IDisposable
     }
 
     [Fact]
-    public void Create_ZipsTheSettings_WithoutTheUsdbPassword()
+    public void Create_ZipsTheSettings_WithoutTheUsdbPasswordOrTheLastPartysQueue()
     {
         int files = SettingsBackup.Create(Settings, Zip);
 

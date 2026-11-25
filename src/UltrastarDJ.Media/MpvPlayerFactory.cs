@@ -2,10 +2,24 @@ using Microsoft.Extensions.Logging;
 
 namespace UltrastarDJ.Media;
 
-/// <summary>Creates mpv players. <see cref="Options"/> may change (a yt-dlp update): every new player takes the current ones.</summary>
-public sealed class MpvPlayerFactory(MpvOptions options, ILoggerFactory loggers) : IMediaPlayerFactory
+/// <summary>
+/// Creates mpv players. <see cref="Options"/> may change (a yt-dlp update, the login setting): every new player takes
+/// the current ones. All players share one <see cref="YouTubeResolver"/>, so preview and game look a song up once.
+/// </summary>
+public sealed class MpvPlayerFactory : IMediaPlayerFactory
 {
-    public MpvOptions Options { get; set; } = options;
+    private readonly ILoggerFactory _loggers;
 
-    public IMediaPlayer Create(string name, bool video) => new MpvPlayer(name, video, Options, loggers.CreateLogger<MpvPlayer>());
+    public MpvPlayerFactory(MpvOptions options, ILoggerFactory loggers)
+    {
+        Options = options;
+        _loggers = loggers;
+        YouTube = new YouTubeResolver(() => Options, loggers.CreateLogger<YouTubeResolver>());
+    }
+
+    public MpvOptions Options { get; set; }
+
+    public YouTubeResolver YouTube { get; }
+
+    public IMediaPlayer Create(string name, bool video) => new MpvPlayer(name, video, Options, _loggers.CreateLogger<MpvPlayer>(), YouTube);
 }

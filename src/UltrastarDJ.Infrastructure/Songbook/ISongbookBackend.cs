@@ -15,9 +15,11 @@ public sealed record SongbookRequestResult(bool Ok, bool UnknownSong, string? Me
 /// Live state shown at the top of the guest page. <see cref="LibraryVersion"/> changes when the library does
 /// (drive plugged in, source switched off); the phone then fetches the catalog again. <see cref="Mine"/> are this
 /// phone's requests; <see cref="Taken"/> marks songs already requested or queued ("Requested", "In the queue #3").
+/// <see cref="Session"/> is new on every app start: a phone that sees it change tells its guest that earlier
+/// requests are still with the DJ but no longer shown.
 /// </summary>
 public sealed record SongbookState(SongbookSong? NowPlaying, IReadOnlyList<SongbookSong> Queue, int SongCount, int LibraryVersion,
-    IReadOnlyList<SongbookMine> Mine, IReadOnlyDictionary<string, string> Taken, bool RequestsOpen);
+    IReadOnlyList<SongbookMine> Mine, IReadOnlyDictionary<string, string> Taken, bool RequestsOpen, string Session);
 
 /// <summary>
 /// What the guest server needs from the app. Implemented by the App layer; every member may be called from

@@ -75,6 +75,7 @@ Everything below exists in the prototype and must exist in v2 unless marked *(la
 
 ### Queue
 - Ordered list, add/remove/reorder, load next into game.
+- Kept over a restart or crash, with the guest names of requested songs; waiting requests too.
 
 ### Players & microphones
 - 4 fixed player slots: active, name, colour (blue/red/green/yellow), mic assignment (device + channel L/R/mono).
@@ -110,7 +111,7 @@ Everything below exists in the prototype and must exist in v2 unless marked *(la
 - YIN pitch detection per mic, median ring buffer (5), octave-invariant matching, difficulty easy/medium/hard (±2 / ±1 / ±0.5 semitones), points per beat (normal 1×, golden 2×, rap = any sound, freestyle = 0), max 10 000 per song, phrase bonus.
 
 ### Songbook for guests
-- Embedded HTTP server serving a mobile web page: guests browse/search the library and request songs. Optional 4-digit party PIN. Public https link via a Cloudflare Quick Tunnel (`cloudflared`) for guests not on the Wi-Fi, optional next to the Wi-Fi address; the beamer shows a QR code.
+- Embedded HTTP server serving a mobile web page: guests browse/search the library and request songs. Optional 4-digit party PIN (the panel warns when it is off with the public link). Public https link via a Cloudflare Quick Tunnel (`cloudflared`) for guests not on the Wi-Fi, optional next to the Wi-Fi address; the beamer shows a QR code.
 
 ### Settings
 - Theme dark/light, difficulty, output latency per device, sources, persisted players/displays/outputs.

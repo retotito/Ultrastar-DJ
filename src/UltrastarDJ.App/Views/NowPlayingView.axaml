@@ -124,7 +124,7 @@
       </Grid>
       <!-- Requested on the songbook: who to call to the mic (same look as in the queue) -->
       <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,-4,0,0"
-                  IsVisible="{Binding RequestedBy, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" ToolTip.Tip="{l:T game_player.requested_songbook}">
+                  IsVisible="{Binding RequestedBy, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" ToolTip.Tip="{Binding RequestedByTip}">
         <c:Icon Glyph="mic" FontSize="{StaticResource IconSm}" Foreground="{DynamicResource BrushPrimary}" VerticalAlignment="Center" />
         <TextBlock Text="{Binding RequestedBy}" FontSize="{StaticResource TextXs}" FontWeight="{StaticResource WeightSemibold}"
                    Foreground="{DynamicResource BrushPrimary}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />

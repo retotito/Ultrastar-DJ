@@ -27,4 +27,6 @@ public static class PlayerConverters
     public static readonly IMultiValueConverter FirstText = new FuncMultiValueConverter<string?, string?>(texts => texts.FirstOrDefault(t => !string.IsNullOrEmpty(t)));
     public static readonly IValueConverter AvailabilityTooltip = new FuncValueConverter<bool, string?>(ok => ok ? null : L.T("library.source_unreachable"));
     public static readonly IValueConverter PlayPauseGlyph = new FuncValueConverter<bool, string>(playing => playing ? "pause" : "play_arrow");
+    /// <summary>A request kept from before a restart: its guest's name slanted, so it reads as no longer live.</summary>
+    public static readonly IValueConverter ItalicIf = new FuncValueConverter<bool, FontStyle>(on => on ? FontStyle.Italic : FontStyle.Normal);
 }

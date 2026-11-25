@@ -8,14 +8,15 @@ namespace UltrastarDJ.Infrastructure.Settings;
 /// Backup of what cannot be rebuilt: the settings documents (players and mics, outputs and latency, sources, songbook,
 /// app settings, song marks) as one zip, saved wherever the DJ likes. The song index, USDB catalog, cache and logs
 /// are left out — a scan and a USDB sync rebuild them. So is <c>usdb.json</c>: it holds the USDB password in plain
-/// text, and a backup on a stick must not. A restore is staged and applied at the next start, before anything loads
+/// text, and a backup on a stick must not. Nor is <c>party.json</c> (the queue and requests kept over a restart): a
+/// restored backup must not bring back an old party's queue. A restore is staged and applied at the next start, before anything loads
 /// its settings: the running app would otherwise save over the restored files on its way out.
 /// </summary>
 public static class SettingsBackup
 {
     public const string ManifestName = "ultrastar-dj-backup.json";
     private const string PendingFolder = "restore-pending";
-    private static readonly HashSet<string> Excluded = new(StringComparer.OrdinalIgnoreCase) { "usdb.json" };
+    private static readonly HashSet<string> Excluded = new(StringComparer.OrdinalIgnoreCase) { "usdb.json", "party.json" };
 
     /// <summary>Writes the backup zip. Returns how many settings documents it holds.</summary>
     public static int Create(string settingsDir, string zipPath)

@@ -897,25 +897,23 @@ Acer Aspire V3-772G, built-in audio + Logitech H340 USB headset).
 From GitHub issue #5 (a bar): after ~2 h YouTube answers "confirm you're not a bot", 18+ videos need a login, and a
 restart lost the guests' requests.
 
-- [x] Setting "YouTube login: Firefox" (yt-dlp `cookies-from-browser`) — a login for long parties and 18+ videos,
-      with the advice to use a separate Google account (Settings → YouTube, 13 languages; applies to the next song
-      loaded; an unreadable login gets its own message, tested); ⓘ next to the switch opens an explanation over the window
-      (why, four steps — separate account, log in in Firefox, close it, switch on — and what to know)
-- [x] YouTube login verified live (macOS, Firefox installed and logged in after switching on)
-- [x] Under the switch: is Firefox logged in to YouTube? (`FirefoxYouTubeLogin`, tested — on this computer only, in the
-      profile yt-dlp picks, whether a YouTube login cookie exists, never its value, never asking YouTube) ✓ logged in /
-      ⚠ not logged in / ⚠ no Firefox, ↻ to check again; "Check account" opens youtube.com/account in Firefox, where the
-      profile picture shows which account it is. Switched on without Firefox: songs play without a login instead of all
-      failing. Fixed after the first live test ("not logged in" although logged in): Firefox locks its
-      open cookie database and .NET refused to copy it — copied with the system's cp (macOS / Linux) or shared read
-      (Windows), as yt-dlp does; newer Firefox stores expiry dates in milliseconds (tested)
-- [x] Settings: the login in a card of its own ("YouTube login"), next to the yt-dlp card; both slightly red
-      (`Border.card.youtube`, `BrushYouTubeContainer` / `BrushYouTubeOutline`, light and dark); "How it works" a green
-      button instead of a small ⓘ
+- [x] ~~YouTube login from Firefox~~ — built (setting, guide, logged-in check), then **removed**: logged in, YouTube's
+      addresses need Deno to decode, and with Deno the lookup works but YouTube refuses the streams (SABR, tokens) —
+      docs/02-media-engine.md "YouTube lookups". Settings keeps one red YouTube card (yt-dlp)
 - [ ] YouTube pausing ("not a bot"): no retries, one clear message (YouTube pauses for a while, local songs still work,
-      a login helps) instead of an error per song
-- [ ] Guest requests and the queue kept across a restart
-- [ ] Fewer YouTube requests: a song is looked up once and the result reused for preview, game and repeats
+      it passes after a while) instead of an error per song
+- [x] Guest requests and the queue kept across a restart: queue (with requester names) and waiting requests saved on
+      every change and restored silently; restored ones no longer connected to the songbook (grey / slanted name,
+      tooltip), unavailable songs greyed, gone songs skipped. Phones: "paused" banner when the app can't be reached,
+      "restarted" note when the session changed and they had open requests (`docs/04-ui.md` → Requests list);
+      the banner sits in the sticky header with ⚠ in the tab title, and on the public link says the link has ended
+- [x] Party PIN with the public link: no longer silently switched on at start — the DJ's choice stays; off with the
+      public link shows a warning ("Without a PIN, anyone with the link can open the songbook and request songs")
+- [x] "Guests connect via" locked while the songbook runs ("Stop the songbook to change how guests connect"):
+      switching under running phones cut them off
+- [x] Fewer YouTube requests: a song is looked up once (`YouTubeResolver`) and kept until shortly before its addresses
+      expire (~6 h); preview, game and repeats play from it — verified in a real run: preview + Game Player = one
+      lookup (was two), the game load ready in ~1 s; a refused kept address is forgotten and looked up anew (tested)
 - [ ] Watch: the freeze after switching the practice speed (seen once in Sprint 36)
 - [ ] Before the release: the update dialog shows what's new (today only "Ultrastar DJ x is available" / "You have y")
       — e.g. the release's "What's new" packed with the update (Velopack `vpk pack --releaseNotes`) and shown in the
@@ -923,7 +921,7 @@ restart lost the guests' requests.
 - [ ] Verified live; released; reply to Kayert (#5)
 - [ ] After the release: website, section "YouTube or your own files / A .txt and a YouTube link — that's a song" —
       add an explanation (e.g. a "Long parties?" link opening a popup like "Create your own songs"): YouTube may pause
-      after many songs, the Firefox login in Settings helps (separate account), 18+ videos need it
+      after many songs; the app asks it as rarely as it can, says so clearly, and local songs always work
 
 ---
 

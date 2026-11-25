@@ -15,8 +15,16 @@ using UltrastarDJ.App.Localization;
 
 namespace UltrastarDJ.App.Services;
 
-/// <summary>A guest's wish, shown in the queue widget until the DJ queues or dismisses it.</summary>
-public sealed record SongRequest(string Id, Song Song, string Guest, DateTime At);
+/// <summary>
+/// A guest's wish, shown in the queue widget until the DJ queues or dismisses it. <paramref name="FromBefore"/>: kept
+/// over a restart — no longer connected to the guest's phone. Greyed while its song cannot be played (drive unplugged,
+/// USDB offline).
+/// </summary>
+public sealed record SongRequest(string Id, Song Song, string Guest, DateTime At, bool FromBefore = false, bool IsAvailable = true, string? UnavailableTip = null)
+{
+    public double Opacity => IsAvailable ? 1.0 : 0.4;
+    public string? GuestTip => FromBefore ? L.T("queue.requested_before_restart") : null;
+}
 
 /// <summary>
 /// Guest songbook: hosts <see cref="SongbookServer"/>, feeds it library/queue state and collects requests.
@@ -60,7 +68,11 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
         _settings = settings;
         _log = loggers.CreateLogger<SongbookService>();
         _doc = settings.Load(SettingsName, SongbookDocument.Default());
-        _server = new SongbookServer(this, loggers.CreateLogger<SongbookServer>()) { Pin = _doc.PinEnabled ? _doc.Pin : null };
+        _server = new SongbookServer(this, loggers.CreateLogger<SongbookServer>()) { Pin = PinEnabled ? _doc.Pin : null };
+        RestoreParty();
+        playlist.Changed += SaveParty;
+        // A drive plugged in or USDB back online: the waiting requests' greying follows.
+        library.AvailabilityChanged += () => Dispatcher.UIThread.Post(RefreshRequests);
     }
 
     /// <summary>Raised on the UI thread.</summary>
@@ -68,6 +80,7 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
 
     public bool IsRunning => _server.IsRunning;
     public int Port => _doc.Port;
+    /// <summary>The DJ's choice, also with the public link (the panel warns when it is off there); never changed by a start.</summary>
     public bool PinEnabled => _doc.PinEnabled;
     public string Pin => _doc.Pin;
     public bool AutoStart => _doc.AutoStart;
@@ -198,6 +211,7 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
         }
 
         Save(_doc with { PublicLink = on });
+        _server.Pin = PinEnabled ? _doc.Pin : null;
         _tunnelRetries = 0;
         if (wasRunning)
         {
@@ -213,12 +227,6 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
         {
             SetPublic(null, L.T("songbook.cloudflared_missing"));
             return;
-        }
-
-        // Anyone with the link could open it: the party PIN keeps strangers out.
-        if (!_doc.PinEnabled)
-        {
-            SetPinEnabled(true);
         }
 
         SetPublic(null, _tunnelRetries == 0 ? L.T("songbook.connecting") : L.T("songbook.reconnecting"));
@@ -283,13 +291,13 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
     public void SetPinEnabled(bool on)
     {
         Save(_doc with { PinEnabled = on });
-        _server.Pin = on ? _doc.Pin : null;
+        _server.Pin = PinEnabled ? _doc.Pin : null;
     }
 
     public void RegeneratePin()
     {
         Save(_doc with { Pin = NewPin() });
-        _server.Pin = _doc.PinEnabled ? _doc.Pin : null;
+        _server.Pin = PinEnabled ? _doc.Pin : null;
     }
 
     /// <summary>Takes effect on the next start.</summary>
@@ -300,13 +308,25 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
 
     public void Dismiss(SongRequest request)
     {
-        _requests.Dismiss(request.Id);
+        if (!ForgetFromBefore(request))
+        {
+            _requests.Dismiss(request.Id);
+        }
+
         RefreshRequests();
     }
 
     public void Accept(SongRequest request)
     {
-        _requests.Accept(request.Id);
+        if (ForgetFromBefore(request))
+        {
+            _carried[request.Song.Id] = request.Guest;
+        }
+        else
+        {
+            _requests.Accept(request.Id);
+        }
+
         _playlist.Add(request.Song);
         RefreshRequests();
     }
@@ -317,13 +337,29 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
     /// </summary>
     public void AcceptLoaded(SongRequest request)
     {
-        _requests.Accept(request.Id);
-        _requests.Observe(LoadedId);
+        if (ForgetFromBefore(request))
+        {
+            _carried[request.Song.Id] = request.Guest;
+        }
+        else
+        {
+            _requests.Accept(request.Id);
+            _requests.Observe(LoadedId);
+        }
+
         RefreshRequests();
     }
 
     /// <summary>The guest who asked for a queued or on-stage song — the queue shows it so the DJ can call them up.</summary>
-    public string? RequesterOf(string songId) => _requests.RequesterOf(songId, QueueIds(), _playlist.ActiveIndex, LoadedId);
+    public string? RequesterOf(string songId)
+        => _requests.RequesterOf(songId, QueueIds(), _playlist.ActiveIndex, LoadedId) ?? CarriedRequester(songId);
+
+    /// <summary>The song's requester is from before a restart: the name is kept, their phone no longer follows it.</summary>
+    public bool IsRequestFromBefore(string songId)
+        => _requests.RequesterOf(songId, QueueIds(), _playlist.ActiveIndex, LoadedId) is null && CarriedRequester(songId) is not null;
+
+    private string? CarriedRequester(string songId)
+        => _carried.TryGetValue(songId, out string? guest) && (songId == LoadedId || _playlist.Items.Any(s => s.Id == songId)) ? guest : null;
 
     private IReadOnlyList<string> QueueIds() => [.. _playlist.Items.Select(s => s.Id)];
 
@@ -333,7 +369,18 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
     private void OnStageChanged()
     {
         _requests.Observe(LoadedId);
+        DropSungCarried();
         Changed?.Invoke();
+    }
+
+    // A name from before a restart belongs to that queue entry only: once the song left the queue and the stage, the
+    // same song queued again later is nobody's request.
+    private void DropSungCarried()
+    {
+        foreach (string id in _carried.Keys.Where(id => CarriedRequester(id) is null).ToList())
+        {
+            _carried.Remove(id);
+        }
     }
 
     private void RefreshRequests()
@@ -343,11 +390,87 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
         {
             if (_library.Songs.FirstOrDefault(s => s.Id == r.SongId) is { } song)
             {
-                Requests.Add(new SongRequest(r.Id, song, r.Guest, r.At));
+                Requests.Add(WithAvailability(new SongRequest(r.Id, song, r.Guest, r.At)));
             }
         }
 
+        foreach (SongRequest r in _before)
+        {
+            Requests.Add(WithAvailability(r));
+        }
+
+        SaveParty();
         Notify();
+    }
+
+    private SongRequest WithAvailability(SongRequest r)
+        => _library.IsAvailable(r.Song.SourceId) ? r : r with { IsAvailable = false, UnavailableTip = _library.UnavailableTip(r.Song) };
+
+    // ── Kept over a restart (settings/party.json): the queue with who requested what, and the waiting requests ──
+    // Saved on every change, so a crash keeps them too. Restored ones are no longer connected to a phone: the new
+    // session's GuestRequests does not know them, so phones do not list them and guests cannot cancel them.
+    private const string PartyName = "party";
+    private readonly List<SongRequest> _before = [];
+    // Requester names of queued (or on-stage) songs that came from before a restart.
+    private readonly Dictionary<string, string> _carried = [];
+    private bool _partyRestored;
+
+    private void RestoreParty()
+    {
+        SavedParty saved = _settings.Load(PartyName, SavedParty.Empty);
+        Dictionary<string, Song> byId = [];
+        if (saved.Queue is { Count: > 0 } || saved.Requests is { Count: > 0 })
+        {
+            foreach (Song s in _library.Songs)
+            {
+                byId.TryAdd(s.Id, s);
+            }
+        }
+
+        var (queue, requests) = saved.Restore(byId.GetValueOrDefault);
+        foreach ((Song song, string? guest) in queue)
+        {
+            if (guest is not null)
+            {
+                _carried[song.Id] = guest;
+            }
+
+            _playlist.Add(song);
+        }
+
+        foreach ((Song song, SavedRequest r) in requests)
+        {
+            _before.Add(new SongRequest("before-" + _before.Count, song, r.Guest, r.At, FromBefore: true));
+        }
+
+        _partyRestored = true;
+        if (queue.Count > 0 || requests.Count > 0)
+        {
+            _log.LogInformation("Party kept from the last run: {Queue} queued, {Requests} requests", queue.Count, requests.Count);
+            RefreshRequests();
+        }
+    }
+
+    private bool ForgetFromBefore(SongRequest request) => request.FromBefore && _before.RemoveAll(b => b.Id == request.Id) > 0;
+
+    private void SaveParty()
+    {
+        if (!_partyRestored)
+        {
+            return;
+        }
+
+        DropSungCarried();
+        List<SavedRequest> waiting = [.. _requests.Waiting.Select(r => new SavedRequest(r.SongId, r.Guest, r.At)), .. _before.Select(r => new SavedRequest(r.Song.Id, r.Guest, r.At))];
+        SavedParty party = new([.. _playlist.Items.Select(s => new SavedQueueEntry(s.Id, RequesterOf(s.Id)))], waiting);
+        try
+        {
+            _settings.Save(PartyName, party);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _log.LogWarning(ex, "Could not keep the queue for the next start");
+        }
     }
 
     // ── ISongbookBackend (Kestrel threads) ─────────────────────────────
@@ -428,6 +551,11 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
             taken[r.SongId] = "requested";
         }
 
+        foreach (SongRequest r in _before)
+        {
+            taken[r.Song.Id] = "requested";
+        }
+
         for (int i = active + 1; i < ids.Count; i++)
         {
             taken[ids[i]] = i == active + 1 ? "upnext" : $"queue|{i - active}";
@@ -449,7 +577,7 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
             }
         }
 
-        return new SongbookState(now is null ? null : ToGuestSong(now), queue, _library.Songs.Count, LibraryVersion, mine, taken, RequestsOpen);
+        return new SongbookState(now is null ? null : ToGuestSong(now), queue, _library.Songs.Count, LibraryVersion, mine, taken, RequestsOpen, _session);
     }
 
     // Codes; the guest page words them in the phone's language ("status_queue": "In the queue #{0}").
@@ -461,6 +589,9 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
         GuestRequestStatus.Sung => "sung",
         _ => "declined",
     };
+
+    // New on every start: a phone that sees it change knows its earlier requests are no longer shown ("restarted").
+    private readonly string _session = Guid.NewGuid().ToString("N")[..12];
 
     public IReadOnlyList<(string Code, string Name)> GuestLanguages() => [.. Translations.Languages.Select(l => (l.Code, l.NativeName))];
 
@@ -490,6 +621,12 @@ public sealed class SongbookService : ISongbookBackend, IAsyncDisposable
         if (!RequestsOpen)
         {
             return new SongbookRequestResult(false, false, "closed");
+        }
+
+        // Asked for before a restart: still waiting with the DJ, just no longer on anyone's phone.
+        if (_before.FirstOrDefault(b => b.Song.Id == songId) is { } before)
+        {
+            return new SongbookRequestResult(false, false, $"requested_by|{before.Guest}");
         }
 
         RequestOutcome outcome = _requests.Add(songId, guestName, clientId, DateTime.Now, QueueIds(), _playlist.ActiveIndex, LoadedId);

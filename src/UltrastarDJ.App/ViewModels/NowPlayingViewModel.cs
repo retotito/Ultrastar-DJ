@@ -59,7 +59,7 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
         _ytDlp = ytDlp;
         _songbook = songbook;
         // Accepted, cancelled, loaded: who asked for the loaded song may change.
-        songbook.Changed += () => OnPropertyChanged(nameof(RequestedBy));
+        songbook.Changed += () => { OnPropertyChanged(nameof(RequestedBy)); OnPropertyChanged(nameof(RequestedByTip)); };
         _outputs = outputs;
         _playback = playback;
         _displays = displays;
@@ -110,6 +110,8 @@ public sealed partial class NowPlayingViewModel : ViewModelBase, IDisposable
 
     /// <summary>The guest who requested the loaded song on the songbook (as in the queue) — the DJ calls them up.</summary>
     public string? RequestedBy => _playback.Song is { } song ? _songbook.RequesterOf(song.Id) : null;
+    public string RequestedByTip => _playback.Song is { } song && _songbook.IsRequestFromBefore(song.Id)
+        ? L.T("queue.requested_before_restart") : L.T("game_player.requested_songbook");
 
     // ── Countdown and pause in the box, as on the beamers ──
     private readonly DispatcherTimer _countdown;

@@ -14,12 +14,14 @@ public sealed partial class QueueViewModel : ViewModelBase
     private readonly Playlist _playlist;
     private readonly NowPlayingViewModel _nowPlaying;
     private readonly SongbookService _songbook;
+    private readonly LibraryService _library;
 
     [ObservableProperty] private Song? _selected;
 
-    public QueueViewModel(Playlist playlist, NowPlayingViewModel nowPlaying, SongbookService songbook)
+    public QueueViewModel(Playlist playlist, NowPlayingViewModel nowPlaying, SongbookService songbook, LibraryService library)
     {
         _playlist = playlist;
+        _library = library;
         _nowPlaying = nowPlaying;
         _nowPlaying.LoadAvailabilityChanged += () =>
         {
@@ -71,14 +73,21 @@ public sealed partial class QueueViewModel : ViewModelBase
         }
     }
 
-    private bool CanLoadRequest(SongRequest? r) => _nowPlaying.CanLoadSong;
+    private bool CanLoadRequest(SongRequest? r) => _nowPlaying.CanLoadSong && r is not { IsAvailable: false };
 
     private void Refresh()
     {
         Items.Clear();
         for (int i = 0; i < _playlist.Items.Count; i++)
         {
-            Items.Add(new QueueRowViewModel(_playlist.Items[i], i + 1, i == _playlist.ActiveIndex, _songbook.RequesterOf(_playlist.Items[i].Id), this));
+            Song song = _playlist.Items[i];
+            bool available = _library.IsAvailable(song.SourceId);
+            Items.Add(new QueueRowViewModel(song, i + 1, i == _playlist.ActiveIndex, _songbook.RequesterOf(song.Id), this)
+            {
+                IsRequestFromBefore = _songbook.IsRequestFromBefore(song.Id),
+                IsAvailable = available,
+                UnavailableTip = available ? null : _library.UnavailableTip(song),
+            });
         }
 
         OnPropertyChanged(nameof(Count));
@@ -122,6 +131,13 @@ public sealed partial class QueueRowViewModel(Song song, int number, bool isActi
     /// <summary>The guest who requested it via the songbook — so the DJ can call them up before it starts.</summary>
     public string? RequestedBy { get; } = requestedBy;
     public bool IsRequest => RequestedBy is not null;
+    /// <summary>Requested before a restart: the name is kept (grey), the guest's phone no longer follows the song.</summary>
+    public bool IsRequestFromBefore { get; init; }
+    public bool IsLiveRequest => IsRequest && !IsRequestFromBefore;
+    /// <summary>False while its drive is unplugged or USDB is offline: greyed, cannot be loaded.</summary>
+    public bool IsAvailable { get; init; } = true;
+    public string? UnavailableTip { get; init; }
+    public double Opacity => IsAvailable ? 1.0 : 0.4;
     public Song Song { get; } = song;
     public int Number { get; } = number;
     public bool IsActive { get; } = isActive;
@@ -129,7 +145,7 @@ public sealed partial class QueueRowViewModel(Song song, int number, bool isActi
     public string Artist => Song.Artist;
 
     [RelayCommand(CanExecute = nameof(CanLoad), AllowConcurrentExecutions = true)] private Task LoadAsync() => owner.LoadAsync(Song);
-    private bool CanLoad() => owner.CanLoadSong;
+    private bool CanLoad() => owner.CanLoadSong && IsAvailable;
     [RelayCommand] private void Remove() => owner.Remove(Song);
     [RelayCommand] private void MoveUp() => owner.MoveUp(Song);
     [RelayCommand] private void MoveDown() => owner.MoveDown(Song);

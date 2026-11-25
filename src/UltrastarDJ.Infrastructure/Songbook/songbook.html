@@ -39,6 +39,12 @@
            opacity:0; transform:translateY(-50%) scale(.96); transition:.25s; pointer-events:none; box-shadow:0 8px 28px rgba(0,0,0,.5); }
   .toast.show { opacity:1; transform:translateY(-50%); }
   .toast.ok { background:var(--request); border-color:#3a6a4b; }
+  .notice { background:var(--card2); border:1px solid #4a4a66; border-radius:14px; padding:12px 14px; margin-bottom:12px; font-size:14px; display:flex; gap:10px; align-items:flex-start; }
+  .notice[hidden] { display:none; }   /* display:flex above would otherwise show a hidden banner */
+  .notice span { flex:1; }
+  .notice.warn { border-color:#8a6a2a; background:#2e2616; }
+  header .notice { margin:10px 0 0; }
+  .notice button { background:none; border:none; color:var(--muted); font-size:18px; line-height:1; padding:0 2px; cursor:pointer; }
   .overlay { display:none; position:fixed; inset:0; background:var(--bg); z-index:100; align-items:center; justify-content:center; padding:24px; }
   .overlay.visible { display:flex; }
   .card { background:var(--card); border:1px solid #2a2a3a; border-radius:16px; padding:28px 24px; width:100%; max-width:320px; display:flex; flex-direction:column; gap:14px; align-items:center; text-align:center; }
@@ -110,9 +116,15 @@
     <select id="fv" onchange="valueChanged()" disabled><option value="">—</option></select>
   </div>
   <button class="handle" id="handle" hidden onclick="openDrop()" data-ta="my_requests" aria-label="My requests"></button>
+  <!-- In the sticky header, so it is seen wherever the guest has scrolled. "paused": no answer (the phone's internet,
+       or the app away on the Wi-Fi address) — it comes back by itself. "ended": Cloudflare says the public link is
+       gone (the app closed or got a new link) — this page will not work again. -->
+  <div class="notice warn" id="paused" hidden><span id="pausedText" data-t="paused">The songbook is paused right now. It reconnects by itself. If it doesn't come back, scan the QR code on the screen again.</span></div>
   <div class="drop" id="drop" hidden><div class="mine"><div class="title" id="dropTitle" data-t="my_requests">My requests</div><div id="dropList"></div></div></div>
 </header>
 <main>
+  <!-- The app was restarted: this phone's earlier requests are still with the DJ, but no longer listed here. -->
+  <div class="notice" id="restarted" hidden><span data-t="restarted">The songbook was restarted. Your earlier requests are still with the DJ, but are no longer shown here.</span><button onclick="this.parentNode.hidden = true" data-ta="close" aria-label="Close">✕</button></div>
   <!-- This phone's requests and where they stand; cancel while the DJ has not decided. -->
   <details class="mine" id="mine" open hidden>
     <summary id="mineTitle" data-t="my_requests">My requests</summary>
@@ -389,7 +401,7 @@
     // The DJ switched requests off: the songbook is for browsing (the name field goes too).
     document.getElementById('mName').hidden = !requestsOpen;
     document.querySelector('label[for="mName"]').hidden = !requestsOpen;
-    btn.disabled = !requestsOpen || !!taken[id];
+    btn.disabled = paused || !requestsOpen || !!taken[id];
     btn.textContent = !requestsOpen ? t('refusal_closed') : taken[id] ? coded('status_', taken[id]) : t('request');
   }
   async function requestOpen() {
@@ -404,19 +416,45 @@
   }
 
   // ── Now playing, queue, and a new catalog when the library changed ──
+  // Two missed checks in a row (10 s): the Mac is away — say so, and hold requests until it answers again.
+  var misses = 0, paused = false, pageTitle = document.title;
+  var publicLink = /\.trycloudflare\.com$/i.test(location.hostname);
+  // ended: on the public link, Cloudflare itself answers (5xx) that the address has no app behind it any more.
+  function setPaused(on, ended) {
+    document.getElementById('pausedText').textContent = t(ended ? 'link_ended' : 'paused');
+    if (paused === on) return;
+    paused = on;
+    document.getElementById('paused').hidden = !on;
+    // Seen from another tab or app too.
+    document.title = on ? '⚠ ' + pageTitle : pageTitle;
+    if (on) closeSong();
+    updateRequestButton();
+  }
   async function refreshState() {
-    var res = await api('/api/state?client=' + client);
+    var res;
+    try { res = await api('/api/state?client=' + client); }
+    catch (e) { res = null; }
+    if (!res || res.status >= 500) { if (++misses >= 2) setPaused(true, !!res && publicLink); return; }
+    misses = 0; setPaused(false, false);
     if (!res.ok) { if (res.status === 401) verify(); return; }
     var s = await res.json();
     if (s.libraryVersion !== libVersion) loadLibrary(s.libraryVersion);
     mine = s.mine || []; taken = s.taken || {}; requestsOpen = s.requestsOpen !== false;
+    // A new session means the app was restarted: the requests this phone had are kept by the DJ, not listed here.
+    var seen = localStorage.getItem('sb_session');
+    if (seen && seen !== s.session && localStorage.getItem('sb_had') === '1' && mine.length === 0) document.getElementById('restarted').hidden = false;
+    localStorage.setItem('sb_session', s.session);
+    var open = mine.some(function (m) { return m.status === 'waiting' || m.status === 'upnext' || m.status.indexOf('queue|') === 0; });
+    localStorage.setItem('sb_had', open ? '1' : '0');
     renderMine(); updateMarks(); updateRequestButton(); updateHandle();
     document.getElementById('count').textContent = t('n_songs', s.songCount.toLocaleString());
   }
 
   // ── Requests ──
   async function send(songId) {
-    var res = await fetch('/api/request?pin=' + encodeURIComponent(pin), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ songId: songId, guest: guest, client: client }) });
+    var res;
+    try { res = await fetch('/api/request?pin=' + encodeURIComponent(pin), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ songId: songId, guest: guest, client: client }) }); }
+    catch (e) { toast(t('paused')); setPaused(true, false); return; }
     if (res.ok) toast(t('requested_ok'), true);
     else if (res.status === 401) verify();
     else if (res.status === 404) toast(t('gone'));
@@ -425,7 +463,9 @@
     refreshState();
   }
   async function cancel(id) {
-    var res = await fetch('/api/cancel?pin=' + encodeURIComponent(pin), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id, client: client }) });
+    var res;
+    try { res = await fetch('/api/cancel?pin=' + encodeURIComponent(pin), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id, client: client }) }); }
+    catch (e) { toast(t('paused')); setPaused(true, false); return; }
     toast(res.ok ? t('cancelled') : t('too_late'), res.ok);
     refreshState();
   }

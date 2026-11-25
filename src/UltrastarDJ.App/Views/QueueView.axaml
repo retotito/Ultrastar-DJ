@@ -17,10 +17,13 @@
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="svc:SongRequest">
               <Grid ColumnDefinitions="*,Auto,Auto,Auto" Margin="8,4">
-                <StackPanel VerticalAlignment="Center">
+                <!-- Greyed while the song cannot be played (drive unplugged, USDB offline); a request from before a
+                     restart says so on its name -->
+                <StackPanel VerticalAlignment="Center" Opacity="{Binding Opacity}" Background="Transparent" ToolTip.Tip="{Binding UnavailableTip}">
                   <TextBlock Text="{Binding Song.Title}" TextTrimming="CharacterEllipsis" />
-                  <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextTrimming="CharacterEllipsis">
-                    <Run Text="{Binding Song.Artist}" /><Run Text="  ·  " /><Run Text="{Binding Guest}" FontWeight="{StaticResource WeightSemibold}" />
+                  <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding GuestTip}">
+                    <Run Text="{Binding Song.Artist}" /><Run Text="  ·  " /><Run Text="{Binding Guest}" FontWeight="{StaticResource WeightSemibold}"
+                         FontStyle="{Binding FromBefore, Converter={x:Static vm:PlayerConverters.ItalicIf}}" />
                   </TextBlock>
                 </StackPanel>
                 <Button Grid.Column="1" Classes="sidebar" Width="26" Height="26" ToolTip.Tip="{l:T queue.add_queue}"
@@ -77,14 +80,20 @@
               </Border.Styles>
               <Grid ColumnDefinitions="24,*,Auto,Auto,Auto,Auto">
                 <TextBlock Grid.Column="0" Classes="muted" Text="{Binding Number}" VerticalAlignment="Center" />
-                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                <StackPanel Grid.Column="1" VerticalAlignment="Center" Opacity="{Binding Opacity}" Background="Transparent" ToolTip.Tip="{Binding UnavailableTip}">
                   <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
                   <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="{Binding Artist}" TextTrimming="CharacterEllipsis" />
                   <!-- Requested on the songbook: who to call to the mic -->
-                  <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsRequest}" ToolTip.Tip="{l:T queue.requested_songbook}">
+                  <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsLiveRequest}" ToolTip.Tip="{l:T queue.requested_songbook}">
                     <c:Icon Glyph="mic" FontSize="{StaticResource IconSm}" Foreground="{DynamicResource BrushPrimary}" VerticalAlignment="Center" />
                     <TextBlock Text="{Binding RequestedBy}" FontSize="{StaticResource TextXs}" FontWeight="{StaticResource WeightSemibold}"
                                Foreground="{DynamicResource BrushPrimary}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                  </StackPanel>
+                  <!-- Requested before a restart: the name stays (grey), the songbook no longer follows it -->
+                  <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsRequestFromBefore}" Background="Transparent" ToolTip.Tip="{l:T queue.requested_before_restart}">
+                    <c:Icon Glyph="mic" FontSize="{StaticResource IconSm}" Foreground="{DynamicResource BrushOnSurfaceVariant}" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding RequestedBy}" FontSize="{StaticResource TextXs}" FontWeight="{StaticResource WeightSemibold}"
+                               Foreground="{DynamicResource BrushOnSurfaceVariant}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
                   </StackPanel>
                 </StackPanel>
                 <Button Grid.Column="2" Classes="sidebar" Width="26" Height="26" Command="{Binding MoveUpCommand}" ToolTip.Tip="{l:T queue.move_up}"><c:Icon Glyph="arrow_upward" FontSize="{StaticResource IconSm}" /></Button>

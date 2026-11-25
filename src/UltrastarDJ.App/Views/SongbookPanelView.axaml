@@ -24,13 +24,15 @@
     <Border Classes="card">
       <StackPanel Spacing="{StaticResource Space2}">
         <TextBlock Text="{l:T songbook.guests_connect_via}" />
-        <ComboBox ItemsSource="{Binding ConnectChoices}" SelectedItem="{Binding ConnectVia}" HorizontalAlignment="Stretch" IsEnabled="{Binding !Busy}">
+        <ComboBox ItemsSource="{Binding ConnectChoices}" SelectedItem="{Binding ConnectVia}" HorizontalAlignment="Stretch" IsEnabled="{Binding CanChangeConnect}">
             <ComboBox.ItemTemplate>
               <DataTemplate>
                 <TextBlock Text="{l:TOf ., Prefix=songbook.connect.}" />
               </DataTemplate>
             </ComboBox.ItemTemplate>
           </ComboBox>
+        <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap" IsVisible="{Binding IsRunning}"
+                   Text="{l:T songbook.stop_to_change_connect}" />
         <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap" IsVisible="{Binding IsWifi}"
                    Text="{l:T songbook.only_phones_same_wi}" />
         <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" TextWrapping="Wrap" IsVisible="{Binding IsPublic}"
@@ -65,6 +67,8 @@
           <StackPanel>
             <TextBlock Text="{l:T songbook.party_pin}" />
             <TextBlock Classes="muted" FontSize="{StaticResource TextXs}" Text="{l:T songbook.guests_must_enter_before}" TextWrapping="Wrap" />
+            <!-- Public link without PIN: the DJ's choice, but they should know what it means -->
+            <TextBlock FontSize="{StaticResource TextXs}" Foreground="{DynamicResource BrushError}" Text="{l:T songbook.no_pin_public_warning}" TextWrapping="Wrap" IsVisible="{Binding PublicWithoutPin}" />
           </StackPanel>
           <ToggleSwitch Grid.Column="1" IsChecked="{Binding PinEnabled}" OnContent="" OffContent="" />
         </Grid>

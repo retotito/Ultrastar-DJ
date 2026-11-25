@@ -9,9 +9,7 @@ using static UltrastarDJ.Media.Native.LibMpv;
 namespace UltrastarDJ.Media;
 
 /// <summary>Process-wide settings for every <see cref="MpvPlayer"/>.</summary>
-/// <param name="YtDlpPath">The yt-dlp mpv runs for YouTube.</param>
-/// <param name="YouTubeLoginBrowser">yt-dlp uses the YouTube login of this browser ("firefox"), null = none.</param>
-public sealed record MpvOptions(string? YtDlpPath, string? YouTubeLoginBrowser = null);
+public sealed record MpvOptions(string? YtDlpPath);
 
 /// <summary>
 /// <see cref="IMediaPlayer"/> over one libmpv handle. All mpv option/property names live here and nowhere else.
@@ -60,6 +58,7 @@ public sealed class MpvPlayer : IMediaPlayer
     // yt-dlp's own error line for the current load. mpv reports a failed YouTube load only as
     // "unrecognized file format"; this is what the user needs to see (see PlaybackError).
     private volatile string? _ytdlError;
+    private readonly YouTubeResolver? _youTube;
     // This load's mpv warnings, for the error details (what a DJ copies into a bug report).
     private readonly System.Collections.Concurrent.ConcurrentQueue<string> _loadLog = new();
     private const int LoadLogLines = 25;
@@ -83,8 +82,10 @@ public sealed class MpvPlayer : IMediaPlayer
     /// <param name="video">Whether this player renders video (creates a software render context).</param>
     /// <param name="options">Process-wide mpv settings.</param>
     /// <param name="log">Logger.</param>
-    public MpvPlayer(string name, bool video, MpvOptions options, ILogger<MpvPlayer> log)
+    /// <param name="youTube">Looks YouTube videos up once for all players; null: mpv runs yt-dlp itself for every load.</param>
+    public MpvPlayer(string name, bool video, MpvOptions options, ILogger<MpvPlayer> log, YouTubeResolver? youTube = null)
     {
+        _youTube = youTube;
         Name = name;
         _video = video;
         _log = log;
@@ -132,9 +133,7 @@ public sealed class MpvPlayer : IMediaPlayer
         // yt-dlp would use a JavaScript runtime it finds on the computer (Deno, Node): then it reaches YouTube another
         // way than on a computer without one — a Deno from Homebrew made every YouTube stream fail with 403. Same
         // behaviour everywhere: none.
-        // With a login (Settings → YouTube): yt-dlp reads it from the browser — long parties without YouTube's "not a bot"
-        // pause, and 18+ videos.
-        Set("ytdl-raw-options", YtdlRawOptions(options));
+        Set("ytdl-raw-options", "no-js-runtimes=");
         if (!string.IsNullOrEmpty(options.YtDlpPath))
         {
             Set("script-opts", $"ytdl_hook-ytdl_path={options.YtDlpPath}");
@@ -268,6 +267,12 @@ public sealed class MpvPlayer : IMediaPlayer
             catch (StreamRejectedException)
             {
                 _log.LogWarning("{Player}: YouTube refused the stream — retry {Attempt}/{Max} with a fresh address", Name, attempt + 1, StreamRetry.MaxRetries);
+                // A kept lookup may be the cause (expired early, or the internet address changed): ask YouTube anew.
+                if (source is MediaSource.YouTube refused)
+                {
+                    _youTube?.Forget(refused.VideoId);
+                }
+
                 await Task.Delay(StreamRetry.Delay, ct).ConfigureAwait(false);
             }
         }
@@ -307,7 +312,13 @@ public sealed class MpvPlayer : IMediaPlayer
         Volume = _volume;
         Speed = 1.0;
 
-        Command("loadfile", source.ToMpvUri(), "replace");
+        string uri = source.ToMpvUri();
+        if (source is MediaSource.YouTube yt && _youTube is { IsAvailable: true } youTube)
+        {
+            uri = await YouTubeUriAsync(youTube, yt.VideoId, options, tcs, ct).ConfigureAwait(false);
+        }
+
+        Command("loadfile", uri, "replace");
         _log.LogInformation("{Player}: loading {Source} (audio:{Audio} video:{Video} start:{Start:F2}s)",
             Name, source, options.Audio, options.Video && _video, options.StartAt.TotalSeconds);
 
@@ -352,6 +363,53 @@ public sealed class MpvPlayer : IMediaPlayer
         if (options.Autoplay)
         {
             Play();
+        }
+    }
+
+    /// <summary>
+    /// The streams of a YouTube video from the shared lookup (one per song for preview, game and repeats), opened
+    /// directly with yt-dlp's headers — mpv's own yt-dlp run is skipped. A failed lookup fails the load like mpv would.
+    /// </summary>
+    private async Task<string> YouTubeUriAsync(YouTubeResolver youTube, string videoId, MediaLoadOptions options, TaskCompletionSource tcs, CancellationToken ct)
+    {
+        try
+        {
+            YouTubeInfo info = await youTube.ResolveAsync(videoId, ct).ConfigureAwait(false);
+            (YouTubeFormat? video, YouTubeFormat? audio) = YouTubeStreams.Pick(info, options.Video && _video, options.Audio, options.MaxHeight)
+                ?? throw new MediaException("ERROR: [youtube] " + videoId + ": Requested format is not available");
+            IReadOnlyDictionary<string, string> headers = (video ?? audio)!.Headers;
+            if (headers.TryGetValue("User-Agent", out string? agent))
+            {
+                SetProp("user-agent", agent);
+            }
+
+            // Appended one by one: a header's value may hold commas (mpv splits a whole list on them).
+            SetProp("http-header-fields", "");
+            foreach ((string name, string value) in headers.Where(h => !h.Key.Equals("User-Agent", StringComparison.OrdinalIgnoreCase)))
+            {
+                Command("change-list", "http-header-fields", "append", $"{name}: {value}");
+            }
+
+            return YouTubeStreams.MpvUrl(video, audio);
+        }
+        catch (Exception ex) when (ex is MediaException or OperationCanceledException)
+        {
+            lock (_stateLock)
+            {
+                if (ReferenceEquals(_loadTcs, tcs))
+                {
+                    _loadTcs = null;
+                }
+
+                SetStateLocked(ex is MediaException ? MediaState.Error : MediaState.Idle);
+            }
+
+            if (ex is MediaException)
+            {
+                _log.LogError("{Player}: playback failed: {Error}", Name, ex.Message);
+            }
+
+            throw;
         }
     }
 
@@ -843,10 +901,6 @@ public sealed class MpvPlayer : IMediaPlayer
     }
 
     // ── Plumbing ──────────────────────────────────────────────────────────
-
-    /// <summary>mpv's <c>ytdl-raw-options</c>: yt-dlp flags as key=value, comma separated (an empty value is a bare flag).</summary>
-    public static string YtdlRawOptions(MpvOptions o)
-        => o.YouTubeLoginBrowser is { } browser ? $"no-js-runtimes=,cookies-from-browser={browser}" : "no-js-runtimes=";
 
     private static string YtdlFormat(MediaLoadOptions o)
     {

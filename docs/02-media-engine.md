@@ -49,9 +49,8 @@ public interface IMediaPlayer : IAsyncDisposable
 | Output device | `audio-device=<id>`; device list from `audio-device-list` property |
 | Video off (audio-only role) | `vid=no` |
 | Audio off (visual-only role) | `aid=no` (no audio stream is downloaded for YouTube either) |
-| YouTube | `ytdl=yes`, `ytdl-raw-options=no-js-runtimes=` (yt-dlp ignores a JavaScript runtime installed on the computer — with Homebrew's Deno it reached YouTube another way and every stream failed with 403; now every computer behaves the same; with Settings → YouTube → "Use the YouTube login from Firefox" also
-`cookies-from-browser=firefox`, `MpvPlayer.YtdlRawOptions`, tested — Firefox only, as Chrome and Edge on Windows lock their
-logins away), `script-opts=ytdl_hook-ytdl_path=<sidecar yt-dlp>`, `ytdl-format=bestvideo[height<=720]+bestaudio/best[height<=720]` (or `bestaudio` when `Video=false`) |
+| YouTube | `ytdl=yes`, `ytdl-raw-options=no-js-runtimes=` (yt-dlp ignores a JavaScript runtime installed on the computer — with Homebrew's Deno it reached YouTube another way and every stream failed with 403; now every computer behaves the same), `script-opts=ytdl_hook-ytdl_path=<sidecar yt-dlp>` (only when the app's own lookup
+is unavailable — see "YouTube lookups"), `ytdl-format=bestvideo[height<=720]+bestaudio/best[height<=720]` (or `bestaudio` when `Video=false`) |
 | Hardware decode | `hwdec=auto-safe` |
 | Range | `start=<sec>`, `end=<sec>` |
 | External video for Case 2/3 | after load: `video-add <file-or-ytdl://ID>` then `vid=1`; plus `audio-delay` for `#VIDEOGAP` (see below) |
@@ -70,6 +69,26 @@ and raises .NET events **on a thread pool thread**. Callers marshal to the UI th
 is made from a render/frame callback.
 
 ---
+
+### YouTube lookups (`YouTubeResolver`, `YouTubeStreams`, tested)
+
+YouTube counts the lookups (yt-dlp asking for a video's streams) and after too many from one connection pauses
+("confirm you're not a bot") — a bar hit it after ~2 h (GitHub #5). So the app looks a song up **once** and keeps
+the answer: `MpvPlayerFactory.YouTube`, shared by all players, runs `yt-dlp -J --no-playlist --no-js-runtimes
+-f "bv*+ba/b/ba/bv*"` (the `-f` only so yt-dlp lists the streams instead of insisting on one file with both, which many
+videos lack without ffmpeg) and keeps the answer until 15 minutes before its addresses expire (`expire=` in them,
+~6 h). Preview, Game Player and a song sung again play from it: about one lookup per song instead of two or three.
+`YouTubeStreams.Pick` makes the choice mpv's format rule made (avc1 video up to the height + the best audio, else
+another codec, else one stream with both; picture strips and HLS playlists skipped); `MpvPlayer` opens the streams
+directly — two joined as an EDL with UTF-8 byte lengths, since the addresses hold commas — with yt-dlp's headers
+(`user-agent`, the rest appended one by one). A lookup waited for by preview and game at once runs once; a failed
+one is not kept, its yt-dlp `ERROR:` line goes to `PlaybackError`. A refused kept address (the router got a new IP,
+or it expired early) → `Forget` and the retry looks it up anew. Without yt-dlp, mpv's own `ytdl_hook` path remains.
+
+**No YouTube login.** Tried in Sprint 37 and removed: with a browser's login yt-dlp acts as a logged-in browser,
+whose addresses need a JavaScript runtime (Deno) to decode — without one only pictures; with one the lookup works but
+YouTube refuses the streams themselves (its SABR delivery for logged-in users wants tokens that exist to stop
+programs like this). Not worked around.
 
 ## Roles and channels
 

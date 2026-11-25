@@ -79,10 +79,6 @@ public sealed class AppSettingsService
     /// <summary>Slow computers: the displays draw no glows, sparkles or star showers (docs/03-game-engine.md).</summary>
     public bool ReduceEffects => _doc.ReduceEffects;
     public void SetReduceEffects(bool reduce) => Update(_doc with { ReduceEffects = reduce });
-
-    /// <summary>Settings → YouTube: yt-dlp uses the YouTube login from Firefox (long parties, 18+ videos).</summary>
-    public bool YouTubeLoginFirefox => _doc.YouTubeLoginFirefox;
-    public void SetYouTubeLoginFirefox(bool on) => Update(_doc with { YouTubeLoginFirefox = on });
     public void SetDifficulty(Difficulty d) => Update(_doc with { Difficulty = d });
     /// <summary>Migrated into the game output's latency (OutputsService); kept only to read old settings files.</summary>
     public void ClearLyricsOffset() => Update(_doc with { LyricsOffsetMs = 0 });
@@ -116,7 +112,6 @@ public sealed class AppSettingsService
         /// <summary>Stored inverted so settings files from before the switch keep the lines.</summary>
         public bool HideGridLines { get; init; }
         public bool ReduceEffects { get; init; }
-        public bool YouTubeLoginFirefox { get; init; }
         public double? NowPlayingX { get; init; }
         public double? NowPlayingY { get; init; }
         /// <summary>Null = <see cref="LibraryColumns.DefaultVisible"/> (files written before the Layout panel).</summary>
